@@ -58,9 +58,9 @@
     .btns .btn{ flex:1; }
     label.f{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:.08em;
       color:var(--ink-soft); margin:14px 0 5px; }
-    input.f{ width:100%; font-family:var(--mono); font-size:16px; padding:10px 8px;
+    input.f, select.f{ width:100%; font-family:var(--mono); font-size:16px; padding:10px 8px;
       border:none; border-bottom:1px solid var(--ink); background:var(--paper-shade); color:var(--ink); }
-    input.f:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+    input.f:focus, select.f:focus{ outline:2px solid var(--accent); outline-offset:1px; }
     .chips{ display:flex; flex-wrap:wrap; gap:8px; }
     .chip{ border:1px solid var(--ink-soft); background:none; color:var(--ink); padding:7px 11px;
       font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
@@ -72,6 +72,17 @@
     .offline-bar{ text-align:center; margin:20px 0 6px; font-size:12px; letter-spacing:.06em; }
     .barcode{ height:26px; margin:8px auto 0; width:60%;
       background:repeating-linear-gradient(90deg,var(--ink) 0 1px,transparent 1px 3px,var(--ink) 3px 4px,transparent 4px 7px); }
+    .art{ margin:10px 0; padding:8px; background:var(--paper-shade); border-left:3px solid var(--line); }
+    .art .art-name{ background:var(--paper); font-size:14px; }
+    .art-row{ display:flex; gap:6px; align-items:center; margin-top:5px; }
+    .art-row .art-prix{ flex:0 0 84px; }
+    .art-row .art-prod{ flex:1; font-size:13px; }
+    .art-row .art-del{ flex:0 0 auto; padding:8px 11px; }
+    .leader.fam{ margin-top:8px; }
+    .leader.fam .lbl{ font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+    .leader.fam .val{ font-weight:700; color:var(--accent); }
+    .leader.item{ font-size:12px; padding-left:16px; }
+    .leader.item .lbl, .leader.item .val{ color:var(--ink-soft); }
     @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
   </style>
 </head>
@@ -87,6 +98,7 @@
       read: function(k, def){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):def; }catch(e){ return (k in mem)?mem[k]:def; } },
       write: function(k, val){ try{ localStorage.setItem(k, JSON.stringify(val)); }catch(e){ mem[k]=val; } }
     };
+
     var CATS = ["Alimentation","Restaurant","Carburant","Maison","Santé","Transport","Loisirs","Autre"];
     var KEYWORDS = {
       "Alimentation":["carrefour","leclerc","lidl","aldi","intermarch","super u","hyper u","casino","monoprix","auchan","netto","cora","biocoop","grand frais","franprix"],
@@ -97,21 +109,50 @@
       "Transport":["sncf","peage","autoroute","parking","ratp"],
       "Loisirs":["fnac","decathlon","cultura","micromania"]
     };
+    var FAMILLES = ["Nourriture","Boissons","Vêtements","Divers"];
+    var DEFAULT_PROD = FAMILLES.concat(["Tomates","Yaourts","Pain","Lait","Œufs","Fromage","Pâtes","Riz","Café","Fruits","Légumes","Viande","Éponges","Lessive","Produits ménagers"]);
+    var PRODUITS = store.read("produits", null) || DEFAULT_PROD.slice();
+    (function(){ var miss=FAMILLES.filter(function(f){ return PRODUITS.indexOf(f)<0; }); if(miss.length) PRODUITS = miss.concat(PRODUITS); })();
+    function persistProd(){ store.write("produits", PRODUITS); }
+
+    var APPRIS = store.read("appris", {});
+    function persistAppris(){ store.write("appris", APPRIS); }
+    function norm(s){ return (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z ]/g," ").replace(/\s+/g," ").trim(); }
+    function lookupAppris(label){
+      var n=norm(label); if(!n) return "";
+      if(APPRIS[n]) return APPRIS[n];
+      var best="", bestKey="";
+      for(var k in APPRIS){ if(k.length>=3 && (n.indexOf(k)>=0 || k.indexOf(n)>=0) && k.length>bestKey.length){ bestKey=k; best=APPRIS[k]; } }
+      return best;
+    }
+
+    var DEFAULT_FAMILLE_DE = { "Tomates":"Nourriture","Yaourts":"Nourriture","Pain":"Nourriture","Lait":"Nourriture","Œufs":"Nourriture","Fromage":"Nourriture","Pâtes":"Nourriture","Riz":"Nourriture","Café":"Boissons","Fruits":"Nourriture","Légumes":"Nourriture","Viande":"Nourriture","Éponges":"Divers","Lessive":"Divers","Produits ménagers":"Divers" };
+    var FAMILLE_DE = store.read("familleDe", null) || {};
+    (function(){ for(var k in DEFAULT_FAMILLE_DE){ if(!(k in FAMILLE_DE)) FAMILLE_DE[k]=DEFAULT_FAMILLE_DE[k]; } FAMILLES.forEach(function(f){ FAMILLE_DE[f]=f; }); })();
+    function persistFamille(){ store.write("familleDe", FAMILLE_DE); }
+    function familleOf(p){ return FAMILLE_DE[p] || "Divers"; }
+
     function guessCat(text){
       var t=(text||"").toLowerCase();
       for(var i=0;i<CATS.length;i++){ var c=CATS[i], kws=KEYWORDS[c]||[]; for(var j=0;j<kws.length;j++){ if(t.indexOf(kws[j])>=0) return c; } }
       return "Autre";
     }
+
     function parseTicket(text){
       var lines = text.split(/\n/).map(function(l){return l.trim();}).filter(Boolean);
       var amtRe = /(\d{1,4})[.,](\d{2})\b/g;
-      var all = [];
+      var key = /total|a payer|à payer|net a|net à|montant|carte|especes|espèces|rendu|tva/i;
+      var all = [], lignes = [];
       lines.forEach(function(l){
-        var m; amtRe.lastIndex=0;
-        while((m=amtRe.exec(l))){ all.push({ value: parseFloat(m[1]+"."+m[2]), line:l }); }
+        var m, last=null; amtRe.lastIndex=0;
+        while((m=amtRe.exec(l))){ all.push({ value: parseFloat(m[1]+"."+m[2]), line:l }); last=m; }
+        if(key.test(l) || !last) return;
+        var prix = parseFloat(last[1]+"."+last[2]);
+        var label = l.replace(/(\d{1,4})[.,](\d{2})\b/g," ").replace(/[^0-9A-Za-zÀ-ÿ ]+/g," ").replace(/\s+/g," ").trim();
+        if(label.length < 2) return;
+        lignes.push({ label: label.slice(0,28), prix: String(prix).replace(".",","), produit:"" });
       });
-      var key = /total|a payer|à payer|net a|net à|montant/i;
-      var flagged = all.filter(function(a){ return key.test(a.line); });
+      var flagged = all.filter(function(a){ return /total|a payer|à payer|net a|net à|montant/i.test(a.line); });
       var total = "";
       if(flagged.length) total = Math.max.apply(null, flagged.map(function(a){return a.value;}));
       else if(all.length) total = Math.max.apply(null, all.map(function(a){return a.value;}));
@@ -120,12 +161,15 @@
       if(dm){ var y=dm[3].length===2?"20"+dm[3]:dm[3]; date=y+"-"+dm[2]+"-"+dm[1]; }
       var marchand="";
       for(var i=0;i<lines.length;i++){ if(/[A-Za-zÀ-ÿ]{3,}/.test(lines[i])){ marchand=lines[i].slice(0,32); break; } }
-      return { total: total, date: date, marchand: marchand, categorie: guessCat(text) };
+      return { total: total, date: date, marchand: marchand, categorie: guessCat(text), lignes: lignes };
     }
+
     function todayISO(){ return new Date().toISOString().slice(0,10); }
     function fmt(n){ return (Number(n)||0).toFixed(2).replace(".",",")+" €"; }
     function monthKey(iso){ return (iso||todayISO()).slice(0,7); }
     function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+    function num(x){ return parseFloat(String(x).replace(",","."))||0; }
+
     var state = {
       entries: store.read("entries", []),
       view: "list", draft: null,
@@ -133,13 +177,21 @@
       busy: false, prog: 0
     };
     function persist(){ store.write("entries", state.entries); }
+
     var app = document.getElementById("app");
     var filein = document.getElementById("filein");
+
     function header(){
       return '<header class="head"><h1>Tickets — Dépenses</h1>'+
              '<div class="sub">suivi local · sans compte</div><div class="barcode"></div></header>';
     }
-    function render(){ if(state.view==="list") renderList(); else renderForm(); }
+
+    function render(){
+      if(state.view==="form") return renderForm();
+      if(state.view==="articles") return renderArticles();
+      return renderList();
+    }
+
     function renderList(){
       var month = monthKey(todayISO());
       var mois = state.entries.filter(function(e){ return monthKey(e.date)===month; });
@@ -148,6 +200,7 @@
       mois.forEach(function(e){ parCat[e.categorie]=(parCat[e.categorie]||0)+(Number(e.montant)||0); });
       var cats = Object.keys(parCat).sort(function(a,b){ return parCat[b]-parCat[a]; });
       var monthLabel = new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
+
       var h = header();
       h += '<section class="paper torn">';
       h += '<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">'+esc(monthLabel)+'</div>';
@@ -157,7 +210,11 @@
         h += '<div class="leader"><span class="lbl">'+esc(c)+'</span><span class="fill"></span><span class="val">'+fmt(parCat[c])+'</span></div>';
       });
       h += '<hr class="rule"><div class="leader total"><span class="lbl">Total</span><span class="fill"></span><span class="val">'+fmt(totalMois)+'</span></div>';
-      h += '</section><hr class="rule">';
+      h += '</section>';
+
+      h += '<div class="center" style="margin:14px 0"><button class="btn" id="goarts">Articles du mois →</button></div>';
+      h += '<hr class="rule">';
+
       if(state.entries.length===0){
         h += '<div class="empty">Rien d\'enregistré pour l\'instant.<br>Appuie sur <b>Scanner un ticket</b> en bas pour commencer.</div>';
       } else {
@@ -168,21 +225,40 @@
                '</div>';
         });
       }
+
       h += '<div class="offline-bar">' + (state.offline==="ready"
           ? '<span class="muted">OCR hors-ligne prêt</span>'
           : '<button class="btn ghost" id="prep"'+(state.offline==="loading"?" disabled":"")+'>'+
               (state.offline==="loading"?"Téléchargement…":state.offline==="error"?"Échec — réessayer":"Préparer le mode hors-ligne")+
             '</button>') + '</div>';
+
       h += '<button class="fab" id="manual" style="bottom:78px;background:transparent;color:var(--ink);box-shadow:none;border:1px solid var(--ink)">Saisie manuelle</button>';
       h += '<button class="fab" id="scan">Scanner un ticket</button>';
+
       app.innerHTML = h;
+
       var scan=document.getElementById("scan"); if(scan) scan.onclick=function(){ filein.click(); };
       var manual=document.getElementById("manual"); if(manual) manual.onclick=newDraft;
       var prep=document.getElementById("prep"); if(prep) prep.onclick=prepareOffline;
+      var goarts=document.getElementById("goarts"); if(goarts) goarts.onclick=function(){ state.view="articles"; render(); };
       [].forEach.call(document.querySelectorAll(".entry"), function(node){
         node.onclick=function(){ editEntry(node.getAttribute("data-id")); };
       });
     }
+
+    function artRow(a){
+      var opts='<option value="">— non classé —</option>';
+      PRODUITS.forEach(function(p){ opts+='<option value="'+esc(p)+'"'+(a.produit===p?" selected":"")+'>'+esc(p)+'</option>'; });
+      opts+='<option value="__new">+ Nouveau produit…</option>';
+      return '<div class="art">'+
+        '<input class="f art-name" value="'+esc(a.label)+'" placeholder="Article">'+
+        '<div class="art-row">'+
+          '<input class="f art-prix" inputmode="decimal" value="'+esc(a.prix)+'" placeholder="0,00">'+
+          '<select class="f art-prod">'+opts+'</select>'+
+          '<button class="btn ghost art-del" type="button">✕</button>'+
+        '</div></div>';
+    }
+
     function renderForm(){
       var d = state.draft;
       var h = header() + '<section class="paper">';
@@ -196,13 +272,19 @@
       h += '<label class="f">Date</label><input class="f" id="f-date" type="date" value="'+esc(d.date)+'">';
       h += '<label class="f">Catégorie</label><div class="chips" id="chips">';
       CATS.forEach(function(c){ h += '<button class="chip'+(d.categorie===c?" on":"")+'" data-cat="'+esc(c)+'">'+esc(c)+'</button>'; });
-      h += '</div><div class="btns"><button class="btn ghost" id="cancel">Annuler</button>'+
-           (d.id?'<button class="btn" id="del">Supprimer</button>':'')+
-           '<button class="btn primary" id="save">Enregistrer</button></div></section>';
+      h += '</div>';
+      h += '<label class="f">Articles (rangés par produit)</label><div id="arts">';
+      (d.articles||[]).forEach(function(a){ h += artRow(a); });
+      h += '</div><button class="btn ghost" id="addart" type="button" style="margin-top:10px">+ Ajouter un article</button>';
+      h += '<div class="btns"><button class="btn ghost" id="cancel" type="button">Annuler</button>'+
+           (d.id?'<button class="btn" id="del" type="button">Supprimer</button>':'')+
+           '<button class="btn primary" id="save" type="button">Enregistrer</button></div></section>';
       app.innerHTML = h;
+
       document.getElementById("cancel").onclick=function(){ state.view="list"; state.draft=null; render(); };
       var del=document.getElementById("del"); if(del) del.onclick=delDraft;
       document.getElementById("save").onclick=saveDraft;
+      document.getElementById("addart").onclick=function(){ readForm(); state.draft.articles.push({label:"",prix:"",produit:""}); render(); };
       [].forEach.call(document.querySelectorAll("#chips .chip"), function(btn){
         btn.onclick=function(){
           state.draft.categorie=btn.getAttribute("data-cat");
@@ -210,23 +292,60 @@
           btn.classList.add("on");
         };
       });
+      [].forEach.call(document.querySelectorAll(".art-del"), function(b,i){
+        b.onclick=function(){ readForm(); state.draft.articles.splice(i,1); render(); };
+      });
+      [].forEach.call(document.querySelectorAll(".art-prod"), function(sel,i){
+        sel.onchange=function(){
+          if(sel.value==="__new"){
+            var name=(window.prompt("Nom du nouveau produit :")||"").trim();
+            readForm();
+            if(name){
+              if(PRODUITS.indexOf(name)<0){ PRODUITS.push(name); persistProd(); }
+              if(!(name in FAMILLE_DE)){
+                var fam=(window.prompt("Grande catégorie pour « "+name+" » ?\n(Nourriture, Boissons, Vêtements, Divers)","Divers")||"Divers").trim();
+                FAMILLE_DE[name]= FAMILLES.indexOf(fam)>=0 ? fam : "Divers"; persistFamille();
+              }
+              if(state.draft.articles[i]) state.draft.articles[i].produit=name;
+            }
+            else if(state.draft.articles[i]) state.draft.articles[i].produit="";
+            render();
+          }
+        };
+      });
     }
-    function newDraft(){ state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre"}; state.view="form"; render(); }
-    function editEntry(id){
-      var e=state.entries.filter(function(x){ return String(x.id)===String(id); })[0];
-      if(!e) return; state.draft={}; for(var k in e) state.draft[k]=e[k]; state.view="form"; render();
-    }
+
     function readForm(){
       state.draft.montant=document.getElementById("f-montant").value;
       state.draft.marchand=document.getElementById("f-marchand").value;
       state.draft.date=document.getElementById("f-date").value;
+      var arts=[];
+      [].forEach.call(document.querySelectorAll("#arts .art"), function(node){
+        arts.push({ label:node.querySelector(".art-name").value,
+                    prix:node.querySelector(".art-prix").value,
+                    produit:node.querySelector(".art-prod").value });
+      });
+      state.draft.articles=arts;
+    }
+
+    function newDraft(){ state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[]}; state.view="form"; render(); }
+    function editEntry(id){
+      var e=state.entries.filter(function(x){ return String(x.id)===String(id); })[0];
+      if(!e) return;
+      state.draft={id:e.id,montant:e.montant,date:e.date,marchand:e.marchand,categorie:e.categorie,
+        articles:(e.articles||[]).map(function(a){ return {label:a.label,prix:a.prix,produit:a.produit}; })};
+      state.view="form"; render();
     }
     function saveDraft(){
       readForm();
-      var montant=parseFloat(String(state.draft.montant).replace(",","."));
+      var montant=num(state.draft.montant);
       if(!montant){ var f=document.getElementById("f-montant"); if(f) f.focus(); return; }
-      var entry={}; for(var k in state.draft) entry[k]=state.draft[k];
-      entry.montant=montant; entry.marchand=(state.draft.marchand||"").trim()||"Sans nom"; entry.date=state.draft.date||todayISO();
+      var arts=(state.draft.articles||[]).map(function(a){ return {label:(a.label||"").trim(), prix:num(a.prix), produit:(a.produit==="__new"?"":a.produit)||""}; })
+        .filter(function(a){ return a.label || a.produit || a.prix; });
+      var entry={ id:state.draft.id, montant:montant, date:state.draft.date||todayISO(),
+        marchand:(state.draft.marchand||"").trim()||"Sans nom", categorie:state.draft.categorie, articles:arts };
+      arts.forEach(function(a){ if(a.produit && a.label){ APPRIS[norm(a.label)]=a.produit; } });
+      persistAppris();
       if(entry.id){ state.entries=state.entries.map(function(e){ return String(e.id)===String(entry.id)?entry:e; }); }
       else { entry.id=Date.now(); state.entries.unshift(entry); }
       persist(); state.view="list"; state.draft=null; render();
@@ -235,11 +354,46 @@
       if(state.draft && state.draft.id){ state.entries=state.entries.filter(function(e){ return String(e.id)!==String(state.draft.id); }); persist(); }
       state.view="list"; state.draft=null; render();
     }
+
+    function renderArticles(){
+      var month = monthKey(todayISO());
+      var monthLabel = new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
+      var perP={};
+      state.entries.filter(function(e){ return monthKey(e.date)===month; }).forEach(function(e){
+        (e.articles||[]).forEach(function(a){
+          var p=a.produit||(a.label||"").trim()||"—";
+          if(!perP[p]) perP[p]={n:0,total:0};
+          perP[p].n++; perP[p].total+=Number(a.prix)||0;
+        });
+      });
+      var fams={}, grand=0;
+      Object.keys(perP).forEach(function(p){
+        var f=familleOf(p);
+        if(!fams[f]) fams[f]={total:0,items:[]};
+        fams[f].total+=perP[p].total; fams[f].items.push({produit:p,n:perP[p].n,total:perP[p].total}); grand+=perP[p].total;
+      });
+      var famKeys=Object.keys(fams).sort(function(a,b){ return fams[b].total-fams[a].total; });
+      var h=header()+'<section class="paper torn">';
+      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Articles · '+esc(monthLabel)+'</div><hr class="rule">';
+      if(famKeys.length===0) h+='<div class="center muted" style="font-size:12px">Aucun article rangé ce mois-ci.<br>Scanne un ticket et classe ses lignes par produit.</div>';
+      famKeys.forEach(function(f){
+        h+='<div class="leader fam"><span class="lbl">'+esc(f)+'</span><span class="fill"></span><span class="val">'+fmt(fams[f].total)+'</span></div>';
+        fams[f].items.sort(function(a,b){ return b.total-a.total; }).forEach(function(it){
+          var nm = it.produit===f ? "(non détaillé)" : it.produit;
+          h+='<div class="leader item"><span class="lbl">'+esc(nm)+' ×'+it.n+'</span><span class="fill"></span><span class="val">'+fmt(it.total)+'</span></div>';
+        });
+      });
+      if(famKeys.length) h+='<hr class="rule"><div class="leader total"><span class="lbl">Total articles</span><span class="fill"></span><span class="val">'+fmt(grand)+'</span></div>';
+      h+='</section><div class="btns" style="margin-top:18px"><button class="btn" id="back" type="button">Retour</button></div>';
+      app.innerHTML=h;
+      document.getElementById("back").onclick=function(){ state.view="list"; render(); };
+    }
+
     filein.onchange=function(ev){
       var file=ev.target.files && ev.target.files[0]; ev.target.value="";
       if(!file) return;
       state.busy=true; state.prog=0;
-      state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre"};
+      state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[]};
       state.view="form"; render();
       if(typeof Tesseract==="undefined"){ state.busy=false; render(); return; }
       Tesseract.recognize(file, "fra+eng", { logger:function(m){
@@ -251,10 +405,12 @@
           state.draft.date = p.date || state.draft.date;
           state.draft.marchand = p.marchand || state.draft.marchand;
           state.draft.categorie = p.categorie;
+          state.draft.articles = (p.lignes||[]).map(function(a){ return {label:a.label, prix:a.prix, produit:lookupAppris(a.label)}; });
         })
         .catch(function(err){ console.warn("OCR indisponible:", err); })
         .then(function(){ state.busy=false; render(); });
     };
+
     function prepareOffline(){
       if(typeof Tesseract==="undefined"){ state.offline="error"; render(); return; }
       state.offline="loading"; render();
@@ -263,7 +419,9 @@
         .then(function(){ store.write("offlineReady", true); state.offline="ready"; render(); })
         .catch(function(err){ console.warn(err); state.offline="error"; render(); });
     }
+
     render();
+
     if("serviceWorker" in navigator){
       window.addEventListener("load", function(){ navigator.serviceWorker.register("./sw.js").catch(function(){}); });
     }
