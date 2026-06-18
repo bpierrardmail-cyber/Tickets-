@@ -1,0 +1,12 @@
+{
+  "name": "Tickets — Suivi des dépenses",
+  "short_name": "Tickets",
+  "description": "Scan de tickets de caisse et suivi de budget en local",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#cfccc2",
+  "theme_color": "#1b1a17",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

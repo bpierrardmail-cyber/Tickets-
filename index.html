@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1b1a17" />
+  <title>Tickets — Suivi des dépenses</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+
+  <!-- React + Babel (sans étape de build, pratique pour une base à bidouiller) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- OCR local dans le navigateur -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <style>
+    :root{
+      --surface:#cfccc2;        /* plan de travail neutre */
+      --paper:#faf7ef;          /* papier thermique */
+      --paper-shade:#efe9db;    /* zones imprimées */
+      --ink:#1b1a17;            /* encre */
+      --ink-soft:#6f6a5e;       /* encre passée */
+      --accent:#b23a2e;         /* rouge caisse (totaux) */
+      --line:#d9d3c4;
+      --mono: ui-monospace, "SFMono-Regular", "Roboto Mono", Menlo, Consolas, monospace;
+    }
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; }
+    body{
+      background:var(--surface);
+      color:var(--ink);
+      font-family:var(--mono);
+      -webkit-font-smoothing:antialiased;
+      padding:env(safe-area-inset-top) 0 0;
+    }
+    .app{ max-width:520px; margin:0 auto; padding:18px 14px 120px; }
+
+    /* En-tête type ticket */
+    .head{
+      text-align:center; padding:14px 0 6px;
+      letter-spacing:.18em; text-transform:uppercase;
+    }
+    .head h1{ font-size:14px; margin:0 0 4px; font-weight:700; }
+    .head .sub{ font-size:10px; color:var(--ink-soft); letter-spacing:.22em; }
+    .rule{ border:0; border-top:1px dashed var(--ink-soft); margin:12px 0; opacity:.6; }
+
+    /* Carte papier + bord déchiré en bas (signature) */
+    .paper{ position:relative; background:var(--paper); padding:18px 16px;
+      box-shadow:0 1px 0 rgba(0,0,0,.04), 0 10px 24px rgba(0,0,0,.10); }
+    .paper.torn::after{
+      content:""; position:absolute; bottom:-9px; left:0; width:100%; height:10px;
+      background:
+        linear-gradient(45deg, transparent 33%, var(--paper) 33%, var(--paper) 67%, transparent 67%),
+        linear-gradient(-45deg, transparent 33%, var(--paper) 33%, var(--paper) 67%, transparent 67%);
+      background-size:14px 18px;
+    }
+
+    /* Lignes à pointillés (label .......... montant) */
+    .leader{ display:flex; align-items:baseline; gap:.4em; font-size:13px; padding:3px 0; }
+    .leader .lbl{ white-space:nowrap; }
+    .leader .fill{ flex:1; border-bottom:1px dotted var(--ink-soft); transform:translateY(-3px); opacity:.7; }
+    .leader .val{ white-space:nowrap; font-variant-numeric:tabular-nums; }
+
+    .total .lbl{ font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
+    .total .val{ font-size:22px; font-weight:700; color:var(--accent); }
+
+    .muted{ color:var(--ink-soft); }
+    .center{ text-align:center; }
+
+    /* Liste des entrées */
+    .entry{ padding:11px 4px; border-bottom:1px dashed var(--line); }
+    .entry .row1{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+    .entry .name{ font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .entry .amt{ font-variant-numeric:tabular-nums; font-weight:700; white-space:nowrap; }
+    .entry .row2{ display:flex; justify-content:space-between; font-size:11px; color:var(--ink-soft); margin-top:2px; }
+    .cat{ display:inline-block; border:1px solid var(--ink-soft); padding:1px 7px; font-size:10px;
+      text-transform:uppercase; letter-spacing:.06em; }
+
+    /* Boutons */
+    button{ font-family:var(--mono); cursor:pointer; }
+    .fab{ position:fixed; left:50%; transform:translateX(-50%); bottom:22px;
+      background:var(--ink); color:var(--paper); border:none; padding:14px 26px;
+      font-size:14px; letter-spacing:.08em; text-transform:uppercase; font-weight:700;
+      border-radius:2px; box-shadow:0 8px 20px rgba(0,0,0,.28); }
+    .fab:active{ transform:translateX(-50%) translateY(1px); }
+
+    .btn{ background:none; border:1px solid var(--ink); color:var(--ink); padding:10px 14px;
+      text-transform:uppercase; letter-spacing:.06em; font-size:12px; }
+    .btn.primary{ background:var(--ink); color:var(--paper); }
+    .btn.ghost{ border-color:var(--line); color:var(--ink-soft); }
+    .btn:disabled{ opacity:.4; cursor:not-allowed; }
+    .btns{ display:flex; gap:10px; margin-top:16px; }
+    .btns .btn{ flex:1; }
+
+    /* Formulaire */
+    label.f{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+      color:var(--ink-soft); margin:14px 0 5px; }
+    input.f{ width:100%; font-family:var(--mono); font-size:16px; padding:10px 8px;
+      border:none; border-bottom:1px solid var(--ink); background:var(--paper-shade); color:var(--ink); }
+    input.f:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+
+    .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+    .chip{ border:1px solid var(--ink-soft); background:none; color:var(--ink); padding:7px 11px;
+      font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
+    .chip.on{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+
+    .scanbox{ text-align:center; padding:26px 12px; border:1px dashed var(--ink-soft); }
+    .progress{ height:6px; background:var(--paper-shade); margin-top:14px; overflow:hidden; }
+    .progress > i{ display:block; height:100%; background:var(--accent); transition:width .2s; }
+    .hidden-file{ display:none; }
+    .empty{ text-align:center; color:var(--ink-soft); padding:30px 10px; font-size:13px; line-height:1.6; }
+    .offline-bar{ text-align:center; margin:20px 0 6px; font-size:12px; letter-spacing:.06em; }
+    .barcode{ height:26px; margin:8px auto 0; width:60%;
+      background:repeating-linear-gradient(90deg,var(--ink) 0 1px,transparent 1px 3px,var(--ink) 3px 4px,transparent 4px 7px); }
+    @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    /* ---------- Stockage local (tombe en mémoire si indisponible, ex. aperçu sandbox) ---------- */
+    const mem = {};
+    const store = {
+      read(k, def){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; }
+                    catch(e){ return (k in mem) ? mem[k] : def; } },
+      write(k, val){ try { localStorage.setItem(k, JSON.stringify(val)); }
+                     catch(e){ mem[k] = val; } }
+    };
+
+    /* ---------- Catégories + détection auto par enseigne ---------- */
+    const CATS = ["Alimentation","Restaurant","Carburant","Maison","Santé","Transport","Loisirs","Autre"];
+    const KEYWORDS = {
+      Alimentation:["carrefour","leclerc","lidl","aldi","intermarch","super u","hyper u","casino","monoprix","auchan","netto","cora","biocoop","grand frais","franprix"],
+      Carburant:["total","esso"," bp ","station","avia","agip","gasoil","sp95","sp98","carburant"],
+      Restaurant:["restaurant","mcdo","mcdonald","burger","kebab","pizz","boulang","cafe","brasserie"],
+      Maison:["leroy merlin","castorama","brico","weldom","mr bricolage","point p","gedimat","ikea"],
+      Santé:["pharmacie","parapharm","optique","mutuelle"],
+      Transport:["sncf","peage","autoroute","parking","ratp"],
+      Loisirs:["fnac","decathlon","cultura","micromania"]
+    };
+    function guessCat(text){
+      const t = (text||"").toLowerCase();
+      for(const c of CATS){ for(const kw of (KEYWORDS[c]||[])){ if(t.includes(kw)) return c; } }
+      return "Autre";
+    }
+
+    /* ---------- Extraction depuis le texte OCR ---------- */
+    function parseTicket(text){
+      const lines = text.split(/\n/).map(l=>l.trim()).filter(Boolean);
+      // Montants au format 12,34 ou 12.34
+      const amtRe = /(\d{1,4})[.,](\d{2})\b/g;
+      const all = [];
+      for(const l of lines){
+        let m; amtRe.lastIndex = 0;
+        while((m = amtRe.exec(l))){ all.push({ value: parseFloat(m[1]+"."+m[2]), line: l }); }
+      }
+      // Total : priorité aux lignes contenant TOTAL / A PAYER / NET, sinon le plus gros montant
+      const key = /total|a payer|à payer|net a|net à|montant/i;
+      const flagged = all.filter(a => key.test(a.line));
+      let total = null;
+      if(flagged.length) total = Math.max(...flagged.map(a=>a.value));
+      else if(all.length) total = Math.max(...all.map(a=>a.value));
+
+      // Date JJ/MM/AAAA, JJ-MM-AA, JJ.MM.AAAA
+      let date = "";
+      const dRe = /\b(\d{2})[\/.\-](\d{2})[\/.\-](\d{2,4})\b/;
+      const dm = text.match(dRe);
+      if(dm){ const y = dm[3].length===2 ? "20"+dm[3] : dm[3]; date = `${y}-${dm[2]}-${dm[1]}`; }
+
+      // Marchand : 1re ligne « texte »
+      const marchand = (lines.find(l => /[A-Za-zÀ-ÿ]{3,}/.test(l)) || "").slice(0,32);
+
+      return { total: total ?? "", date, marchand, categorie: guessCat(text) };
+    }
+
+    function todayISO(){ return new Date().toISOString().slice(0,10); }
+    function fmt(n){ return (Number(n)||0).toFixed(2).replace(".",",")+" €"; }
+    function monthKey(iso){ return (iso||todayISO()).slice(0,7); }
+
+    /* ---------- App ---------- */
+    function App(){
+      const [entries, setEntries] = useState(() => store.read("entries", []));
+      const [view, setView] = useState("list");   // list | form
+      const [draft, setDraft] = useState(null);
+      const [busy, setBusy] = useState(false);
+      const [prog, setProg] = useState(0);
+      const [offline, setOffline] = useState(() => store.read("offlineReady", false) ? "ready" : "idle");
+      const fileRef = useRef();
+
+      useEffect(()=>{ store.write("entries", entries); }, [entries]);
+
+      const month = monthKey(todayISO());
+      const moisEntries = entries.filter(e => monthKey(e.date) === month);
+      const totalMois = moisEntries.reduce((s,e)=> s + (Number(e.montant)||0), 0);
+      const parCat = {};
+      moisEntries.forEach(e => { parCat[e.categorie] = (parCat[e.categorie]||0) + (Number(e.montant)||0); });
+      const cats = Object.keys(parCat).sort((a,b)=>parCat[b]-parCat[a]);
+
+      function newDraft(){
+        setDraft({ id:null, montant:"", date:todayISO(), marchand:"", categorie:"Autre" });
+        setView("form");
+      }
+      function editEntry(e){ setDraft({...e}); setView("form"); }
+
+      async function onFile(ev){
+        const file = ev.target.files && ev.target.files[0];
+        ev.target.value = "";
+        if(!file) return;
+        setBusy(true); setProg(0);
+        // pré-remplir un brouillon vide pendant l'OCR
+        setDraft({ id:null, montant:"", date:todayISO(), marchand:"", categorie:"Autre" });
+        setView("form");
+        try{
+          const { data } = await Tesseract.recognize(file, "fra+eng", {
+            logger: m => { if(m.status==="recognizing text") setProg(Math.round(m.progress*100)); }
+          });
+          const p = parseTicket(data.text || "");
+          setDraft(d => ({ ...d, montant: p.total===""?"":String(p.total).replace(".",","),
+            date: p.date || d.date, marchand: p.marchand || d.marchand, categorie: p.categorie }));
+        }catch(err){
+          // OCR indisponible (réseau/aperçu) : on garde la saisie manuelle
+          console.warn("OCR indisponible :", err);
+        }finally{ setBusy(false); setProg(0); }
+      }
+
+      // Télécharge moteur OCR + langues une fois ; le service worker les garde en cache.
+      async function prepareOffline(){
+        setOffline("loading");
+        try{
+          const w = await Tesseract.createWorker("fra+eng");
+          await w.terminate();
+          store.write("offlineReady", true);
+          setOffline("ready");
+        }catch(err){ console.warn("Préparation hors-ligne impossible :", err); setOffline("error"); }
+      }
+
+      function saveDraft(){
+        const montant = parseFloat(String(draft.montant).replace(",","."));
+        if(!montant){ return; }
+        const entry = { ...draft, montant, marchand: draft.marchand.trim() || "Sans nom",
+          date: draft.date || todayISO() };
+        if(entry.id){ setEntries(es => es.map(e => e.id===entry.id ? entry : e)); }
+        else { entry.id = Date.now(); setEntries(es => [entry, ...es]); }
+        setView("list"); setDraft(null);
+      }
+      function delDraft(){
+        if(draft && draft.id) setEntries(es => es.filter(e => e.id!==draft.id));
+        setView("list"); setDraft(null);
+      }
+
+      return (
+        <div className="app">
+          <header className="head">
+            <h1>Tickets — Dépenses</h1>
+            <div className="sub">suivi local · sans compte</div>
+            <div className="barcode" aria-hidden="true"></div>
+          </header>
+
+          {view==="list" && (
+            <>
+              <section className="paper torn" aria-label="Total du mois">
+                <div className="center muted" style={{fontSize:11,letterSpacing:".18em",textTransform:"uppercase"}}>
+                  {new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"})}
+                </div>
+                <hr className="rule" />
+                {cats.length===0 && <div className="center muted" style={{fontSize:12}}>Aucune dépense ce mois-ci</div>}
+                {cats.map(c=>(
+                  <div className="leader" key={c}>
+                    <span className="lbl">{c}</span>
+                    <span className="fill"></span>
+                    <span className="val">{fmt(parCat[c])}</span>
+                  </div>
+                ))}
+                <hr className="rule" />
+                <div className="leader total">
+                  <span className="lbl">Total</span>
+                  <span className="fill"></span>
+                  <span className="val">{fmt(totalMois)}</span>
+                </div>
+              </section>
+
+              <hr className="rule" />
+
+              {entries.length===0 ? (
+                <div className="empty">
+                  Rien d'enregistré pour l'instant.<br/>
+                  Appuie sur <b>Scanner un ticket</b> en bas pour commencer.
+                </div>
+              ) : entries.map(e=>(
+                <div className="entry" key={e.id} onClick={()=>editEntry(e)} role="button" tabIndex={0}>
+                  <div className="row1">
+                    <span className="name">{e.marchand}</span>
+                    <span className="amt">{fmt(e.montant)}</span>
+                  </div>
+                  <div className="row2">
+                    <span className="cat">{e.categorie}</span>
+                    <span>{e.date.split("-").reverse().join("/")}</span>
+                  </div>
+                </div>
+              ))}
+
+              <div className="offline-bar">
+                {offline==="ready"
+                  ? <span className="muted">OCR hors-ligne prêt</span>
+                  : <button className="btn ghost" onClick={prepareOffline} disabled={offline==="loading"}>
+                      {offline==="loading" ? "Téléchargement…" : offline==="error" ? "Échec — réessayer" : "Préparer le mode hors-ligne"}
+                    </button>}
+              </div>
+
+              <button className="fab" onClick={()=> fileRef.current.click()}>Scanner un ticket</button>
+              <button className="fab" style={{bottom:78,background:"transparent",color:"var(--ink)",
+                boxShadow:"none",border:"1px solid var(--ink)"}} onClick={newDraft}>Saisie manuelle</button>
+              <input ref={fileRef} className="hidden-file" type="file"
+                accept="image/*" capture="environment" onChange={onFile} />
+            </>
+          )}
+
+          {view==="form" && draft && (
+            <section className="paper">
+              {busy && (
+                <div className="scanbox">
+                  Lecture du ticket en cours…
+                  <div className="progress"><i style={{width:prog+"%"}}></i></div>
+                  <div className="muted" style={{fontSize:11,marginTop:8}}>
+                    Tu peux déjà corriger les champs ci-dessous.
+                  </div>
+                </div>
+              )}
+
+              <label className="f">Montant (€)</label>
+              <input className="f" inputMode="decimal" value={draft.montant}
+                onChange={e=>setDraft({...draft, montant:e.target.value})} placeholder="0,00" />
+
+              <label className="f">Enseigne</label>
+              <input className="f" value={draft.marchand}
+                onChange={e=>setDraft({...draft, marchand:e.target.value})} placeholder="Nom du magasin" />
+
+              <label className="f">Date</label>
+              <input className="f" type="date" value={draft.date}
+                onChange={e=>setDraft({...draft, date:e.target.value})} />
+
+              <label className="f">Catégorie</label>
+              <div className="chips">
+                {CATS.map(c=>(
+                  <button key={c} className={"chip"+(draft.categorie===c?" on":"")}
+                    onClick={()=>setDraft({...draft, categorie:c})}>{c}</button>
+                ))}
+              </div>
+
+              <div className="btns">
+                <button className="btn ghost" onClick={()=>{setView("list");setDraft(null);}}>Annuler</button>
+                {draft.id && <button className="btn" onClick={delDraft}>Supprimer</button>}
+                <button className="btn primary" disabled={!String(draft.montant).trim()} onClick={saveDraft}>
+                  Enregistrer
+                </button>
+              </div>
+            </section>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+
+    /* Service worker (ignoré en aperçu, actif une fois hébergé) */
+    if("serviceWorker" in navigator){
+      window.addEventListener("load", ()=> navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+    }
+  </script>
+</body>
+</html>
