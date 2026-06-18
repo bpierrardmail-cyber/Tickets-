@@ -232,6 +232,8 @@
               (state.offline==="loading"?"Téléchargement…":state.offline==="error"?"Échec — réessayer":"Préparer le mode hors-ligne")+
             '</button>') + '</div>';
 
+      h += '<div class="center" style="margin:2px 0 0;font-size:11px"><button class="btn ghost" id="cloudkey">'+(store.read("ocrKey","")?"OCR cloud activé ✓":"Activer OCR cloud (clé)")+'</button></div>';
+
       h += '<button class="fab" id="manual" style="bottom:78px;background:transparent;color:var(--ink);box-shadow:none;border:1px solid var(--ink)">Saisie manuelle</button>';
       h += '<button class="fab" id="scan">Scanner un ticket</button>';
 
@@ -240,6 +242,7 @@
       var scan=document.getElementById("scan"); if(scan) scan.onclick=function(){ filein.click(); };
       var manual=document.getElementById("manual"); if(manual) manual.onclick=newDraft;
       var prep=document.getElementById("prep"); if(prep) prep.onclick=prepareOffline;
+      var ck=document.getElementById("cloudkey"); if(ck) ck.onclick=function(){ var cur=store.read("ocrKey",""); var k=window.prompt("Colle ta clé API OCR.space (vide = désactiver) :", cur); if(k===null) return; store.write("ocrKey", k.trim()); render(); };
       var goarts=document.getElementById("goarts"); if(goarts) goarts.onclick=function(){ state.view="articles"; render(); };
       [].forEach.call(document.querySelectorAll(".entry"), function(node){
         node.onclick=function(){ editEntry(node.getAttribute("data-id")); };
@@ -415,6 +418,27 @@
       });
     }
 
+    function canvasToBlob(src){
+      return new Promise(function(resolve){
+        try{ if(src && src.toBlob){ src.toBlob(function(b){ resolve(b||src); }, "image/jpeg", 0.7); } else resolve(src); }
+        catch(e){ resolve(src); }
+      });
+    }
+    function ocrCloud(blob){
+      var key=store.read("ocrKey","");
+      if(!key) return Promise.reject(new Error("pas de cle"));
+      var fd=new FormData();
+      fd.append("apikey", key); fd.append("language","fre"); fd.append("OCREngine","2");
+      fd.append("isTable","true"); fd.append("scale","true");
+      fd.append("file", blob, "ticket.jpg");
+      return fetch("https://api.ocr.space/parse/image",{ method:"POST", body:fd })
+        .then(function(r){ return r.json(); })
+        .then(function(j){
+          if(j.IsErroredOnProcessing) throw new Error((j.ErrorMessage&&j.ErrorMessage[0])||"erreur OCR cloud");
+          return (j.ParsedResults&&j.ParsedResults[0]&&j.ParsedResults[0].ParsedText)||"";
+        });
+    }
+
     filein.onchange=function(ev){
       var file=ev.target.files && ev.target.files[0]; ev.target.value="";
       if(!file) return;
@@ -422,10 +446,15 @@
       state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[]};
       state.view="form"; render();
       if(typeof Tesseract==="undefined"){ state.busy=false; render(); return; }
-      preprocess(file).then(function(src){
-        return Tesseract.recognize(src, "fra+eng", { logger:function(m){
+      function tess(src){ return Tesseract.recognize(src, "fra+eng", { logger:function(m){
           if(m.status==="recognizing text"){ state.prog=Math.round(m.progress*100); var bar=document.getElementById("bar"); if(bar) bar.style.width=state.prog+"%"; }
-        }});
+        }}); }
+      preprocess(file).then(function(src){
+        if(store.read("ocrKey","")){
+          return canvasToBlob(src).then(ocrCloud).then(function(t){ return {data:{text:t}}; })
+            .catch(function(e){ console.warn("OCR cloud KO, repli local:", e); return tess(src); });
+        }
+        return tess(src);
       })
         .then(function(res){
           var p=parseTicket((res.data && res.data.text) || "");
