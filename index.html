@@ -389,6 +389,32 @@
       document.getElementById("back").onclick=function(){ state.view="list"; render(); };
     }
 
+    function preprocess(file){
+      return new Promise(function(resolve){
+        try{
+          var img=new Image();
+          img.onload=function(){
+            try{
+              var scale = img.width < 1600 ? 1600/img.width : 1;
+              if(img.width*scale > 2200) scale = 2200/img.width;
+              var w=Math.max(1,Math.round(img.width*scale)), h=Math.max(1,Math.round(img.height*scale));
+              var c=document.createElement("canvas"); c.width=w; c.height=h;
+              var ctx=c.getContext("2d"); ctx.drawImage(img,0,0,w,h);
+              var d=ctx.getImageData(0,0,w,h), p=d.data, i, g, min=255, max=0;
+              var lum=new Uint8ClampedArray(w*h);
+              for(i=0;i<p.length;i+=4){ g=(p[i]*0.299+p[i+1]*0.587+p[i+2]*0.114)|0; lum[i>>2]=g; if(g<min)min=g; if(g>max)max=g; }
+              var range=(max-min)||1;
+              for(i=0;i<p.length;i+=4){ var v=(lum[i>>2]-min)*255/range; v=(v-128)*1.4+128; if(v<0)v=0; else if(v>255)v=255; p[i]=p[i+1]=p[i+2]=v; }
+              ctx.putImageData(d,0,0);
+              resolve(c);
+            }catch(e){ resolve(file); }
+          };
+          img.onerror=function(){ resolve(file); };
+          img.src=URL.createObjectURL(file);
+        }catch(e){ resolve(file); }
+      });
+    }
+
     filein.onchange=function(ev){
       var file=ev.target.files && ev.target.files[0]; ev.target.value="";
       if(!file) return;
@@ -396,9 +422,11 @@
       state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[]};
       state.view="form"; render();
       if(typeof Tesseract==="undefined"){ state.busy=false; render(); return; }
-      Tesseract.recognize(file, "fra+eng", { logger:function(m){
+      preprocess(file).then(function(src){
+        return Tesseract.recognize(src, "fra+eng", { logger:function(m){
           if(m.status==="recognizing text"){ state.prog=Math.round(m.progress*100); var bar=document.getElementById("bar"); if(bar) bar.style.width=state.prog+"%"; }
-        }})
+        }});
+      })
         .then(function(res){
           var p=parseTicket((res.data && res.data.text) || "");
           state.draft.montant = (p.total==="")?"":String(p.total).replace(".",",");
