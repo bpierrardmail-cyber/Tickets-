@@ -117,6 +117,7 @@
     var DEFAULT_PROD = FAMILLES.concat(["Tomates","Yaourts","Pain","Lait","Œufs","Fromage","Pâtes","Riz","Café","Fruits","Légumes","Viande","Éponges","Lessive","Produits ménagers"]);
     var PRODUITS = store.read("produits", null) || DEFAULT_PROD.slice();
     (function(){ var miss=FAMILLES.filter(function(f){ return PRODUITS.indexOf(f)<0; }); if(miss.length) PRODUITS = miss.concat(PRODUITS); })();
+    if(PRODUITS.indexOf("Remise")<0) PRODUITS.push("Remise");
     function persistProd(){ store.write("produits", PRODUITS); }
 
     var APPRIS = store.read("appris", {});
@@ -130,7 +131,7 @@
       return best;
     }
 
-    var DEFAULT_FAMILLE_DE = { "Tomates":"Nourriture","Yaourts":"Nourriture","Pain":"Nourriture","Lait":"Nourriture","Œufs":"Nourriture","Fromage":"Nourriture","Pâtes":"Nourriture","Riz":"Nourriture","Café":"Boissons","Fruits":"Nourriture","Légumes":"Nourriture","Viande":"Nourriture","Éponges":"Divers","Lessive":"Divers","Produits ménagers":"Divers" };
+    var DEFAULT_FAMILLE_DE = { "Tomates":"Nourriture","Yaourts":"Nourriture","Pain":"Nourriture","Lait":"Nourriture","Œufs":"Nourriture","Fromage":"Nourriture","Pâtes":"Nourriture","Riz":"Nourriture","Café":"Boissons","Fruits":"Nourriture","Légumes":"Nourriture","Viande":"Nourriture","Éponges":"Divers","Lessive":"Divers","Produits ménagers":"Divers","Remise":"Divers" };
     var FAMILLE_DE = store.read("familleDe", null) || {};
     (function(){ for(var k in DEFAULT_FAMILLE_DE){ if(!(k in FAMILLE_DE)) FAMILLE_DE[k]=DEFAULT_FAMILLE_DE[k]; } FAMILLES.forEach(function(f){ FAMILLE_DE[f]=f; }); })();
     function persistFamille(){ store.write("familleDe", FAMILLE_DE); }
@@ -286,7 +287,8 @@
       h += '</div>';
       h += '<label class="f">Articles (rangés par produit)</label><div id="arts">';
       (d.articles||[]).forEach(function(a){ h += artRow(a); });
-      h += '</div><button class="btn ghost" id="addart" type="button" style="margin-top:10px">+ Ajouter un article</button>';
+      h += '</div><button class="btn ghost" id="addart" type="button" style="margin-top:10px">+ Ajouter un article</button>'+
+           ' <button class="btn ghost" id="addremise" type="button" style="margin-top:10px">+ Remise / promo</button>';
       h += '<div class="btns"><button class="btn ghost" id="cancel" type="button">Annuler</button>'+
            (d.id?'<button class="btn" id="del" type="button">Supprimer</button>':'')+
            '<button class="btn primary" id="save" type="button">Enregistrer</button></div></section>';
@@ -296,6 +298,7 @@
       var del=document.getElementById("del"); if(del) del.onclick=delDraft;
       document.getElementById("save").onclick=saveDraft;
       document.getElementById("addart").onclick=function(){ readForm(); state.draft.articles.push({label:"",prix:"",produit:""}); render(); };
+      var addr=document.getElementById("addremise"); if(addr) addr.onclick=function(){ readForm(); state.draft.articles.push({label:"Remise",prix:"",produit:"Remise"}); render(); };
       [].forEach.call(document.querySelectorAll("#chips .chip"), function(btn){
         btn.onclick=function(){
           state.draft.categorie=btn.getAttribute("data-cat");
@@ -351,8 +354,11 @@
       readForm();
       var montant=num(state.draft.montant);
       if(!montant){ var f=document.getElementById("f-montant"); if(f) f.focus(); return; }
-      var arts=(state.draft.articles||[]).map(function(a){ return {label:(a.label||"").trim(), prix:num(a.prix), produit:(a.produit==="__new"?"":a.produit)||""}; })
-        .filter(function(a){ return a.label || a.produit || a.prix; });
+      var arts=(state.draft.articles||[]).map(function(a){
+          var pr=num(a.prix), prod=(a.produit==="__new"?"":a.produit)||"";
+          if(prod==="Remise") pr=-Math.abs(pr);
+          return {label:(a.label||"").trim(), prix:pr, produit:prod};
+        }).filter(function(a){ return a.label || a.produit || a.prix; });
       var entry={ id:state.draft.id, montant:montant, date:state.draft.date||todayISO(),
         marchand:(state.draft.marchand||"").trim()||"Sans nom", categorie:state.draft.categorie, articles:arts };
       arts.forEach(function(a){ if(a.produit && a.label){ APPRIS[norm(a.label)]=a.produit; } });
@@ -401,7 +407,7 @@
     }
 
     function renderProduits(){
-      var list = PRODUITS.filter(function(p){ return FAMILLES.indexOf(p)<0; });
+      var list = PRODUITS.filter(function(p){ return FAMILLES.indexOf(p)<0 && p!=="Remise"; });
       var h=header()+'<section class="paper">';
       h+='<label class="f">Produits — grande catégorie</label>';
       if(list.length===0) h+='<div class="muted" style="font-size:12px">Aucun produit personnalisé pour l\'instant.</div>';
