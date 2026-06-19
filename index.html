@@ -454,7 +454,7 @@
         function attempt(qi){
           steps++;
           if(qi>=quals.length){
-            if(canvas.width<=500 || steps>16){ canvas.toBlob(function(b){ resolve(b||src); }, "image/jpeg", 0.4); return; }
+            if(canvas.width<=900 || steps>16){ canvas.toBlob(function(b){ resolve(b||src); }, "image/jpeg", 0.4); return; }
             var nc=document.createElement("canvas");
             nc.width=Math.max(1,Math.round(canvas.width*0.8));
             nc.height=Math.max(1,Math.round(canvas.height*0.8));
@@ -495,12 +495,17 @@
       function tessText(src){ return Tesseract.recognize(src, "fra+eng", { logger:function(m){
           if(m.status==="recognizing text"){ state.prog=Math.round(m.progress*100); var bar=document.getElementById("bar"); if(bar) bar.style.width=state.prog+"%"; }
         }}).then(function(r){ return (r.data&&r.data.text)||""; }); }
+      var diag=[];
+      function localOne(src){ return (typeof Tesseract==="undefined") ? Promise.resolve("") : tessText(src).then(function(t){ diag.push("local:"+(t||"").length); return t; }); }
       function ocrOne(file){
         return preprocess(file).then(function(src){
           if(store.read("ocrKey","")){
-            return canvasToBlob(src).then(ocrCloud).catch(function(e){ console.warn("OCR cloud KO, repli local:", e); return (typeof Tesseract==="undefined")?"":tessText(src); });
+            return canvasToBlob(src).then(function(blob){
+              var ko = (blob && blob.size) ? Math.round(blob.size/1024) : "?";
+              return ocrCloud(blob).then(function(t){ diag.push("cloud "+ko+"Ko:"+(t||"").length+"car"); return t; });
+            }).catch(function(e){ diag.push("cloud KO("+((e&&e.message)||e)+")"); return localOne(src); });
           }
-          return (typeof Tesseract==="undefined")?"":tessText(src);
+          return localOne(src);
         });
       }
       var texts=[], idx=0;
@@ -513,7 +518,7 @@
           state.draft.categorie = p.categorie;
           state.draft.articles = (p.lignes||[]).map(function(a){ return {label:a.label, prix:a.prix, produit:lookupAppris(a.label)}; });
           var hasData = state.draft.montant || (state.draft.articles && state.draft.articles.length);
-          state.note = hasData ? "" : "Lecture vide. Réessaie avec une photo plus nette et bien à plat, ou recadrée sur le ticket.";
+          state.note = hasData ? "" : ("Lecture vide ["+diag.join(" · ")+"]. Réessaie avec une photo plus nette, ou recadrée sur le ticket.");
           state.busy=false; state.scanMsg=""; render(); return;
         }
         if(files.length>1){ var sm=document.getElementById("scanmsg"); if(sm) sm.textContent="Lecture "+(idx+1)+"/"+files.length+"…"; state.prog=0; var bar=document.getElementById("bar"); if(bar) bar.style.width="0%"; }
