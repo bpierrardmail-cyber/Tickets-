@@ -178,7 +178,7 @@
       entries: store.read("entries", []),
       view: "list", draft: null,
       offline: store.read("offlineReady", false) ? "ready" : "idle",
-      busy: false, prog: 0, scanMsg: ""
+      busy: false, prog: 0, scanMsg: "", note: ""
     };
     function persist(){ store.write("entries", state.entries); }
 
@@ -272,6 +272,7 @@
     function renderForm(){
       var d = state.draft;
       var h = header() + '<section class="paper">';
+      if(state.note){ h += '<div class="center" style="font-size:11px;color:var(--accent);margin-bottom:8px">'+esc(state.note)+'</div>'; }
       if(state.busy){
         h += '<div class="scanbox"><span id="scanmsg">'+esc(state.scanMsg||"Lecture du ticket en cours…")+'</span>'+
                '<div class="progress"><i id="bar" style="width:'+state.prog+'%"></i></div>'+
@@ -338,7 +339,7 @@
       state.draft.articles=arts;
     }
 
-    function newDraft(){ state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[]}; state.view="form"; render(); }
+    function newDraft(){ state.note=""; state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[]}; state.view="form"; render(); }
     function editEntry(id){
       var e=state.entries.filter(function(x){ return String(x.id)===String(id); })[0];
       if(!e) return;
@@ -448,8 +449,25 @@
 
     function canvasToBlob(src){
       return new Promise(function(resolve){
-        try{ if(src && src.toBlob){ src.toBlob(function(b){ resolve(b||src); }, "image/jpeg", 0.7); } else resolve(src); }
-        catch(e){ resolve(src); }
+        if(!(src && src.toBlob)){ resolve(src); return; }
+        var canvas=src, quals=[0.7,0.55,0.42,0.32,0.25], steps=0;
+        function attempt(qi){
+          steps++;
+          if(qi>=quals.length){
+            if(canvas.width<=500 || steps>16){ canvas.toBlob(function(b){ resolve(b||src); }, "image/jpeg", 0.4); return; }
+            var nc=document.createElement("canvas");
+            nc.width=Math.max(1,Math.round(canvas.width*0.8));
+            nc.height=Math.max(1,Math.round(canvas.height*0.8));
+            nc.getContext("2d").drawImage(canvas,0,0,nc.width,nc.height);
+            canvas=nc; attempt(0); return;
+          }
+          canvas.toBlob(function(b){
+            if(!b){ resolve(src); return; }
+            if(b.size<=950000){ resolve(b); return; }
+            attempt(qi+1);
+          }, "image/jpeg", quals[qi]);
+        }
+        attempt(0);
       });
     }
     function ocrCloud(blob){
@@ -470,7 +488,7 @@
     filein.onchange=function(ev){
       var files=ev.target.files ? [].slice.call(ev.target.files) : []; ev.target.value="";
       if(!files.length) return;
-      state.busy=true; state.prog=0;
+      state.busy=true; state.prog=0; state.note="";
       state.scanMsg = files.length>1 ? ("Lecture 1/"+files.length+"…") : "Lecture du ticket en cours…";
       state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[]};
       state.view="form"; render();
@@ -494,6 +512,8 @@
           state.draft.marchand = p.marchand || state.draft.marchand;
           state.draft.categorie = p.categorie;
           state.draft.articles = (p.lignes||[]).map(function(a){ return {label:a.label, prix:a.prix, produit:lookupAppris(a.label)}; });
+          var hasData = state.draft.montant || (state.draft.articles && state.draft.articles.length);
+          state.note = hasData ? "" : "Lecture vide. Réessaie avec une photo plus nette et bien à plat, ou recadrée sur le ticket.";
           state.busy=false; state.scanMsg=""; render(); return;
         }
         if(files.length>1){ var sm=document.getElementById("scanmsg"); if(sm) sm.textContent="Lecture "+(idx+1)+"/"+files.length+"…"; state.prog=0; var bar=document.getElementById("bar"); if(bar) bar.style.width="0%"; }
