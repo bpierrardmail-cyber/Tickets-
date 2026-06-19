@@ -92,7 +92,8 @@
 </head>
 <body>
   <div id="app" class="app"></div>
-  <input id="filein" type="file" accept="image/*" style="display:none" />
+  <input id="filein" type="file" accept="image/*" multiple style="display:none" />
+
   <script>
   (function(){
     "use strict";
@@ -177,7 +178,7 @@
       entries: store.read("entries", []),
       view: "list", draft: null,
       offline: store.read("offlineReady", false) ? "ready" : "idle",
-      busy: false, prog: 0
+      busy: false, prog: 0, scanMsg: ""
     };
     function persist(){ store.write("entries", state.entries); }
 
@@ -272,7 +273,7 @@
       var d = state.draft;
       var h = header() + '<section class="paper">';
       if(state.busy){
-        h += '<div class="scanbox">Lecture du ticket en cours…'+
+        h += '<div class="scanbox"><span id="scanmsg">'+esc(state.scanMsg||"Lecture du ticket en cours…")+'</span>'+
                '<div class="progress"><i id="bar" style="width:'+state.prog+'%"></i></div>'+
                '<div class="muted" style="font-size:11px;margin-top:8px">Tu peux déjà corriger les champs ci-dessous.</div></div>';
       }
@@ -467,32 +468,39 @@
     }
 
     filein.onchange=function(ev){
-      var file=ev.target.files && ev.target.files[0]; ev.target.value="";
-      if(!file) return;
+      var files=ev.target.files ? [].slice.call(ev.target.files) : []; ev.target.value="";
+      if(!files.length) return;
       state.busy=true; state.prog=0;
+      state.scanMsg = files.length>1 ? ("Lecture 1/"+files.length+"…") : "Lecture du ticket en cours…";
       state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[]};
       state.view="form"; render();
-      if(typeof Tesseract==="undefined"){ state.busy=false; render(); return; }
-      function tess(src){ return Tesseract.recognize(src, "fra+eng", { logger:function(m){
+      function tessText(src){ return Tesseract.recognize(src, "fra+eng", { logger:function(m){
           if(m.status==="recognizing text"){ state.prog=Math.round(m.progress*100); var bar=document.getElementById("bar"); if(bar) bar.style.width=state.prog+"%"; }
-        }}); }
-      preprocess(file).then(function(src){
-        if(store.read("ocrKey","")){
-          return canvasToBlob(src).then(ocrCloud).then(function(t){ return {data:{text:t}}; })
-            .catch(function(e){ console.warn("OCR cloud KO, repli local:", e); return tess(src); });
-        }
-        return tess(src);
-      })
-        .then(function(res){
-          var p=parseTicket((res.data && res.data.text) || "");
+        }}).then(function(r){ return (r.data&&r.data.text)||""; }); }
+      function ocrOne(file){
+        return preprocess(file).then(function(src){
+          if(store.read("ocrKey","")){
+            return canvasToBlob(src).then(ocrCloud).catch(function(e){ console.warn("OCR cloud KO, repli local:", e); return (typeof Tesseract==="undefined")?"":tessText(src); });
+          }
+          return (typeof Tesseract==="undefined")?"":tessText(src);
+        });
+      }
+      var texts=[], idx=0;
+      function step(){
+        if(idx>=files.length){
+          var p=parseTicket(texts.join("\n"));
           state.draft.montant = (p.total==="")?"":String(p.total).replace(".",",");
           state.draft.date = p.date || state.draft.date;
           state.draft.marchand = p.marchand || state.draft.marchand;
           state.draft.categorie = p.categorie;
           state.draft.articles = (p.lignes||[]).map(function(a){ return {label:a.label, prix:a.prix, produit:lookupAppris(a.label)}; });
-        })
-        .catch(function(err){ console.warn("OCR indisponible:", err); })
-        .then(function(){ state.busy=false; render(); });
+          state.busy=false; state.scanMsg=""; render(); return;
+        }
+        if(files.length>1){ var sm=document.getElementById("scanmsg"); if(sm) sm.textContent="Lecture "+(idx+1)+"/"+files.length+"…"; state.prog=0; var bar=document.getElementById("bar"); if(bar) bar.style.width="0%"; }
+        ocrOne(files[idx]).then(function(t){ texts.push(t||""); idx++; step(); })
+          .catch(function(e){ console.warn("OCR indisponible:", e); texts.push(""); idx++; step(); });
+      }
+      step();
     };
 
     function prepareOffline(){
