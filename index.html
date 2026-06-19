@@ -426,20 +426,24 @@
         try{
           var img=new Image();
           img.onload=function(){
+            var c, ctx;
             try{
-              var scale = img.width < 1600 ? 1600/img.width : 1;
-              if(img.width*scale > 2200) scale = 2200/img.width;
+              var longest=Math.max(img.width,img.height), scale=1;
+              if(img.width<1600) scale=1600/img.width;
+              if(longest*scale>2000) scale=2000/longest;
               var w=Math.max(1,Math.round(img.width*scale)), h=Math.max(1,Math.round(img.height*scale));
-              var c=document.createElement("canvas"); c.width=w; c.height=h;
-              var ctx=c.getContext("2d"); ctx.drawImage(img,0,0,w,h);
-              var d=ctx.getImageData(0,0,w,h), p=d.data, i, g, min=255, max=0;
-              var lum=new Uint8ClampedArray(w*h);
+              c=document.createElement("canvas"); c.width=w; c.height=h;
+              ctx=c.getContext("2d"); ctx.drawImage(img,0,0,w,h);
+            }catch(e){ resolve(file); return; }
+            try{
+              var d=ctx.getImageData(0,0,c.width,c.height), p=d.data, i, g, min=255, max=0;
+              var lum=new Uint8ClampedArray(c.width*c.height);
               for(i=0;i<p.length;i+=4){ g=(p[i]*0.299+p[i+1]*0.587+p[i+2]*0.114)|0; lum[i>>2]=g; if(g<min)min=g; if(g>max)max=g; }
               var range=(max-min)||1;
               for(i=0;i<p.length;i+=4){ var v=(lum[i>>2]-min)*255/range; v=(v-128)*1.4+128; if(v<0)v=0; else if(v>255)v=255; p[i]=p[i+1]=p[i+2]=v; }
               ctx.putImageData(d,0,0);
-              resolve(c);
-            }catch(e){ resolve(file); }
+            }catch(e){}
+            resolve(c);
           };
           img.onerror=function(){ resolve(file); };
           img.src=URL.createObjectURL(file);
