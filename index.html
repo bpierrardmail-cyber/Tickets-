@@ -83,6 +83,10 @@
     .leader.fam .val{ font-weight:700; color:var(--accent); }
     .leader.item{ font-size:12px; padding-left:16px; }
     .leader.item .lbl, .leader.item .val{ color:var(--ink-soft); }
+    .prow{ display:flex; gap:8px; align-items:center; padding:8px 4px; border-bottom:1px dashed var(--line); }
+    .prow .pname{ flex:1; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .prow .pfam{ flex:0 0 148px; font-size:13px; }
+    .prow .pdel{ flex:0 0 auto; padding:6px 9px; }
     @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
   </style>
 </head>
@@ -189,6 +193,7 @@
     function render(){
       if(state.view==="form") return renderForm();
       if(state.view==="articles") return renderArticles();
+      if(state.view==="produits") return renderProduits();
       return renderList();
     }
 
@@ -213,6 +218,7 @@
       h += '</section>';
 
       h += '<div class="center" style="margin:14px 0"><button class="btn" id="goarts">Articles du mois →</button></div>';
+      h += '<div class="center" style="margin:0 0 14px"><button class="btn" id="goprod">Produits et catégories →</button></div>';
       h += '<hr class="rule">';
 
       if(state.entries.length===0){
@@ -244,6 +250,7 @@
       var prep=document.getElementById("prep"); if(prep) prep.onclick=prepareOffline;
       var ck=document.getElementById("cloudkey"); if(ck) ck.onclick=function(){ var cur=store.read("ocrKey",""); var k=window.prompt("Colle ta clé API OCR.space (vide = désactiver) :", cur); if(k===null) return; store.write("ocrKey", k.trim()); render(); };
       var goarts=document.getElementById("goarts"); if(goarts) goarts.onclick=function(){ state.view="articles"; render(); };
+      var goprod=document.getElementById("goprod"); if(goprod) goprod.onclick=function(){ state.view="produits"; render(); };
       [].forEach.call(document.querySelectorAll(".entry"), function(node){
         node.onclick=function(){ editEntry(node.getAttribute("data-id")); };
       });
@@ -390,6 +397,27 @@
       h+='</section><div class="btns" style="margin-top:18px"><button class="btn" id="back" type="button">Retour</button></div>';
       app.innerHTML=h;
       document.getElementById("back").onclick=function(){ state.view="list"; render(); };
+    }
+
+    function renderProduits(){
+      var list = PRODUITS.filter(function(p){ return FAMILLES.indexOf(p)<0; });
+      var h=header()+'<section class="paper">';
+      h+='<label class="f">Produits — grande catégorie</label>';
+      if(list.length===0) h+='<div class="muted" style="font-size:12px">Aucun produit personnalisé pour l\'instant.</div>';
+      list.forEach(function(p){
+        var opts="";
+        FAMILLES.forEach(function(f){ opts+='<option value="'+esc(f)+'"'+(familleOf(p)===f?" selected":"")+'>'+esc(f)+'</option>'; });
+        h+='<div class="prow"><span class="pname">'+esc(p)+'</span><select class="f pfam" data-p="'+esc(p)+'">'+opts+'</select><button class="btn ghost pdel" type="button" data-p="'+esc(p)+'">✕</button></div>';
+      });
+      h+='<div class="btns" style="margin-top:18px"><button class="btn" id="back" type="button">Retour</button></div></section>';
+      app.innerHTML=h;
+      document.getElementById("back").onclick=function(){ state.view="list"; render(); };
+      [].forEach.call(document.querySelectorAll(".pfam"), function(sel){
+        sel.onchange=function(){ FAMILLE_DE[sel.getAttribute("data-p")]=sel.value; persistFamille(); };
+      });
+      [].forEach.call(document.querySelectorAll(".pdel"), function(b){
+        b.onclick=function(){ var p=b.getAttribute("data-p"); var i=PRODUITS.indexOf(p); if(i>=0){ PRODUITS.splice(i,1); persistProd(); } if(p in FAMILLE_DE){ delete FAMILLE_DE[p]; persistFamille(); } render(); };
+      });
     }
 
     function preprocess(file){
