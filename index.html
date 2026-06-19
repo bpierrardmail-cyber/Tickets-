@@ -96,6 +96,11 @@
     .bar-top .bv{ font-variant-numeric:tabular-nums; font-weight:700; }
     .bar-track{ height:16px; background:var(--paper-shade); border:1px solid var(--line); overflow:hidden; }
     .bar-track > i{ display:block; height:100%; background:var(--accent); }
+    .checkrow{ display:flex; align-items:center; gap:10px; padding:9px 2px; font-size:13px; border-bottom:1px dashed var(--line); }
+    .checkrow input{ width:18px; height:18px; accent-color:var(--accent); flex:0 0 auto; }
+    .checkrow .ctot{ margin-left:auto; font-variant-numeric:tabular-nums; font-weight:700; color:var(--ink-soft); }
+    .graph-block{ margin-top:18px; }
+    .graph-block .gtitle{ font-weight:700; text-transform:uppercase; letter-spacing:.05em; font-size:12px; color:var(--accent); margin:6px 0 8px; }
     @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
   </style>
 </head>
@@ -190,7 +195,7 @@
       entries: store.read("entries", []),
       view: "list", draft: null,
       offline: store.read("offlineReady", false) ? "ready" : "idle",
-      busy: false, prog: 0, scanMsg: "", note: ""
+      busy: false, prog: 0, scanMsg: "", note: "", graphSel: null
     };
     function persist(){ store.write("entries", state.entries); }
 
@@ -232,7 +237,7 @@
 
       h += '<div class="center" style="margin:14px 0"><button class="btn" id="goarts">Articles du mois →</button></div>';
       h += '<div class="center" style="margin:0 0 14px"><button class="btn" id="goprod">Produits et catégories →</button></div>';
-      h += '<div class="center" style="margin:0 0 14px"><button class="btn" id="gograph">Graphique des dépenses →</button></div>';
+      h += '<div class="center" style="margin:0 0 14px"><button class="btn" id="gograph">Graphiques produits →</button></div>';
       h += '<hr class="rule">';
 
       if(state.entries.length===0){
@@ -423,27 +428,57 @@
     function renderGraph(){
       var month = monthKey(todayISO());
       var monthLabel = new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
-      var parCat={}, total=0;
+      var perP={};
       state.entries.filter(function(e){ return monthKey(e.date)===month; }).forEach(function(e){
-        var v=Number(e.montant)||0; parCat[e.categorie]=(parCat[e.categorie]||0)+v; total+=v;
-      });
-      var cats=Object.keys(parCat).sort(function(a,b){ return parCat[b]-parCat[a]; });
-      var maxV=0; cats.forEach(function(c){ if(parCat[c]>maxV) maxV=parCat[c]; }); if(maxV<=0) maxV=1;
-      var h=header()+'<section class="paper torn">';
-      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Dépenses par catégorie · '+esc(monthLabel)+'</div><hr class="rule">';
-      if(cats.length===0){
-        h+='<div class="center muted" style="font-size:12px">Aucune dépense ce mois-ci.</div>';
-      } else {
-        cats.forEach(function(c){
-          var pct=Math.max(2, Math.round(parCat[c]/maxV*100));
-          h+='<div class="bar-row"><div class="bar-top"><span class="bl">'+esc(c)+'</span><span class="bv">'+fmt(parCat[c])+'</span></div>'+
-             '<div class="bar-track"><i style="width:'+pct+'%"></i></div></div>';
+        (e.articles||[]).forEach(function(a){
+          var p=a.produit||(a.label||"").trim()||"—";
+          if(p==="Remise") return;
+          if(!perP[p]) perP[p]={total:0};
+          perP[p].total+=Number(a.prix)||0;
         });
-        h+='<hr class="rule"><div class="leader total"><span class="lbl">Total</span><span class="fill"></span><span class="val">'+fmt(total)+'</span></div>';
+      });
+      var fams={};
+      Object.keys(perP).forEach(function(p){
+        if(perP[p].total<=0) return;
+        var f=familleOf(p);
+        if(!fams[f]) fams[f]={total:0, items:[]};
+        fams[f].total+=perP[p].total; fams[f].items.push({produit:p, total:perP[p].total});
+      });
+      var famKeys=Object.keys(fams).sort(function(a,b){ return fams[b].total-fams[a].total; });
+      if(!state.graphSel) state.graphSel={};
+      famKeys.forEach(function(f){ if(!(f in state.graphSel)) state.graphSel[f]=true; });
+
+      var h=header()+'<section class="paper torn">';
+      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Graphiques produits · '+esc(monthLabel)+'</div><hr class="rule">';
+      if(famKeys.length===0){
+        h+='<div class="center muted" style="font-size:12px">Aucun article rangé ce mois-ci.<br>Scanne un ticket et classe ses lignes par produit.</div>';
+      } else {
+        h+='<label class="f">Catégories à afficher</label>';
+        famKeys.forEach(function(f){
+          var on=state.graphSel[f]!==false;
+          h+='<label class="checkrow"><input type="checkbox" data-fam="'+esc(f)+'"'+(on?" checked":"")+'><span>'+esc(f)+'</span><span class="ctot">'+fmt(fams[f].total)+'</span></label>';
+        });
+        var anySel=false;
+        famKeys.forEach(function(f){
+          if(state.graphSel[f]===false) return;
+          anySel=true;
+          var items=fams[f].items.sort(function(a,b){ return b.total-a.total; });
+          var maxV=0; items.forEach(function(it){ if(it.total>maxV) maxV=it.total; }); if(maxV<=0) maxV=1;
+          h+='<div class="graph-block"><div class="gtitle">'+esc(f)+' — '+fmt(fams[f].total)+'</div>';
+          items.forEach(function(it){
+            var pct=Math.max(2, Math.round(it.total/maxV*100));
+            h+='<div class="bar-row"><div class="bar-top"><span class="bl">'+esc(it.produit)+'</span><span class="bv">'+fmt(it.total)+'</span></div><div class="bar-track"><i style="width:'+pct+'%"></i></div></div>';
+          });
+          h+='</div>';
+        });
+        if(!anySel) h+='<div class="center muted" style="font-size:12px;margin-top:14px">Coche au moins une catégorie pour voir son graphique.</div>';
       }
       h+='</section><div class="btns" style="margin-top:18px"><button class="btn" id="back" type="button">Retour</button></div>';
       app.innerHTML=h;
       document.getElementById("back").onclick=function(){ state.view="list"; render(); };
+      [].forEach.call(document.querySelectorAll(".checkrow input"), function(cb){
+        cb.onchange=function(){ state.graphSel[cb.getAttribute("data-fam")]=cb.checked; render(); };
+      });
     }
 
     function pickFamille(current){
