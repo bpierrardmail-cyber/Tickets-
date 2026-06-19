@@ -87,6 +87,9 @@
     .prow .pname{ flex:1; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .prow .pfam{ flex:0 0 148px; font-size:13px; }
     .prow .pdel{ flex:0 0 auto; padding:6px 9px; }
+    .prow .pren{ flex:0 0 auto; padding:6px 9px; }
+    .prow .pdelfam{ flex:0 0 auto; padding:6px 9px; }
+    .pname.pedit{ text-decoration:underline dotted; text-underline-offset:3px; }
     @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
   </style>
 </head>
@@ -113,7 +116,9 @@
       "Transport":["sncf","peage","autoroute","parking","ratp"],
       "Loisirs":["fnac","decathlon","cultura","micromania"]
     };
-    var FAMILLES = ["Nourriture","Boissons","Vêtements","Divers"];
+    var FAMILLES = store.read("familles", null) || ["Nourriture","Boissons","Vêtements","Divers"];
+    if(FAMILLES.indexOf("Divers")<0) FAMILLES.push("Divers");
+    function persistFamilles(){ store.write("familles", FAMILLES); }
     var DEFAULT_PROD = FAMILLES.concat(["Tomates","Yaourts","Pain","Lait","Œufs","Fromage","Pâtes","Riz","Café","Fruits","Légumes","Viande","Éponges","Lessive","Produits ménagers"]);
     var PRODUITS = store.read("produits", null) || DEFAULT_PROD.slice();
     (function(){ var miss=FAMILLES.filter(function(f){ return PRODUITS.indexOf(f)<0; }); if(miss.length) PRODUITS = miss.concat(PRODUITS); })();
@@ -317,7 +322,7 @@
             if(name){
               if(PRODUITS.indexOf(name)<0){ PRODUITS.push(name); persistProd(); }
               if(!(name in FAMILLE_DE)){
-                var fam=(window.prompt("Grande catégorie pour « "+name+" » ?\n(Nourriture, Boissons, Vêtements, Divers)","Divers")||"Divers").trim();
+                var fam=(window.prompt("Grande catégorie pour « "+name+" » ?\n("+FAMILLES.join(", ")+")","Divers")||"Divers").trim();
                 FAMILLE_DE[name]= FAMILLES.indexOf(fam)>=0 ? fam : "Divers"; persistFamille();
               }
               if(state.draft.articles[i]) state.draft.articles[i].produit=name;
@@ -406,25 +411,88 @@
       document.getElementById("back").onclick=function(){ state.view="list"; render(); };
     }
 
+    function pickFamille(current){
+      var f=(window.prompt("Grande catégorie ?\n("+FAMILLES.join(", ")+")", current||"Divers")||"").trim();
+      return FAMILLES.indexOf(f)>=0 ? f : "Divers";
+    }
+    function nameTaken(name){ return FAMILLES.indexOf(name)>=0 || PRODUITS.indexOf(name)>=0; }
+    function addFamille(){
+      var name=(window.prompt("Nom de la nouvelle grande catégorie :")||"").trim();
+      if(!name) return;
+      if(nameTaken(name)){ window.alert("Ce nom existe déjà."); return; }
+      FAMILLES.push(name); FAMILLE_DE[name]=name; if(PRODUITS.indexOf(name)<0) PRODUITS.push(name);
+      persistFamilles(); persistFamille(); persistProd(); render();
+    }
+    function renameFamille(old){
+      if(old==="Divers"){ window.alert("« Divers » ne peut pas être renommée (catégorie de repli)."); return; }
+      var name=(window.prompt("Renommer la grande catégorie :", old)||"").trim();
+      if(!name || name===old) return;
+      if(nameTaken(name)){ window.alert("Ce nom existe déjà."); return; }
+      var idx=FAMILLES.indexOf(old); if(idx>=0) FAMILLES[idx]=name;
+      var pidx=PRODUITS.indexOf(old); if(pidx>=0) PRODUITS[pidx]=name;
+      for(var k in FAMILLE_DE){ if(FAMILLE_DE[k]===old) FAMILLE_DE[k]=name; }
+      delete FAMILLE_DE[old]; FAMILLE_DE[name]=name;
+      persistFamilles(); persistFamille(); persistProd(); render();
+    }
+    function deleteFamille(name){
+      if(name==="Divers"){ window.alert("« Divers » ne peut pas être supprimée."); return; }
+      for(var k in FAMILLE_DE){ if(FAMILLE_DE[k]===name && k!==name) FAMILLE_DE[k]="Divers"; }
+      var idx=FAMILLES.indexOf(name); if(idx>=0) FAMILLES.splice(idx,1);
+      var pidx=PRODUITS.indexOf(name); if(pidx>=0) PRODUITS.splice(pidx,1);
+      delete FAMILLE_DE[name];
+      persistFamilles(); persistFamille(); persistProd(); render();
+    }
+    function addProduct(){
+      var name=(window.prompt("Nom du nouveau produit :")||"").trim();
+      if(!name) return;
+      if(nameTaken(name)){ window.alert("Ce nom existe déjà."); return; }
+      var fam=pickFamille("Divers");
+      PRODUITS.push(name); FAMILLE_DE[name]=fam;
+      persistProd(); persistFamille(); render();
+    }
+    function renameProduct(old){
+      if(old==="Remise") return;
+      var name=(window.prompt("Renommer le produit :", old)||"").trim();
+      if(!name || name===old) return;
+      if(nameTaken(name)){ window.alert("Ce nom existe déjà."); return; }
+      var pidx=PRODUITS.indexOf(old); if(pidx>=0) PRODUITS[pidx]=name;
+      if(old in FAMILLE_DE){ FAMILLE_DE[name]=FAMILLE_DE[old]; delete FAMILLE_DE[old]; }
+      for(var k in APPRIS){ if(APPRIS[k]===old) APPRIS[k]=name; }
+      state.entries.forEach(function(e){ (e.articles||[]).forEach(function(a){ if(a.produit===old) a.produit=name; }); });
+      persistProd(); persistFamille(); persistAppris(); persist(); render();
+    }
     function renderProduits(){
-      var list = PRODUITS.filter(function(p){ return FAMILLES.indexOf(p)<0 && p!=="Remise"; });
       var h=header()+'<section class="paper">';
-      h+='<label class="f">Produits — grande catégorie</label>';
+      h+='<label class="f">Grandes catégories</label>';
+      FAMILLES.forEach(function(f){
+        var prot=(f==="Divers");
+        h+='<div class="prow"><span class="pname">'+esc(f)+'</span>'+
+           '<button class="btn ghost pren" type="button" data-fam="'+esc(f)+'">✎</button>'+
+           '<button class="btn ghost pdelfam" type="button"'+(prot?' disabled style="opacity:.3"':'')+' data-fam="'+esc(f)+'">✕</button></div>';
+      });
+      h+='<button class="btn ghost" id="addfam" type="button" style="margin-top:10px">+ Ajouter une grande catégorie</button>';
+
+      var list = PRODUITS.filter(function(p){ return FAMILLES.indexOf(p)<0 && p!=="Remise"; });
+      h+='<label class="f" style="margin-top:22px">Produits (appuie sur le nom pour renommer)</label>';
       if(list.length===0) h+='<div class="muted" style="font-size:12px">Aucun produit personnalisé pour l\'instant.</div>';
       list.forEach(function(p){
         var opts="";
         FAMILLES.forEach(function(f){ opts+='<option value="'+esc(f)+'"'+(familleOf(p)===f?" selected":"")+'>'+esc(f)+'</option>'; });
-        h+='<div class="prow"><span class="pname">'+esc(p)+'</span><select class="f pfam" data-p="'+esc(p)+'">'+opts+'</select><button class="btn ghost pdel" type="button" data-p="'+esc(p)+'">✕</button></div>';
+        h+='<div class="prow"><span class="pname pedit" data-p="'+esc(p)+'">'+esc(p)+'</span><select class="f pfam" data-p="'+esc(p)+'">'+opts+'</select><button class="btn ghost pdel" type="button" data-p="'+esc(p)+'">✕</button></div>';
       });
+      h+='<button class="btn ghost" id="addprod" type="button" style="margin-top:10px">+ Ajouter un produit</button>';
+
       h+='<div class="btns" style="margin-top:18px"><button class="btn" id="back" type="button">Retour</button></div></section>';
       app.innerHTML=h;
+
       document.getElementById("back").onclick=function(){ state.view="list"; render(); };
-      [].forEach.call(document.querySelectorAll(".pfam"), function(sel){
-        sel.onchange=function(){ FAMILLE_DE[sel.getAttribute("data-p")]=sel.value; persistFamille(); };
-      });
-      [].forEach.call(document.querySelectorAll(".pdel"), function(b){
-        b.onclick=function(){ var p=b.getAttribute("data-p"); var i=PRODUITS.indexOf(p); if(i>=0){ PRODUITS.splice(i,1); persistProd(); } if(p in FAMILLE_DE){ delete FAMILLE_DE[p]; persistFamille(); } render(); };
-      });
+      var af=document.getElementById("addfam"); if(af) af.onclick=addFamille;
+      var ap=document.getElementById("addprod"); if(ap) ap.onclick=addProduct;
+      [].forEach.call(document.querySelectorAll(".pren"), function(b){ b.onclick=function(){ renameFamille(b.getAttribute("data-fam")); }; });
+      [].forEach.call(document.querySelectorAll(".pdelfam"), function(b){ if(!b.disabled) b.onclick=function(){ var f=b.getAttribute("data-fam"); if(window.confirm("Supprimer « "+f+" » ? Ses produits passeront dans Divers.")) deleteFamille(f); }; });
+      [].forEach.call(document.querySelectorAll(".pedit"), function(sp){ sp.onclick=function(){ renameProduct(sp.getAttribute("data-p")); }; });
+      [].forEach.call(document.querySelectorAll(".pfam"), function(sel){ sel.onchange=function(){ FAMILLE_DE[sel.getAttribute("data-p")]=sel.value; persistFamille(); }; });
+      [].forEach.call(document.querySelectorAll(".pdel"), function(b){ b.onclick=function(){ var p=b.getAttribute("data-p"); if(!window.confirm("Supprimer le produit « "+p+" » ?")) return; var i=PRODUITS.indexOf(p); if(i>=0){ PRODUITS.splice(i,1); persistProd(); } if(p in FAMILLE_DE){ delete FAMILLE_DE[p]; persistFamille(); } render(); }; });
     }
 
     function makeCanvas(srcImg, w0, h0){
