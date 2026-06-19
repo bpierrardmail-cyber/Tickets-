@@ -421,57 +421,75 @@
       });
     }
 
+    function makeCanvas(srcImg, w0, h0){
+      var longest=Math.max(w0,h0), scale=1;
+      if(w0<1600) scale=1600/w0;
+      if(longest*scale>2000) scale=2000/longest;
+      var w=Math.max(1,Math.round(w0*scale)), h=Math.max(1,Math.round(h0*scale));
+      var c=document.createElement("canvas"); c.width=w; c.height=h;
+      c.getContext("2d").drawImage(srcImg,0,0,w,h);
+      return c;
+    }
+    function enhance(c){
+      try{
+        var ctx=c.getContext("2d"), d=ctx.getImageData(0,0,c.width,c.height), p=d.data, i, g, min=255, max=0;
+        var lum=new Uint8ClampedArray(c.width*c.height);
+        for(i=0;i<p.length;i+=4){ g=(p[i]*0.299+p[i+1]*0.587+p[i+2]*0.114)|0; lum[i>>2]=g; if(g<min)min=g; if(g>max)max=g; }
+        var range=(max-min)||1;
+        for(i=0;i<p.length;i+=4){ var v=(lum[i>>2]-min)*255/range; v=(v-128)*1.4+128; if(v<0)v=0; else if(v>255)v=255; p[i]=p[i+1]=p[i+2]=v; }
+        ctx.putImageData(d,0,0);
+      }catch(e){}
+      return c;
+    }
     function preprocess(file){
       return new Promise(function(resolve){
+        function viaImg(){
+          try{
+            var img=new Image();
+            img.onload=function(){ try{ resolve(enhance(makeCanvas(img,img.width,img.height))); }catch(e){ resolve(file); } };
+            img.onerror=function(){ resolve(file); };
+            img.src=URL.createObjectURL(file);
+          }catch(e){ resolve(file); }
+        }
         try{
-          var img=new Image();
-          img.onload=function(){
-            var c, ctx;
-            try{
-              var longest=Math.max(img.width,img.height), scale=1;
-              if(img.width<1600) scale=1600/img.width;
-              if(longest*scale>2000) scale=2000/longest;
-              var w=Math.max(1,Math.round(img.width*scale)), h=Math.max(1,Math.round(img.height*scale));
-              c=document.createElement("canvas"); c.width=w; c.height=h;
-              ctx=c.getContext("2d"); ctx.drawImage(img,0,0,w,h);
-            }catch(e){ resolve(file); return; }
-            try{
-              var d=ctx.getImageData(0,0,c.width,c.height), p=d.data, i, g, min=255, max=0;
-              var lum=new Uint8ClampedArray(c.width*c.height);
-              for(i=0;i<p.length;i+=4){ g=(p[i]*0.299+p[i+1]*0.587+p[i+2]*0.114)|0; lum[i>>2]=g; if(g<min)min=g; if(g>max)max=g; }
-              var range=(max-min)||1;
-              for(i=0;i<p.length;i+=4){ var v=(lum[i>>2]-min)*255/range; v=(v-128)*1.4+128; if(v<0)v=0; else if(v>255)v=255; p[i]=p[i+1]=p[i+2]=v; }
-              ctx.putImageData(d,0,0);
-            }catch(e){}
-            resolve(c);
-          };
-          img.onerror=function(){ resolve(file); };
-          img.src=URL.createObjectURL(file);
-        }catch(e){ resolve(file); }
+          if(self.createImageBitmap){
+            createImageBitmap(file).then(function(bmp){
+              try{ var c=makeCanvas(bmp,bmp.width,bmp.height); try{ bmp.close(); }catch(e){} resolve(enhance(c)); }
+              catch(e){ viaImg(); }
+            }).catch(viaImg);
+          } else viaImg();
+        }catch(e){ viaImg(); }
       });
     }
 
     function canvasToBlob(src){
       return new Promise(function(resolve){
-        if(!(src && src.toBlob)){ resolve(src); return; }
-        var canvas=src, quals=[0.7,0.55,0.42,0.32,0.25], steps=0;
-        function attempt(qi){
-          steps++;
-          if(qi>=quals.length){
-            if(canvas.width<=900 || steps>16){ canvas.toBlob(function(b){ resolve(b||src); }, "image/jpeg", 0.4); return; }
-            var nc=document.createElement("canvas");
-            nc.width=Math.max(1,Math.round(canvas.width*0.8));
-            nc.height=Math.max(1,Math.round(canvas.height*0.8));
-            nc.getContext("2d").drawImage(canvas,0,0,nc.width,nc.height);
-            canvas=nc; attempt(0); return;
-          }
-          canvas.toBlob(function(b){
-            if(!b){ resolve(src); return; }
-            if(b.size<=950000){ resolve(b); return; }
-            attempt(qi+1);
-          }, "image/jpeg", quals[qi]);
+        function compress(canvas){
+          var quals=[0.7,0.55,0.42,0.32,0.25], steps=0;
+          (function attempt(qi){
+            steps++;
+            if(qi>=quals.length){
+              if(canvas.width<=900 || steps>16){ canvas.toBlob(function(b){ resolve(b||src); }, "image/jpeg", 0.4); return; }
+              var nc=document.createElement("canvas");
+              nc.width=Math.max(1,Math.round(canvas.width*0.8));
+              nc.height=Math.max(1,Math.round(canvas.height*0.8));
+              nc.getContext("2d").drawImage(canvas,0,0,nc.width,nc.height);
+              canvas=nc; attempt(0); return;
+            }
+            canvas.toBlob(function(b){
+              if(!b){ resolve(src); return; }
+              if(b.size<=950000){ resolve(b); return; }
+              attempt(qi+1);
+            }, "image/jpeg", quals[qi]);
+          })(0);
         }
-        attempt(0);
+        if(src && src.toBlob){ compress(src); return; }
+        function smallFrom(srcImg, w0, h0){ var lo=Math.max(w0,h0), s=lo>2000?2000/lo:1; var c=document.createElement("canvas"); c.width=Math.max(1,Math.round(w0*s)); c.height=Math.max(1,Math.round(h0*s)); c.getContext("2d").drawImage(srcImg,0,0,c.width,c.height); return c; }
+        function viaImg(){ try{ var img=new Image(); img.onload=function(){ try{ compress(smallFrom(img,img.width,img.height)); }catch(e){ resolve(src); } }; img.onerror=function(){ resolve(src); }; img.src=URL.createObjectURL(src); }catch(e){ resolve(src); } }
+        try{
+          if(self.createImageBitmap){ createImageBitmap(src).then(function(bmp){ try{ var c=smallFrom(bmp,bmp.width,bmp.height); try{ bmp.close(); }catch(e){} compress(c); }catch(e){ viaImg(); } }).catch(viaImg); }
+          else viaImg();
+        }catch(e){ viaImg(); }
       });
     }
     function ocrCloud(blob){
@@ -503,6 +521,7 @@
       function localOne(src){ return (typeof Tesseract==="undefined") ? Promise.resolve("") : tessText(src).then(function(t){ diag.push("local:"+(t||"").length); return t; }); }
       function ocrOne(file){
         return preprocess(file).then(function(src){
+          if(!(src && src.toBlob)) diag.push("preproc-KO");
           if(store.read("ocrKey","")){
             return canvasToBlob(src).then(function(blob){
               var ko = (blob && blob.size) ? Math.round(blob.size/1024) : "?";
