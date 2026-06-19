@@ -1,15 +1,14 @@
-// Service worker : coquille locale + cache des assets distants (OCR, React).
-// Stratégie : "cache d'abord" pour les CDN, donc après un premier chargement
-// EN LIGNE, le moteur Tesseract + les langues restent disponibles HORS-LIGNE.
-const SHELL_CACHE = "tickets-shell-v2";
-const CDN_CACHE   = "tickets-cdn-v2";
+// Service worker : "réseau d'abord" pour l'app (toujours la dernière version),
+// "cache d'abord" pour les CDN (moteur OCR + langues) afin de garder l'hors-ligne.
+const SHELL_CACHE = "tickets-shell-v3";
+const CDN_CACHE   = "tickets-cdn-v3";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
 
-// Hôtes dont on garde durablement les fichiers (lib OCR, données de langue, React/Babel)
+// Hôtes dont on garde durablement les fichiers (lib OCR, données de langue)
 const CDN_HOSTS = ["unpkg.com", "cdn.jsdelivr.net", "tessdata.projectnaptha.com"];
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(SHELL_CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(SHELL_CACHE).then(c => c.addAll(SHELL)).catch(() => {}).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", e => {
@@ -25,13 +24,21 @@ self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
 
-  // 1) Coquille locale : cache d'abord, sinon réseau.
+  // 1) App (même origine) : RESEAU D'ABORD, cache seulement en secours hors-ligne.
   if (url.origin === location.origin) {
-    e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+    e.respondWith(
+      fetch(e.request)
+        .then(resp => {
+          const copy = resp.clone();
+          caches.open(SHELL_CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+          return resp;
+        })
+        .catch(() => caches.match(e.request).then(r => r || Response.error()))
+    );
     return;
   }
 
-  // 2) CDN (OCR + langues + React) : cache d'abord, on stocke au passage.
+  // 2) CDN (OCR + langues) : cache d'abord, on stocke au passage.
   if (CDN_HOSTS.some(h => url.hostname.endsWith(h))) {
     e.respondWith((async () => {
       const cache = await caches.open(CDN_CACHE);
@@ -39,11 +46,9 @@ self.addEventListener("fetch", e => {
       if (hit) return hit;
       try {
         const resp = await fetch(e.request);
-        // On met en cache même les réponses opaques (lang data volumineuses).
         cache.put(e.request, resp.clone()).catch(() => {});
         return resp;
       } catch (err) {
-        // Hors-ligne et pas en cache : on laisse échouer proprement.
         return hit || Response.error();
       }
     })());
