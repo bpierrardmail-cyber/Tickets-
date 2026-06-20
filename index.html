@@ -106,6 +106,17 @@
     .checkrow .ctot{ margin-left:auto; font-variant-numeric:tabular-nums; font-weight:700; color:var(--ink-soft); }
     .graph-block{ margin-top:18px; }
     .graph-block .gtitle{ font-weight:700; text-transform:uppercase; letter-spacing:.05em; font-size:12px; color:var(--accent); margin:6px 0 8px; }
+    .seg{ display:flex; border:1px solid var(--ink-soft); margin:14px 0 2px; }
+    .seg button{ flex:1; background:none; border:none; padding:9px 4px; font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); }
+    .seg button.on{ background:var(--ink); color:var(--paper); }
+    .lgd{ display:flex; align-items:center; gap:8px; width:100%; background:none; border:none; padding:8px 2px; border-bottom:1px dashed var(--line); font-family:var(--mono); font-size:12px; color:var(--ink); text-align:left; }
+    .lgd .sw{ width:12px; height:12px; flex:0 0 auto; border-radius:2px; }
+    .lgd .ln{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lgd .lv{ font-variant-numeric:tabular-nums; color:var(--ink-soft); }
+    .lgd .lp{ flex:0 0 42px; text-align:right; font-variant-numeric:tabular-nums; color:var(--accent); font-weight:700; }
+    .lgd.off{ opacity:.45; }
+    .lgd.off .ln{ text-decoration:line-through; }
+    .lgd.off .lp{ color:var(--ink-soft); font-weight:400; }
     .nav{ position:fixed; left:0; right:0; bottom:0; z-index:60; display:flex; align-items:flex-end;
       background:var(--paper); border-top:1px dashed var(--ink-soft);
       padding:6px 4px calc(6px + env(safe-area-inset-bottom)); box-shadow:0 -6px 18px rgba(0,0,0,.10); }
@@ -222,7 +233,7 @@
       entries: store.read("entries", []),
       view: "list", draft: null,
       offline: store.read("offlineReady", false) ? "ready" : "idle",
-      busy: false, prog: 0, scanMsg: "", note: "", graphSel: null, histCat: "", histMonth: null, artSel: null
+      busy: false, prog: 0, scanMsg: "", note: "", graphSel: null, graphPeriod: "cur", graphDim: "fam", graphType: "donut", graphHide: {}, histCat: "", histMonth: null, artSel: null
     };
     function persist(){ store.write("entries", state.entries); }
 
@@ -290,7 +301,7 @@
       h += '<hr class="rule">';
 
       if(state.entries.length===0){
-        h += '<div class="empty">Rien d\'enregistré pour l\'instant.<br>Appuie sur <b>Scan</b> en bas pour commencer.</div>';
+        h += '<div class="empty">Rien d\'enregistré pour l\'instant.<br>Appuie sur <b>Scanner un ticket</b> en bas pour commencer.</div>';
       } else {
         state.entries.forEach(function(e){
           h += '<div class="entry" data-id="'+esc(e.id)+'">'+
@@ -503,59 +514,98 @@
       setNav("articles", true);
     }
 
+    var PALETTE=["#b23a2e","#7d8b3f","#c9893f","#4f6d6f","#9c5a3c","#a8973f","#6b6f8c","#8a6d3b","#5f7a52","#a04a4a","#7a7a6a","#c2a35a","#866c9c"];
+    function gPeriodEntries(){
+      var p=state.graphPeriod||"cur";
+      if(p==="all"){ var ms={}; lastMonths(12).forEach(function(m){ ms[m.key]=true; }); return state.entries.filter(function(e){ return ms[monthKey(e.date)]; }); }
+      if(p.indexOf("m:")===0){ var k=p.slice(2); return state.entries.filter(function(e){ return monthKey(e.date)===k; }); }
+      var cur=monthKey(todayISO()); return state.entries.filter(function(e){ return monthKey(e.date)===cur; });
+    }
+    function gAggregate(entries, dim){
+      var map={};
+      if(dim==="cat"){ entries.forEach(function(e){ var v=Number(e.montant)||0; if(v>0) map[e.categorie]=(map[e.categorie]||0)+v; }); }
+      else { entries.forEach(function(e){ (e.articles||[]).forEach(function(a){ if((a.produit||"")==="Remise") return; var c=classifyArticle(a); if(c.amt<=0) return; var key=dim==="fam"?c.fam:c.name; map[key]=(map[key]||0)+c.amt; }); }); }
+      return map;
+    }
+    function gDonut(items, total){
+      var r=70, cx=90, cy=90, sw=26, C=2*Math.PI*r, off=0, segs="";
+      items.forEach(function(it){
+        var frac= total>0 ? it.value/total : 0, len=frac*C;
+        if(len<=0) return;
+        segs+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+it.color+'" stroke-width="'+sw+'" stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" transform="rotate(-90 '+cx+' '+cy+')"></circle>';
+        off+=len;
+      });
+      return '<svg viewBox="0 0 180 180" width="100%" style="max-width:230px;display:block;margin:8px auto 6px">'+
+             '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="#efe9db" stroke-width="'+sw+'"></circle>'+segs+
+             '<text x="90" y="86" text-anchor="middle" font-size="10" fill="#6f6a5e" font-family="monospace" letter-spacing="1">TOTAL</text>'+
+             '<text x="90" y="106" text-anchor="middle" font-size="17" font-weight="700" fill="#b23a2e" font-family="monospace">'+fmt(total)+'</text></svg>';
+    }
     function renderGraph(){
-      var month = monthKey(todayISO());
-      var monthLabel = new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
-      var bucket={};
-      state.entries.filter(function(e){ return monthKey(e.date)===month; }).forEach(function(e){
-        (e.articles||[]).forEach(function(a){
-          if((a.produit||"")==="Remise") return;
-          var c=classifyArticle(a);
-          var key=c.fam+"||"+c.name;
-          if(!bucket[key]) bucket[key]={fam:c.fam, name:c.name, total:0};
-          bucket[key].total+=c.amt;
-        });
-      });
-      var fams={};
-      Object.keys(bucket).forEach(function(k){
-        var b=bucket[k]; if(b.total<=0) return;
-        if(!fams[b.fam]) fams[b.fam]={total:0, items:[]};
-        fams[b.fam].total+=b.total; fams[b.fam].items.push({produit:b.name, total:b.total});
-      });
-      var famKeys=Object.keys(fams).sort(function(a,b){ return fams[b].total-fams[a].total; });
-      if(!state.graphSel) state.graphSel={};
-      famKeys.forEach(function(f){ if(!(f in state.graphSel)) state.graphSel[f]=true; });
+      var p=state.graphPeriod||"cur", dim=state.graphDim||"fam", typ=state.graphType||"donut";
+      var perLabel = p==="all" ? "12 derniers mois" : (p.indexOf("m:")===0 ? new Date(p.slice(2)+"-01T00:00:00").toLocaleDateString("fr-FR",{month:"short",year:"2-digit"}) : new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"}));
+      var entries=gPeriodEntries();
+      var map=gAggregate(entries, dim);
+      var all=Object.keys(map).map(function(k){ return {name:k, value:map[k]}; }).sort(function(a,b){ return b.value-a.value; });
+      if(dim==="prod" && all.length>12){ var top=all.slice(0,12); var rest=all.slice(12).reduce(function(s2,x){ return s2+x.value; },0); if(rest>0) top.push({name:"Autres", value:rest}); all=top; }
+      all.forEach(function(it,i){ it.color=PALETTE[i%PALETTE.length]; });
+      var hide=state.graphHide||{};
+      var vis=all.filter(function(it){ return !hide[dim+"|"+it.name]; });
+      var visTotal=vis.reduce(function(s2,it){ return s2+it.value; },0);
+      var maxV=0; vis.forEach(function(it){ if(it.value>maxV) maxV=it.value; }); if(maxV<=0) maxV=1;
 
       var h=header()+'<section class="paper torn">';
-      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Graphiques produits · '+esc(monthLabel)+'</div><hr class="rule">';
-      if(famKeys.length===0){
-        h+='<div class="center muted" style="font-size:12px">Aucun article rangé ce mois-ci.<br>Scanne un ticket et classe ses lignes par produit.</div>';
+      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Graphiques · '+esc(perLabel)+'</div><hr class="rule">';
+
+      h+='<label class="f">Période</label><select class="f" id="gper">';
+      h+='<option value="cur"'+(p==="cur"?" selected":"")+'>Ce mois-ci</option>';
+      h+='<option value="all"'+(p==="all"?" selected":"")+'>12 derniers mois (cumul)</option>';
+      h+='<optgroup label="Un mois précis">';
+      lastMonths(12).slice().reverse().forEach(function(m){
+        var v="m:"+m.key, lb=m.date.toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
+        h+='<option value="'+v+'"'+(p===v?" selected":"")+'>'+esc(lb)+'</option>';
+      });
+      h+='</optgroup></select>';
+
+      h+='<label class="f">Répartition par</label><select class="f" id="gdim">';
+      h+='<option value="fam"'+(dim==="fam"?" selected":"")+'>Grande catégorie (produits)</option>';
+      h+='<option value="prod"'+(dim==="prod"?" selected":"")+'>Produit</option>';
+      h+='<option value="cat"'+(dim==="cat"?" selected":"")+'>Catégorie ticket</option>';
+      h+='</select>';
+
+      h+='<div class="seg" id="gtype"><button type="button" class="'+(typ==="donut"?"on":"")+'" data-t="donut">Camembert</button><button type="button" class="'+(typ==="bars"?"on":"")+'" data-t="bars">Barres</button></div>';
+
+      if(all.length===0){
+        h+='<div class="center muted" style="font-size:12px;margin-top:16px">Aucune donnée pour cette période.</div>';
       } else {
-        h+='<label class="f">Catégories à afficher</label>';
-        famKeys.forEach(function(f){
-          var on=state.graphSel[f]!==false;
-          h+='<label class="checkrow"><input type="checkbox" data-fam="'+esc(f)+'"'+(on?" checked":"")+'><span>'+esc(f)+'</span><span class="ctot">'+fmt(fams[f].total)+'</span></label>';
-        });
-        var anySel=false;
-        famKeys.forEach(function(f){
-          if(state.graphSel[f]===false) return;
-          anySel=true;
-          var items=fams[f].items.sort(function(a,b){ return b.total-a.total; });
-          var maxV=0; items.forEach(function(it){ if(it.total>maxV) maxV=it.total; }); if(maxV<=0) maxV=1;
-          h+='<div class="graph-block"><div class="gtitle">'+esc(f)+' — '+fmt(fams[f].total)+'</div>';
-          items.forEach(function(it){
-            var pct=Math.max(2, Math.round(it.total/maxV*100));
-            h+='<div class="bar-row"><div class="bar-top"><span class="bl">'+esc(it.produit)+'</span><span class="bv">'+fmt(it.total)+'</span></div><div class="bar-track"><i style="width:'+pct+'%"></i></div></div>';
+        if(visTotal<=0){
+          h+='<div class="center muted" style="font-size:12px;margin-top:16px">Tout est masqué — touche une entrée ci-dessous pour l\'afficher.</div>';
+        } else if(typ==="donut"){
+          h+=gDonut(vis, visTotal);
+        } else {
+          h+='<div style="margin-top:10px">';
+          vis.forEach(function(it){
+            var pct=Math.max(2, Math.round(it.value/maxV*100));
+            var share=visTotal>0?Math.round(it.value/visTotal*100):0;
+            h+='<div class="bar-row"><div class="bar-top"><span class="bl">'+esc(it.name)+'</span><span class="bv">'+fmt(it.value)+' · '+share+'%</span></div><div class="bar-track"><i style="width:'+pct+'%;background:'+it.color+'"></i></div></div>';
           });
           h+='</div>';
+        }
+        h+='<div style="margin-top:10px">';
+        all.forEach(function(it){
+          var hidden=!!hide[dim+"|"+it.name];
+          var share=(!hidden && visTotal>0)?(Math.round(it.value/visTotal*100)+"%"):"—";
+          h+='<button class="lgd'+(hidden?" off":"")+'" type="button" data-name="'+esc(it.name)+'"><span class="sw" style="background:'+it.color+'"></span><span class="ln">'+esc(it.name)+'</span><span class="lv">'+fmt(it.value)+'</span><span class="lp">'+share+'</span></button>';
         });
-        if(!anySel) h+='<div class="center muted" style="font-size:12px;margin-top:14px">Coche au moins une catégorie pour voir son graphique.</div>';
+        h+='</div>';
+        h+='<hr class="rule"><div class="leader total"><span class="lbl">Total affiché</span><span class="fill"></span><span class="val">'+fmt(visTotal)+'</span></div>';
       }
       h+='</section>';
       app.innerHTML=h;
-      [].forEach.call(document.querySelectorAll(".checkrow input"), function(cb){
-        cb.onchange=function(){ state.graphSel[cb.getAttribute("data-fam")]=cb.checked; render(); };
-      });
+
+      var gp=document.getElementById("gper"); if(gp) gp.onchange=function(){ state.graphPeriod=gp.value; render(); };
+      var gd=document.getElementById("gdim"); if(gd) gd.onchange=function(){ state.graphDim=gd.value; render(); };
+      [].forEach.call(document.querySelectorAll("#gtype button"), function(b){ b.onclick=function(){ state.graphType=b.getAttribute("data-t"); render(); }; });
+      [].forEach.call(document.querySelectorAll(".lgd"), function(b){ b.onclick=function(){ var nm=b.getAttribute("data-name"); var key=dim+"|"+nm; if(!state.graphHide) state.graphHide={}; if(state.graphHide[key]) delete state.graphHide[key]; else state.graphHide[key]=true; render(); }; });
       setNav("graph", true);
     }
 
