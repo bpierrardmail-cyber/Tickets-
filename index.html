@@ -89,6 +89,7 @@
     .prow .pdel{ flex:0 0 auto; padding:6px 9px; }
     .prow .pren{ flex:0 0 auto; padding:6px 9px; }
     .prow .pdelfam{ flex:0 0 auto; padding:6px 9px; }
+    .prow .catren, .prow .catdel{ flex:0 0 auto; padding:6px 9px; }
     .pname.pedit{ text-decoration:underline dotted; text-underline-offset:3px; }
     .bar-row{ margin:12px 2px; }
     .bar-top{ display:flex; justify-content:space-between; align-items:baseline; font-size:12px; margin-bottom:4px; }
@@ -118,7 +119,9 @@
       write: function(k, val){ try{ localStorage.setItem(k, JSON.stringify(val)); }catch(e){ mem[k]=val; } }
     };
 
-    var CATS = ["Alimentation","Restaurant","Carburant","Maison","Santé","Transport","Loisirs","Autre"];
+    var CATS = store.read("cats", null) || ["Alimentation","Restaurant","Carburant","Maison","Santé","Transport","Loisirs","Autre"];
+    if(CATS.indexOf("Autre")<0) CATS.push("Autre");
+    function persistCats(){ store.write("cats", CATS); }
     var KEYWORDS = {
       "Alimentation":["carrefour","leclerc","lidl","aldi","intermarch","super u","hyper u","casino","monoprix","auchan","netto","cora","biocoop","grand frais","franprix"],
       "Carburant":["total","esso"," bp ","station","avia","agip","gasoil","sp95","sp98","carburant"],
@@ -635,9 +638,41 @@
       state.entries.forEach(function(e){ (e.articles||[]).forEach(function(a){ if(a.produit===old) a.produit=name; }); });
       persistProd(); persistFamille(); persistAppris(); persist(); render();
     }
+    function addCat(){
+      var name=(window.prompt("Nom de la nouvelle catégorie de ticket :")||"").trim();
+      if(!name) return;
+      if(CATS.indexOf(name)>=0){ window.alert("Cette catégorie existe déjà."); return; }
+      var ai=CATS.indexOf("Autre"); if(ai<0) CATS.push(name); else CATS.splice(ai,0,name);
+      persistCats(); render();
+    }
+    function renameCat(old){
+      if(old==="Autre"){ window.alert("« Autre » ne peut pas être renommée (catégorie de repli)."); return; }
+      var name=(window.prompt("Renommer la catégorie de ticket :", old)||"").trim();
+      if(!name || name===old) return;
+      if(CATS.indexOf(name)>=0){ window.alert("Cette catégorie existe déjà."); return; }
+      var i=CATS.indexOf(old); if(i>=0) CATS[i]=name;
+      if(KEYWORDS[old]){ KEYWORDS[name]=KEYWORDS[old]; delete KEYWORDS[old]; }
+      state.entries.forEach(function(e){ if(e.categorie===old) e.categorie=name; });
+      persistCats(); persist(); render();
+    }
+    function deleteCat(name){
+      if(name==="Autre"){ window.alert("« Autre » ne peut pas être supprimée."); return; }
+      var i=CATS.indexOf(name); if(i>=0) CATS.splice(i,1);
+      if(KEYWORDS[name]) delete KEYWORDS[name];
+      state.entries.forEach(function(e){ if(e.categorie===name) e.categorie="Autre"; });
+      persistCats(); persist(); render();
+    }
     function renderProduits(){
       var h=header()+'<section class="paper">';
-      h+='<label class="f">Grandes catégories</label>';
+      h+='<label class="f">Catégories de ticket</label>';
+      CATS.forEach(function(c){
+        var protc=(c==="Autre");
+        h+='<div class="prow"><span class="pname">'+esc(c)+'</span>'+
+           '<button class="btn ghost catren" type="button" data-cat="'+esc(c)+'">✎</button>'+
+           '<button class="btn ghost catdel" type="button"'+(protc?' disabled style="opacity:.3"':'')+' data-cat="'+esc(c)+'">✕</button></div>';
+      });
+      h+='<button class="btn ghost" id="addcat" type="button" style="margin-top:10px">+ Ajouter une catégorie de ticket</button>';
+      h+='<label class="f" style="margin-top:22px">Grandes catégories (produits)</label>';
       FAMILLES.forEach(function(f){
         var prot=(f==="Divers");
         h+='<div class="prow"><span class="pname">'+esc(f)+'</span>'+
@@ -661,6 +696,9 @@
 
       document.getElementById("back").onclick=function(){ state.view="list"; render(); };
       var af=document.getElementById("addfam"); if(af) af.onclick=addFamille;
+      var ac=document.getElementById("addcat"); if(ac) ac.onclick=addCat;
+      [].forEach.call(document.querySelectorAll(".catren"), function(b){ b.onclick=function(){ renameCat(b.getAttribute("data-cat")); }; });
+      [].forEach.call(document.querySelectorAll(".catdel"), function(b){ if(!b.disabled) b.onclick=function(){ var c=b.getAttribute("data-cat"); if(window.confirm("Supprimer « "+c+" » ? Les tickets de cette catégorie passeront dans Autre.")) deleteCat(c); }; });
       var ap=document.getElementById("addprod"); if(ap) ap.onclick=addProduct;
       [].forEach.call(document.querySelectorAll(".pren"), function(b){ b.onclick=function(){ renameFamille(b.getAttribute("data-fam")); }; });
       [].forEach.call(document.querySelectorAll(".pdelfam"), function(b){ if(!b.disabled) b.onclick=function(){ var f=b.getAttribute("data-fam"); if(window.confirm("Supprimer « "+f+" » ? Ses produits passeront dans Divers.")) deleteFamille(f); }; });
