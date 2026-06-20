@@ -497,24 +497,49 @@
     function renderHistory(){
       var months=lastMonths(12);
       var monthsSet={}; months.forEach(function(mo){ monthsSet[mo.key]=true; });
-      var catSet={};
-      state.entries.forEach(function(e){ if(monthsSet[monthKey(e.date)]) catSet[e.categorie]=true; });
-      var catList=Object.keys(catSet).sort();
-      if(state.histCat && catList.indexOf(state.histCat)<0) state.histCat="";
-      var perM={};
+      var catSet={}, famSet={}, prodSet={};
       state.entries.forEach(function(e){
-        if(state.histCat && e.categorie!==state.histCat) return;
-        var k=monthKey(e.date); if(monthsSet[k]) perM[k]=(perM[k]||0)+(Number(e.montant)||0);
+        if(!monthsSet[monthKey(e.date)]) return;
+        catSet[e.categorie]=true;
+        (e.articles||[]).forEach(function(a){
+          famSet[classifyArticle(a).fam]=true;
+          var p=a.produit||""; if(p && FAMILLES.indexOf(p)<0 && p!=="Remise") prodSet[p]=true;
+        });
       });
+      var catList=Object.keys(catSet).sort(), famList=Object.keys(famSet).sort(), prodList=Object.keys(prodSet).sort();
+      function selValid(sel){
+        if(!sel) return true;
+        if(sel.indexOf("cat:")===0) return catList.indexOf(sel.slice(4))>=0;
+        if(sel.indexOf("fam:")===0) return famList.indexOf(sel.slice(4))>=0;
+        if(sel.indexOf("prod:")===0) return prodList.indexOf(sel.slice(5))>=0;
+        return false;
+      }
+      if(!selValid(state.histCat)) state.histCat="";
+      var sel=state.histCat;
+      function amountFor(e){
+        if(!sel) return Number(e.montant)||0;
+        if(sel.indexOf("cat:")===0) return e.categorie===sel.slice(4)?(Number(e.montant)||0):0;
+        if(sel.indexOf("fam:")===0){ var f=sel.slice(4), st=0; (e.articles||[]).forEach(function(a){ if(classifyArticle(a).fam===f) st+=Number(a.prix)||0; }); return st; }
+        if(sel.indexOf("prod:")===0){ var p=sel.slice(5), st=0; (e.articles||[]).forEach(function(a){ if((a.produit||"")===p) st+=Number(a.prix)||0; }); return st; }
+        return 0;
+      }
+      var perM={};
+      state.entries.forEach(function(e){ var k=monthKey(e.date); if(monthsSet[k]) perM[k]=(perM[k]||0)+amountFor(e); });
       var data=months.map(function(mo){ return { key:mo.key, label: mo.date.toLocaleDateString("fr-FR",{month:"short",year:"2-digit"}), total: perM[mo.key]||0 }; });
       var maxV=0; data.forEach(function(d){ if(d.total>maxV) maxV=d.total; }); if(maxV<=0) maxV=1;
       var grand=0, active=0; data.forEach(function(d){ grand+=d.total; if(d.total>0) active++; });
       var avg = active ? grand/active : 0;
-      var titre = state.histCat ? ("Historique · "+state.histCat) : "Historique · 12 derniers mois";
+      var selLabel="12 derniers mois";
+      if(sel.indexOf("cat:")===0) selLabel=sel.slice(4);
+      else if(sel.indexOf("fam:")===0) selLabel=sel.slice(4);
+      else if(sel.indexOf("prod:")===0) selLabel=sel.slice(5);
       var h=header()+'<section class="paper torn">';
-      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">'+esc(titre)+'</div><hr class="rule">';
-      h+='<label class="f">Catégorie</label><select class="f" id="histcat"><option value="">Toutes les catégories</option>';
-      catList.forEach(function(c){ h+='<option value="'+esc(c)+'"'+(state.histCat===c?" selected":"")+'>'+esc(c)+'</option>'; });
+      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Historique · '+esc(selLabel)+'</div><hr class="rule">';
+      h+='<label class="f">Filtrer par</label><select class="f" id="histcat">';
+      h+='<option value=""'+(sel===""?" selected":"")+'>Tout (total dépenses)</option>';
+      if(catList.length){ h+='<optgroup label="Catégories ticket">'; catList.forEach(function(c){ var v="cat:"+c; h+='<option value="'+esc(v)+'"'+(sel===v?" selected":"")+'>'+esc(c)+'</option>'; }); h+='</optgroup>'; }
+      if(famList.length){ h+='<optgroup label="Grandes catégories (produits)">'; famList.forEach(function(f){ var v="fam:"+f; h+='<option value="'+esc(v)+'"'+(sel===v?" selected":"")+'>'+esc(f)+'</option>'; }); h+='</optgroup>'; }
+      if(prodList.length){ h+='<optgroup label="Produits">'; prodList.forEach(function(p){ var v="prod:"+p; h+='<option value="'+esc(v)+'"'+(sel===v?" selected":"")+'>'+esc(p)+'</option>'; }); h+='</optgroup>'; }
       h+='</select>';
       h+='<div class="muted" style="font-size:11px;margin:12px 2px 2px">Touche un mois pour voir son détail.</div>';
       data.forEach(function(d){
