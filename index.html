@@ -98,6 +98,8 @@
     .bar-track{ height:16px; background:var(--paper-shade); border:1px solid var(--line); overflow:hidden; }
     .bar-track > i{ display:block; height:100%; background:var(--accent); }
     .bar-row.clk{ cursor:pointer; }
+    .leader.item.itemclk{ cursor:pointer; }
+    .leader.item.itemclk .lbl{ text-decoration:underline dotted; text-underline-offset:3px; }
     .checkrow{ display:flex; align-items:center; gap:10px; padding:9px 2px; font-size:13px; border-bottom:1px dashed var(--line); }
     .checkrow input{ width:18px; height:18px; accent-color:var(--accent); flex:0 0 auto; }
     .checkrow .ctot{ margin-left:auto; font-variant-numeric:tabular-nums; font-weight:700; color:var(--ink-soft); }
@@ -205,7 +207,7 @@
       entries: store.read("entries", []),
       view: "list", draft: null,
       offline: store.read("offlineReady", false) ? "ready" : "idle",
-      busy: false, prog: 0, scanMsg: "", note: "", graphSel: null, histCat: "", histMonth: null
+      busy: false, prog: 0, scanMsg: "", note: "", graphSel: null, histCat: "", histMonth: null, artSel: null
     };
     function persist(){ store.write("entries", state.entries); }
 
@@ -224,6 +226,7 @@
       if(state.view==="graph") return renderGraph();
       if(state.view==="history") return renderHistory();
       if(state.view==="month") return renderMonth();
+      if(state.view==="artDetail") return renderArtDetail();
       return renderList();
     }
 
@@ -422,18 +425,53 @@
       var h=header()+'<section class="paper torn">';
       h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Articles · '+esc(monthLabel)+'</div><hr class="rule">';
       if(famKeys.length===0) h+='<div class="center muted" style="font-size:12px">Aucun article rangé ce mois-ci.<br>Scanne un ticket et classe ses lignes par produit.</div>';
+      if(famKeys.length) h+='<div class="muted" style="font-size:11px;margin:0 2px 6px">Touche un produit pour voir son détail.</div>';
       famKeys.forEach(function(f){
         h+='<div class="leader fam"><span class="lbl">'+esc(f)+'</span><span class="fill"></span><span class="val">'+fmt(fams[f].total)+'</span></div>';
         var names=Object.keys(fams[f].items).sort(function(a,b){ return fams[f].items[b].total-fams[f].items[a].total; });
         names.forEach(function(nm){
           var it=fams[f].items[nm];
-          h+='<div class="leader item"><span class="lbl">'+esc(nm)+' ×'+it.n+'</span><span class="fill"></span><span class="val">'+fmt(it.total)+'</span></div>';
+          h+='<div class="leader item itemclk" data-fam="'+esc(f)+'" data-name="'+esc(nm)+'"><span class="lbl">'+esc(nm)+' ×'+it.n+'</span><span class="fill"></span><span class="val">'+fmt(it.total)+'</span></div>';
         });
       });
       if(famKeys.length) h+='<hr class="rule"><div class="leader total"><span class="lbl">Total articles</span><span class="fill"></span><span class="val">'+fmt(grand)+'</span></div>';
       h+='</section><div class="btns" style="margin-top:18px"><button class="btn" id="back" type="button">Retour</button></div>';
       app.innerHTML=h;
       document.getElementById("back").onclick=function(){ state.view="list"; render(); };
+      [].forEach.call(document.querySelectorAll(".itemclk"), function(row){ row.onclick=function(){ state.artSel={fam:row.getAttribute("data-fam"), name:row.getAttribute("data-name")}; state.view="artDetail"; render(); }; });
+    }
+
+    function renderArtDetail(){
+      var month = monthKey(todayISO());
+      var sel = state.artSel || {};
+      var rows=[], total=0;
+      state.entries.filter(function(e){ return monthKey(e.date)===month; }).forEach(function(e){
+        (e.articles||[]).forEach(function(a){
+          var c=classifyArticle(a);
+          if(c.fam===sel.fam && c.name===sel.name){
+            rows.push({ id:e.id, marchand:e.marchand, date:e.date, label:(a.label||"").trim(), prix:c.amt });
+            total+=c.amt;
+          }
+        });
+      });
+      rows.sort(function(a,b){ return b.prix-a.prix; });
+      var h=header()+'<section class="paper torn">';
+      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Détail · '+esc(sel.name||"")+'</div>';
+      h+='<div class="center muted" style="font-size:10px;letter-spacing:.06em;margin-top:2px">'+esc(sel.fam||"")+'</div><hr class="rule">';
+      if(rows.length===0) h+='<div class="center muted" style="font-size:12px">Aucune ligne pour ce produit ce mois-ci.</div>';
+      rows.forEach(function(r){
+        var lbl = r.label || sel.name || "—";
+        h+='<div class="entry" data-id="'+esc(r.id)+'">'+
+             '<div class="row1"><span class="name">'+esc(lbl)+'</span><span class="amt">'+fmt(r.prix)+'</span></div>'+
+             '<div class="row2"><span>'+esc(r.marchand||"")+'</span><span>'+esc((r.date||"").split("-").reverse().join("/"))+'</span></div>'+
+           '</div>';
+      });
+      if(rows.length) h+='<hr class="rule"><div class="leader total"><span class="lbl">Total</span><span class="fill"></span><span class="val">'+fmt(total)+'</span></div>';
+      h+='</section><div class="muted" style="font-size:11px;margin:14px 2px 0;text-align:center">Touche une ligne pour modifier le ticket.</div>';
+      h+='<div class="btns" style="margin-top:10px"><button class="btn" id="back" type="button">Retour</button></div>';
+      app.innerHTML=h;
+      document.getElementById("back").onclick=function(){ state.view="articles"; render(); };
+      [].forEach.call(document.querySelectorAll(".entry"), function(node){ node.onclick=function(){ editEntry(node.getAttribute("data-id")); }; });
     }
 
     function renderGraph(){
