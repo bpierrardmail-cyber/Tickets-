@@ -17,7 +17,7 @@
     html,body{ margin:0; }
     body{ background:var(--surface); color:var(--ink); font-family:var(--mono);
       -webkit-font-smoothing:antialiased; padding:env(safe-area-inset-top) 0 0; }
-    .app{ max-width:520px; margin:0 auto; padding:18px 14px 104px; }
+    .app{ max-width:520px; margin:0 auto; padding:18px 14px 108px; }
     .head{ position:relative; text-align:center; padding:14px 0 6px; letter-spacing:.18em; text-transform:uppercase; }
     .hback{ position:absolute; left:6px; top:12px; background:none; border:none; color:var(--ink-soft); font-family:var(--mono); font-size:12px; letter-spacing:.06em; padding:5px 6px; }
     .head h1{ font-size:14px; margin:0 0 4px; font-weight:700; }
@@ -93,6 +93,7 @@
     .prow .pren{ flex:0 0 auto; padding:6px 9px; }
     .prow .pdelfam{ flex:0 0 auto; padding:6px 9px; }
     .prow .catren, .prow .catdel{ flex:0 0 auto; padding:6px 9px; }
+    .prow .fxedit, .prow .fxdel{ flex:0 0 auto; padding:6px 9px; }
     .pname.pedit{ text-decoration:underline dotted; text-underline-offset:3px; }
     .bar-row{ margin:12px 2px; }
     .bar-top{ display:flex; justify-content:space-between; align-items:baseline; font-size:12px; margin-bottom:4px; }
@@ -119,19 +120,20 @@
     .lgd.off{ opacity:.45; }
     .lgd.off .ln{ text-decoration:line-through; }
     .lgd.off .lp{ color:var(--ink-soft); font-weight:400; }
-    .nav{ position:fixed; left:0; right:0; bottom:0; z-index:60; display:flex; align-items:flex-end;
+    .nav{ position:fixed; left:0; right:0; bottom:0; z-index:60; display:flex; flex-direction:column;
       background:var(--paper); border-top:1px dashed var(--ink-soft);
-      padding:6px 4px calc(6px + env(safe-area-inset-bottom)); box-shadow:0 -6px 18px rgba(0,0,0,.10); }
+      padding:0 4px calc(4px + env(safe-area-inset-bottom)); box-shadow:0 -6px 18px rgba(0,0,0,.10); }
     .nav.hidden{ display:none; }
-    .nav .navi{ flex:1; background:none; border:none; color:var(--ink-soft); font-family:var(--mono);
-      font-size:9px; letter-spacing:.02em; text-transform:uppercase; padding:10px 1px 8px; position:relative; }
-    .nav .navi.on{ color:var(--accent); font-weight:700; }
-    .nav .navi.on::before{ content:""; position:absolute; top:0; left:22%; right:22%; height:2px; background:var(--accent); }
-    .nav .navscan{ flex:1; display:flex; align-items:center; justify-content:center; }
-    .nav .navscan button{ background:var(--ink); color:var(--paper); border:none; width:56px; height:56px;
-      border-radius:50%; margin-top:-20px; box-shadow:0 6px 16px rgba(0,0,0,.32); font-family:var(--mono);
+    .navscanrow{ display:flex; justify-content:center; }
+    .navscanrow button{ background:var(--ink); color:var(--paper); border:none; width:56px; height:56px;
+      border-radius:50%; margin-top:-22px; box-shadow:0 6px 16px rgba(0,0,0,.32); font-family:var(--mono);
       font-size:10px; letter-spacing:.06em; text-transform:uppercase; font-weight:700; }
-    .nav .navscan button:active{ transform:translateY(1px); }
+    .navscanrow button:active{ transform:translateY(1px); }
+    .navtabs{ display:flex; }
+    .navtabs .navi{ flex:1; background:none; border:none; color:var(--ink-soft); font-family:var(--mono);
+      font-size:10px; letter-spacing:.04em; text-transform:uppercase; padding:6px 1px 8px; position:relative; }
+    .navtabs .navi.on{ color:var(--accent); font-weight:700; }
+    .navtabs .navi.on::before{ content:""; position:absolute; top:0; left:22%; right:22%; height:2px; background:var(--accent); }
     @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
   </style>
 </head>
@@ -168,6 +170,8 @@
     (function(){ var miss=FAMILLES.filter(function(f){ return PRODUITS.indexOf(f)<0; }); if(miss.length) PRODUITS = miss.concat(PRODUITS); })();
     if(PRODUITS.indexOf("Remise")<0) PRODUITS.push("Remise");
     function persistProd(){ store.write("produits", PRODUITS); }
+    var fraisCommuns = store.read("fraisCommuns", []);
+    function persistFrais(){ store.write("fraisCommuns", fraisCommuns); }
 
     var APPRIS = store.read("appris", {});
     function persistAppris(){ store.write("appris", APPRIS); }
@@ -244,12 +248,14 @@
 
     var navEl=document.createElement("nav"); navEl.className="nav hidden"; navEl.id="nav";
     navEl.innerHTML=
-      '<button class="navi" type="button" data-view="list">Accueil</button>'+
-      '<button class="navi" type="button" data-view="articles">Articles</button>'+
-      '<span class="navscan"><button id="navscan" type="button">Scan</button></span>'+
-      '<button class="navi" type="button" data-view="communes">Commun</button>'+
-      '<button class="navi" type="button" data-view="graph">Graphes</button>'+
-      '<button class="navi" type="button" data-view="history">Histo.</button>';
+      '<div class="navscanrow"><button id="navscan" type="button">Scan</button></div>'+
+      '<div class="navtabs">'+
+        '<button class="navi" type="button" data-view="list">Accueil</button>'+
+        '<button class="navi" type="button" data-view="articles">Articles</button>'+
+        '<button class="navi" type="button" data-view="communes">Commun</button>'+
+        '<button class="navi" type="button" data-view="graph">Graphes</button>'+
+        '<button class="navi" type="button" data-view="history">Histo.</button>'+
+      '</div>';
     document.body.appendChild(navEl);
     [].forEach.call(navEl.querySelectorAll(".navi"), function(b){
       b.onclick=function(){ var v=b.getAttribute("data-view"); if(v==="history") state.histMonth=null; if(v==="articles") state.artSel=null; state.view=v; render(); };
@@ -305,7 +311,7 @@
       h += '<hr class="rule">';
 
       if(state.entries.length===0){
-        h += '<div class="empty">Rien d\'enregistré pour l\'instant.<br>Appuie sur <b>Scanner un ticket</b> en bas pour commencer.</div>';
+        h += '<div class="empty">Rien d\'enregistré pour l\'instant.<br>Appuie sur <b>Scan</b> en bas pour commencer.</div>';
       } else {
         state.entries.forEach(function(e){
           h += '<div class="entry" data-id="'+esc(e.id)+'">'+
@@ -521,38 +527,77 @@
       setNav("articles", true);
     }
 
+    function addFraisCommun(){
+      var label=(window.prompt("Nom du frais commun (ex. Loyer, Internet) :")||"").trim();
+      if(!label) return;
+      var mv=window.prompt("Montant (€) :","");
+      if(mv===null) return;
+      var rec=window.confirm("Récurrent chaque mois ?\n\nOK = chaque mois · Annuler = seulement ce mois-ci");
+      fraisCommuns.push({ id:Date.now(), label:label, montant:num(mv), recurrent:rec, month: rec?null:monthKey(todayISO()) });
+      persistFrais(); render();
+    }
+    function editFraisCommun(id){
+      var f=fraisCommuns.filter(function(x){ return String(x.id)===String(id); })[0]; if(!f) return;
+      var label=(window.prompt("Nom du frais :", f.label)||"").trim(); if(label) f.label=label;
+      var mv=window.prompt("Montant (€) :", String(f.montant).replace(".",",")); if(mv!==null) f.montant=num(mv);
+      persistFrais(); render();
+    }
+    function delFraisCommun(id){
+      if(!window.confirm("Supprimer ce frais commun ?")) return;
+      fraisCommuns=fraisCommuns.filter(function(x){ return String(x.id)!==String(id); });
+      persistFrais(); render();
+    }
     function renderCommunes(){
       var month = monthKey(todayISO());
       var monthLabel = new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
-      var rows=[], total=0;
+      var frais=fraisCommuns.filter(function(f){ return f.recurrent || f.month===month; });
+      var fraisTotal=0; frais.forEach(function(f){ fraisTotal+=Number(f.montant)||0; });
+      var rows=[], prodTotal=0;
       state.entries.filter(function(e){ return monthKey(e.date)===month; }).forEach(function(e){
         (e.articles||[]).forEach(function(a){
           if(!a.commun) return;
           var amt=Number(a.prix)||0;
           var lbl=(a.label||"").trim() || a.produit || "Article";
           rows.push({ id:e.id, marchand:e.marchand, date:e.date, label:lbl, prix:amt });
-          total+=amt;
+          prodTotal+=amt;
         });
       });
       rows.sort(function(a,b){ return String(b.date||"").localeCompare(String(a.date||"")); });
-      var half=total/2;
+      var grand=fraisTotal+prodTotal, half=grand/2;
+
       var h=header()+'<section class="paper torn">';
       h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Dépenses communes · '+esc(monthLabel)+'</div><hr class="rule">';
+
+      h+='<div class="leader fam"><span class="lbl">Frais fixes</span><span class="fill"></span><span class="val">'+fmt(fraisTotal)+'</span></div>';
+      if(frais.length===0) h+='<div class="muted" style="font-size:11px;margin:2px 2px 4px">Aucun frais fixe. Ajoute loyer, internet, assurance…</div>';
+      frais.forEach(function(f){
+        h+='<div class="prow"><span class="pname">'+esc(f.label)+' <span class="muted" style="font-size:10px">'+(f.recurrent?"· chaque mois":"· ce mois")+'</span></span>'+
+           '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px">'+fmt(f.montant)+'</span>'+
+           '<button class="btn ghost fxedit" type="button" data-id="'+esc(f.id)+'">✎</button>'+
+           '<button class="btn ghost fxdel" type="button" data-id="'+esc(f.id)+'">✕</button></div>';
+      });
+      h+='<button class="btn ghost" id="addfrais" type="button" style="margin-top:10px">+ Ajouter un frais commun</button>';
+
+      h+='<div class="leader fam" style="margin-top:20px"><span class="lbl">Produits communs</span><span class="fill"></span><span class="val">'+fmt(prodTotal)+'</span></div>';
       if(rows.length===0){
-        h+='<div class="center muted" style="font-size:12px">Aucune dépense commune ce mois-ci.<br>Ouvre un ticket et coche « Dépense à deux » sur les articles partagés.</div>';
+        h+='<div class="muted" style="font-size:11px;margin:2px 2px 4px">Aucun produit coché ce mois-ci. Coche « Dépense à deux » sur les articles d\'un ticket.</div>';
       } else {
-        h+='<div class="muted" style="font-size:11px;margin:0 2px 6px">'+rows.length+' article'+(rows.length>1?"s":"")+' partagé'+(rows.length>1?"s":"")+' — touche pour modifier le ticket.</div>';
+        h+='<div class="muted" style="font-size:11px;margin:2px 2px 6px">Touche une ligne pour modifier le ticket.</div>';
         rows.forEach(function(r){
           h+='<div class="entry" data-id="'+esc(r.id)+'">'+
                '<div class="row1"><span class="name">'+esc(r.label)+'</span><span class="amt">'+fmt(r.prix)+'</span></div>'+
                '<div class="row2"><span>'+esc(r.marchand||"")+'</span><span>'+esc((r.date||"").split("-").reverse().join("/"))+'</span></div>'+
              '</div>';
         });
-        h+='<hr class="rule"><div class="leader total"><span class="lbl">Total commun</span><span class="fill"></span><span class="val">'+fmt(total)+'</span></div>';
-        h+='<div class="leader"><span class="lbl">Part de chacun (÷2)</span><span class="fill"></span><span class="val">'+fmt(half)+'</span></div>';
       }
+
+      h+='<hr class="rule"><div class="leader total"><span class="lbl">Total commun</span><span class="fill"></span><span class="val">'+fmt(grand)+'</span></div>';
+      h+='<div class="leader"><span class="lbl">Part de chacun (÷2)</span><span class="fill"></span><span class="val">'+fmt(half)+'</span></div>';
       h+='</section>';
       app.innerHTML=h;
+      var af=document.getElementById("addfrais"); if(af) af.onclick=addFraisCommun;
+      [].forEach.call(document.querySelectorAll(".fxedit"), function(b){ b.onclick=function(){ editFraisCommun(b.getAttribute("data-id")); }; });
+      [].forEach.call(document.querySelectorAll(".fxdel"), function(b){ b.onclick=function(){ delFraisCommun(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".entry"), function(node){ node.onclick=function(){ editEntry(node.getAttribute("data-id")); }; });
       setNav("communes", true);
     }
