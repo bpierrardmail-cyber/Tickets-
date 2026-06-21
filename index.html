@@ -79,6 +79,8 @@
     .art-row .art-prix{ flex:0 0 84px; }
     .art-row .art-prod{ flex:1; font-size:13px; }
     .art-row .art-del{ flex:0 0 auto; padding:8px 11px; }
+    .art-com{ display:flex; align-items:center; gap:8px; margin-top:7px; font-size:12px; color:var(--ink-soft); }
+    .art-com input{ width:18px; height:18px; accent-color:var(--accent); flex:0 0 auto; }
     .leader.fam{ margin-top:8px; }
     .leader.fam .lbl{ font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
     .leader.fam .val{ font-weight:700; color:var(--accent); }
@@ -122,7 +124,7 @@
       padding:6px 4px calc(6px + env(safe-area-inset-bottom)); box-shadow:0 -6px 18px rgba(0,0,0,.10); }
     .nav.hidden{ display:none; }
     .nav .navi{ flex:1; background:none; border:none; color:var(--ink-soft); font-family:var(--mono);
-      font-size:10px; letter-spacing:.08em; text-transform:uppercase; padding:10px 2px 8px; position:relative; }
+      font-size:9px; letter-spacing:.02em; text-transform:uppercase; padding:10px 1px 8px; position:relative; }
     .nav .navi.on{ color:var(--accent); font-weight:700; }
     .nav .navi.on::before{ content:""; position:absolute; top:0; left:22%; right:22%; height:2px; background:var(--accent); }
     .nav .navscan{ flex:1; display:flex; align-items:center; justify-content:center; }
@@ -245,6 +247,7 @@
       '<button class="navi" type="button" data-view="list">Accueil</button>'+
       '<button class="navi" type="button" data-view="articles">Articles</button>'+
       '<span class="navscan"><button id="navscan" type="button">Scan</button></span>'+
+      '<button class="navi" type="button" data-view="communes">Commun</button>'+
       '<button class="navi" type="button" data-view="graph">Graphes</button>'+
       '<button class="navi" type="button" data-view="history">Histo.</button>';
     document.body.appendChild(navEl);
@@ -274,6 +277,7 @@
       if(state.view==="history") return renderHistory();
       if(state.view==="month") return renderMonth();
       if(state.view==="artDetail") return renderArtDetail();
+      if(state.view==="communes") return renderCommunes();
       return renderList();
     }
 
@@ -341,7 +345,9 @@
           '<input class="f art-prix" inputmode="decimal" value="'+esc(a.prix)+'" placeholder="0,00">'+
           '<select class="f art-prod">'+opts+'</select>'+
           '<button class="btn ghost art-del" type="button">✕</button>'+
-        '</div></div>';
+        '</div>'+
+        '<label class="art-com"><input type="checkbox" class="art-comc"'+(a.commun?" checked":"")+'><span>Dépense à deux (commune)</span></label>'+
+      '</div>';
     }
 
     function renderForm(){
@@ -413,7 +419,8 @@
       [].forEach.call(document.querySelectorAll("#arts .art"), function(node){
         arts.push({ label:node.querySelector(".art-name").value,
                     prix:node.querySelector(".art-prix").value,
-                    produit:node.querySelector(".art-prod").value });
+                    produit:node.querySelector(".art-prod").value,
+                    commun:node.querySelector(".art-comc")?node.querySelector(".art-comc").checked:false });
       });
       state.draft.articles=arts;
     }
@@ -423,7 +430,7 @@
       var e=state.entries.filter(function(x){ return String(x.id)===String(id); })[0];
       if(!e) return;
       state.draft={id:e.id,montant:e.montant,date:e.date,marchand:e.marchand,categorie:e.categorie,
-        articles:(e.articles||[]).map(function(a){ return {label:a.label,prix:a.prix,produit:a.produit}; })};
+        articles:(e.articles||[]).map(function(a){ return {label:a.label,prix:a.prix,produit:a.produit,commun:!!a.commun}; })};
       state.view="form"; render();
     }
     function saveDraft(){
@@ -433,7 +440,7 @@
       var arts=(state.draft.articles||[]).map(function(a){
           var pr=num(a.prix), prod=(a.produit==="__new"?"":a.produit)||"";
           if(prod==="Remise") pr=-Math.abs(pr);
-          return {label:(a.label||"").trim(), prix:pr, produit:prod};
+          return {label:(a.label||"").trim(), prix:pr, produit:prod, commun:!!a.commun};
         }).filter(function(a){ return a.label || a.produit || a.prix; });
       var entry={ id:state.draft.id, montant:montant, date:state.draft.date||todayISO(),
         marchand:(state.draft.marchand||"").trim()||"Sans nom", categorie:state.draft.categorie, articles:arts };
@@ -512,6 +519,42 @@
       bindBack(function(){ state.view="articles"; render(); });
       [].forEach.call(document.querySelectorAll(".entry"), function(node){ node.onclick=function(){ editEntry(node.getAttribute("data-id")); }; });
       setNav("articles", true);
+    }
+
+    function renderCommunes(){
+      var month = monthKey(todayISO());
+      var monthLabel = new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
+      var rows=[], total=0;
+      state.entries.filter(function(e){ return monthKey(e.date)===month; }).forEach(function(e){
+        (e.articles||[]).forEach(function(a){
+          if(!a.commun) return;
+          var amt=Number(a.prix)||0;
+          var lbl=(a.label||"").trim() || a.produit || "Article";
+          rows.push({ id:e.id, marchand:e.marchand, date:e.date, label:lbl, prix:amt });
+          total+=amt;
+        });
+      });
+      rows.sort(function(a,b){ return String(b.date||"").localeCompare(String(a.date||"")); });
+      var half=total/2;
+      var h=header()+'<section class="paper torn">';
+      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Dépenses communes · '+esc(monthLabel)+'</div><hr class="rule">';
+      if(rows.length===0){
+        h+='<div class="center muted" style="font-size:12px">Aucune dépense commune ce mois-ci.<br>Ouvre un ticket et coche « Dépense à deux » sur les articles partagés.</div>';
+      } else {
+        h+='<div class="muted" style="font-size:11px;margin:0 2px 6px">'+rows.length+' article'+(rows.length>1?"s":"")+' partagé'+(rows.length>1?"s":"")+' — touche pour modifier le ticket.</div>';
+        rows.forEach(function(r){
+          h+='<div class="entry" data-id="'+esc(r.id)+'">'+
+               '<div class="row1"><span class="name">'+esc(r.label)+'</span><span class="amt">'+fmt(r.prix)+'</span></div>'+
+               '<div class="row2"><span>'+esc(r.marchand||"")+'</span><span>'+esc((r.date||"").split("-").reverse().join("/"))+'</span></div>'+
+             '</div>';
+        });
+        h+='<hr class="rule"><div class="leader total"><span class="lbl">Total commun</span><span class="fill"></span><span class="val">'+fmt(total)+'</span></div>';
+        h+='<div class="leader"><span class="lbl">Part de chacun (÷2)</span><span class="fill"></span><span class="val">'+fmt(half)+'</span></div>';
+      }
+      h+='</section>';
+      app.innerHTML=h;
+      [].forEach.call(document.querySelectorAll(".entry"), function(node){ node.onclick=function(){ editEntry(node.getAttribute("data-id")); }; });
+      setNav("communes", true);
     }
 
     var PALETTE=["#b23a2e","#7d8b3f","#c9893f","#4f6d6f","#9c5a3c","#a8973f","#6b6f8c","#8a6d3b","#5f7a52","#a04a4a","#7a7a6a","#c2a35a","#866c9c"];
