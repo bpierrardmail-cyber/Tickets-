@@ -541,11 +541,12 @@
     }
     function choosePerson(current){
       var ex=uniquePersons();
-      var hint = ex.length ? ("\nDéjà : "+ex.map(function(p,i){ return (i+1)+". "+p; }).join("   ")) : "";
-      var ans=window.prompt("Pour qui ce frais ?"+hint+"\n\nTape un nom (ou le numéro)", current||ex[0]||"");
+      if(ex.indexOf("Commun")<0) ex.unshift("Commun");
+      var hint = "\nChoix : "+ex.map(function(p,i){ return (i+1)+". "+p; }).join("   ");
+      var ans=window.prompt("Pour qui ce frais ?\n(« Commun » = dépense partagée)"+hint+"\n\nTape un nom ou le numéro", current||"Commun");
       if(ans===null) return null;
       ans=ans.trim();
-      if(!ans) return current||ex[0]||"Non attribué";
+      if(!ans) return current||"Commun";
       if(/^\d+$/.test(ans)){ var n=parseInt(ans,10); if(n>=1 && n<=ex.length) return ex[n-1]; }
       return ans;
     }
@@ -578,7 +579,7 @@
       var frais=fraisCommuns.filter(function(f){ return f.recurrent || f.month===month; });
       var byPerson={}, order=[], fraisTotal=0;
       frais.forEach(function(f){
-        var who=(f.personne||"").trim()||"Non attribué";
+        var who=(f.personne||"").trim()||"Commun";
         if(!byPerson[who]){ byPerson[who]={total:0, items:[]}; order.push(who); }
         byPerson[who].total+=Number(f.montant)||0; byPerson[who].items.push(f);
         fraisTotal+=Number(f.montant)||0;
