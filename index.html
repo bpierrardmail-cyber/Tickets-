@@ -577,14 +577,16 @@
       var month = monthKey(todayISO());
       var monthLabel = new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
       var frais=fraisCommuns.filter(function(f){ return f.recurrent || f.month===month; });
-      var byPerson={}, order=[], fraisTotal=0;
+      var byPerson={}, persons=[], fraisTotal=0;
       frais.forEach(function(f){
         var who=(f.personne||"").trim()||"Commun";
-        if(!byPerson[who]){ byPerson[who]={total:0, items:[]}; order.push(who); }
+        if(!byPerson[who]){ byPerson[who]={total:0, items:[]}; persons.push(who); }
         byPerson[who].total+=Number(f.montant)||0; byPerson[who].items.push(f);
         fraisTotal+=Number(f.montant)||0;
       });
-      order.sort();
+      var others=persons.filter(function(p){ return p!=="Commun"; }).sort();
+      var communTotal=byPerson["Commun"]?byPerson["Commun"].total:0;
+
       var rows=[], prodTotal=0;
       state.entries.filter(function(e){ return monthKey(e.date)===month; }).forEach(function(e){
         (e.articles||[]).forEach(function(a){
@@ -596,25 +598,25 @@
         });
       });
       rows.sort(function(a,b){ return String(b.date||"").localeCompare(String(a.date||"")); });
-      var prodHalf=prodTotal/2;
+      var prodHalf=prodTotal/2, communHalf=communTotal/2;
 
-      var h=header()+'<section class="paper torn">';
-      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Dépenses communes · '+esc(monthLabel)+'</div><hr class="rule">';
-
-      h+='<div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:0 2px 2px">Frais fixes par personne</div>';
-      if(frais.length===0) h+='<div class="muted" style="font-size:11px;margin:4px 2px">Aucun frais fixe. Ajoute loyer, internet… en choisissant la personne.</div>';
-      order.forEach(function(who){
-        var g=byPerson[who];
-        h+='<div class="leader fam"><span class="lbl">'+esc(who)+'</span><span class="fill"></span><span class="val">'+fmt(g.total)+'</span></div>';
-        g.items.forEach(function(f){
-          h+='<div class="prow"><span class="pname">'+esc(f.label)+' <span class="muted" style="font-size:10px">'+(f.recurrent?"· chaque mois":"· ce mois")+'</span></span>'+
+      function fraisRows(items){
+        var s2="";
+        items.forEach(function(f){
+          s2+='<div class="prow"><span class="pname">'+esc(f.label)+' <span class="muted" style="font-size:10px">'+(f.recurrent?"· chaque mois":"· ce mois")+'</span></span>'+
              '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px">'+fmt(f.montant)+'</span>'+
              '<button class="btn ghost fxedit" type="button" data-id="'+esc(f.id)+'">✎</button>'+
              '<button class="btn ghost fxdel" type="button" data-id="'+esc(f.id)+'">✕</button></div>';
         });
-      });
-      h+='<button class="btn ghost" id="addfrais" type="button" style="margin-top:10px">+ Ajouter un frais fixe</button>';
-      if(frais.length) h+='<div class="leader" style="margin-top:8px"><span class="lbl">Total frais fixes</span><span class="fill"></span><span class="val">'+fmt(fraisTotal)+'</span></div>';
+        return s2;
+      }
+
+      var h=header()+'<section class="paper torn">';
+      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Dépenses communes · '+esc(monthLabel)+'</div><hr class="rule">';
+
+      h+='<div class="leader fam"><span class="lbl">Commun</span><span class="fill"></span><span class="val">'+fmt(communTotal)+'</span></div>';
+      if(byPerson["Commun"]) h+=fraisRows(byPerson["Commun"].items);
+      else h+='<div class="muted" style="font-size:11px;margin:4px 2px">Aucun frais commun. Touche « + Ajouter un frais fixe » et garde « Commun ».</div>';
 
       h+='<hr class="rule"><div class="leader fam"><span class="lbl">Produits communs (à deux)</span><span class="fill"></span><span class="val">'+fmt(prodTotal)+'</span></div>';
       if(rows.length===0){
@@ -629,6 +631,25 @@
         });
         h+='<div class="leader"><span class="lbl">Part de chacun (÷2)</span><span class="fill"></span><span class="val">'+fmt(prodHalf)+'</span></div>';
       }
+
+      others.forEach(function(who){
+        var g=byPerson[who];
+        h+='<hr class="rule"><div class="leader fam"><span class="lbl">'+esc(who)+'</span><span class="fill"></span><span class="val">'+fmt(g.total)+'</span></div>';
+        h+=fraisRows(g.items);
+      });
+
+      h+='<button class="btn ghost" id="addfrais" type="button" style="margin-top:12px">+ Ajouter un frais fixe</button>';
+      if(frais.length) h+='<div class="leader" style="margin-top:8px"><span class="lbl">Total frais fixes</span><span class="fill"></span><span class="val">'+fmt(fraisTotal)+'</span></div>';
+
+      if(others.length){
+        h+='<hr class="rule"><div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:0 2px 2px">Total du mois par personne</div>';
+        h+='<div class="muted" style="font-size:10px;margin:0 2px 8px">frais perso + ½ commun + ½ produits communs</div>';
+        others.forEach(function(who){
+          var tot=byPerson[who].total + communHalf + prodHalf;
+          h+='<div class="leader"><span class="lbl" style="font-weight:700;text-transform:uppercase;letter-spacing:.04em">'+esc(who)+'</span><span class="fill"></span><span class="val" style="font-weight:700;color:var(--accent)">'+fmt(tot)+'</span></div>';
+        });
+      }
+
       h+='</section>';
       app.innerHTML=h;
       var af=document.getElementById("addfrais"); if(af) af.onclick=addFraisCommun;
