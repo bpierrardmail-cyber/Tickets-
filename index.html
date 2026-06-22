@@ -832,11 +832,18 @@
       var f=(window.prompt("Grande catégorie ?\n("+FAMILLES.join(", ")+")", current||"Divers")||"").trim();
       return FAMILLES.indexOf(f)>=0 ? f : "Divers";
     }
-    function nameTaken(name){ return FAMILLES.indexOf(name)>=0 || PRODUITS.indexOf(name)>=0; }
+    function normName(s){ return (s||"").trim().toLowerCase(); }
+    function takenAs(name){
+      var n=normName(name); if(!n) return "";
+      for(var i=0;i<FAMILLES.length;i++){ if(normName(FAMILLES[i])===n) return "grande catégorie"; }
+      for(var j=0;j<PRODUITS.length;j++){ if(FAMILLES.indexOf(PRODUITS[j])<0 && PRODUITS[j]!=="Remise" && normName(PRODUITS[j])===n) return "produit"; }
+      return "";
+    }
+    function nameTaken(name){ return takenAs(name)!==""; }
     function addFamille(){
       var name=(window.prompt("Nom de la nouvelle grande catégorie :")||"").trim();
       if(!name) return;
-      if(nameTaken(name)){ window.alert("Ce nom existe déjà."); return; }
+      var w=takenAs(name); if(w){ window.alert("« "+name+" » existe déjà comme "+w+".\nSupprime-le d'abord (✕) ou choisis un autre nom."); return; }
       FAMILLES.push(name); FAMILLE_DE[name]=name; if(PRODUITS.indexOf(name)<0) PRODUITS.push(name);
       persistFamilles(); persistFamille(); persistProd(); render();
     }
@@ -844,7 +851,7 @@
       if(old==="Divers"){ window.alert("« Divers » ne peut pas être renommée (catégorie de repli)."); return; }
       var name=(window.prompt("Renommer la grande catégorie :", old)||"").trim();
       if(!name || name===old) return;
-      if(nameTaken(name)){ window.alert("Ce nom existe déjà."); return; }
+      var w=takenAs(name); if(w && normName(name)!==normName(old)){ window.alert("« "+name+" » existe déjà comme "+w+".\nSupprime-le d'abord (✕) ou choisis un autre nom."); return; }
       var idx=FAMILLES.indexOf(old); if(idx>=0) FAMILLES[idx]=name;
       var pidx=PRODUITS.indexOf(old); if(pidx>=0) PRODUITS[pidx]=name;
       for(var k in FAMILLE_DE){ if(FAMILLE_DE[k]===old) FAMILLE_DE[k]=name; }
@@ -862,7 +869,7 @@
     function addProduct(){
       var name=(window.prompt("Nom du nouveau produit :")||"").trim();
       if(!name) return;
-      if(nameTaken(name)){ window.alert("Ce nom existe déjà."); return; }
+      var w=takenAs(name); if(w){ window.alert("« "+name+" » existe déjà comme "+w+".\nSupprime-le d'abord (✕) ou choisis un autre nom."); return; }
       var fam=pickFamille("Divers");
       PRODUITS.push(name); FAMILLE_DE[name]=fam;
       persistProd(); persistFamille(); render();
@@ -871,7 +878,7 @@
       if(old==="Remise") return;
       var name=(window.prompt("Renommer le produit :", old)||"").trim();
       if(!name || name===old) return;
-      if(nameTaken(name)){ window.alert("Ce nom existe déjà."); return; }
+      var w=takenAs(name); if(w && normName(name)!==normName(old)){ window.alert("« "+name+" » existe déjà comme "+w+".\nSupprime-le d'abord (✕) ou choisis un autre nom."); return; }
       var pidx=PRODUITS.indexOf(old); if(pidx>=0) PRODUITS[pidx]=name;
       if(old in FAMILLE_DE){ FAMILLE_DE[name]=FAMILLE_DE[old]; delete FAMILLE_DE[old]; }
       for(var k in APPRIS){ if(APPRIS[k]===old) APPRIS[k]=name; }
