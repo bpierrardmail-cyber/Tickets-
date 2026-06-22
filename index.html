@@ -527,23 +527,41 @@
       setNav("articles", true);
     }
 
+    function uniquePersons(){
+      var set={}, arr=[];
+      fraisCommuns.forEach(function(f){ var w=(f.personne||"").trim(); if(w && !set[w]){ set[w]=1; arr.push(w); } });
+      arr.sort(); return arr;
+    }
+    function choosePerson(current){
+      var ex=uniquePersons();
+      var hint = ex.length ? ("\nDéjà : "+ex.map(function(p,i){ return (i+1)+". "+p; }).join("   ")) : "";
+      var ans=window.prompt("Pour qui ce frais ?"+hint+"\n\nTape un nom (ou le numéro)", current||ex[0]||"");
+      if(ans===null) return null;
+      ans=ans.trim();
+      if(!ans) return current||ex[0]||"Non attribué";
+      if(/^\d+$/.test(ans)){ var n=parseInt(ans,10); if(n>=1 && n<=ex.length) return ex[n-1]; }
+      return ans;
+    }
     function addFraisCommun(){
-      var label=(window.prompt("Nom du frais commun (ex. Loyer, Internet) :")||"").trim();
+      var label=(window.prompt("Nom du frais (ex. Loyer, Internet) :")||"").trim();
       if(!label) return;
       var mv=window.prompt("Montant (€) :","");
       if(mv===null) return;
+      var who=choosePerson(null);
+      if(who===null) return;
       var rec=window.confirm("Récurrent chaque mois ?\n\nOK = chaque mois · Annuler = seulement ce mois-ci");
-      fraisCommuns.push({ id:Date.now(), label:label, montant:num(mv), recurrent:rec, month: rec?null:monthKey(todayISO()) });
+      fraisCommuns.push({ id:Date.now(), label:label, montant:num(mv), personne:who, recurrent:rec, month: rec?null:monthKey(todayISO()) });
       persistFrais(); render();
     }
     function editFraisCommun(id){
       var f=fraisCommuns.filter(function(x){ return String(x.id)===String(id); })[0]; if(!f) return;
       var label=(window.prompt("Nom du frais :", f.label)||"").trim(); if(label) f.label=label;
       var mv=window.prompt("Montant (€) :", String(f.montant).replace(".",",")); if(mv!==null) f.montant=num(mv);
+      var who=choosePerson(f.personne); if(who!==null) f.personne=who;
       persistFrais(); render();
     }
     function delFraisCommun(id){
-      if(!window.confirm("Supprimer ce frais commun ?")) return;
+      if(!window.confirm("Supprimer ce frais ?")) return;
       fraisCommuns=fraisCommuns.filter(function(x){ return String(x.id)!==String(id); });
       persistFrais(); render();
     }
@@ -551,7 +569,14 @@
       var month = monthKey(todayISO());
       var monthLabel = new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
       var frais=fraisCommuns.filter(function(f){ return f.recurrent || f.month===month; });
-      var fraisTotal=0; frais.forEach(function(f){ fraisTotal+=Number(f.montant)||0; });
+      var byPerson={}, order=[], fraisTotal=0;
+      frais.forEach(function(f){
+        var who=(f.personne||"").trim()||"Non attribué";
+        if(!byPerson[who]){ byPerson[who]={total:0, items:[]}; order.push(who); }
+        byPerson[who].total+=Number(f.montant)||0; byPerson[who].items.push(f);
+        fraisTotal+=Number(f.montant)||0;
+      });
+      order.sort();
       var rows=[], prodTotal=0;
       state.entries.filter(function(e){ return monthKey(e.date)===month; }).forEach(function(e){
         (e.articles||[]).forEach(function(a){
@@ -563,22 +588,27 @@
         });
       });
       rows.sort(function(a,b){ return String(b.date||"").localeCompare(String(a.date||"")); });
-      var grand=fraisTotal+prodTotal, half=grand/2;
+      var prodHalf=prodTotal/2;
 
       var h=header()+'<section class="paper torn">';
       h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Dépenses communes · '+esc(monthLabel)+'</div><hr class="rule">';
 
-      h+='<div class="leader fam"><span class="lbl">Frais fixes</span><span class="fill"></span><span class="val">'+fmt(fraisTotal)+'</span></div>';
-      if(frais.length===0) h+='<div class="muted" style="font-size:11px;margin:2px 2px 4px">Aucun frais fixe. Ajoute loyer, internet, assurance…</div>';
-      frais.forEach(function(f){
-        h+='<div class="prow"><span class="pname">'+esc(f.label)+' <span class="muted" style="font-size:10px">'+(f.recurrent?"· chaque mois":"· ce mois")+'</span></span>'+
-           '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px">'+fmt(f.montant)+'</span>'+
-           '<button class="btn ghost fxedit" type="button" data-id="'+esc(f.id)+'">✎</button>'+
-           '<button class="btn ghost fxdel" type="button" data-id="'+esc(f.id)+'">✕</button></div>';
+      h+='<div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:0 2px 2px">Frais fixes par personne</div>';
+      if(frais.length===0) h+='<div class="muted" style="font-size:11px;margin:4px 2px">Aucun frais fixe. Ajoute loyer, internet… en choisissant la personne.</div>';
+      order.forEach(function(who){
+        var g=byPerson[who];
+        h+='<div class="leader fam"><span class="lbl">'+esc(who)+'</span><span class="fill"></span><span class="val">'+fmt(g.total)+'</span></div>';
+        g.items.forEach(function(f){
+          h+='<div class="prow"><span class="pname">'+esc(f.label)+' <span class="muted" style="font-size:10px">'+(f.recurrent?"· chaque mois":"· ce mois")+'</span></span>'+
+             '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px">'+fmt(f.montant)+'</span>'+
+             '<button class="btn ghost fxedit" type="button" data-id="'+esc(f.id)+'">✎</button>'+
+             '<button class="btn ghost fxdel" type="button" data-id="'+esc(f.id)+'">✕</button></div>';
+        });
       });
-      h+='<button class="btn ghost" id="addfrais" type="button" style="margin-top:10px">+ Ajouter un frais commun</button>';
+      h+='<button class="btn ghost" id="addfrais" type="button" style="margin-top:10px">+ Ajouter un frais fixe</button>';
+      if(frais.length) h+='<div class="leader" style="margin-top:8px"><span class="lbl">Total frais fixes</span><span class="fill"></span><span class="val">'+fmt(fraisTotal)+'</span></div>';
 
-      h+='<div class="leader fam" style="margin-top:20px"><span class="lbl">Produits communs</span><span class="fill"></span><span class="val">'+fmt(prodTotal)+'</span></div>';
+      h+='<hr class="rule"><div class="leader fam"><span class="lbl">Produits communs (à deux)</span><span class="fill"></span><span class="val">'+fmt(prodTotal)+'</span></div>';
       if(rows.length===0){
         h+='<div class="muted" style="font-size:11px;margin:2px 2px 4px">Aucun produit coché ce mois-ci. Coche « Dépense à deux » sur les articles d\'un ticket.</div>';
       } else {
@@ -589,10 +619,8 @@
                '<div class="row2"><span>'+esc(r.marchand||"")+'</span><span>'+esc((r.date||"").split("-").reverse().join("/"))+'</span></div>'+
              '</div>';
         });
+        h+='<div class="leader"><span class="lbl">Part de chacun (÷2)</span><span class="fill"></span><span class="val">'+fmt(prodHalf)+'</span></div>';
       }
-
-      h+='<hr class="rule"><div class="leader total"><span class="lbl">Total commun</span><span class="fill"></span><span class="val">'+fmt(grand)+'</span></div>';
-      h+='<div class="leader"><span class="lbl">Part de chacun (÷2)</span><span class="fill"></span><span class="val">'+fmt(half)+'</span></div>';
       h+='</section>';
       app.innerHTML=h;
       var af=document.getElementById("addfrais"); if(af) af.onclick=addFraisCommun;
