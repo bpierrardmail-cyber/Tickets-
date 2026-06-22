@@ -140,6 +140,8 @@
 <body>
   <div id="app" class="app"></div>
   <input id="filein" type="file" accept="image/*" multiple style="display:none" />
+  <input id="filebak" type="file" accept="application/json,.json" style="display:none" />
+  <input id="restorein" type="file" accept="application/json,.json" style="display:none" />
 
   <script>
   (function(){
@@ -245,6 +247,9 @@
 
     var app = document.getElementById("app");
     var filein = document.getElementById("filein");
+    var filebak = document.getElementById("filebak");
+    filebak.onchange=function(ev){ var f=ev.target.files&&ev.target.files[0]; ev.target.value=""; if(f) importData(f); };
+    var restorein = document.getElementById("restorein");
 
     var navEl=document.createElement("nav"); navEl.className="nav hidden"; navEl.id="nav";
     navEl.innerHTML=
@@ -311,7 +316,7 @@
       h += '<hr class="rule">';
 
       if(state.entries.length===0){
-        h += '<div class="empty">Rien d\'enregistré pour l\'instant.<br>Appuie sur <b>Scan</b> en bas pour commencer.</div>';
+        h += '<div class="empty">Rien d\'enregistré pour l\'instant.<br>Appuie sur <b>Scanner un ticket</b> en bas pour commencer.</div>';
       } else {
         state.entries.forEach(function(e){
           h += '<div class="entry" data-id="'+esc(e.id)+'">'+
@@ -328,13 +333,22 @@
             '</button>') + '</div>';
 
       h += '<div class="center" style="margin:2px 0 0;font-size:11px"><button class="btn ghost" id="cloudkey">'+(store.read("ocrKey","")?"OCR cloud activé ✓":"Activer OCR cloud (clé)")+'</button></div>';
+      h += '<div class="center" style="margin:10px 0 0;font-size:11px"><button class="btn ghost" id="backup">Sauvegarder</button> <button class="btn ghost" id="restore">Restaurer</button></div>';
+
+      h += '<hr class="rule"><div class="center muted" style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">Sauvegarde locale</div>';
+      h += '<div class="center" style="font-size:11px"><button class="btn ghost" id="backup">Sauvegarder</button> <button class="btn ghost" id="restore">Restaurer</button></div>';
+      h += '<div class="center muted" style="font-size:10px;margin-top:6px">Télécharge un fichier de tes données, à recharger en cas de pépin.</div>';
 
       app.innerHTML = h;
 
       var manual2=document.getElementById("manual2"); if(manual2) manual2.onclick=newDraft;
       var prep=document.getElementById("prep"); if(prep) prep.onclick=prepareOffline;
       var ck=document.getElementById("cloudkey"); if(ck) ck.onclick=function(){ var cur=store.read("ocrKey",""); var k=window.prompt("Colle ta clé API OCR.space (vide = désactiver) :", cur); if(k===null) return; store.write("ocrKey", k.trim()); render(); };
+      var bkp=document.getElementById("backup"); if(bkp) bkp.onclick=backupData;
+      var rst=document.getElementById("restore"); if(rst) rst.onclick=function(){ restorein.click(); };
       var goprod=document.getElementById("goprod"); if(goprod) goprod.onclick=function(){ state.view="produits"; render(); };
+      var bkp=document.getElementById("backup"); if(bkp) bkp.onclick=exportData;
+      var rst=document.getElementById("restore"); if(rst) rst.onclick=function(){ filebak.click(); };
       [].forEach.call(document.querySelectorAll(".entry"), function(node){
         node.onclick=function(){ editEntry(node.getAttribute("data-id")); };
       });
@@ -459,6 +473,43 @@
     function delDraft(){
       if(state.draft && state.draft.id){ state.entries=state.entries.filter(function(e){ return String(e.id)!==String(state.draft.id); }); persist(); }
       state.view="list"; state.draft=null; render();
+    }
+    function exportData(){
+      var data={ app:"tickets", version:1, date:new Date().toISOString(),
+        entries: state.entries, cats: CATS, familles: FAMILLES, produits: PRODUITS,
+        familleDe: FAMILLE_DE, appris: APPRIS, fraisCommuns: fraisCommuns, ocrKey: store.read("ocrKey","") };
+      try{
+        var blob=new Blob([JSON.stringify(data)], {type:"application/json"});
+        var url=URL.createObjectURL(blob);
+        var d=new Date(), p=function(n){ return ("0"+n).slice(-2); };
+        var stamp=d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"-"+p(d.getHours())+p(d.getMinutes());
+        var a=document.createElement("a");
+        a.href=url; a.download="tickets-sauvegarde-"+stamp+".json";
+        document.body.appendChild(a); a.click();
+        setTimeout(function(){ try{ document.body.removeChild(a); }catch(e){} URL.revokeObjectURL(url); }, 1500);
+      }catch(e){ window.alert("Sauvegarde impossible sur ce navigateur."); }
+    }
+    function importData(file){
+      var r=new FileReader();
+      r.onload=function(){
+        var obj;
+        try{ obj=JSON.parse(r.result); }catch(e){ window.alert("Fichier illisible (JSON invalide)."); return; }
+        if(!obj || (!obj.entries && !obj.fraisCommuns && !obj.cats)){ window.alert("Ce fichier ne ressemble pas à une sauvegarde Tickets."); return; }
+        var nbT=(obj.entries&&obj.entries.length)||0, nbF=(obj.fraisCommuns&&obj.fraisCommuns.length)||0;
+        if(!window.confirm("Restaurer cette sauvegarde ?\n\n"+nbT+" ticket(s) · "+nbF+" frais fixe(s)\n\nCela REMPLACE les données actuelles de cet appareil.")) return;
+        if(obj.entries) store.write("entries", obj.entries);
+        if(obj.cats) store.write("cats", obj.cats);
+        if(obj.familles) store.write("familles", obj.familles);
+        if(obj.produits) store.write("produits", obj.produits);
+        if(obj.familleDe) store.write("familleDe", obj.familleDe);
+        if(obj.appris) store.write("appris", obj.appris);
+        if(obj.fraisCommuns) store.write("fraisCommuns", obj.fraisCommuns);
+        if(typeof obj.ocrKey==="string" && obj.ocrKey) store.write("ocrKey", obj.ocrKey);
+        window.alert("Sauvegarde restaurée. L'application va se recharger.");
+        window.location.reload();
+      };
+      r.onerror=function(){ window.alert("Lecture du fichier impossible."); };
+      r.readAsText(file);
     }
 
     function renderArticles(){
@@ -1070,6 +1121,40 @@
       }
       step();
     };
+
+    function backupData(){
+      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","ocrKey","offlineReady"];
+      var dump={ _app:"tickets", _version:1, _date:new Date().toISOString(), data:{} };
+      keys.forEach(function(k){ var v=store.read(k, null); if(v!==null) dump.data[k]=v; });
+      try{
+        var blob=new Blob([JSON.stringify(dump)], {type:"application/json"});
+        var url=URL.createObjectURL(blob);
+        var a=document.createElement("a");
+        a.href=url; a.download="tickets-sauvegarde-"+todayISO()+".json";
+        document.body.appendChild(a); a.click();
+        setTimeout(function(){ try{ document.body.removeChild(a); }catch(e){} URL.revokeObjectURL(url); }, 1500);
+      }catch(e){ window.alert("Sauvegarde impossible : "+((e&&e.message)||e)); }
+    }
+    function restoreData(file){
+      var r=new FileReader();
+      r.onload=function(){
+        try{
+          var obj=JSON.parse(r.result);
+          var data=(obj && obj.data && typeof obj.data==="object") ? obj.data : obj;
+          if(!data || typeof data!=="object") throw new Error("format non reconnu");
+          var n=(data.entries && data.entries.length) ? data.entries.length : 0;
+          if(!window.confirm("Restaurer cette sauvegarde ?\n"+n+" ticket(s) vont REMPLACER les données actuelles.")) return;
+          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","ocrKey","offlineReady"].forEach(function(k){
+            if(k in data) store.write(k, data[k]);
+          });
+          window.alert("Sauvegarde restaurée ✓");
+          window.location.reload();
+        }catch(e){ window.alert("Fichier invalide : "+((e&&e.message)||e)); }
+      };
+      r.onerror=function(){ window.alert("Lecture du fichier impossible."); };
+      r.readAsText(file);
+    }
+    restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if(ev.target) ev.target.value=""; if(f) restoreData(f); };
 
     function prepareOffline(){
       if(typeof Tesseract==="undefined"){ state.offline="error"; render(); return; }
