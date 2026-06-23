@@ -131,7 +131,7 @@
     .navscanrow button:active{ transform:translateY(1px); }
     .navtabs{ display:flex; }
     .navtabs .navi{ flex:1; background:none; border:none; color:var(--ink-soft); font-family:var(--mono);
-      font-size:9px; letter-spacing:.01em; text-transform:uppercase; padding:6px 0 8px; position:relative; }
+      font-size:8px; letter-spacing:0; text-transform:uppercase; padding:6px 0 8px; position:relative; }
     .navtabs .navi.on{ color:var(--accent); font-weight:700; }
     .navtabs .navi.on::before{ content:""; position:absolute; top:0; left:22%; right:22%; height:2px; background:var(--accent); }
     @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
@@ -183,6 +183,42 @@
       if(ch) store.write("epargne", epargne);
     })();
     function persistEpargne(){ store.write("epargne", epargne); }
+    var bourse = store.read("bourse", []);
+    function persistBourse(){ store.write("bourse", bourse); }
+    function bMonths(c){ return Object.keys(c.vals||{}).sort(); }
+    function bLast(c){ var ms=bMonths(c); return ms.length?c.vals[ms[ms.length-1]]:null; }
+    function bPrev(c){ var ms=bMonths(c); return ms.length>1?c.vals[ms[ms.length-2]]:null; }
+    function bFirst(c){ var ms=bMonths(c); return ms.length?c.vals[ms[0]]:null; }
+    function bPct(from,to){ if(!from||from===0) return null; var p=(to-from)/Math.abs(from)*100; return (p>=0?"+":"")+p.toFixed(1).replace(".",",")+" %"; }
+    function bPctCol(from,to){ return (to-from)>=0?"#5f7a52":"#b23a2e"; }
+    function bBadge(from,to,label){
+      if(from===null||from===undefined) return "";
+      var diff=to-from, pct=bPct(from,to), col=bPctCol(from,to);
+      return '<span style="font-size:10px;color:'+col+'">'+label+' '+(diff>=0?"+":"")+diff.toFixed(2).replace(".",",")+'€'+(pct?" ("+pct+")":"")+'</span>';
+    }
+    function addBourse(){
+      var nom=(window.prompt("Nom du compte bourse (ex. eToro, PEA) :")||"").trim();
+      if(!nom) return;
+      var cap=window.prompt("Capital investi (€) :",""); if(cap===null) return;
+      var val=window.prompt("Valeur actuelle (€) :",""); if(val===null) return;
+      var m=monthKey(todayISO()), v={}; v[m]={capital:num(cap),valeur:num(val)};
+      bourse.push({ id:Date.now(), nom:nom, vals:v });
+      persistBourse(); render();
+    }
+    function editBourse(id){
+      var c=bourse.filter(function(x){ return String(x.id)===String(id); })[0]; if(!c) return;
+      var nom=(window.prompt("Nom du compte :", c.nom)||"").trim(); if(nom) c.nom=nom;
+      var last=bLast(c)||{};
+      var cap=window.prompt("Capital investi (€) :", last.capital?String(last.capital).replace(".",","):""); if(cap===null) return;
+      var val=window.prompt("Valeur actuelle (€) :", last.valeur?String(last.valeur).replace(".",","):""); if(val===null) return;
+      if(!c.vals) c.vals={}; c.vals[monthKey(todayISO())]={capital:num(cap),valeur:num(val)};
+      persistBourse(); render();
+    }
+    function delBourse(id){
+      if(!window.confirm("Supprimer ce compte bourse ?")) return;
+      bourse=bourse.filter(function(x){ return String(x.id)!==String(id); });
+      persistBourse(); render();
+    }
     function epMonthsOf(c){ return Object.keys(c.vals||{}).sort(); }
     function epCurrent(c){ var ms=epMonthsOf(c); return ms.length?(Number(c.vals[ms[ms.length-1]])||0):0; }
     function epPrev(c){ var ms=epMonthsOf(c); return ms.length>1?(Number(c.vals[ms[ms.length-2]])||0):null; }
@@ -294,6 +330,7 @@
         '<button class="navi" type="button" data-view="articles">Articles</button>'+
         '<button class="navi" type="button" data-view="communes">Commun</button>'+
         '<button class="navi" type="button" data-view="compte">Compte</button>'+
+        '<button class="navi" type="button" data-view="bourse">Bourse</button>'+
         '<button class="navi" type="button" data-view="graph">Graphes</button>'+
         '<button class="navi" type="button" data-view="history">Histo.</button>'+
       '</div>';
@@ -326,6 +363,7 @@
       if(state.view==="artDetail") return renderArtDetail();
       if(state.view==="communes") return renderCommunes();
       if(state.view==="compte") return renderCompte();
+      if(state.view==="bourse") return renderBourse();
       return renderList();
     }
 
@@ -805,6 +843,56 @@
       setNav("compte", true);
     }
 
+    function renderBourse(){
+      var monthLabel=new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
+      var h=header()+'<section class="paper torn">';
+      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Bourse · '+esc(monthLabel)+'</div><hr class="rule">';
+      if(bourse.length===0) h+='<div class="muted" style="font-size:12px;margin:4px 2px">Aucun compte. Ajoute ton premier compte bourse.</div>';
+      var totCap=0, totVal=0, totPrevVal=null, totFirstVal=null, totFirstCap=null;
+      bourse.forEach(function(c){
+        var last=bLast(c)||{}, prev=bPrev(c), first=bFirst(c);
+        var cap=Number(last.capital)||0, val=Number(last.valeur)||0;
+        var pv=val-cap;
+        totCap+=cap; totVal+=val;
+        if(prev){ totPrevVal=(totPrevVal||0)+Number(prev.valeur||0); }
+        if(first){ totFirstVal=(totFirstVal||0)+Number(first.valeur||0); totFirstCap=(totFirstCap||0)+Number(first.capital||0); }
+        h+='<div style="margin:10px 0 2px">';
+        h+='<div class="prow"><span class="pname" style="font-weight:700">'+esc(c.nom)+'</span>'+
+           '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px">'+fmt(val)+'</span>'+
+           '<button class="btn ghost bedit" type="button" data-id="'+esc(c.id)+'">✎</button>'+
+           '<button class="btn ghost bdel" type="button" data-id="'+esc(c.id)+'">✕</button></div>';
+        h+='<div style="font-size:10px;color:var(--ink-soft);margin:2px 6px 0">Capital investi : '+fmt(cap)+'</div>';
+        var badges=[];
+        badges.push(bBadge(cap,val,"Plus-value :"));
+        if(prev) badges.push(bBadge(Number(prev.valeur||0),val,"Mois préc. :"));
+        if(first&&bMonths(c).length>1) badges.push(bBadge(Number(first.valeur||0),val,"Depuis création :"));
+        badges.forEach(function(b){ if(b) h+='<div style="font-size:10px;margin:2px 6px 0">'+b+'</div>'; });
+        h+='</div>';
+        h+='<hr class="rule" style="margin:6px 0;opacity:.3">';
+      });
+      h+='<button class="btn ghost" id="addbrs" type="button" style="margin-top:6px">+ Ajouter un compte bourse</button>';
+      h+='<hr class="rule"><div class="leader fam"><span class="lbl">Total portefeuille</span><span class="fill"></span><span class="val">'+fmt(totVal)+'</span></div>';
+      h+='<div class="leader item"><span class="lbl">Capital total investi</span><span class="fill"></span><span class="val">'+fmt(totCap)+'</span></div>';
+      if(totCap>0){
+        var pvTot=totVal-totCap, pvPct=bPct(totCap,totVal);
+        h+='<div class="leader item"><span class="lbl">Plus-value totale</span><span class="fill"></span><span class="val" style="color:'+bPctCol(totCap,totVal)+'">'+(pvTot>=0?"+":"")+pvTot.toFixed(2).replace(".",",")+'€'+(pvPct?" ("+pvPct+")":" ")+'</span></div>';
+      }
+      if(totPrevVal!==null){
+        var diffPrev=totVal-totPrevVal, pctPrev=bPct(totPrevVal,totVal);
+        h+='<div class="leader item"><span class="lbl">vs mois précédent</span><span class="fill"></span><span class="val" style="color:'+bPctCol(totPrevVal,totVal)+'">'+(diffPrev>=0?"+":"")+diffPrev.toFixed(2).replace(".",",")+'€'+(pctPrev?" ("+pctPrev+")":" ")+'</span></div>';
+      }
+      if(totFirstVal!==null&&bourse.some(function(c){ return bMonths(c).length>1; })){
+        var diffFirst=totVal-totFirstVal, pctFirst=bPct(totFirstVal,totVal);
+        h+='<div class="leader item"><span class="lbl">Depuis création</span><span class="fill"></span><span class="val" style="color:'+bPctCol(totFirstVal,totVal)+'">'+(diffFirst>=0?"+":"")+diffFirst.toFixed(2).replace(".",",")+'€'+(pctFirst?" ("+pctFirst+")":" ")+'</span></div>';
+      }
+      h+='</section>';
+      app.innerHTML=h;
+      var ab=document.getElementById("addbrs"); if(ab) ab.onclick=addBourse;
+      [].forEach.call(document.querySelectorAll(".bedit"), function(b){ b.onclick=function(){ editBourse(b.getAttribute("data-id")); }; });
+      [].forEach.call(document.querySelectorAll(".bdel"), function(b){ b.onclick=function(){ delBourse(b.getAttribute("data-id")); }; });
+      setNav("bourse", true);
+    }
+
     var PALETTE=["#b23a2e","#7d8b3f","#c9893f","#4f6d6f","#9c5a3c","#a8973f","#6b6f8c","#8a6d3b","#5f7a52","#a04a4a","#7a7a6a","#c2a35a","#866c9c"];
     function gPeriodEntries(){
       var p=state.graphPeriod||"cur";
@@ -1254,7 +1342,7 @@
     };
 
     function backupData(){
-      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","epargne","ocrKey","offlineReady"];
+      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","epargne","bourse","ocrKey","offlineReady"];
       var dump={ _app:"tickets", _version:1, _date:new Date().toISOString(), data:{} };
       keys.forEach(function(k){ var v=store.read(k, null); if(v!==null) dump.data[k]=v; });
       try{
@@ -1275,7 +1363,7 @@
           if(!data || typeof data!=="object") throw new Error("format non reconnu");
           var n=(data.entries && data.entries.length) ? data.entries.length : 0;
           if(!window.confirm("Restaurer cette sauvegarde ?\n"+n+" ticket(s) vont REMPLACER les données actuelles.")) return;
-          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","epargne","ocrKey","offlineReady"].forEach(function(k){
+          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","epargne","bourse","ocrKey","offlineReady"].forEach(function(k){
             if(k in data) store.write(k, data[k]);
           });
           window.alert("Sauvegarde restaurée ✓");
