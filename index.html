@@ -314,7 +314,7 @@
       entries: store.read("entries", []),
       view: "list", draft: null,
       offline: store.read("offlineReady", false) ? "ready" : "idle",
-      busy: false, prog: 0, scanMsg: "", note: "", graphSel: null, graphPeriod: "cur", graphDim: "fam", graphType: "donut", graphHide: {}, histCat: "", histMonth: null, artSel: null, prixActuel: "", solPrice: null, solLoading: false, solError: "", solTime: ""
+      busy: false, prog: 0, scanMsg: "", note: "", graphSel: null, graphView: "depenses", graphPeriod: "cur", graphDim: "fam", graphType: "donut", graphHide: {}, histCat: "", histMonth: null, artSel: null, prixActuel: "", solPrice: null, solLoading: false, solError: "", solTime: ""
     };
     function persist(){ store.write("entries", state.entries); }
 
@@ -961,72 +961,138 @@
              '<text x="90" y="86" text-anchor="middle" font-size="10" fill="#6f6a5e" font-family="monospace" letter-spacing="1">TOTAL</text>'+
              '<text x="90" y="106" text-anchor="middle" font-size="17" font-weight="700" fill="#b23a2e" font-family="monospace">'+fmt(total)+'</text></svg>';
     }
-    function renderGraph(){
-      var p=state.graphPeriod||"cur", dim=state.graphDim||"fam", typ=state.graphType||"donut";
-      var perLabel = p==="all" ? "12 derniers mois" : (p.indexOf("m:")===0 ? new Date(p.slice(2)+"-01T00:00:00").toLocaleDateString("fr-FR",{month:"short",year:"2-digit"}) : new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"}));
-      var entries=gPeriodEntries();
-      var map=gAggregate(entries, dim);
-      var all=Object.keys(map).map(function(k){ return {name:k, value:map[k]}; }).sort(function(a,b){ return b.value-a.value; });
-      if(dim==="prod" && all.length>12){ var top=all.slice(0,12); var rest=all.slice(12).reduce(function(s2,x){ return s2+x.value; },0); if(rest>0) top.push({name:"Autres", value:rest}); all=top; }
-      all.forEach(function(it,i){ it.color=PALETTE[i%PALETTE.length]; });
-      var hide=state.graphHide||{};
-      var vis=all.filter(function(it){ return !hide[dim+"|"+it.name]; });
-      var visTotal=vis.reduce(function(s2,it){ return s2+it.value; },0);
-      var maxV=0; vis.forEach(function(it){ if(it.value>maxV) maxV=it.value; }); if(maxV<=0) maxV=1;
-
-      var h=header()+'<section class="paper torn">';
-      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Graphiques · '+esc(perLabel)+'</div><hr class="rule">';
-
-      h+='<label class="f">Période</label><select class="f" id="gper">';
-      h+='<option value="cur"'+(p==="cur"?" selected":"")+'>Ce mois-ci</option>';
-      h+='<option value="all"'+(p==="all"?" selected":"")+'>12 derniers mois (cumul)</option>';
-      h+='<optgroup label="Un mois précis">';
-      lastMonths(12).slice().reverse().forEach(function(m){
-        var v="m:"+m.key, lb=m.date.toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
-        h+='<option value="'+v+'"'+(p===v?" selected":"")+'>'+esc(lb)+'</option>';
+    function gMonthShort(key){ return new Date(key+"-01T00:00:00").toLocaleDateString("fr-FR",{month:"short",year:"2-digit"}); }
+    function gBlock(items){
+      var tot=items.reduce(function(s2,it){ return s2+(Number(it.value)||0); },0);
+      if(tot<=0) return '<div class="center muted" style="font-size:12px;margin-top:12px">Aucune donnée.</div>';
+      items=items.filter(function(it){ return (Number(it.value)||0)>0; }).sort(function(a,b){ return b.value-a.value; });
+      items.forEach(function(it,i){ it.color=PALETTE[i%PALETTE.length]; });
+      var out=gDonut(items, tot);
+      out+='<div style="margin-top:10px">';
+      items.forEach(function(it){
+        var share=Math.round(it.value/tot*100)+"%";
+        out+='<div class="lgd" style="cursor:default"><span class="sw" style="background:'+it.color+'"></span><span class="ln">'+esc(it.name)+'</span><span class="lv">'+fmt(it.value)+'</span><span class="lp">'+share+'</span></div>';
       });
-      h+='</optgroup></select>';
-
-      h+='<label class="f">Répartition par</label><select class="f" id="gdim">';
-      h+='<option value="fam"'+(dim==="fam"?" selected":"")+'>Grande catégorie (produits)</option>';
-      h+='<option value="prod"'+(dim==="prod"?" selected":"")+'>Produit</option>';
-      h+='<option value="cat"'+(dim==="cat"?" selected":"")+'>Catégorie ticket</option>';
+      out+='</div>';
+      return out;
+    }
+    function gMonthBars(rows, colorFn){
+      var maxV=0; rows.forEach(function(r){ if(Math.abs(r.value)>maxV) maxV=Math.abs(r.value); }); if(maxV<=0) maxV=1;
+      var out="";
+      rows.forEach(function(r){
+        var pct=Math.max(r.value!==0?2:0, Math.round(Math.abs(r.value)/maxV*100));
+        var col=colorFn?colorFn(r.value):"#b23a2e";
+        out+='<div class="bar-row"><div class="bar-top"><span class="bl">'+esc(r.label)+'</span><span class="bv" style="color:'+col+'">'+esc(r.sub||fmt(r.value))+'</span></div><div class="bar-track"><i style="width:'+pct+'%;background:'+col+'"></i></div></div>';
+      });
+      return out;
+    }
+    function computeCompteMonth(person, month){
+      var me=state.entries.filter(function(e){ return monthKey(e.date)===month; });
+      var paid=0; me.forEach(function(e){ if((e.payePar||"").trim()===person) paid+=Number(e.montant)||0; });
+      var fr=fraisCommuns.filter(function(f){ return f.recurrent || f.month===month; });
+      var fp=0, fc=0; fr.forEach(function(f){ var who=(f.personne||"").trim()||"Commun"; var m=Number(f.montant)||0; if(who===person) fp+=m; else if(who==="Commun") fc+=m; });
+      var po=0; me.forEach(function(e){ if((e.payePar||"").trim()===person) return; (e.articles||[]).forEach(function(a){ if(a.commun) po+=Number(a.prix)||0; }); });
+      var dep=paid+fp+fc/2+po/2, arg=getArgent(person,month);
+      return { argent:arg, depenses:dep, reste:arg-dep };
+    }
+    function renderGraph(){
+      var view=state.graphView||"depenses";
+      var h=header()+'<section class="paper torn">';
+      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Graphiques</div><hr class="rule">';
+      h+='<label class="f">Que visualiser</label><select class="f" id="gview">';
+      [["depenses","Dépenses"],["frais","Frais fixes (par personne)"],["epargne","Épargne"],["bourse","Bourse"],["compte","Compte Benoit"]].forEach(function(o){
+        h+='<option value="'+o[0]+'"'+(view===o[0]?" selected":"")+'>'+o[1]+'</option>';
+      });
       h+='</select>';
 
-      h+='<div class="seg" id="gtype"><button type="button" class="'+(typ==="donut"?"on":"")+'" data-t="donut">Camembert</button><button type="button" class="'+(typ==="bars"?"on":"")+'" data-t="bars">Barres</button></div>';
-
-      if(all.length===0){
-        h+='<div class="center muted" style="font-size:12px;margin-top:16px">Aucune donnée pour cette période.</div>';
-      } else {
-        if(visTotal<=0){
-          h+='<div class="center muted" style="font-size:12px;margin-top:16px">Tout est masqué — touche une entrée ci-dessous pour l\'afficher.</div>';
-        } else if(typ==="donut"){
-          h+=gDonut(vis, visTotal);
-        } else {
+      if(view==="depenses"){
+        var p=state.graphPeriod||"cur", dim=state.graphDim||"fam", typ=state.graphType||"donut";
+        var perLabel = p==="all" ? "12 derniers mois" : (p.indexOf("m:")===0 ? new Date(p.slice(2)+"-01T00:00:00").toLocaleDateString("fr-FR",{month:"short",year:"2-digit"}) : new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"}));
+        var map=gAggregate(gPeriodEntries(), dim);
+        var all=Object.keys(map).map(function(k){ return {name:k, value:map[k]}; }).sort(function(a,b){ return b.value-a.value; });
+        if(dim==="prod" && all.length>12){ var top=all.slice(0,12); var rest=all.slice(12).reduce(function(s2,x){ return s2+x.value; },0); if(rest>0) top.push({name:"Autres", value:rest}); all=top; }
+        all.forEach(function(it,i){ it.color=PALETTE[i%PALETTE.length]; });
+        var hide=state.graphHide||{};
+        var vis=all.filter(function(it){ return !hide[dim+"|"+it.name]; });
+        var visTotal=vis.reduce(function(s2,it){ return s2+it.value; },0);
+        var maxV=0; vis.forEach(function(it){ if(it.value>maxV) maxV=it.value; }); if(maxV<=0) maxV=1;
+        h+='<label class="f">Période</label><select class="f" id="gper">';
+        h+='<option value="cur"'+(p==="cur"?" selected":"")+'>Ce mois-ci</option>';
+        h+='<option value="all"'+(p==="all"?" selected":"")+'>12 derniers mois (cumul)</option>';
+        h+='<optgroup label="Un mois précis">';
+        lastMonths(12).slice().reverse().forEach(function(m){ var v="m:"+m.key, lb=m.date.toLocaleDateString("fr-FR",{month:"long",year:"numeric"}); h+='<option value="'+v+'"'+(p===v?" selected":"")+'>'+esc(lb)+'</option>'; });
+        h+='</optgroup></select>';
+        h+='<label class="f">Répartition par</label><select class="f" id="gdim">';
+        h+='<option value="fam"'+(dim==="fam"?" selected":"")+'>Grande catégorie (produits)</option>';
+        h+='<option value="prod"'+(dim==="prod"?" selected":"")+'>Produit</option>';
+        h+='<option value="cat"'+(dim==="cat"?" selected":"")+'>Catégorie ticket</option>';
+        h+='</select>';
+        h+='<div class="muted" style="font-size:10px;margin:6px 2px 0">'+esc(perLabel)+'</div>';
+        h+='<div class="seg" id="gtype"><button type="button" class="'+(typ==="donut"?"on":"")+'" data-t="donut">Camembert</button><button type="button" class="'+(typ==="bars"?"on":"")+'" data-t="bars">Barres</button></div>';
+        if(all.length===0){ h+='<div class="center muted" style="font-size:12px;margin-top:16px">Aucune donnée pour cette période.</div>'; }
+        else {
+          if(visTotal<=0){ h+='<div class="center muted" style="font-size:12px;margin-top:16px">Tout est masqué — touche une entrée ci-dessous pour l\'afficher.</div>'; }
+          else if(typ==="donut"){ h+=gDonut(vis, visTotal); }
+          else {
+            h+='<div style="margin-top:10px">';
+            vis.forEach(function(it){ var pct=Math.max(2, Math.round(it.value/maxV*100)); var share=visTotal>0?Math.round(it.value/visTotal*100):0; h+='<div class="bar-row"><div class="bar-top"><span class="bl">'+esc(it.name)+'</span><span class="bv">'+fmt(it.value)+' · '+share+'%</span></div><div class="bar-track"><i style="width:'+pct+'%;background:'+it.color+'"></i></div></div>'; });
+            h+='</div>';
+          }
           h+='<div style="margin-top:10px">';
-          vis.forEach(function(it){
-            var pct=Math.max(2, Math.round(it.value/maxV*100));
-            var share=visTotal>0?Math.round(it.value/visTotal*100):0;
-            h+='<div class="bar-row"><div class="bar-top"><span class="bl">'+esc(it.name)+'</span><span class="bv">'+fmt(it.value)+' · '+share+'%</span></div><div class="bar-track"><i style="width:'+pct+'%;background:'+it.color+'"></i></div></div>';
-          });
+          all.forEach(function(it){ var hidden=!!hide[dim+"|"+it.name]; var share=(!hidden && visTotal>0)?(Math.round(it.value/visTotal*100)+"%"):"—"; h+='<button class="lgd'+(hidden?" off":"")+'" type="button" data-name="'+esc(it.name)+'"><span class="sw" style="background:'+it.color+'"></span><span class="ln">'+esc(it.name)+'</span><span class="lv">'+fmt(it.value)+'</span><span class="lp">'+share+'</span></button>'; });
           h+='</div>';
+          h+='<hr class="rule"><div class="leader total"><span class="lbl">Total affiché</span><span class="fill"></span><span class="val">'+fmt(visTotal)+'</span></div>';
         }
-        h+='<div style="margin-top:10px">';
-        all.forEach(function(it){
-          var hidden=!!hide[dim+"|"+it.name];
-          var share=(!hidden && visTotal>0)?(Math.round(it.value/visTotal*100)+"%"):"—";
-          h+='<button class="lgd'+(hidden?" off":"")+'" type="button" data-name="'+esc(it.name)+'"><span class="sw" style="background:'+it.color+'"></span><span class="ln">'+esc(it.name)+'</span><span class="lv">'+fmt(it.value)+'</span><span class="lp">'+share+'</span></button>';
-        });
-        h+='</div>';
-        h+='<hr class="rule"><div class="leader total"><span class="lbl">Total affiché</span><span class="fill"></span><span class="val">'+fmt(visTotal)+'</span></div>';
       }
+      else if(view==="frais"){
+        var month=monthKey(todayISO());
+        var fr=fraisCommuns.filter(function(f){ return f.recurrent || f.month===month; });
+        var byp={}; fr.forEach(function(f){ var who=(f.personne||"").trim()||"Commun"; byp[who]=(byp[who]||0)+(Number(f.montant)||0); });
+        h+='<div class="muted" style="font-size:10px;margin:8px 2px 0">Frais fixes du mois, par personne</div>';
+        h+=gBlock(Object.keys(byp).map(function(k){ return {name:k, value:byp[k]}; }));
+      }
+      else if(view==="epargne"){
+        var epAllM={}; epargne.forEach(function(c){ Object.keys(c.vals||{}).forEach(function(m){ epAllM[m]=true; }); });
+        var epMs=Object.keys(epAllM).sort();
+        function epTotAt(month){ var t=0; epargne.forEach(function(c){ var ms=Object.keys(c.vals||{}).filter(function(m){ return m<=month; }).sort(); if(ms.length) t+=Number(c.vals[ms[ms.length-1]])||0; }); return t; }
+        h+='<div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:10px 2px 4px">Évolution du total</div>';
+        if(epMs.length) h+=gMonthBars(epMs.map(function(m){ return {label:gMonthShort(m), value:epTotAt(m)}; }), function(){ return "#5f7a52"; });
+        else h+='<div class="center muted" style="font-size:12px">Aucune donnée épargne.</div>';
+        h+='<div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:16px 2px 4px">Par compte</div>';
+        h+=gBlock(epargne.map(function(c){ return {name:c.nom, value:epCurrent(c)}; }));
+      }
+      else if(view==="bourse"){
+        var bAllM={}; bourse.forEach(function(c){ Object.keys(c.vals||{}).forEach(function(m){ bAllM[m]=true; }); });
+        var bMs=Object.keys(bAllM).sort();
+        function bValAt(month){ var t=0; bourse.forEach(function(c){ var ms=Object.keys(c.vals||{}).filter(function(m){ return m<=month; }).sort(); if(ms.length) t+=Number(c.vals[ms[ms.length-1]].valeur)||0; }); return t; }
+        var totCap=0, totVal=0; bourse.forEach(function(c){ var l=bLast(c)||{}; totCap+=Number(l.capital)||0; totVal+=Number(l.valeur)||0; });
+        h+='<div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:10px 2px 4px">Évolution (valeur)</div>';
+        if(bMs.length) h+=gMonthBars(bMs.map(function(m){ return {label:gMonthShort(m), value:bValAt(m)}; }), function(){ return "#4f6d6f"; });
+        else h+='<div class="center muted" style="font-size:12px">Aucune donnée bourse.</div>';
+        h+='<hr class="rule"><div class="leader item"><span class="lbl">Valeur totale</span><span class="fill"></span><span class="val">'+fmt(totVal)+'</span></div>';
+        h+='<div class="leader item"><span class="lbl">Capital investi</span><span class="fill"></span><span class="val">'+fmt(totCap)+'</span></div>';
+        if(totCap>0){ var pv=totVal-totCap, pct=(pv/totCap*100); h+='<div class="leader"><span class="lbl" style="font-weight:700;text-transform:uppercase;font-size:12px">Plus-value</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+(pv>=0?"#5f7a52":"#b23a2e")+'">'+(pv>=0?"+":"")+pv.toFixed(2).replace(".",",")+'€ ('+(pct>=0?"+":"")+pct.toFixed(1).replace(".",",")+'%)</span></div>'; }
+        h+='<div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:16px 2px 4px">Valeur par compte</div>';
+        h+=gBlock(bourse.map(function(c){ var l=bLast(c)||{}; return {name:c.nom, value:Number(l.valeur)||0}; }));
+      }
+      else if(view==="compte"){
+        var rows=lastMonths(12).map(function(mo){ var r=computeCompteMonth("Benoit", mo.key); return {label:mo.date.toLocaleDateString("fr-FR",{month:"short",year:"2-digit"}), value:r.reste, sub:fmt(r.reste)}; });
+        h+='<div class="muted" style="font-size:10px;margin:8px 2px 0">Reste par mois (argent − dépenses) · Benoit</div>';
+        h+=gMonthBars(rows, function(v){ return v>=0?"#5f7a52":"#b23a2e"; });
+        var cur=computeCompteMonth("Benoit", monthKey(todayISO()));
+        h+='<hr class="rule"><div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:0 2px 4px">Ce mois-ci</div>';
+        h+='<div class="leader item"><span class="lbl">Argent du mois</span><span class="fill"></span><span class="val">'+fmt(cur.argent)+'</span></div>';
+        h+='<div class="leader item"><span class="lbl">Dépenses</span><span class="fill"></span><span class="val">'+fmt(cur.depenses)+'</span></div>';
+        h+='<div class="leader total"><span class="lbl">Reste</span><span class="fill"></span><span class="val" style="color:'+(cur.reste<0?"#b23a2e":"#5f7a52")+'">'+fmt(cur.reste)+'</span></div>';
+      }
+
       h+='</section>';
       app.innerHTML=h;
-
+      var gv=document.getElementById("gview"); if(gv) gv.onchange=function(){ state.graphView=gv.value; render(); };
       var gp=document.getElementById("gper"); if(gp) gp.onchange=function(){ state.graphPeriod=gp.value; render(); };
       var gd=document.getElementById("gdim"); if(gd) gd.onchange=function(){ state.graphDim=gd.value; render(); };
       [].forEach.call(document.querySelectorAll("#gtype button"), function(b){ b.onclick=function(){ state.graphType=b.getAttribute("data-t"); render(); }; });
-      [].forEach.call(document.querySelectorAll(".lgd"), function(b){ b.onclick=function(){ var nm=b.getAttribute("data-name"); var key=dim+"|"+nm; if(!state.graphHide) state.graphHide={}; if(state.graphHide[key]) delete state.graphHide[key]; else state.graphHide[key]=true; render(); }; });
+      [].forEach.call(document.querySelectorAll(".lgd[data-name]"), function(b){ b.onclick=function(){ var nm=b.getAttribute("data-name"); var key=(state.graphDim||"fam")+"|"+nm; if(!state.graphHide) state.graphHide={}; if(state.graphHide[key]) delete state.graphHide[key]; else state.graphHide[key]=true; render(); }; });
       setNav("graph", true);
     }
 
@@ -1334,104 +1400,4 @@
       return fetch("https://api.ocr.space/parse/image",{ method:"POST", body:fd })
         .then(function(r){ return r.json(); })
         .then(function(j){
-          if(j.IsErroredOnProcessing) throw new Error((j.ErrorMessage&&j.ErrorMessage[0])||"erreur OCR cloud");
-          return (j.ParsedResults&&j.ParsedResults[0]&&j.ParsedResults[0].ParsedText)||"";
-        });
-    }
-
-    filein.onchange=function(ev){
-      var files=ev.target.files ? [].slice.call(ev.target.files) : []; ev.target.value="";
-      if(!files.length) return;
-      state.busy=true; state.prog=0; state.note="";
-      state.scanMsg = files.length>1 ? ("Lecture 1/"+files.length+"…") : "Lecture du ticket en cours…";
-      state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[],payePar:""};
-      state.view="form"; render();
-      function tessText(src){ return Tesseract.recognize(src, "fra+eng", { logger:function(m){
-          if(m.status==="recognizing text"){ state.prog=Math.round(m.progress*100); var bar=document.getElementById("bar"); if(bar) bar.style.width=state.prog+"%"; }
-        }}).then(function(r){ return (r.data&&r.data.text)||""; }); }
-      var diag=[];
-      function localOne(src){ return (typeof Tesseract==="undefined") ? Promise.resolve("") : tessText(src).then(function(t){ diag.push("local:"+(t||"").length); return t; }); }
-      function ocrOne(file){
-        return preprocess(file).then(function(src){
-          if(!(src && src.toBlob)) diag.push("preproc-KO");
-          if(store.read("ocrKey","")){
-            return canvasToBlob(src).then(function(blob){
-              var ko = (blob && blob.size) ? Math.round(blob.size/1024) : "?";
-              return ocrCloud(blob).then(function(t){ diag.push("cloud "+ko+"Ko:"+(t||"").length+"car"); return t; });
-            }).catch(function(e){ diag.push("cloud KO("+((e&&e.message)||e)+")"); return localOne(src); });
-          }
-          return localOne(src);
-        });
-      }
-      var texts=[], idx=0;
-      function step(){
-        if(idx>=files.length){
-          var p=parseTicket(texts.join("\n"));
-          state.draft.montant = (p.total==="")?"":String(p.total).replace(".",",");
-          state.draft.date = p.date || state.draft.date;
-          state.draft.marchand = p.marchand || state.draft.marchand;
-          state.draft.categorie = p.categorie;
-          state.draft.articles = (p.lignes||[]).map(function(a){ return {label:a.label, prix:a.prix, produit:lookupAppris(a.label)}; });
-          var hasData = state.draft.montant || (state.draft.articles && state.draft.articles.length);
-          state.note = hasData ? "" : ("Lecture vide ["+diag.join(" · ")+"]. Réessaie avec une photo plus nette, ou recadrée sur le ticket.");
-          state.busy=false; state.scanMsg=""; render(); return;
-        }
-        if(files.length>1){ var sm=document.getElementById("scanmsg"); if(sm) sm.textContent="Lecture "+(idx+1)+"/"+files.length+"…"; state.prog=0; var bar=document.getElementById("bar"); if(bar) bar.style.width="0%"; }
-        ocrOne(files[idx]).then(function(t){ texts.push(t||""); idx++; step(); })
-          .catch(function(e){ console.warn("OCR indisponible:", e); texts.push(""); idx++; step(); });
-      }
-      step();
-    };
-
-    function backupData(){
-      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","epargne","bourse","ocrKey","offlineReady"];
-      var dump={ _app:"tickets", _version:1, _date:new Date().toISOString(), data:{} };
-      keys.forEach(function(k){ var v=store.read(k, null); if(v!==null) dump.data[k]=v; });
-      try{
-        var blob=new Blob([JSON.stringify(dump)], {type:"application/json"});
-        var url=URL.createObjectURL(blob);
-        var a=document.createElement("a");
-        a.href=url; a.download="tickets-sauvegarde-"+todayISO()+".json";
-        document.body.appendChild(a); a.click();
-        setTimeout(function(){ try{ document.body.removeChild(a); }catch(e){} URL.revokeObjectURL(url); }, 1500);
-      }catch(e){ window.alert("Sauvegarde impossible : "+((e&&e.message)||e)); }
-    }
-    function restoreData(file){
-      var r=new FileReader();
-      r.onload=function(){
-        try{
-          var obj=JSON.parse(r.result);
-          var data=(obj && obj.data && typeof obj.data==="object") ? obj.data : obj;
-          if(!data || typeof data!=="object") throw new Error("format non reconnu");
-          var n=(data.entries && data.entries.length) ? data.entries.length : 0;
-          if(!window.confirm("Restaurer cette sauvegarde ?\n"+n+" ticket(s) vont REMPLACER les données actuelles.")) return;
-          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","epargne","bourse","ocrKey","offlineReady"].forEach(function(k){
-            if(k in data) store.write(k, data[k]);
-          });
-          window.alert("Sauvegarde restaurée ✓");
-          window.location.reload();
-        }catch(e){ window.alert("Fichier invalide : "+((e&&e.message)||e)); }
-      };
-      r.onerror=function(){ window.alert("Lecture du fichier impossible."); };
-      r.readAsText(file);
-    }
-    restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if(ev.target) ev.target.value=""; if(f) restoreData(f); };
-
-    function prepareOffline(){
-      if(typeof Tesseract==="undefined"){ state.offline="error"; render(); return; }
-      state.offline="loading"; render();
-      Tesseract.createWorker("fra+eng")
-        .then(function(w){ return w.terminate(); })
-        .then(function(){ store.write("offlineReady", true); state.offline="ready"; render(); })
-        .catch(function(err){ console.warn(err); state.offline="error"; render(); });
-    }
-
-    render();
-
-    if("serviceWorker" in navigator){
-      window.addEventListener("load", function(){ navigator.serviceWorker.register("./sw.js").catch(function(){}); });
-    }
-  })();
-  </script>
-</body>
-</html>
+          if
