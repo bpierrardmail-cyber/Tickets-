@@ -177,6 +177,40 @@
     function persistArgent(){ store.write("argentMois", argentMois); }
     function getArgent(p,m){ return (argentMois[p] && argentMois[p][m]) || 0; }
     function setArgent(p,m,v){ if(!argentMois[p]) argentMois[p]={}; argentMois[p][m]=v; persistArgent(); }
+    var epargne = store.read("epargne", []);
+    (function(){ var m=monthKey(todayISO()), ch=false;
+      epargne.forEach(function(c){ if(!c.vals){ c.vals={}; if(typeof c.montant!=="undefined") c.vals[m]=Number(c.montant)||0; delete c.montant; ch=true; } });
+      if(ch) store.write("epargne", epargne);
+    })();
+    function persistEpargne(){ store.write("epargne", epargne); }
+    function epMonthsOf(c){ return Object.keys(c.vals||{}).sort(); }
+    function epCurrent(c){ var ms=epMonthsOf(c); return ms.length?(Number(c.vals[ms[ms.length-1]])||0):0; }
+    function epPrev(c){ var ms=epMonthsOf(c); return ms.length>1?(Number(c.vals[ms[ms.length-2]])||0):null; }
+    function epFirst(c){ var ms=epMonthsOf(c); return ms.length?(Number(c.vals[ms[0]])||0):null; }
+    function pctStr(from,to){ if(from===null||from===0) return null; var p=(to-from)/Math.abs(from)*100; return (p>=0?"+":"-")+Math.abs(p).toFixed(1).replace(".",",")+" %"; }
+    function pctColor(from,to){ if(from===null) return "var(--ink-soft)"; return (to-from)>=0?"#5f7a52":"#b23a2e"; }
+    function addEpargne(){
+      var nom=(window.prompt("Nom du compte épargne (ex. Livret A) :")||"").trim();
+      if(!nom) return;
+      var mv=window.prompt("Montant actuel (€) :","");
+      if(mv===null) return;
+      var m=monthKey(todayISO()), v={}; v[m]=num(mv);
+      epargne.push({ id:Date.now(), nom:nom, vals:v });
+      persistEpargne(); render();
+    }
+    function editEpargne(id){
+      var c=epargne.filter(function(x){ return String(x.id)===String(id); })[0]; if(!c) return;
+      var nom=(window.prompt("Nom du compte :", c.nom)||"").trim(); if(nom) c.nom=nom;
+      var cur=epCurrent(c);
+      var mv=window.prompt("Montant ce mois-ci (€) :", cur?String(cur).replace(".",","):"");
+      if(mv!==null){ if(!c.vals) c.vals={}; c.vals[monthKey(todayISO())]=num(mv); }
+      persistEpargne(); render();
+    }
+    function delEpargne(id){
+      if(!window.confirm("Supprimer ce compte épargne ?")) return;
+      epargne=epargne.filter(function(x){ return String(x.id)!==String(id); });
+      persistEpargne(); render();
+    }
 
     var APPRIS = store.read("appris", {});
     function persistAppris(){ store.write("appris", APPRIS); }
@@ -735,10 +769,39 @@
 
       h+='<hr class="rule"><div class="leader"><span class="lbl" style="font-weight:700;text-transform:uppercase;letter-spacing:.05em">Total dépenses</span><span class="fill"></span><span class="val" style="font-weight:700">'+fmt(depenses)+'</span></div>';
       h+='<div class="leader total"><span class="lbl">Reste</span><span class="fill"></span><span class="val" style="color:'+(reste<0?"#b23a2e":"#5f7a52")+'">'+fmt(reste)+'</span></div>';
+
+      h+='<hr class="rule"><div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:0 2px 4px">Épargne</div>';
+      epargne.forEach(function(c){
+        var cur=epCurrent(c), prev=epPrev(c), first=epFirst(c);
+        h+='<div class="prow"><span class="pname">'+esc(c.nom)+'</span>'+
+           '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px">'+fmt(cur)+'</span>'+
+           '<button class="btn ghost epedit" type="button" data-id="'+esc(c.id)+'">✎</button>'+
+           '<button class="btn ghost epdel" type="button" data-id="'+esc(c.id)+'">✕</button></div>';
+        var parts=[];
+        var pm=pctStr(prev,cur); if(pm) parts.push('<span style="color:'+pctColor(prev,cur)+'">préc. '+fmt(prev)+' ('+pm+')</span>');
+        var pc=pctStr(first,cur); if(pc && epMonthsOf(c).length>1) parts.push('<span style="color:'+pctColor(first,cur)+'">création '+pc+'</span>');
+        if(parts.length) h+='<div class="muted" style="font-size:10px;margin:0 2px 7px">'+parts.join(" · ")+'</div>';
+      });
+      if(epargne.length===0) h+='<div class="muted" style="font-size:11px;margin:2px 2px 4px">Aucun compte épargne.</div>';
+      h+='<button class="btn ghost" id="addep" type="button" style="margin-top:10px">+ Ajouter un compte épargne</button>';
+      var epAllM={}; epargne.forEach(function(c){ Object.keys(c.vals||{}).forEach(function(m){ epAllM[m]=true; }); });
+      var epMs=Object.keys(epAllM).sort();
+      function epTotalAt(month){ var t=0; epargne.forEach(function(c){ var ms=Object.keys(c.vals||{}).filter(function(mm){ return mm<=month; }).sort(); if(ms.length) t+=Number(c.vals[ms[ms.length-1]])||0; }); return t; }
+      var totCur=epMs.length?epTotalAt(epMs[epMs.length-1]):0;
+      var totPrev=epMs.length>1?epTotalAt(epMs[epMs.length-2]):null;
+      var totFirst=epMs.length?epTotalAt(epMs[0]):null;
+      h+='<div class="leader total" style="margin-top:6px"><span class="lbl">Total épargne</span><span class="fill"></span><span class="val" style="color:#5f7a52">'+fmt(totCur)+'</span></div>';
+      var tparts=[];
+      var tpm=pctStr(totPrev,totCur); if(tpm) tparts.push('<span style="color:'+pctColor(totPrev,totCur)+'">préc. '+fmt(totPrev)+' ('+tpm+')</span>');
+      var tpc=pctStr(totFirst,totCur); if(tpc && epMs.length>1) tparts.push('<span style="color:'+pctColor(totFirst,totCur)+'">création '+tpc+'</span>');
+      if(tparts.length) h+='<div class="muted" style="font-size:10px;margin:3px 2px 0">'+tparts.join(" · ")+'</div>';
       h+='</section>';
       app.innerHTML=h;
       var ar=document.getElementById("argentrow"); if(ar) ar.onclick=function(){ var cur=getArgent(person,month); var v=window.prompt("Argent du mois de "+person+" ("+monthLabel+") :", cur?String(cur).replace(".",","):""); if(v===null) return; setArgent(person,month,num(v)); render(); };
       [].forEach.call(document.querySelectorAll(".entry"), function(node){ node.onclick=function(){ editEntry(node.getAttribute("data-id")); }; });
+      var ae=document.getElementById("addep"); if(ae) ae.onclick=addEpargne;
+      [].forEach.call(document.querySelectorAll(".epedit"), function(b){ b.onclick=function(){ editEpargne(b.getAttribute("data-id")); }; });
+      [].forEach.call(document.querySelectorAll(".epdel"), function(b){ b.onclick=function(){ delEpargne(b.getAttribute("data-id")); }; });
       setNav("compte", true);
     }
 
@@ -1191,7 +1254,7 @@
     };
 
     function backupData(){
-      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","ocrKey","offlineReady"];
+      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","epargne","ocrKey","offlineReady"];
       var dump={ _app:"tickets", _version:1, _date:new Date().toISOString(), data:{} };
       keys.forEach(function(k){ var v=store.read(k, null); if(v!==null) dump.data[k]=v; });
       try{
@@ -1212,7 +1275,7 @@
           if(!data || typeof data!=="object") throw new Error("format non reconnu");
           var n=(data.entries && data.entries.length) ? data.entries.length : 0;
           if(!window.confirm("Restaurer cette sauvegarde ?\n"+n+" ticket(s) vont REMPLACER les données actuelles.")) return;
-          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","ocrKey","offlineReady"].forEach(function(k){
+          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","epargne","ocrKey","offlineReady"].forEach(function(k){
             if(k in data) store.write(k, data[k]);
           });
           window.alert("Sauvegarde restaurée ✓");
