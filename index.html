@@ -131,7 +131,7 @@
     .navscanrow button:active{ transform:translateY(1px); }
     .navtabs{ display:flex; }
     .navtabs .navi{ flex:1; background:none; border:none; color:var(--ink-soft); font-family:var(--mono);
-      font-size:10px; letter-spacing:.04em; text-transform:uppercase; padding:6px 1px 8px; position:relative; }
+      font-size:9px; letter-spacing:.01em; text-transform:uppercase; padding:6px 0 8px; position:relative; }
     .navtabs .navi.on{ color:var(--accent); font-weight:700; }
     .navtabs .navi.on::before{ content:""; position:absolute; top:0; left:22%; right:22%; height:2px; background:var(--accent); }
     @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
@@ -173,6 +173,10 @@
     function persistProd(){ store.write("produits", PRODUITS); }
     var fraisCommuns = store.read("fraisCommuns", []);
     function persistFrais(){ store.write("fraisCommuns", fraisCommuns); }
+    var argentMois = store.read("argentMois", {});
+    function persistArgent(){ store.write("argentMois", argentMois); }
+    function getArgent(p,m){ return (argentMois[p] && argentMois[p][m]) || 0; }
+    function setArgent(p,m,v){ if(!argentMois[p]) argentMois[p]={}; argentMois[p][m]=v; persistArgent(); }
 
     var APPRIS = store.read("appris", {});
     function persistAppris(){ store.write("appris", APPRIS); }
@@ -255,6 +259,7 @@
         '<button class="navi" type="button" data-view="list">Accueil</button>'+
         '<button class="navi" type="button" data-view="articles">Articles</button>'+
         '<button class="navi" type="button" data-view="communes">Commun</button>'+
+        '<button class="navi" type="button" data-view="compte">Compte</button>'+
         '<button class="navi" type="button" data-view="graph">Graphes</button>'+
         '<button class="navi" type="button" data-view="history">Histo.</button>'+
       '</div>';
@@ -286,6 +291,7 @@
       if(state.view==="month") return renderMonth();
       if(state.view==="artDetail") return renderArtDetail();
       if(state.view==="communes") return renderCommunes();
+      if(state.view==="compte") return renderCompte();
       return renderList();
     }
 
@@ -681,6 +687,59 @@
       [].forEach.call(document.querySelectorAll(".fxdel"), function(b){ b.onclick=function(){ delFraisCommun(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".entry"), function(node){ node.onclick=function(){ editEntry(node.getAttribute("data-id")); }; });
       setNav("communes", true);
+    }
+
+    function renderCompte(){
+      var person="Benoit";
+      var month=monthKey(todayISO());
+      var monthLabel=new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
+      var argent=getArgent(person,month);
+      var monthEntries=state.entries.filter(function(e){ return monthKey(e.date)===month; });
+
+      var paid=[], paidTotal=0;
+      monthEntries.forEach(function(e){ if((e.payePar||"").trim()===person){ paid.push(e); paidTotal+=Number(e.montant)||0; } });
+      paid.sort(function(a,b){ return String(b.date||"").localeCompare(String(a.date||"")); });
+
+      var fraisThis=fraisCommuns.filter(function(f){ return f.recurrent || f.month===month; });
+      var fraisPerso=0, fraisCommun=0;
+      fraisThis.forEach(function(f){ var who=(f.personne||"").trim()||"Commun"; var m=Number(f.montant)||0; if(who===person) fraisPerso+=m; else if(who==="Commun") fraisCommun+=m; });
+      var fraisTotal=fraisPerso + fraisCommun/2;
+
+      var prodOwed=0;
+      monthEntries.forEach(function(e){ if((e.payePar||"").trim()===person) return; (e.articles||[]).forEach(function(a){ if(a.commun) prodOwed+=Number(a.prix)||0; }); });
+      var prodPart=prodOwed/2;
+
+      var depenses=paidTotal + fraisTotal + prodPart;
+      var reste=argent - depenses;
+
+      var h=header()+'<section class="paper torn">';
+      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Compte · '+esc(person)+' · '+esc(monthLabel)+'</div><hr class="rule">';
+      h+='<div class="leader" id="argentrow" style="cursor:pointer"><span class="lbl" style="font-weight:700;text-transform:uppercase;letter-spacing:.05em">Argent du mois ✎</span><span class="fill"></span><span class="val" style="font-weight:700;font-size:18px">'+fmt(argent)+'</span></div>';
+
+      h+='<hr class="rule"><div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:0 2px 4px">Dépenses</div>';
+      h+='<div class="leader fam"><span class="lbl">Tickets payés</span><span class="fill"></span><span class="val">'+fmt(paidTotal)+'</span></div>';
+      if(paid.length){
+        paid.forEach(function(e){
+          h+='<div class="entry" data-id="'+esc(e.id)+'"><div class="row1"><span class="name">'+esc(e.marchand)+'</span><span class="amt">'+fmt(e.montant)+'</span></div><div class="row2"><span class="cat">'+esc(e.categorie)+'</span><span>'+esc((e.date||"").split("-").reverse().join("/"))+'</span></div></div>';
+        });
+      } else {
+        h+='<div class="muted" style="font-size:11px;margin:2px 2px 4px">Aucun ticket « payé par Benoit » ce mois-ci.</div>';
+      }
+
+      h+='<div class="leader fam" style="margin-top:12px"><span class="lbl">Frais fixes</span><span class="fill"></span><span class="val">'+fmt(fraisTotal)+'</span></div>';
+      h+='<div class="leader item"><span class="lbl">Ses frais</span><span class="fill"></span><span class="val">'+fmt(fraisPerso)+'</span></div>';
+      h+='<div class="leader item"><span class="lbl">½ frais communs</span><span class="fill"></span><span class="val">'+fmt(fraisCommun/2)+'</span></div>';
+
+      h+='<div class="leader fam" style="margin-top:12px"><span class="lbl">Produits communs (sa part)</span><span class="fill"></span><span class="val">'+fmt(prodPart)+'</span></div>';
+      h+='<div class="muted" style="font-size:10px;margin:0 2px 4px">½ des produits communs sur les tickets non payés par Benoit</div>';
+
+      h+='<hr class="rule"><div class="leader"><span class="lbl" style="font-weight:700;text-transform:uppercase;letter-spacing:.05em">Total dépenses</span><span class="fill"></span><span class="val" style="font-weight:700">'+fmt(depenses)+'</span></div>';
+      h+='<div class="leader total"><span class="lbl">Reste</span><span class="fill"></span><span class="val" style="color:'+(reste<0?"#b23a2e":"#5f7a52")+'">'+fmt(reste)+'</span></div>';
+      h+='</section>';
+      app.innerHTML=h;
+      var ar=document.getElementById("argentrow"); if(ar) ar.onclick=function(){ var cur=getArgent(person,month); var v=window.prompt("Argent du mois de "+person+" ("+monthLabel+") :", cur?String(cur).replace(".",","):""); if(v===null) return; setArgent(person,month,num(v)); render(); };
+      [].forEach.call(document.querySelectorAll(".entry"), function(node){ node.onclick=function(){ editEntry(node.getAttribute("data-id")); }; });
+      setNav("compte", true);
     }
 
     var PALETTE=["#b23a2e","#7d8b3f","#c9893f","#4f6d6f","#9c5a3c","#a8973f","#6b6f8c","#8a6d3b","#5f7a52","#a04a4a","#7a7a6a","#c2a35a","#866c9c"];
@@ -1132,7 +1191,7 @@
     };
 
     function backupData(){
-      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","ocrKey","offlineReady"];
+      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","ocrKey","offlineReady"];
       var dump={ _app:"tickets", _version:1, _date:new Date().toISOString(), data:{} };
       keys.forEach(function(k){ var v=store.read(k, null); if(v!==null) dump.data[k]=v; });
       try{
@@ -1153,7 +1212,7 @@
           if(!data || typeof data!=="object") throw new Error("format non reconnu");
           var n=(data.entries && data.entries.length) ? data.entries.length : 0;
           if(!window.confirm("Restaurer cette sauvegarde ?\n"+n+" ticket(s) vont REMPLACER les données actuelles.")) return;
-          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","ocrKey","offlineReady"].forEach(function(k){
+          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","ocrKey","offlineReady"].forEach(function(k){
             if(k in data) store.write(k, data[k]);
           });
           window.alert("Sauvegarde restaurée ✓");
