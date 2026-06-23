@@ -536,7 +536,9 @@
 
     function uniquePersons(){
       var set={}, arr=[];
-      fraisCommuns.forEach(function(f){ var w=(f.personne||"").trim(); if(w && !set[w]){ set[w]=1; arr.push(w); } });
+      fraisCommuns.forEach(function(f){
+        [f.personne, f.payePar].forEach(function(w){ w=(w||"").trim(); if(w && w!=="Commun" && !set[w]){ set[w]=1; arr.push(w); } });
+      });
       arr.sort(); return arr;
     }
     function choosePerson(current){
@@ -550,6 +552,16 @@
       if(/^\d+$/.test(ans)){ var n=parseInt(ans,10); if(n>=1 && n<=ex.length) return ex[n-1]; }
       return ans;
     }
+    function choosePayer(current){
+      var ex=uniquePersons();
+      var hint = ex.length ? ("\nQui : "+ex.map(function(p,i){ return (i+1)+". "+p; }).join("   ")) : "";
+      var ans=window.prompt("Payé par qui ? (vide = peu importe)"+hint+"\n\nTape un nom ou le numéro", current||"");
+      if(ans===null) return current||"";
+      ans=ans.trim();
+      if(!ans) return "";
+      if(/^\d+$/.test(ans)){ var n=parseInt(ans,10); if(n>=1 && n<=ex.length) return ex[n-1]; }
+      return ans;
+    }
     function addFraisCommun(){
       var label=(window.prompt("Nom du frais (ex. Loyer, Internet) :")||"").trim();
       if(!label) return;
@@ -558,7 +570,9 @@
       var who=choosePerson(null);
       if(who===null) return;
       var rec=window.confirm("Récurrent chaque mois ?\n\nOK = chaque mois · Annuler = seulement ce mois-ci");
-      fraisCommuns.push({ id:Date.now(), label:label, montant:num(mv), personne:who, recurrent:rec, month: rec?null:monthKey(todayISO()) });
+      var f={ id:Date.now(), label:label, montant:num(mv), personne:who, recurrent:rec, month: rec?null:monthKey(todayISO()) };
+      if(who==="Commun") f.payePar=choosePayer("");
+      fraisCommuns.push(f);
       persistFrais(); render();
     }
     function editFraisCommun(id){
@@ -566,6 +580,8 @@
       var label=(window.prompt("Nom du frais :", f.label)||"").trim(); if(label) f.label=label;
       var mv=window.prompt("Montant (€) :", String(f.montant).replace(".",",")); if(mv!==null) f.montant=num(mv);
       var who=choosePerson(f.personne); if(who!==null) f.personne=who;
+      var isCommun=((f.personne||"").trim()===""||f.personne==="Commun");
+      if(isCommun) f.payePar=choosePayer(f.payePar||""); else f.payePar="";
       persistFrais(); render();
     }
     function delFraisCommun(id){
@@ -603,7 +619,8 @@
       function fraisRows(items){
         var s2="";
         items.forEach(function(f){
-          s2+='<div class="prow"><span class="pname">'+esc(f.label)+' <span class="muted" style="font-size:10px">'+(f.recurrent?"· chaque mois":"· ce mois")+'</span></span>'+
+          var tg=(f.recurrent?"· chaque mois":"· ce mois"); var pp=(f.payePar||"").trim(); if(pp) tg+=" · payé par "+esc(pp);
+          s2+='<div class="prow"><span class="pname">'+esc(f.label)+' <span class="muted" style="font-size:10px">'+tg+'</span></span>'+
              '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px">'+fmt(f.montant)+'</span>'+
              '<button class="btn ghost fxedit" type="button" data-id="'+esc(f.id)+'">✎</button>'+
              '<button class="btn ghost fxdel" type="button" data-id="'+esc(f.id)+'">✕</button></div>';
@@ -617,6 +634,13 @@
       h+='<div class="leader fam"><span class="lbl">Commun</span><span class="fill"></span><span class="val">'+fmt(communTotal)+'</span></div>';
       if(byPerson["Commun"]) h+=fraisRows(byPerson["Commun"].items);
       else h+='<div class="muted" style="font-size:11px;margin:4px 2px">Aucun frais commun. Touche « + Ajouter un frais fixe » et garde « Commun ».</div>';
+      var avance={}, avOrder=[];
+      (byPerson["Commun"]?byPerson["Commun"].items:[]).forEach(function(f){ var pp=(f.payePar||"").trim(); if(!pp) return; if(!(pp in avance)){ avance[pp]=0; avOrder.push(pp); } avance[pp]+=Number(f.montant)||0; });
+      avOrder.sort();
+      if(avOrder.length){
+        h+='<div class="muted" style="font-size:10px;letter-spacing:.04em;text-transform:uppercase;margin:6px 2px 2px">Avancé par chacun</div>';
+        avOrder.forEach(function(pp){ h+='<div class="leader item"><span class="lbl">'+esc(pp)+'</span><span class="fill"></span><span class="val">'+fmt(avance[pp])+'</span></div>'; });
+      }
 
       h+='<hr class="rule"><div class="leader fam"><span class="lbl">Produits communs (à deux)</span><span class="fill"></span><span class="val">'+fmt(prodTotal)+'</span></div>';
       if(rows.length===0){
