@@ -328,7 +328,7 @@
       var fr=fraisCommuns.filter(function(f){ return fraisActif(f, month); });
       var fp=0, fc=0; fr.forEach(function(f){ var who=(f.personne||"").trim()||"Commun"; var m=fraisMontant(f, month); if(who===person) fp+=m; else if(who==="Commun") fc+=m; });
       var po=0; me.forEach(function(e){ if((e.payePar||"").trim()===person) return; (e.articles||[]).forEach(function(a){ if(a.commun) po+=Number(a.prix)||0; }); });
-      return paid+fp+fc/2+po/2;
+      return paid+fp+fc;
     }
     function compteMonths(person, upto){
       var set={};
@@ -1256,13 +1256,13 @@
       var fraisThis=fraisCommuns.filter(function(f){ return fraisActif(f, month); });
       var fraisPerso=0, fraisCommun=0;
       fraisThis.forEach(function(f){ var who=(f.personne||"").trim()||"Commun"; var m=fraisMontant(f, month); if(who===person) fraisPerso+=m; else if(who==="Commun") fraisCommun+=m; });
-      var fraisTotal=fraisPerso + fraisCommun/2;
+      var fraisTotal=fraisPerso + fraisCommun;
 
       var prodOwed=0;
       monthEntries.forEach(function(e){ if((e.payePar||"").trim()===person) return; (e.articles||[]).forEach(function(a){ if(a.commun) prodOwed+=Number(a.prix)||0; }); });
       var prodPart=prodOwed/2;
 
-      var depenses=paidTotal + fraisTotal + prodPart;
+      var depenses=paidTotal + fraisTotal;
       var soldeFin=fl.closing;
       var virDone=virs.reduce(function(t,v){ return t+(v.done?(Number(v.montant)||0):0); },0);
       var fraisDoneFull=0;
@@ -1306,16 +1306,14 @@
 
       h+='<div class="leader fam" style="margin-top:12px"><span class="lbl">Frais fixes</span><span class="fill"></span><span class="val">'+fmt(fraisTotal)+'</span></div>';
       h+='<div class="leader item"><span class="lbl">Ses frais</span><span class="fill"></span><span class="val">'+fmt(fraisPerso)+'</span></div>';
-      h+='<div class="leader item"><span class="lbl">½ frais communs</span><span class="fill"></span><span class="val">'+fmt(fraisCommun/2)+'</span></div>';
+      h+='<div class="leader item"><span class="lbl">Frais communs</span><span class="fill"></span><span class="val">'+fmt(fraisCommun)+'</span></div>';
 
-      h+='<div class="leader fam" style="margin-top:12px"><span class="lbl">Produits communs (sa part)</span><span class="fill"></span><span class="val">'+fmt(prodPart)+'</span></div>';
-      h+='<div class="muted" style="font-size:10px;margin:0 2px 4px">½ des produits communs sur les tickets non payés par Benoit</div>';
 
       h+='<hr class="rule"><div class="leader"><span class="lbl" style="font-weight:700;text-transform:uppercase;letter-spacing:.05em">Total dépenses</span><span class="fill"></span><span class="val" style="font-weight:700">'+fmt(depenses)+'</span></div>';
       h+='<div class="leader total"><span class="lbl">Solde de fin de mois</span><span class="fill"></span><span class="val" style="color:'+(soldeFin<0?"#f4796b":"#4fd6a0")+'">'+fmt(soldeFin)+'</span></div>';
       h+='<div class="muted" style="font-size:9px;margin:2px 2px 0">se reporte automatiquement au mois suivant</div>';
       h+='<hr class="rule" style="opacity:.4"><div class="leader"><span class="lbl" style="font-weight:700">Solde bancaire estimé</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+(soldeBanque<0?"#f4796b":"#4fd6a0")+'">'+fmt(soldeBanque)+'</span></div>';
-      h+='<div class="muted" style="font-size:9px;margin:2px 2px 0">reporté + virements faits − tickets − frais faits (montant total prélevé) · ton solde bancaire réel (≠ solde de fin de mois, qui est ta part après partage)</div>';
+      h+='<div class="muted" style="font-size:9px;margin:2px 2px 0">reporté + virements faits − tickets − frais faits · devient le solde de fin de mois quand tout est coché</div>';
 
       h+='<hr class="rule"><div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:0 2px 4px">Épargne</div>';
       epargne.forEach(function(c){
