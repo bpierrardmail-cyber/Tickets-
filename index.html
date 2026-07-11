@@ -112,7 +112,7 @@
     .prow{ display:flex; gap:8px; align-items:center; padding:11px 2px; border-bottom:1px solid var(--line); }
     .prow .pname{ flex:1; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .prow .pfam{ flex:0 0 148px; font-size:13px; }
-    .prow .pdel, .prow .pren, .prow .pdelfam, .prow .catren, .prow .catdel, .prow .fxedit, .prow .fxdel{ flex:0 0 auto; padding:8px 11px; }
+    .prow .pdel, .prow .pren, .prow .pdelfam, .prow .catren, .prow .catdel, .prow .fxedit, .prow .fxdel, .prow .fxdone{ flex:0 0 auto; padding:8px 11px; }
     .pname.pedit{ text-decoration:underline dotted; text-underline-offset:3px; }
     .bar-row{ margin:14px 2px; }
     .bar-top{ display:flex; justify-content:space-between; align-items:baseline; font-size:13px; margin-bottom:6px; }
@@ -263,6 +263,13 @@
     function fraisActif(f, month){
       if(f.recurrent) return (!f.endMonth || month<=f.endMonth);
       return f.month===month;
+    }
+    function fraisDone(f, month){ return !!(f.doneMonths && f.doneMonths[month]); }
+    function toggleFraisDone(id, month){
+      var f=fraisCommuns.filter(function(x){ return String(x.id)===String(id); })[0]; if(!f) return;
+      if(!f.doneMonths) f.doneMonths={};
+      f.doneMonths[month]=!f.doneMonths[month];
+      persistFrais(); render();
     }
     function applyEp(accId, delta){
       var a=epargne.filter(function(x){ return String(x.id)===String(accId); })[0];
@@ -1169,6 +1176,7 @@
         items.forEach(function(f){
           s2+='<div class="prow"><span class="pname">'+esc(f.label)+' <span class="muted" style="font-size:10px">'+(f.recurrent?"· chaque mois":"· ce mois")+'</span></span>'+
              '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px">'+fmt(fraisMontant(f, month))+'</span>'+
+             '<button class="btn ghost fxdone" type="button" data-id="'+esc(f.id)+'" style="flex:0 0 auto;'+(fraisDone(f, month)?"color:var(--accent);border-color:var(--accent)":"color:var(--muted)")+'">'+(fraisDone(f, month)?"✓":"○")+'</button>'+
              '<button class="btn ghost fxedit" type="button" data-id="'+esc(f.id)+'">✎</button>'+
              '<button class="btn ghost fxdel" type="button" data-id="'+esc(f.id)+'">✕</button></div>';
         });
@@ -1221,6 +1229,7 @@
       h+='</section>';
       app.innerHTML=h;
       var af=document.getElementById("addfrais"); if(af) af.onclick=addFraisCommun;
+      [].forEach.call(document.querySelectorAll(".fxdone"), function(b){ b.onclick=function(){ toggleFraisDone(b.getAttribute("data-id"), month); }; });
       [].forEach.call(document.querySelectorAll(".fxedit"), function(b){ b.onclick=function(){ editFraisCommun(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".fxdel"), function(b){ b.onclick=function(){ delFraisCommun(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".entry"), function(node){ node.onclick=function(){ editEntry(node.getAttribute("data-id")); }; });
@@ -1255,6 +1264,10 @@
 
       var depenses=paidTotal + fraisTotal + prodPart;
       var soldeFin=fl.closing;
+      var virDone=virs.reduce(function(t,v){ return t+(v.done?(Number(v.montant)||0):0); },0);
+      var fraisDoneFull=0;
+      fraisThis.forEach(function(f){ if(!fraisDone(f, month)) return; var dwho=(f.personne||"").trim()||"Commun"; if(dwho===person || dwho==="Commun") fraisDoneFull+=fraisMontant(f, month); });
+      var soldeBanque=reporte + virDone - paidTotal - fraisDoneFull;
 
       var h=header()+'<section class="paper torn">';
       h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:10px">'+
@@ -1301,6 +1314,8 @@
       h+='<hr class="rule"><div class="leader"><span class="lbl" style="font-weight:700;text-transform:uppercase;letter-spacing:.05em">Total dépenses</span><span class="fill"></span><span class="val" style="font-weight:700">'+fmt(depenses)+'</span></div>';
       h+='<div class="leader total"><span class="lbl">Solde de fin de mois</span><span class="fill"></span><span class="val" style="color:'+(soldeFin<0?"#f4796b":"#4fd6a0")+'">'+fmt(soldeFin)+'</span></div>';
       h+='<div class="muted" style="font-size:9px;margin:2px 2px 0">se reporte automatiquement au mois suivant</div>';
+      h+='<hr class="rule" style="opacity:.4"><div class="leader"><span class="lbl" style="font-weight:700">Solde bancaire estimé</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+(soldeBanque<0?"#f4796b":"#4fd6a0")+'">'+fmt(soldeBanque)+'</span></div>';
+      h+='<div class="muted" style="font-size:9px;margin:2px 2px 0">reporté + virements faits − tickets − frais faits (montant total) · à comparer à ton compte bancaire</div>';
 
       h+='<hr class="rule"><div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:0 2px 4px">Épargne</div>';
       epargne.forEach(function(c){
