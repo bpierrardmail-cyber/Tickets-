@@ -2171,10 +2171,17 @@
     var provisions = store.read("provisions", []);
     function persistProvisions(){ store.write("provisions", provisions); }
     function monthsBetween(a,b){ var pa=a.split("-"), pb=b.split("-"); return (parseInt(pb[0],10)*12+parseInt(pb[1],10)) - (parseInt(pa[0],10)*12+parseInt(pa[1],10)); }
+    function mensuelAt(p, mk){
+      var v=Number(p.mensuel)||0;
+      if(p.mensuelChanges){ var best=null; for(var k in p.mensuelChanges){ if(k<=mk && (best===null||k>best)) best=k; } if(best!==null) v=Number(p.mensuelChanges[best])||0; }
+      return v;
+    }
     function provBalance(p, month){
       var m=month||monthKey(todayISO());
-      var n=Math.max(0, monthsBetween(p.startMonth||m, m));
-      var acc=(Number(p.soldeInitial)||0) + (Number(p.mensuel)||0)*n;
+      var start=p.startMonth||m;
+      var acc=Number(p.soldeInitial)||0;
+      var cur=start, guard=0;
+      while(cur<m && guard<600){ cur=nextMonthKey(cur); acc+=mensuelAt(p, cur); guard++; }
       var out=0; (p.prelevements||[]).forEach(function(pr){ if((pr.month||"")<=m) out+=Number(pr.montant)||0; });
       return acc-out;
     }
@@ -2189,7 +2196,9 @@
     function editProvision(id){
       var p=provisions.filter(function(x){ return String(x.id)===String(id); })[0]; if(!p) return;
       var nom=(window.prompt("Nom :", p.nom)||"").trim(); if(nom) p.nom=nom;
-      var mens=window.prompt("Montant mensuel (€) :", String(p.mensuel).replace(".",",")); if(mens!==null) p.mensuel=num(mens);
+      var em=(state.months&&state.months.provisions)||monthKey(todayISO());
+      var curMens=mensuelAt(p, em);
+      var mens=window.prompt("Montant mensuel (€) à partir de "+monthLabelOf(em)+" :\n(les mois précédents ne changent pas)", String(curMens).replace(".",",")); if(mens!==null){ if(!p.mensuelChanges) p.mensuelChanges={}; p.mensuelChanges[em]=num(mens); }
       var init=window.prompt("Montant de départ (€) au mois de "+(p.startMonth||"")+" :", String(p.soldeInitial||0).replace(".",",")); if(init!==null) p.soldeInitial=num(init);
       persistProvisions(); render();
     }
@@ -2227,7 +2236,7 @@
            '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px;color:'+(bal<0?"#f4796b":"#4fd6a0")+'">'+fmt(bal)+'</span>'+
            '<button class="btn ghost predit" type="button" data-id="'+esc(p.id)+'">✎</button>'+
            '<button class="btn ghost prdel" type="button" data-id="'+esc(p.id)+'">✕</button></div>';
-        h+='<div class="muted" style="font-size:10px;margin:1px 6px 0">+ '+fmt(p.mensuel)+' / mois</div>';
+        h+='<div class="muted" style="font-size:10px;margin:1px 6px 0">+ '+fmt(mensuelAt(p, month))+' / mois</div>';
         var prs=(p.prelevements||[]).slice().sort(function(a,b){ return (a.month<b.month)?1:-1; });
         prs.forEach(function(pr){
           h+='<div style="display:flex;align-items:center;gap:6px;padding:6px 4px 0 12px;font-size:12px">'+
