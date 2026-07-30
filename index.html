@@ -696,46 +696,51 @@
       if(storageFull){ h += '<div style="background:var(--coral-dim);color:var(--coral);border:1px solid var(--coral);border-radius:12px;padding:10px 12px;font-size:12px;margin-bottom:12px">⚠ Stockage plein. Exporte une sauvegarde et libère de la place (vieilles photos de la galerie).</div>'; }
       h += monthNavHTML(esc(monthLabel), month, curM);
       h += '<hr class="rule">';
-      if(cats.length===0) h += '<div class="center muted" style="font-size:12px">Aucune dépense ce mois-ci</div>';
-      cats.forEach(function(c){
-        var act=(state.catFilter===c);
-        h += '<div class="leader catrow" data-cat="'+esc(c)+'" style="cursor:pointer">'+
-             '<span class="lbl"'+(act?' style="color:var(--accent);font-weight:700"':'')+'>'+esc(c)+'</span>'+
-             '<span class="fill"></span>'+
-             '<span class="val"'+(act?' style="color:var(--accent)"':'')+'>'+fmt(parCat[c])+'</span></div>';
-      });
-      h += '<hr class="rule"><div class="leader total"><span class="lbl">Total</span><span class="fill"></span><span class="val">'+fmt(totalMois)+'</span></div>';
+      var catsOpen=!!state.catsOpen;
+      if(cats.length===0){ h += '<div class="center muted" style="font-size:12px">Aucune dépense ce mois-ci</div>'; }
+      else {
+        h += '<div class="leader" id="catsToggle" style="cursor:pointer"><span class="lbl" style="font-weight:700">Catégories ('+cats.length+')</span><span class="fill"></span><span class="val" style="color:var(--ink-soft);font-size:13px">'+(catsOpen?"▲ replier":"▼ déplier")+'</span></div>';
+        h += '<div id="catsBody" style="'+(catsOpen?"":"display:none")+'">';
+        cats.forEach(function(c){
+          var act=(state.catFilter===c);
+          h += '<div class="leader catrow" data-cat="'+esc(c)+'" style="cursor:pointer">'+
+               '<span class="lbl"'+(act?' style="color:var(--accent);font-weight:700"':'')+'>'+esc(c)+'</span>'+
+               '<span class="fill"></span>'+
+               '<span class="val"'+(act?' style="color:var(--accent)"':'')+'>'+fmt(parCat[c])+'</span></div>';
+        });
+        h += '</div>';
+      }
       var parPayeur={}, payOrder=[];
       mois.forEach(function(e){ var p=(e.payePar||"").trim()||"Non renseigné"; if(!(p in parPayeur)){ parPayeur[p]=0; payOrder.push(p); } parPayeur[p]+=Number(e.montant)||0; });
       if(payOrder.length){
         payOrder.sort();
-        h += '<hr class="rule"><div class="muted" style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">Payé ce mois par</div>';
+        var payOpen=!!state.payOpen;
+        h += '<hr class="rule"><div class="leader" id="payToggle" style="cursor:pointer"><span class="lbl" style="font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:.06em">Payé ce mois par</span><span class="fill"></span><span class="val" style="color:var(--ink-soft);font-size:13px">'+(payOpen?"▲":"▼")+'</span></div>';
+        h += '<div id="payBody" style="'+(payOpen?"":"display:none")+'">';
         payOrder.forEach(function(p){ h += '<div class="leader"><span class="lbl">'+esc(p)+'</span><span class="fill"></span><span class="val">'+fmt(parPayeur[p])+'</span></div>'; });
+        h += '</div>';
+        h += '<div class="leader total"><span class="lbl">Total</span><span class="fill"></span><span class="val">'+fmt(totalMois)+'</span></div>';
       }
       h += '</section>';
       h += '<section class="paper" style="margin-top:16px">';
       h += '<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Comptes</div>';
-      if(bourse.length){
-        var btot=bourseTotalLive(), bcap=0; bourse.forEach(function(c){ var l=bLast(c)||{}; bcap+=Number(l.capital)||0; });
-        var bpv=btot-bcap, bpct=bcap>0?(bpv/bcap*100):0, bcol=bpv>=0?"var(--accent)":"var(--coral)";
-        h += '<hr class="rule"><div class="leader"><span class="lbl" style="font-weight:700">Bourse</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+bcol+'">'+fmt(btot)+'</span></div>';
-        if(bcap>0) h += '<div class="leader item"><span class="lbl">Plus-value</span><span class="fill"></span><span class="val" style="color:'+bcol+'">'+(bpv>=0?"+":"")+bpv.toFixed(2).replace(".",",")+'€ ('+(bpct>=0?"+":"")+bpct.toFixed(1).replace(".",",")+'%)</span></div>';
-        if(bourse.some(function(c){ return c.sol; }) && state.solTime) h += '<div class="muted" style="font-size:9px;margin:2px 2px 0">cours SOL · maj '+esc(state.solTime)+'</div>';
-      }
-      if(epargne.length){
-        var epTot=0; epargne.forEach(function(c){ epTot+=epCurrent(c); });
-        h += '<hr class="rule"><div class="leader"><span class="lbl" style="font-weight:700">Épargne</span><span class="fill"></span><span class="val" style="font-weight:700;color:var(--accent)">'+fmt(epTot)+'</span></div>';
-      }
       (function(){
         var cb=computeCompteMonth("Benoit", month);
         var ccol=cb.solde<0?"var(--coral)":"var(--accent)";
         h += '<hr class="rule"><div class="leader"><span class="lbl" style="font-weight:700">Compte</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+ccol+'">'+fmt(cb.solde)+'</span></div>';
         h += '<div class="muted" style="font-size:9px;margin:2px 2px 0">reporté '+fmt(cb.reporte)+' · virements '+fmt(cb.argent)+' · dépenses '+fmt(cb.depenses)+'</div>';
       })();
+      if(epargne.length){
+        var epTot=0; epargne.forEach(function(c){ epTot+=epCurrent(c); });
+        h += '<hr class="rule"><div class="leader"><span class="lbl" style="font-weight:700">Épargne</span><span class="fill"></span><span class="val" style="font-weight:700;color:var(--accent)">'+fmt(epTot)+'</span></div>';
+      }
+      if(bourse.length){
+        var btot=bourseTotalLive();
+        h += '<hr class="rule"><div class="leader"><span class="lbl" style="font-weight:700">Bourse</span><span class="fill"></span><span class="val" style="font-weight:700;color:var(--accent)">'+fmt(btot)+'</span></div>';
+      }
       h += '</section>';
 
-      h += '<div class="btns" style="margin:14px 0 0"><button class="btn" id="manual2" type="button">Saisie manuelle</button><button class="btn" id="goprod" type="button">Produits / catégories</button></div>';
-      h += '<div class="center" style="margin-top:10px"><button class="btn ghost" id="gogallery" type="button">📷 Galerie</button></div>';
+      h += '<div class="btns" style="margin:14px 0 0"><button class="btn" id="manual2" type="button">Saisie manuelle</button><button class="btn" id="goprod" type="button">Produits / catégories</button><button class="btn" id="gogallery" type="button">Galerie</button></div>';
       h += '<hr class="rule">';
 
       var listE = state.catFilter ? mois.filter(function(e){ return e.categorie===state.catFilter; }) : mois;
@@ -793,14 +798,6 @@
         }
       })();
 
-      h += '<div class="offline-bar">' + (state.offline==="ready"
-          ? '<span class="muted">OCR hors-ligne prêt</span>'
-          : '<button class="btn ghost" id="prep"'+(state.offline==="loading"?" disabled":"")+'>'+
-              (state.offline==="loading"?"Téléchargement…":state.offline==="error"?"Échec — réessayer":"Préparer le mode hors-ligne")+
-            '</button>') + '</div>';
-
-      h += '<div class="center" style="margin:2px 0 0;font-size:11px"><button class="btn ghost" id="cloudkey">'+(store.read("ocrKey","")?"OCR cloud activé ✓":"Activer OCR cloud (clé)")+'</button></div>';
-
       h += '<hr class="rule"><div class="center muted" style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">Sauvegarde locale</div>';
       h += '<div class="center" style="font-size:11px"><button class="btn ghost" id="backup">Sauvegarder</button> <button class="btn ghost" id="restore">Restaurer</button></div>';
       (function(){
@@ -834,6 +831,8 @@
       [].forEach.call(document.querySelectorAll(".gapfix"), function(node){
         node.onclick=function(){ editEntry(node.getAttribute("data-id")); };
       });
+      var ct=document.getElementById("catsToggle"); if(ct) ct.onclick=function(){ state.catsOpen=!state.catsOpen; render(); };
+      var pt=document.getElementById("payToggle"); if(pt) pt.onclick=function(){ state.payOpen=!state.payOpen; render(); };
       var tt=document.getElementById("ticketsToggle"); if(tt) tt.onclick=function(){ state.ticketsOpen=!state.ticketsOpen; render(); };
       [].forEach.call(document.querySelectorAll(".catrow"), function(row){ row.onclick=function(){ var c=row.getAttribute("data-cat"); state.catFilter=(state.catFilter===c?null:c); state.ticketsOpen=true; render(); var se=document.getElementById("search"); if(se && se.scrollIntoView) se.scrollIntoView({behavior:"smooth", block:"start"}); }; });
       var cc=document.getElementById("catclear"); if(cc) cc.onclick=function(){ state.catFilter=null; render(); };
