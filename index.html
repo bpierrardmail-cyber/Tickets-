@@ -730,11 +730,11 @@
       })();
       if(epargne.length){
         var epTot=0; epargne.forEach(function(c){ epTot+=epCurrent(c); });
-        h += '<div class="leader"><span class="lbl" style="font-weight:700">Épargne</span><span class="fill"></span><span class="val" style="font-weight:700;color:var(--accent)">'+fmt(epTot)+'</span></div>';
-      }
-      if(bourse.length){
-        var btot=bourseTotalLive();
-        h += '<div class="leader"><span class="lbl" style="font-weight:700">Bourse</span><span class="fill"></span><span class="val" style="font-weight:700;color:var(--accent)">'+fmt(btot)+'</span></div>';
+        var epOpen=!!state.epOpenHome;
+        h += '<div class="leader" id="epHomeToggle" style="cursor:pointer"><span class="lbl" style="font-weight:700">Épargne</span><span class="fill"></span><span class="val" style="font-weight:700;color:var(--accent)">'+fmt(epTot)+'</span><span class="muted" style="font-size:11px;margin-left:6px">'+(epOpen?"▲":"▼")+'</span></div>';
+        h += '<div id="epHomeBody" style="'+(epOpen?"":"display:none")+'">';
+        epargne.forEach(function(c){ h += '<div class="leader item"><span class="lbl">'+esc(c.nom)+'</span><span class="fill"></span><span class="val">'+fmt(epCurrent(c))+'</span></div>'; });
+        h += '</div>';
       }
       h += '</section>';
 
@@ -830,6 +830,7 @@
         node.onclick=function(){ editEntry(node.getAttribute("data-id")); };
       });
       var ct=document.getElementById("catsToggle"); if(ct) ct.onclick=function(){ state.catsOpen=!state.catsOpen; render(); };
+      var eht=document.getElementById("epHomeToggle"); if(eht) eht.onclick=function(){ state.epOpenHome=!state.epOpenHome; render(); };
       var pt=document.getElementById("payToggle"); if(pt) pt.onclick=function(){ state.payOpen=!state.payOpen; render(); };
       var tt=document.getElementById("ticketsToggle"); if(tt) tt.onclick=function(){ state.ticketsOpen=!state.ticketsOpen; render(); };
       [].forEach.call(document.querySelectorAll(".catrow"), function(row){ row.onclick=function(){ var c=row.getAttribute("data-cat"); state.catFilter=(state.catFilter===c?null:c); state.ticketsOpen=true; render(); var se=document.getElementById("search"); if(se && se.scrollIntoView) se.scrollIntoView({behavior:"smooth", block:"start"}); }; });
