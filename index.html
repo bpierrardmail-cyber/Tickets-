@@ -739,11 +739,14 @@
       h += '<hr class="rule">';
 
       var listE = state.catFilter ? mois.filter(function(e){ return e.categorie===state.catFilter; }) : mois;
+      var ticketsOpen=!!state.ticketsOpen;
+      h += '<div class="leader" id="ticketsToggle" style="cursor:pointer"><span class="lbl" style="font-weight:700">Tickets ('+mois.length+')</span><span class="fill"></span><span class="val" style="color:var(--ink-soft);font-size:13px">'+(ticketsOpen?"▲ replier":"▼ déplier")+'</span></div>';
+      h += '<div id="ticketsBody" style="'+(ticketsOpen?"":"display:none")+'">';
       if(mois.length===0){
         if(state.entries.length===0) h += '<div class="empty">Rien d\'enregistré pour l\'instant.<br>Appuie sur <b>Scanner un ticket</b> en bas pour commencer.</div>';
         else h += '<div class="empty">Aucun ticket ce mois-ci.<br>Les tickets des mois précédents sont dans l\'onglet <b>Histo.</b></div>';
       } else {
-        h += '<input class="f" id="search" placeholder="Rechercher (enseigne, catégorie, payeur)…" style="margin:0 0 12px" value="'+esc(state.search||"")+'">';
+        h += '<input class="f" id="search" placeholder="Rechercher (enseigne, catégorie, payeur)…" style="margin:12px 0 12px" value="'+esc(state.search||"")+'">';
         if(state.catFilter){ h += '<div class="chip" id="catclear" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin:0 0 12px;color:var(--accent);border-color:var(--accent)">Catégorie : '+esc(state.catFilter)+' ✕</div>'; }
         h += '<div id="results-empty" class="muted" style="display:none;font-size:12px;text-align:center;padding:12px">Aucun ticket ne correspond.</div>';
         if(!listE.length){ h += '<div class="muted" style="text-align:center;padding:14px;font-size:13px">Aucun ticket en « '+esc(state.catFilter||"")+' » ce mois.</div>'; }
@@ -761,6 +764,7 @@
                '</div>';
         });
       }
+      h += '</div>';
 
       (function(){
         if(!mois.length) return;
@@ -830,7 +834,8 @@
       [].forEach.call(document.querySelectorAll(".gapfix"), function(node){
         node.onclick=function(){ editEntry(node.getAttribute("data-id")); };
       });
-      [].forEach.call(document.querySelectorAll(".catrow"), function(row){ row.onclick=function(){ var c=row.getAttribute("data-cat"); state.catFilter=(state.catFilter===c?null:c); render(); var se=document.getElementById("search"); if(se && se.scrollIntoView) se.scrollIntoView({behavior:"smooth", block:"start"}); }; });
+      var tt=document.getElementById("ticketsToggle"); if(tt) tt.onclick=function(){ state.ticketsOpen=!state.ticketsOpen; render(); };
+      [].forEach.call(document.querySelectorAll(".catrow"), function(row){ row.onclick=function(){ var c=row.getAttribute("data-cat"); state.catFilter=(state.catFilter===c?null:c); state.ticketsOpen=true; render(); var se=document.getElementById("search"); if(se && se.scrollIntoView) se.scrollIntoView({behavior:"smooth", block:"start"}); }; });
       var cc=document.getElementById("catclear"); if(cc) cc.onclick=function(){ state.catFilter=null; render(); };
       wireMonthNav(month, curM, "list");
       setNav("list", true);
