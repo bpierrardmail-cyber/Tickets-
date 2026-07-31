@@ -635,10 +635,7 @@
     }
     function header(back){
       var b = back ? '<button class="hback" id="hback" type="button">‹ Retour</button>' : '';
-      var st=backupStatus();
-      return '<header class="head">'+b+'<h1>Tickets — Dépenses</h1>'+
-             '<div id="bkstat" style="font-size:10px;margin-top:3px;cursor:pointer;display:inline-block"><span style="color:'+st.col+';font-size:12px;vertical-align:middle">●</span> <span style="color:var(--ink-soft);vertical-align:middle">'+esc(st.label)+'</span></div>'+
-             '<div class="barcode"></div></header>';
+      return '<header class="head">'+b+'<div class="barcode"></div></header>';
     }
     function bindBack(fn){ var hb=document.getElementById("hback"); if(hb) hb.onclick=fn; }
 
@@ -1186,14 +1183,18 @@
         return s2;
       }
 
+      var comOpen = state.comOpen || (state.comOpen={});
       var h=header()+'<section class="paper torn">';
       h+=monthNavHTML('Dépenses communes · '+esc(monthLabel), month, curM)+'<hr class="rule">';
 
-      h+='<div class="leader fam"><span class="lbl">Commun</span><span class="fill"></span><span class="val">'+fmt(communTotal)+'</span></div>';
+      h+='<div class="leader fam comToggle" data-key="commun" style="cursor:pointer"><span class="lbl">Commun</span><span class="fill"></span><span class="val">'+fmt(communTotal)+'</span><span class="muted" style="font-size:11px;margin-left:6px">'+(comOpen.commun?"▲":"▼")+'</span></div>';
+      h+='<div class="comBody" style="'+(comOpen.commun?"":"display:none")+'">';
       if(byPerson["Commun"]) h+=fraisRows(byPerson["Commun"].items);
       else h+='<div class="muted" style="font-size:11px;margin:4px 2px">Aucun frais commun. Touche « + Ajouter un frais fixe » et garde « Commun ».</div>';
+      h+='</div>';
 
-      h+='<hr class="rule"><div class="leader fam"><span class="lbl">Produit en communs</span><span class="fill"></span><span class="val">'+fmt(prodTotal)+'</span></div>';
+      h+='<hr class="rule"><div class="leader fam comToggle" data-key="prod" style="cursor:pointer"><span class="lbl">Produit en communs</span><span class="fill"></span><span class="val">'+fmt(prodTotal)+'</span><span class="muted" style="font-size:11px;margin-left:6px">'+(comOpen.prod?"▲":"▼")+'</span></div>';
+      h+='<div class="comBody" style="'+(comOpen.prod?"":"display:none")+'">';
       if(rows.length===0){
         h+='<div class="muted" style="font-size:11px;margin:2px 2px 4px">Aucun produit coché ce mois-ci. Coche « Dépense à deux » sur les articles d\'un ticket.</div>';
       } else {
@@ -1206,11 +1207,14 @@
         });
         h+='<div class="leader"><span class="lbl">Part de chacun (÷2)</span><span class="fill"></span><span class="val">'+fmt(prodHalf)+'</span></div>';
       }
+      h+='</div>';
 
       others.forEach(function(who){
-        var g=byPerson[who];
-        h+='<hr class="rule"><div class="leader fam"><span class="lbl">'+esc(who)+'</span><span class="fill"></span><span class="val">'+fmt(g.total)+'</span></div>';
+        var g=byPerson[who], key="p:"+who;
+        h+='<hr class="rule"><div class="leader fam comToggle" data-key="'+esc(key)+'" style="cursor:pointer"><span class="lbl">'+esc(who)+'</span><span class="fill"></span><span class="val">'+fmt(g.total)+'</span><span class="muted" style="font-size:11px;margin-left:6px">'+(comOpen[key]?"▲":"▼")+'</span></div>';
+        h+='<div class="comBody" style="'+(comOpen[key]?"":"display:none")+'">';
         h+=fraisRows(g.items);
+        h+='</div>';
       });
 
       h+='<button class="btn ghost" id="addfrais" type="button" style="margin-top:12px">+ Ajouter un frais fixe</button>';
@@ -1231,6 +1235,7 @@
 
       h+='</section>';
       app.innerHTML=h;
+      [].forEach.call(document.querySelectorAll(".comToggle"), function(t){ t.onclick=function(){ var k=t.getAttribute("data-key"); comOpen[k]=!comOpen[k]; render(); }; });
       var af=document.getElementById("addfrais"); if(af) af.onclick=addFraisCommun;
       [].forEach.call(document.querySelectorAll(".fxdone"), function(b){ b.onclick=function(){ toggleFraisDone(b.getAttribute("data-id"), month); }; });
       [].forEach.call(document.querySelectorAll(".fxedit"), function(b){ b.onclick=function(){ editFraisCommun(b.getAttribute("data-id")); }; });
@@ -1272,6 +1277,7 @@
       fraisThis.forEach(function(f){ if(!fraisDone(f, month)) return; var dwho=(f.personne||"").trim()||"Commun"; if(dwho===person || dwho==="Commun") fraisDoneFull+=fraisMontant(f, month); });
       var soldeBanque=reporte + virDone - paidTotal - fraisDoneFull;
 
+      var cptOpen = state.cptOpen || (state.cptOpen={});
       var h=header()+'<section class="paper torn">';
       h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:10px">'+
          '<span id="cm-prev" style="cursor:pointer;font-size:18px;line-height:1;padding:0 6px;color:var(--ink-soft)">\u2039</span>'+
@@ -1282,7 +1288,8 @@
       h+='<hr class="rule">';
       h+='<div class="leader" id="reporterow" style="cursor:pointer"><span class="lbl" style="font-weight:700;text-transform:uppercase;letter-spacing:.05em">Solde reporté ✎</span><span class="fill"></span><span class="val" style="font-weight:700">'+fmt(reporte)+'</span></div>';
       h+='<div class="muted" style="font-size:9px;margin:0 2px 2px">'+(getSoldeInit(person,month)!==null?"valeur modifiée manuellement":"repris du mois précédent")+'</div>';
-      h+='<hr class="rule"><div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:0 2px 4px">Virements</div>';
+      h+='<hr class="rule"><div class="leader cptToggle" data-key="vir" style="cursor:pointer"><span class="lbl" style="font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:11px">Virements</span><span class="fill"></span><span class="val" style="color:var(--ink-soft);font-size:13px">'+(cptOpen.vir?"▲":"▼")+'</span></div>';
+      h+='<div class="cptBody" style="'+(cptOpen.vir?"":"display:none")+'">';
       if(virs.length){
         virs.forEach(function(v){
           h+='<div class="prow"><span class="pname" style="display:flex;flex-direction:column;min-width:0;gap:1px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(v.label)+'</span>'+(v.note?'<span style="font-size:10px;color:var(--ink-soft);font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(v.note)+'</span>':'')+(v.epargneId?'<span style="font-size:9px;color:var(--accent);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">↔ '+esc(epNameOf(v.epargneId))+'</span>':'')+'</span>'+
@@ -1294,11 +1301,13 @@
       } else {
         h+='<div class="muted" style="font-size:11px;margin:2px 2px 4px">Aucun virement ce mois-ci.</div>';
       }
+      h+='</div>';
       h+='<button class="btn ghost" id="addvir" type="button" style="margin-top:8px">+ Ajouter un virement</button>';
       h+='<div class="leader fam" style="margin-top:8px"><span class="lbl">Total virements</span><span class="fill"></span><span class="val" style="color:'+(virTotal<0?"#f4796b":"#4fd6a0")+'">'+(virTotal>0?"+":"")+fmt(virTotal)+'</span></div>';
 
       h+='<hr class="rule"><div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:0 2px 4px">Dépenses</div>';
-      h+='<div class="leader fam"><span class="lbl">Tickets payés</span><span class="fill"></span><span class="val">'+fmt(paidTotal)+'</span></div>';
+      h+='<div class="leader fam cptToggle" data-key="tickets" style="cursor:pointer"><span class="lbl">Tickets payés</span><span class="fill"></span><span class="val">'+fmt(paidTotal)+'</span><span class="muted" style="font-size:11px;margin-left:6px">'+(cptOpen.tickets?"▲":"▼")+'</span></div>';
+      h+='<div class="cptBody" style="'+(cptOpen.tickets?"":"display:none")+'">';
       if(paid.length){
         paid.forEach(function(e){
           h+='<div class="entry" data-id="'+esc(e.id)+'"><div class="row1"><span class="name">'+esc(e.marchand)+'</span><span class="amt">'+fmt(e.montant)+'</span></div><div class="row2"><span class="cat">'+esc(e.categorie)+'</span><span>'+esc((e.date||"").split("-").reverse().join("/"))+'</span></div></div>';
@@ -1306,6 +1315,7 @@
       } else {
         h+='<div class="muted" style="font-size:11px;margin:2px 2px 4px">Aucun ticket « payé par Benoit » ce mois-ci.</div>';
       }
+      h+='</div>';
 
       h+='<div class="leader fam" style="margin-top:12px"><span class="lbl">Frais fixes</span><span class="fill"></span><span class="val">'+fmt(fraisTotal)+'</span></div>';
       h+='<div class="leader item"><span class="lbl">Ses frais</span><span class="fill"></span><span class="val">'+fmt(fraisPerso)+'</span></div>';
@@ -1318,7 +1328,8 @@
       h+='<hr class="rule" style="opacity:.4"><div class="leader"><span class="lbl" style="font-weight:700">Solde bancaire estimé</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+(soldeBanque<0?"#f4796b":"#4fd6a0")+'">'+fmt(soldeBanque)+'</span></div>';
       h+='<div class="muted" style="font-size:9px;margin:2px 2px 0">reporté + virements faits − tickets − frais faits · devient le solde de fin de mois quand tout est coché</div>';
 
-      h+='<hr class="rule"><div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:0 2px 4px">Épargne</div>';
+      h+='<hr class="rule"><div class="leader cptToggle" data-key="ep" style="cursor:pointer"><span class="lbl" style="font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:11px">Épargne</span><span class="fill"></span><span class="val" style="color:var(--ink-soft);font-size:13px">'+(cptOpen.ep?"▲":"▼")+'</span></div>';
+      h+='<div class="cptBody" style="'+(cptOpen.ep?"":"display:none")+'">';
       epargne.forEach(function(c){
         var cur=epCurrent(c), prev=epPrev(c), first=epFirst(c);
         h+='<div class="prow"><span class="pname">'+esc(c.nom)+(c.bourseLink?' <span style="font-size:9px;color:var(--accent);font-weight:600">● Bourse</span>':'')+'</span>'+
@@ -1332,6 +1343,7 @@
         if(parts.length) h+='<div class="muted" style="font-size:10px;margin:0 2px 7px">'+parts.join(" · ")+'</div>';
       });
       if(epargne.length===0) h+='<div class="muted" style="font-size:11px;margin:2px 2px 4px">Aucun compte épargne.</div>';
+      h+='</div>';
       h+='<button class="btn ghost" id="addep" type="button" style="margin-top:10px">+ Ajouter un compte épargne</button>';
       var epAllM={}; epargne.forEach(function(c){ Object.keys(c.vals||{}).forEach(function(m){ epAllM[m]=true; }); });
       var epMs=Object.keys(epAllM).sort();
@@ -1355,6 +1367,7 @@
         if(v.trim()===""){ clearSoldeInit(person,month); } else { setSoldeInit(person,month,num(v)); }
         render();
       };
+      [].forEach.call(document.querySelectorAll(".cptToggle"), function(t){ t.onclick=function(){ var k=t.getAttribute("data-key"); cptOpen[k]=!cptOpen[k]; render(); }; });
       var av=document.getElementById("addvir"); if(av) av.onclick=addVirement;
       [].forEach.call(document.querySelectorAll(".virdone"), function(b){ b.onclick=function(){ toggleVirementDone(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".viredit"), function(b){ b.onclick=function(){ editVirement(b.getAttribute("data-id")); }; });
