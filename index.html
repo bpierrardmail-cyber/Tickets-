@@ -349,6 +349,25 @@
       }
       return { opening:oOut, closing:cOut };
     }
+    function virementsSumDone(p,m){ return virementsOf(p,m).reduce(function(t,v){ return t+(v.done?(Number(v.montant)||0):0); },0); }
+    function computeDepensesMonthDone(person, month){
+      var me=state.entries.filter(function(e){ return monthKey(e.date)===month; });
+      var paid=0; me.forEach(function(e){ if((e.payePar||"").trim()===person) paid+=Number(e.montant)||0; });
+      var fr=fraisCommuns.filter(function(f){ return fraisActif(f, month) && fraisDone(f, month); });
+      var fp=0, fc=0; fr.forEach(function(f){ var who=(f.personne||"").trim()||"Commun"; var m=fraisMontant(f, month); if(who===person) fp+=m; else if(who==="Commun") fc+=m; });
+      return paid+fp+fc;
+    }
+    function soldeFlowDone(person, upto){
+      var ms=compteMonths(person, upto), closing=0, oOut=0, cOut=0;
+      for(var i=0;i<ms.length;i++){
+        var m=ms[i], ov=getSoldeInit(person,m);
+        var opening=(ov!==null)?ov:closing;
+        var c=opening + virementsSumDone(person,m) - computeDepensesMonthDone(person,m);
+        closing=c;
+        if(m===upto){ oOut=opening; cOut=c; }
+      }
+      return { opening:oOut, closing:cOut };
+    }
     var epargne = store.read("epargne", []);
     (function(){ var m=monthKey(todayISO()), ch=false;
       epargne.forEach(function(c){ if(!c.vals){ c.vals={}; if(typeof c.montant!=="undefined") c.vals[m]=Number(c.montant)||0; delete c.montant; ch=true; } });
@@ -1275,7 +1294,8 @@
       var virDone=virs.reduce(function(t,v){ return t+(v.done?(Number(v.montant)||0):0); },0);
       var fraisDoneFull=0;
       fraisThis.forEach(function(f){ if(!fraisDone(f, month)) return; var dwho=(f.personne||"").trim()||"Commun"; if(dwho===person || dwho==="Commun") fraisDoneFull+=fraisMontant(f, month); });
-      var soldeBanque=reporte + virDone - paidTotal - fraisDoneFull;
+      var reporteReel=soldeFlowDone(person, month).opening;
+      var soldeBanque=reporteReel + virDone - paidTotal - fraisDoneFull;
 
       var cptOpen = state.cptOpen || (state.cptOpen={});
       var h=header()+'<section class="paper torn">';
