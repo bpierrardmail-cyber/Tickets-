@@ -710,6 +710,16 @@
 
       var h = header();
       h += '<section class="paper torn">';
+      (function(){
+        var _now=new Date();
+        var _label=_now.toLocaleDateString("fr-FR",{weekday:"long", day:"numeric", month:"long"});
+        var _dim=new Date(_now.getFullYear(), _now.getMonth()+1, 0).getDate();
+        var _pct=Math.max(0, Math.min(100, Math.round((_now.getDate()/_dim)*100)));
+        h += '<div class="center" style="margin:0 0 14px">';
+        h += '<div style="font-size:15px;font-weight:700;color:var(--ink)">'+esc(_label)+'</div>';
+        h += '<div style="height:4px;border-radius:2px;background:var(--card2);margin-top:8px;overflow:hidden"><div style="height:100%;width:'+_pct+'%;background:var(--accent);border-radius:2px"></div></div>';
+        h += '</div>';
+      })();
       if(storageFull){ h += '<div style="background:var(--coral-dim);color:var(--coral);border:1px solid var(--coral);border-radius:12px;padding:10px 12px;font-size:12px;margin-bottom:12px">⚠ Stockage plein. Exporte une sauvegarde et libère de la place (vieilles photos de la galerie).</div>'; }
       h += monthNavHTML(esc(monthLabel), month, curM);
       h += '<hr class="rule">';
@@ -759,6 +769,8 @@
       h += '<hr class="rule">';
 
       var listE = state.catFilter ? mois.filter(function(e){ return e.categorie===state.catFilter; }) : mois;
+      if(state.dateFrom) listE = listE.filter(function(e){ return (e.date||"")>=state.dateFrom; });
+      if(state.dateTo) listE = listE.filter(function(e){ return (e.date||"")<=state.dateTo; });
       var ticketsOpen=!!state.ticketsOpen;
       h += '<div class="leader" id="ticketsToggle" style="cursor:pointer"><span class="lbl" style="font-weight:700">Tickets ('+mois.length+')</span><span class="fill"></span><span class="val" style="color:var(--ink-soft);font-size:13px">'+(ticketsOpen?"▲":"▼")+'</span></div>';
       h += '<div id="ticketsBody" style="'+(ticketsOpen?"":"display:none")+'">';
@@ -768,6 +780,20 @@
       } else {
         h += '<input class="f" id="search" placeholder="Rechercher (enseigne, catégorie, payeur)…" style="margin:12px 0 12px" value="'+esc(state.search||"")+'">';
         if(state.catFilter){ h += '<div class="chip" id="catclear" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin:0 0 12px;color:var(--accent);border-color:var(--accent)">Catégorie : '+esc(state.catFilter)+' ✕</div>'; }
+        var dateOpen=!!state.dateFilterOpen, hasDate=!!(state.dateFrom||state.dateTo);
+        h += '<div id="datebtn" style="cursor:pointer;font-size:11px;color:var(--ink-soft);margin:0 0 8px">📅 Filtrer par date</div>';
+        h += '<div id="datePanel" style="'+((dateOpen||hasDate)?"":"display:none")+';margin:0 0 10px">';
+        h += '<div style="display:flex;gap:8px;align-items:center">'+
+             '<input class="f" type="date" id="dateFrom" value="'+esc(state.dateFrom||"")+'" style="flex:1">'+
+             '<span class="muted" style="font-size:11px">au</span>'+
+             '<input class="f" type="date" id="dateTo" value="'+esc(state.dateTo||"")+'" style="flex:1">'+
+             '</div>';
+        if(hasDate){
+          var dsum=listE.reduce(function(t,e){ return t+(Number(e.montant)||0); },0);
+          h += '<div class="leader" style="margin-top:8px"><span class="lbl" style="font-size:12px">'+listE.length+' ticket'+(listE.length>1?"s":"")+' sur la période</span><span class="fill"></span><span class="val" style="font-size:14px">'+fmt(dsum)+'</span></div>';
+          h += '<div class="center" style="margin-top:4px"><span id="dateclear" style="cursor:pointer;font-size:11px;color:var(--coral)">Effacer la période</span></div>';
+        }
+        h += '</div>';
         h += '<div id="results-empty" class="muted" style="display:none;font-size:12px;text-align:center;padding:12px">Aucun ticket ne correspond.</div>';
         if(!listE.length){ h += '<div class="muted" style="text-align:center;padding:14px;font-size:13px">Aucun ticket en « '+esc(state.catFilter||"")+' » ce mois.</div>'; }
         listE.forEach(function(e){
@@ -829,6 +855,10 @@
 
       var manual2=document.getElementById("manual2"); if(manual2) manual2.onclick=newDraft;
       var gogallery=document.getElementById("gogallery"); if(gogallery) gogallery.onclick=function(){ state.view="gallery"; render(); };
+      var db=document.getElementById("datebtn"); if(db) db.onclick=function(){ state.dateFilterOpen=!state.dateFilterOpen; render(); };
+      var dFrom=document.getElementById("dateFrom"); if(dFrom) dFrom.onchange=function(){ state.dateFrom=dFrom.value||null; render(); };
+      var dTo=document.getElementById("dateTo"); if(dTo) dTo.onchange=function(){ state.dateTo=dTo.value||null; render(); };
+      var dc=document.getElementById("dateclear"); if(dc) dc.onclick=function(){ state.dateFrom=null; state.dateTo=null; state.dateFilterOpen=false; render(); };
       var search=document.getElementById("search");
       if(search){ search.oninput=function(){
         state.search=search.value; var q=search.value.trim().toLowerCase(), any=false;
