@@ -1400,8 +1400,8 @@
       var epAllM={}; epargne.forEach(function(c){ Object.keys(c.vals||{}).forEach(function(m){ epAllM[m]=true; }); });
       var epMs=Object.keys(epAllM).sort();
       function epTotalAt(month){ var t=0; epargne.forEach(function(c){ var ms=Object.keys(c.vals||{}).filter(function(mm){ return mm<=month; }).sort(); if(ms.length) t+=Number(c.vals[ms[ms.length-1]])||0; }); return t; }
-      var totCur=epMs.length?epTotalAt(epMs[epMs.length-1]):0;
-      var totPrev=epMs.length>1?epTotalAt(epMs[epMs.length-2]):null;
+      var totCur=epTotalAt(month);
+      var totPrev=epMs.length?epTotalAt(prevMonthKey(month)):null;
       var totFirst=epMs.length?epTotalAt(epMs[0]):null;
       h+='<div class="leader total" style="margin-top:6px"><span class="lbl">Total épargne</span><span class="fill"></span><span class="val" style="color:#4fd6a0">'+fmt(totCur)+'</span></div>';
       var tparts=[];
