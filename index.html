@@ -223,10 +223,20 @@
     function getArgent(p,m){ return (argentMois[p] && argentMois[p][m]) || 0; }
     function setArgent(p,m,v){ if(!argentMois[p]) argentMois[p]={}; argentMois[p][m]=v; persistArgent(); }
     var virements = store.read("virements", []);
+    if(store.read("virEpV2", null)!==1){
+      virements.forEach(function(v){ if(v.epargneId) v.done=true; });
+      store.write("virements", virements);
+      store.write("virEpV2", 1);
+    }
     function persistVirements(){ store.write("virements", virements); }
     function toggleVirementDone(id){
       var v=virements.filter(function(x){ return String(x.id)===String(id); })[0]; if(!v) return;
-      v.done=!v.done; persistVirements(); render();
+      v.done=!v.done;
+      if(v.epargneId){
+        if(v.done){ var delta=-(Number(v.montant)||0); applyEp(v.epargneId, delta); v.epApplied=delta; }
+        else { applyEp(v.epargneId, -(v.epApplied||0)); v.epApplied=0; }
+      }
+      persistVirements(); render();
     }
     var soldeInit = store.read("soldeInit", {});
     function persistSoldeInit(){ store.write("soldeInit", soldeInit); }
@@ -300,7 +310,7 @@
       var montant = entree?m:-m;
       var epId=chooseEpargne();
       var v={ id:Date.now(), person:"Benoit", month:((state.months&&state.months.compte)||monthKey(todayISO())), label:(label||"").trim()||"Virement", note:(note||"").trim(), montant: montant };
-      if(epId){ v.epargneId=epId; v.epApplied=-montant; applyEp(epId, -montant); }
+      if(epId){ v.epargneId=epId; v.epApplied=0; }
       virements.push(v);
       persistVirements(); render();
     }
@@ -310,7 +320,7 @@
       var note=window.prompt("Description / commentaire (optionnel) :", v.note||""); if(note!==null) v.note=note.trim();
       var mv=window.prompt("Montant (€) :", String(v.montant).replace(".",",")); if(mv!==null){
         var newM=num(mv);
-        if(v.epargneId){ var delta=-(newM - v.montant); applyEp(v.epargneId, delta); v.epApplied=(v.epApplied||0)+delta; }
+        if(v.epargneId && v.done){ var delta=-(newM - v.montant); applyEp(v.epargneId, delta); v.epApplied=(v.epApplied||0)+delta; }
         v.montant=newM;
       }
       persistVirements(); render();
@@ -318,7 +328,7 @@
     function delVirement(id){
       if(!window.confirm("Supprimer ce virement ?")) return;
       var v=virements.filter(function(x){ return String(x.id)===String(id); })[0];
-      if(v && v.epargneId){ applyEp(v.epargneId, -(v.epApplied||0)); }
+      if(v && v.epargneId && v.done){ applyEp(v.epargneId, -(v.epApplied||0)); }
       virements=virements.filter(function(x){ return String(x.id)!==String(id); });
       persistVirements(); render();
     }
@@ -2331,7 +2341,7 @@
       [].forEach.call(document.querySelectorAll(".prldel"), function(b){ b.onclick=function(){ delPrelevement(b.getAttribute("data-id"), b.getAttribute("data-pr")); }; });
     }
     function backupData(){
-      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold"];
+      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2"];
       var dump={ _app:"tickets", _version:1, _date:new Date().toISOString(), data:{} };
       keys.forEach(function(k){ var v=store.read(k, null); if(v!==null) dump.data[k]=v; });
       dump.photos = PHOTOS;
@@ -2354,10 +2364,11 @@
           if(!data || typeof data!=="object") throw new Error("format non reconnu");
           var n=(data.entries && data.entries.length) ? data.entries.length : 0;
           if(!window.confirm("Restaurer cette sauvegarde ?\n"+n+" ticket(s) vont REMPLACER les données actuelles.")) return;
-          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold"].forEach(function(k){
+          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2"].forEach(function(k){
             if(k in data) store.write(k, data[k]);
           });
           if(data.taxoV2!==2) store.write("taxoV2", null);
+          if(data.virEpV2!==1) store.write("virEpV2", null);
           var photos=(obj && obj.photos && typeof obj.photos==="object") ? obj.photos : null;
           function finishRestore(){ window.alert("Sauvegarde restaurée ✓"); window.location.reload(); }
           if(photos && IDB){ var ch=Promise.resolve(); Object.keys(photos).forEach(function(id){ ch=ch.then(function(){ return idbPut(id, photos[id]); }); }); ch.then(finishRestore).catch(finishRestore); }
