@@ -1465,6 +1465,41 @@
           state.solLoading=false; render();
         });
     }
+    function etoroKeys(){ return { pub: store.read("etoroApiKey",""), priv: store.read("etoroUserKey","") }; }
+    function connectEtoroTest(){
+      var k=etoroKeys();
+      if(!k.pub || !k.priv){
+        var pub=(window.prompt("Colle ta Public Key eToro :","")||"").trim();
+        if(!pub) return;
+        var priv=(window.prompt("Colle ta Private Key eToro (User Key) :","")||"").trim();
+        if(!priv) return;
+        store.write("etoroApiKey", pub);
+        store.write("etoroUserKey", priv);
+        k={ pub:pub, priv:priv };
+      }
+      var reqId="tk-"+Date.now()+"-"+Math.random().toString(16).slice(2);
+      window.alert("Test de connexion en cours…");
+      fetch("https://public-api.etoro.com/api/v1/trading/info/portfolio", {
+        headers: { "x-api-key": k.pub, "x-user-key": k.priv, "x-request-id": reqId, "Accept": "application/json" }
+      }).then(function(r){
+        return r.text().then(function(t){ return { status:r.status, ok:r.ok, text:t }; });
+      }).then(function(res){
+        console.log("eToro test →", res.status, res.text);
+        if(res.ok){
+          window.alert("✅ Connexion réussie (HTTP "+res.status+").\n\nRéponse (début) :\n"+res.text.slice(0,600));
+        } else {
+          window.alert("⚠️ Réponse HTTP "+res.status+" :\n"+res.text.slice(0,400));
+        }
+      }).catch(function(err){
+        console.error("eToro test erreur", err);
+        window.alert("❌ Échec de l'appel — probablement bloqué par CORS (protection du navigateur) ou pas de réseau.\n\nDétail : "+err.message);
+      });
+    }
+    function forgetEtoro(){
+      if(!window.confirm("Oublier les clés eToro enregistrées ?")) return;
+      store.write("etoroApiKey",""); store.write("etoroUserKey","");
+      render();
+    }
     function renderBourse(){
       var curM=monthKey(todayISO());
       var month=(state.months&&state.months.bourse)||curM;
@@ -1528,6 +1563,10 @@
         h+='<hr class="rule" style="margin:6px 0;opacity:.3">';
       });
       h+='<button class="btn ghost" id="addbrs" type="button" style="margin-top:6px">+ Ajouter un compte bourse</button>';
+      (function(){
+        var k=etoroKeys(), has=!!(k.pub&&k.priv);
+        h+='<div class="center" style="margin-top:10px"><button class="btn ghost" id="etorotest" type="button">'+(has?"🔗 Tester la connexion eToro":"🔗 Connecter eToro (test)")+'</button>'+(has?' <button class="btn ghost" id="etoroforget" type="button" style="margin-top:6px">Oublier la clé eToro</button>':'')+'</div>';
+      })();
       h+='<hr class="rule"><div class="leader fam"><span class="lbl">Total portefeuille</span><span class="fill"></span><span class="val">'+fmt(totVal)+'</span></div>';
       h+='<div class="leader item"><span class="lbl">Capital total investi</span><span class="fill"></span><span class="val">'+fmt(totCap)+'</span></div>';
       if(totCap>0){
@@ -1569,6 +1608,8 @@
       var rs=document.getElementById("refreshsol"); if(rs) rs.onclick=function(){ state.solPrice=null; fetchSolPrice(); };
       var pa=document.getElementById("prixact"); if(pa){ pa.oninput=function(){ state.prixActuel=pa.value; render(); }; }
       var ab=document.getElementById("addbrs"); if(ab) ab.onclick=addBourse;
+      var et=document.getElementById("etorotest"); if(et) et.onclick=connectEtoroTest;
+      var ef=document.getElementById("etoroforget"); if(ef) ef.onclick=forgetEtoro;
       [].forEach.call(document.querySelectorAll(".bedit"), function(b){ b.onclick=function(){ editBourse(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".bdel"), function(b){ b.onclick=function(){ delBourse(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".bmonth"), function(sp){ sp.onclick=function(){ if(!state.months) state.months={}; var mk=sp.getAttribute("data-m"); state.months.bourse=(mk===curM?null:mk); render(); }; });
