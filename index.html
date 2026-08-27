@@ -1499,29 +1499,31 @@
                   mirrorDetails+="Mirror #"+(idx+1)+" ("+(m.parentUsername||"?")+") : "+((m.positions||[]).length)+" positions, valeur = "+mirrorPosSum.toFixed(2)+"\n";
                 });
               }
-              var estimTotaleUSD=estimSansMirrors+totalMirrors;
+              var estimTotaleUSD=estimSansMirrors; // uniquement la partie racine est en devise du compte (USD)
               msg+="credit : "+cp.credit+" | unrealizedPnL : "+cp.unrealizedPnL+"\n";
               msg+="Positions : "+(cp.positions?cp.positions.length:0)+" (somme "+invSum.toFixed(2)+")\n";
               msg+=mirrorDetails+"\n";
-              msg+="Estimation (devise du compte, id="+cp.accountCurrencyId+") = "+estimTotaleUSD.toFixed(2)+"\n\n";
+              msg+="Racine (devise du compte, id="+cp.accountCurrencyId+") = "+estimSansMirrors.toFixed(2)+"\n";
+              msg+="Mirrors (déjà en EUR) = "+totalMirrors.toFixed(2)+"\n\n";
 
               var isUSDAccount = Number(cp.accountCurrencyId)===1;
               if(!isUSDAccount){
-                msg+="=== ESTIMATION TOTALE = "+estimTotaleUSD.toFixed(2)+" € ===\n";
+                var estimEUR=estimTotaleUSD+totalMirrors;
+                msg+="=== ESTIMATION TOTALE = "+estimEUR.toFixed(2)+" € ===\n";
                 window.alert(msg.slice(0,7800));
               } else {
                 fetch("https://api.frankfurter.dev/v1/latest?base=USD&symbols=EUR")
                   .then(function(r){ return r.json(); })
                   .then(function(fx){
                     var rate=(fx && fx.rates && fx.rates.EUR) ? fx.rates.EUR : 0.87;
-                    var estimEUR=estimTotaleUSD*rate;
-                    msg+="Taux USD→EUR utilisé : "+rate+"\n";
+                    var estimEUR=(estimTotaleUSD*rate)+totalMirrors;
+                    msg+="Taux USD→EUR utilisé (racine uniquement) : "+rate+"\n";
                     msg+="=== ESTIMATION TOTALE = "+estimEUR.toFixed(2)+" € ===\n";
                     window.alert(msg.slice(0,7800));
                   })
                   .catch(function(){
                     var rate=0.87;
-                    var estimEUR=estimTotaleUSD*rate;
+                    var estimEUR=(estimTotaleUSD*rate)+totalMirrors;
                     msg+="⚠️ Taux en direct indisponible, taux approximatif utilisé : "+rate+"\n";
                     msg+="=== ESTIMATION TOTALE = "+estimEUR.toFixed(2)+" € (approx.) ===\n";
                     window.alert(msg.slice(0,7800));
