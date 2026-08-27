@@ -1497,38 +1497,18 @@
               msg+="Nombre de mirrors (copy) : "+(cp.mirrors?cp.mirrors.length:0)+"\n\n";
               var estimSansMirrors=(Number(cp.credit)||0)+(Number(cp.bonusCredit)||0)+invSum+(Number(cp.unrealizedPnL)||0);
               msg+="Estimation (sans mirrors) = "+estimSansMirrors+"\n\n";
+              var totalMirrors=0;
               if(cp.mirrors && cp.mirrors.length){
-                var m=cp.mirrors[0];
-                var mirrorPosSum=0, mirrorPnlSum=0;
-                var pnlKeys=["unrealizedPnL","netProfit","profit","currentValue","pnl","unrealizedProfit"];
-                var foundPnlKey=null;
-                if(m.positions && m.positions.length){
-                  foundPnlKey=pnlKeys.filter(function(k){ return m.positions[0].hasOwnProperty(k); });
-                }
-                (m.positions||[]).forEach(function(p){
-                  mirrorPosSum+=Number(p.amount)||0;
-                  (foundPnlKey||[]).forEach(function(k){
-                    var v=p[k];
-                    if(v && typeof v==="object"){ mirrorPnlSum+=Number(v.pnL)||Number(v.pnl)||0; }
-                    else { mirrorPnlSum+=Number(v)||0; }
-                  });
+                cp.mirrors.forEach(function(m, idx){
+                  var mirrorPosSum=0;
+                  (m.positions||[]).forEach(function(p){ mirrorPosSum+=Number(p.amount)||0; });
+                  totalMirrors+=mirrorPosSum;
+                  msg+="Mirror #"+(idx+1)+" ("+(m.parentUsername||"?")+") : "+((m.positions||[]).length)+" positions, valeur = "+mirrorPosSum.toFixed(2)+"\n";
                 });
-                msg+="=== MIRROR — valeurs clés ===\n";
-                msg+="initialInvestment = "+JSON.stringify(m.initialInvestment)+"\n";
-                msg+="availableAmount = "+JSON.stringify(m.availableAmount)+"\n";
-                msg+="Nombre de positions dans le mirror : "+((m.positions||[]).length)+"\n";
-                msg+="Somme des amount des positions du mirror : "+mirrorPosSum+"\n";
-                msg+="Champs PnL détectés sur une position mirror : "+((foundPnlKey&&foundPnlKey.length)?foundPnlKey.join(", "):"AUCUN")+"\n";
-                msg+="Somme de ces champs PnL (si trouvés) : "+mirrorPnlSum+"\n\n";
-                msg+="Estimation avec mirror (availableAmount + PnL positions) = "+(estimSansMirrors+(Number(m.availableAmount)||0)+mirrorPnlSum)+"\n";
-                msg+="Estimation avec mirror (somme amount + PnL positions) = "+(estimSansMirrors+mirrorPosSum+mirrorPnlSum)+"\n\n";
-                if(m.positions && m.positions.length){
-                  msg+="--- Position mirror #1 (JSON brut) ---\n"+JSON.stringify(m.positions[0])+"\n\n";
-                }
-                msg+="--- Clés du mirror (niveau racine) ---\n"+Object.keys(m).join(", ")+"\n\n";
-                msg+="--- Valeurs (hors 'positions') ---\n";
-                Object.keys(m).forEach(function(k){ if(k!=="positions") msg+=k+" = "+JSON.stringify(m[k])+"\n"; });
+                msg+="\n";
               }
+              var estimTotale=estimSansMirrors+totalMirrors;
+              msg+="=== ESTIMATION TOTALE (avec mirrors) = "+estimTotale.toFixed(2)+" ===\n";
               window.alert(msg.slice(0,7800));
             }catch(e){
               window.alert("✅ HTTP "+res.status+" mais JSON illisible : "+e.message+"\n\n"+res.text.slice(0,2000));
