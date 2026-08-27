@@ -1,6 +1,6 @@
 // Service worker : "réseau d'abord" pour l'app (toujours la dernière version),
 // "cache d'abord" pour les CDN (moteur OCR + langues) afin de garder l'hors-ligne.
-const SHELL_CACHE = "tickets-shell-v3";
+const SHELL_CACHE = "tickets-shell-v4";
 const CDN_CACHE   = "tickets-cdn-v3";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
 
@@ -27,7 +27,7 @@ self.addEventListener("fetch", e => {
   // 1) App (même origine) : RESEAU D'ABORD, cache seulement en secours hors-ligne.
   if (url.origin === location.origin) {
     e.respondWith(
-      fetch(e.request)
+      fetch(e.request, { cache: "no-store" })
         .then(resp => {
           const copy = resp.clone();
           caches.open(SHELL_CACHE).then(c => c.put(e.request, copy)).catch(() => {});
