@@ -1487,43 +1487,46 @@
               var data=JSON.parse(res.text);
               var cp=data.clientPortfolio||data;
               var msg="✅ HTTP "+res.status+" · "+res.text.length+" caractères\n\n";
-              msg+="--- TOUTES les clés de premier niveau (data) ---\n"+Object.keys(data).join(", ")+"\n\n";
-              if(data.clientPortfolio){
-                msg+="--- TOUTES les clés de clientPortfolio ---\n"+Object.keys(cp).join(", ")+"\n\n";
-              }
-              var totalLikeKeys=Object.keys(data).concat(Object.keys(cp)).filter(function(k){
-                return /total|equity|value|net|balance|worth/i.test(k);
-              });
-              msg+="--- Clés potentiellement pertinentes (total/equity/value/net/balance) ---\n";
-              totalLikeKeys.forEach(function(k){
-                var v=(data.hasOwnProperty(k)?data[k]:cp[k]);
-                if(typeof v!=="object"){ msg+=k+" = "+JSON.stringify(v)+"\n"; }
-              });
-              msg+="\naccountCurrencyId = "+JSON.stringify(cp.accountCurrencyId)+"\n";
-              msg+="\n";
-              msg+="credit : "+cp.credit+"\n";
-              msg+="bonusCredit : "+cp.bonusCredit+"\n";
-              msg+="unrealizedPnL : "+cp.unrealizedPnL+"\n";
               var invSum=0;
               (cp.positions||[]).forEach(function(p){ invSum+=Number(p.amount)||0; });
-              msg+="Nombre de positions : "+(cp.positions?cp.positions.length:0)+"\n";
-              msg+="Somme des \"amount\" des positions : "+invSum+"\n";
-              msg+="Nombre de mirrors (copy) : "+(cp.mirrors?cp.mirrors.length:0)+"\n\n";
               var estimSansMirrors=(Number(cp.credit)||0)+(Number(cp.bonusCredit)||0)+invSum+(Number(cp.unrealizedPnL)||0);
-              msg+="Estimation (sans mirrors) = "+estimSansMirrors+"\n\n";
-              var totalMirrors=0;
+              var totalMirrors=0, mirrorDetails="";
               if(cp.mirrors && cp.mirrors.length){
                 cp.mirrors.forEach(function(m, idx){
                   var mirrorPosSum=0;
                   (m.positions||[]).forEach(function(p){ mirrorPosSum+=Number(p.amount)||0; });
                   totalMirrors+=mirrorPosSum;
-                  msg+="Mirror #"+(idx+1)+" ("+(m.parentUsername||"?")+") : "+((m.positions||[]).length)+" positions, valeur = "+mirrorPosSum.toFixed(2)+"\n";
+                  mirrorDetails+="Mirror #"+(idx+1)+" ("+(m.parentUsername||"?")+") : "+((m.positions||[]).length)+" positions, valeur = "+mirrorPosSum.toFixed(2)+"\n";
                 });
-                msg+="\n";
               }
-              var estimTotale=estimSansMirrors+totalMirrors;
-              msg+="=== ESTIMATION TOTALE (avec mirrors) = "+estimTotale.toFixed(2)+" ===\n";
-              window.alert(msg.slice(0,7800));
+              var estimTotaleUSD=estimSansMirrors+totalMirrors;
+              msg+="credit : "+cp.credit+" | unrealizedPnL : "+cp.unrealizedPnL+"\n";
+              msg+="Positions : "+(cp.positions?cp.positions.length:0)+" (somme "+invSum.toFixed(2)+")\n";
+              msg+=mirrorDetails+"\n";
+              msg+="Estimation (devise du compte, id="+cp.accountCurrencyId+") = "+estimTotaleUSD.toFixed(2)+"\n\n";
+
+              var isUSDAccount = Number(cp.accountCurrencyId)===1;
+              if(!isUSDAccount){
+                msg+="=== ESTIMATION TOTALE = "+estimTotaleUSD.toFixed(2)+" € ===\n";
+                window.alert(msg.slice(0,7800));
+              } else {
+                fetch("https://api.frankfurter.dev/v1/latest?base=USD&symbols=EUR")
+                  .then(function(r){ return r.json(); })
+                  .then(function(fx){
+                    var rate=(fx && fx.rates && fx.rates.EUR) ? fx.rates.EUR : 0.87;
+                    var estimEUR=estimTotaleUSD*rate;
+                    msg+="Taux USD→EUR utilisé : "+rate+"\n";
+                    msg+="=== ESTIMATION TOTALE = "+estimEUR.toFixed(2)+" € ===\n";
+                    window.alert(msg.slice(0,7800));
+                  })
+                  .catch(function(){
+                    var rate=0.87;
+                    var estimEUR=estimTotaleUSD*rate;
+                    msg+="⚠️ Taux en direct indisponible, taux approximatif utilisé : "+rate+"\n";
+                    msg+="=== ESTIMATION TOTALE = "+estimEUR.toFixed(2)+" € (approx.) ===\n";
+                    window.alert(msg.slice(0,7800));
+                  });
+              }
             }catch(e){
               window.alert("✅ HTTP "+res.status+" mais JSON illisible : "+e.message+"\n\n"+res.text.slice(0,2000));
             }
