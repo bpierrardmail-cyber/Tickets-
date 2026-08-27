@@ -1487,6 +1487,19 @@
               var data=JSON.parse(res.text);
               var cp=data.clientPortfolio||data;
               var msg="✅ HTTP "+res.status+" · "+res.text.length+" caractères\n\n";
+              msg+="--- TOUTES les clés de premier niveau (data) ---\n"+Object.keys(data).join(", ")+"\n\n";
+              if(data.clientPortfolio){
+                msg+="--- TOUTES les clés de clientPortfolio ---\n"+Object.keys(cp).join(", ")+"\n\n";
+              }
+              var totalLikeKeys=Object.keys(data).concat(Object.keys(cp)).filter(function(k){
+                return /total|equity|value|net|balance|worth/i.test(k);
+              });
+              msg+="--- Clés potentiellement pertinentes (total/equity/value/net/balance) ---\n";
+              totalLikeKeys.forEach(function(k){
+                var v=(data.hasOwnProperty(k)?data[k]:cp[k]);
+                if(typeof v!=="object"){ msg+=k+" = "+JSON.stringify(v)+"\n"; }
+              });
+              msg+="\n";
               msg+="credit : "+cp.credit+"\n";
               msg+="bonusCredit : "+cp.bonusCredit+"\n";
               msg+="unrealizedPnL : "+cp.unrealizedPnL+"\n";
