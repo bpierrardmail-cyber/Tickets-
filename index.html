@@ -1483,7 +1483,9 @@
         .then(function(res){
           console.log("eToro (via relais) →", res.status, res.text);
           if(res.ok){
-            window.alert("✅ Connexion réussie (HTTP "+res.status+").\n\nRéponse (début) :\n"+res.text.slice(0,700));
+            var pretty=res.text;
+            try{ pretty=JSON.stringify(JSON.parse(res.text), null, 1); }catch(e){}
+            window.alert("✅ Connexion réussie (HTTP "+res.status+").\nLongueur totale : "+res.text.length+" caractères.\n\n"+pretty.slice(0,6000));
           } else {
             window.alert("⚠️ Réponse HTTP "+res.status+" :\n"+res.text.slice(0,400));
           }
