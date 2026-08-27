@@ -425,9 +425,19 @@
       if(isCur){
         var solq=window.prompt("Nombre de SOL détenus (vide = non lié au cours Solana) :", c.solQty?String(c.solQty).replace(".",","):"");
         if(solq!==null){ if(solq.trim() && num(solq)>0){ c.sol=true; c.solQty=num(solq); } else { c.sol=false; delete c.solQty; } }
+        var symb=(window.prompt("Ticker Stooq de l'action (ex. ois.us) — vide = non lié à une action :", (c.stock&&c.stock.symbol)||"")||"").trim().toLowerCase();
+        if(symb){
+          var qty=window.prompt("Nombre de titres détenus :", (c.stock&&c.stock.qty)?String(c.stock.qty).replace(".",","):""); if(qty===null) qty="0";
+          var cash=window.prompt("Solde espèces associé (€) :", (c.stock&&c.stock.cash!==undefined)?String(c.stock.cash).replace(".",","):""); if(cash===null) cash="0";
+          c.stock={symbol:symb, qty:num(qty), cash:num(cash)};
+          if(!state.stockPrices[symb]) fetchStockPrice(symb);
+        } else if(c.stock){
+          delete c.stock;
+        }
       }
       var valeur;
-      if(c.sol && state.solPrice && isCur){ valeur=c.solQty*state.solPrice; }
+      if(c.stock && c.stock.symbol && state.stockPrices[c.stock.symbol] && isCur){ valeur=c.stock.qty*state.stockPrices[c.stock.symbol]+(Number(c.stock.cash)||0); }
+      else if(c.sol && state.solPrice && isCur){ valeur=c.solQty*state.solPrice; }
       else { var val=window.prompt("Valeur ("+m+") (€) :", ref.valeur?String(ref.valeur).replace(".",","):""); if(val===null) return; valeur=num(val); }
       if(!c.vals) c.vals={}; c.vals[m]={capital:num(cap),valeur:valeur};
       persistBourse(); render();
@@ -608,7 +618,7 @@
       entries: store.read("entries", []),
       view: "list", draft: null,
       offline: store.read("offlineReady", false) ? "ready" : "idle",
-      busy: false, prog: 0, scanMsg: "", note: "", graphSel: null, graphView: "depenses", graphPeriod: "cur", graphDim: "fam", graphType: "donut", graphHide: {}, histCat: "", histMonth: null, artSel: null, prixActuel: "", solPrice: null, solLoading: false, solError: "", solTime: ""
+      busy: false, prog: 0, scanMsg: "", note: "", graphSel: null, graphView: "depenses", graphPeriod: "cur", graphDim: "fam", graphType: "donut", graphHide: {}, histCat: "", histMonth: null, artSel: null, prixActuel: "", solPrice: null, solLoading: false, solError: "", solTime: "", stockPrices: {}, stockLoading: {}, stockError: {}
     };
     function persist(){ store.write("entries", state.entries); }
 
@@ -1464,6 +1474,55 @@
           state.solError="Erreur : "+(e&&e.message?e.message:"connexion");
           state.solLoading=false; render();
         });
+    }
+    function fetchStockPrice(symbol){
+      if(!symbol) return;
+      if(state.stockLoading[symbol]) return;
+      state.stockLoading[symbol]=true; state.stockError[symbol]=""; render();
+      fetch("https://stooq.com/q/l/?s="+encodeURIComponent(symbol)+"&f=sd2t2ohlcv&h&e=csv")
+        .then(function(r){ return r.text(); })
+        .then(function(text){
+          var lines=text.trim().split("\n");
+          if(lines.length<2) throw new Error("Réponse vide");
+          var cols=lines[1].split(",");
+          var close=parseFloat(cols[6]);
+          if(!isFinite(close) || close<=0) throw new Error("Cours indisponible pour "+symbol);
+          return fetch("https://api.frankfurter.dev/v1/latest?base=USD&symbols=EUR")
+            .then(function(r){ return r.json(); })
+            .then(function(fx){
+              var rate=(fx && fx.rates && fx.rates.EUR) ? fx.rates.EUR : 0.87;
+              return close*rate;
+            })
+            .catch(function(){ return close*0.87; });
+        })
+        .then(function(priceEUR){
+          state.stockPrices[symbol]=priceEUR;
+          state.stockLoading[symbol]=false; state.stockError[symbol]="";
+          syncStockAccounts();
+          render();
+        })
+        .catch(function(e){
+          state.stockError[symbol]="Erreur : "+(e&&e.message?e.message:"connexion");
+          state.stockLoading[symbol]=false; render();
+        });
+    }
+    function syncStockAccounts(){
+      var m0=monthKey(todayISO()), ch=false;
+      bourse.forEach(function(c){
+        if(c.stock && c.stock.symbol && state.stockPrices[c.stock.symbol]){
+          var nv=(c.stock.qty||0)*state.stockPrices[c.stock.symbol]+(Number(c.stock.cash)||0);
+          if(!c.vals) c.vals={};
+          var cur=c.vals[m0]||{}, capPrev=cur.capital;
+          if(capPrev===undefined){ var bl=bLast(c); capPrev=bl?bl.capital:0; }
+          if(Number(cur.valeur)!==nv){ c.vals[m0]={capital:Number(capPrev)||0, valeur:nv}; ch=true; }
+        }
+      });
+      if(ch) persistBourse();
+    }
+    function fetchAllStockPrices(){
+      var symbols={};
+      bourse.forEach(function(c){ if(c.stock && c.stock.symbol) symbols[c.stock.symbol]=true; });
+      Object.keys(symbols).forEach(function(s){ fetchStockPrice(s); });
     }
     function etoroCfg(){ return { url: store.read("etoroWorkerUrl",""), secret: store.read("etoroAppSecret","") }; }
     function fetchEtoroSilent(){
@@ -2571,6 +2630,8 @@
     initPhotos();
     tickBourse();
     setInterval(tickBourse, 60000);
+    fetchAllStockPrices();
+    setInterval(fetchAllStockPrices, 900000);
     fetchEtoroSilent();
     setInterval(fetchEtoroSilent, 900000);
     document.addEventListener("click", function(e){
