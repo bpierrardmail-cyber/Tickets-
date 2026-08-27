@@ -1506,27 +1506,46 @@
               msg+="Racine (devise du compte, id="+cp.accountCurrencyId+") = "+estimSansMirrors.toFixed(2)+"\n";
               msg+="Mirrors (déjà en EUR) = "+totalMirrors.toFixed(2)+"\n\n";
 
+              var CORRECTION_KEY="etoroCorrectionFactor";
+              function getCorrectionFactor(){
+                var v=parseFloat(localStorage.getItem(CORRECTION_KEY));
+                return (isFinite(v) && v>0) ? v : 1;
+              }
+              function finalizeAndOffer(rawEstim, rateInfo){
+                var factor=getCorrectionFactor();
+                var corrected=rawEstim*factor;
+                msg+=rateInfo;
+                msg+="Estimation brute = "+rawEstim.toFixed(2)+" €\n";
+                msg+="Facteur de correction actuel = "+factor.toFixed(5)+"\n";
+                msg+="=== ESTIMATION CORRIGÉE = "+corrected.toFixed(2)+" € ===\n";
+                window.alert(msg.slice(0,7800));
+                var real=window.prompt("Calibration (optionnel) : quelle est la vraie valeur eToro actuelle en € ? (laisse vide pour ignorer)","");
+                if(real!==null && real.trim()!==""){
+                  var realNum=parseFloat(real.replace(",","."));
+                  if(isFinite(realNum) && realNum>0 && rawEstim>0){
+                    var newFactor=realNum/rawEstim;
+                    localStorage.setItem(CORRECTION_KEY, newFactor.toFixed(5));
+                    window.alert("Nouveau facteur de correction enregistré : "+newFactor.toFixed(5)+"\nProchaine estimation corrigée avec ce facteur.");
+                  }
+                }
+              }
+
               var isUSDAccount = Number(cp.accountCurrencyId)===1;
               if(!isUSDAccount){
                 var estimEUR=estimTotaleUSD+totalMirrors;
-                msg+="=== ESTIMATION TOTALE = "+estimEUR.toFixed(2)+" € ===\n";
-                window.alert(msg.slice(0,7800));
+                finalizeAndOffer(estimEUR, "");
               } else {
                 fetch("https://api.frankfurter.dev/v1/latest?base=USD&symbols=EUR")
                   .then(function(r){ return r.json(); })
                   .then(function(fx){
                     var rate=(fx && fx.rates && fx.rates.EUR) ? fx.rates.EUR : 0.87;
                     var estimEUR=(estimTotaleUSD*rate)+totalMirrors;
-                    msg+="Taux USD→EUR utilisé (racine uniquement) : "+rate+"\n";
-                    msg+="=== ESTIMATION TOTALE = "+estimEUR.toFixed(2)+" € ===\n";
-                    window.alert(msg.slice(0,7800));
+                    finalizeAndOffer(estimEUR, "Taux USD→EUR utilisé (racine uniquement) : "+rate+"\n");
                   })
                   .catch(function(){
                     var rate=0.87;
                     var estimEUR=(estimTotaleUSD*rate)+totalMirrors;
-                    msg+="⚠️ Taux en direct indisponible, taux approximatif utilisé : "+rate+"\n";
-                    msg+="=== ESTIMATION TOTALE = "+estimEUR.toFixed(2)+" € (approx.) ===\n";
-                    window.alert(msg.slice(0,7800));
+                    finalizeAndOffer(estimEUR, "⚠️ Taux en direct indisponible, taux approximatif utilisé : "+rate+"\n");
                   });
               }
             }catch(e){
