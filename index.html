@@ -1488,13 +1488,15 @@
               var cp=data.clientPortfolio||data;
               var msg="✅ HTTP "+res.status+" · "+res.text.length+" caractères\n\n";
               msg+="credit : "+cp.credit+"\n";
-              msg+="bonusCredit : "+cp.bonusCredit+"\n\n";
-              if(cp.positions && cp.positions.length){
-                msg+="Nombre de positions : "+cp.positions.length+"\n\n";
-                msg+="TOUS les champs d'une position :\n"+Object.keys(cp.positions[0]).join(", ")+"\n\n";
-                msg+="Valeurs de la 1ère position :\n";
-                Object.keys(cp.positions[0]).forEach(function(k){ msg+=k+" = "+cp.positions[0][k]+"\n"; });
-              }
+              msg+="bonusCredit : "+cp.bonusCredit+"\n";
+              msg+="unrealizedPnL : "+cp.unrealizedPnL+"\n";
+              var invSum=0;
+              (cp.positions||[]).forEach(function(p){ invSum+=Number(p.amount)||0; });
+              msg+="Nombre de positions : "+(cp.positions?cp.positions.length:0)+"\n";
+              msg+="Somme des \"amount\" des positions : "+invSum+"\n";
+              msg+="Nombre de mirrors (copy) : "+(cp.mirrors?cp.mirrors.length:0)+"\n\n";
+              msg+="Estimation valeur totale = credit + bonusCredit + somme(amount) + unrealizedPnL :\n";
+              msg+="= "+((Number(cp.credit)||0)+(Number(cp.bonusCredit)||0)+invSum+(Number(cp.unrealizedPnL)||0));
               window.alert(msg.slice(0,7000));
             }catch(e){
               window.alert("✅ HTTP "+res.status+" mais JSON illisible : "+e.message+"\n\n"+res.text.slice(0,2000));
