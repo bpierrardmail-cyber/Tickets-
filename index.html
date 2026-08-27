@@ -1483,9 +1483,22 @@
         .then(function(res){
           console.log("eToro (via relais) →", res.status, res.text);
           if(res.ok){
-            var pretty=res.text;
-            try{ pretty=JSON.stringify(JSON.parse(res.text), null, 1); }catch(e){}
-            window.alert("✅ Connexion réussie (HTTP "+res.status+").\nLongueur totale : "+res.text.length+" caractères.\n\n"+pretty.slice(0,6000));
+            try{
+              var data=JSON.parse(res.text);
+              var cp=data.clientPortfolio||data;
+              var topKeys=Object.keys(data);
+              var cpKeys=Object.keys(cp);
+              var msg="✅ Connexion réussie (HTTP "+res.status+")\nLongueur totale : "+res.text.length+" caractères\n\n";
+              msg+="Clés au 1er niveau :\n"+topKeys.join(", ")+"\n\n";
+              msg+="Clés dans clientPortfolio :\n"+cpKeys.join(", ")+"\n\n";
+              if(cp.positions && cp.positions.length){
+                msg+="Nombre de positions : "+cp.positions.length+"\n\n";
+                msg+="1ère position (complète) :\n"+JSON.stringify(cp.positions[0], null, 1);
+              }
+              window.alert(msg.slice(0,7000));
+            }catch(e){
+              window.alert("✅ HTTP "+res.status+" mais JSON illisible : "+e.message+"\n\n"+res.text.slice(0,2000));
+            }
           } else {
             window.alert("⚠️ Réponse HTTP "+res.status+" :\n"+res.text.slice(0,400));
           }
