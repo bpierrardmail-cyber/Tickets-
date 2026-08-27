@@ -1497,8 +1497,14 @@
               msg+="Nombre de mirrors (copy) : "+(cp.mirrors?cp.mirrors.length:0)+"\n\n";
               msg+="Estimation (sans mirrors) = "+((Number(cp.credit)||0)+(Number(cp.bonusCredit)||0)+invSum+(Number(cp.unrealizedPnL)||0))+"\n\n";
               if(cp.mirrors && cp.mirrors.length){
-                msg+="--- Détail du mirror ---\n";
-                msg+=JSON.stringify(cp.mirrors[0], null, 1);
+                var m=cp.mirrors[0];
+                msg+="--- Clés du mirror (niveau racine) ---\n"+Object.keys(m).join(", ")+"\n\n";
+                msg+="--- Valeurs (hors 'positions') ---\n";
+                Object.keys(m).forEach(function(k){ if(k!=="positions") msg+=k+" = "+JSON.stringify(m[k])+"\n"; });
+                if(m.positions && m.positions.length){
+                  msg+="\nNombre de positions dans ce mirror : "+m.positions.length+"\n";
+                  msg+="Clés d'une position de mirror :\n"+Object.keys(m.positions[0]).join(", ");
+                }
               }
               window.alert(msg.slice(0,7000));
             }catch(e){
