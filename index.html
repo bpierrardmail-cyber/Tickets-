@@ -1486,14 +1486,14 @@
             try{
               var data=JSON.parse(res.text);
               var cp=data.clientPortfolio||data;
-              var topKeys=Object.keys(data);
-              var cpKeys=Object.keys(cp);
-              var msg="✅ Connexion réussie (HTTP "+res.status+")\nLongueur totale : "+res.text.length+" caractères\n\n";
-              msg+="Clés au 1er niveau :\n"+topKeys.join(", ")+"\n\n";
-              msg+="Clés dans clientPortfolio :\n"+cpKeys.join(", ")+"\n\n";
+              var msg="✅ HTTP "+res.status+" · "+res.text.length+" caractères\n\n";
+              msg+="credit : "+cp.credit+"\n";
+              msg+="bonusCredit : "+cp.bonusCredit+"\n\n";
               if(cp.positions && cp.positions.length){
                 msg+="Nombre de positions : "+cp.positions.length+"\n\n";
-                msg+="1ère position (complète) :\n"+JSON.stringify(cp.positions[0], null, 1);
+                msg+="TOUS les champs d'une position :\n"+Object.keys(cp.positions[0]).join(", ")+"\n\n";
+                msg+="Valeurs de la 1ère position :\n";
+                Object.keys(cp.positions[0]).forEach(function(k){ msg+=k+" = "+cp.positions[0][k]+"\n"; });
               }
               window.alert(msg.slice(0,7000));
             }catch(e){
