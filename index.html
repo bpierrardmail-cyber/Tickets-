@@ -1499,6 +1499,7 @@
                 var v=(data.hasOwnProperty(k)?data[k]:cp[k]);
                 if(typeof v!=="object"){ msg+=k+" = "+JSON.stringify(v)+"\n"; }
               });
+              msg+="\naccountCurrencyId = "+JSON.stringify(cp.accountCurrencyId)+"\n";
               msg+="\n";
               msg+="credit : "+cp.credit+"\n";
               msg+="bonusCredit : "+cp.bonusCredit+"\n";
