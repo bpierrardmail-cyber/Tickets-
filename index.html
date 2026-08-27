@@ -1495,15 +1495,27 @@
               msg+="Nombre de positions : "+(cp.positions?cp.positions.length:0)+"\n";
               msg+="Somme des \"amount\" des positions : "+invSum+"\n";
               msg+="Nombre de mirrors (copy) : "+(cp.mirrors?cp.mirrors.length:0)+"\n\n";
-              msg+="Estimation (sans mirrors) = "+((Number(cp.credit)||0)+(Number(cp.bonusCredit)||0)+invSum+(Number(cp.unrealizedPnL)||0))+"\n\n";
+              var estimSansMirrors=(Number(cp.credit)||0)+(Number(cp.bonusCredit)||0)+invSum+(Number(cp.unrealizedPnL)||0);
+              msg+="Estimation (sans mirrors) = "+estimSansMirrors+"\n\n";
               if(cp.mirrors && cp.mirrors.length){
                 var m=cp.mirrors[0];
+                var mirrorPosSum=0;
+                (m.positions||[]).forEach(function(p){ mirrorPosSum+=Number(p.amount)||0; });
+                msg+="=== MIRROR — valeurs clés ===\n";
+                msg+="initialInvestment = "+JSON.stringify(m.initialInvestment)+"\n";
+                msg+="availableAmount = "+JSON.stringify(m.availableAmount)+"\n";
+                msg+="stopLossAmount = "+JSON.stringify(m.stopLossAmount)+"\n";
+                msg+="closedPositionsNetProfit = "+JSON.stringify(m.closedPositionsNetProfit)+"\n";
+                msg+="Nombre de positions dans le mirror : "+((m.positions||[]).length)+"\n";
+                msg+="Somme des amount des positions du mirror : "+mirrorPosSum+"\n\n";
+                msg+="Estimation avec mirror (via initialInvestment) = "+(estimSansMirrors+(Number(m.initialInvestment)||0))+"\n";
+                msg+="Estimation avec mirror (via availableAmount) = "+(estimSansMirrors+(Number(m.availableAmount)||0))+"\n";
+                msg+="Estimation avec mirror (via somme positions internes) = "+(estimSansMirrors+mirrorPosSum)+"\n\n";
                 msg+="--- Clés du mirror (niveau racine) ---\n"+Object.keys(m).join(", ")+"\n\n";
                 msg+="--- Valeurs (hors 'positions') ---\n";
                 Object.keys(m).forEach(function(k){ if(k!=="positions") msg+=k+" = "+JSON.stringify(m[k])+"\n"; });
                 if(m.positions && m.positions.length){
-                  msg+="\nNombre de positions dans ce mirror : "+m.positions.length+"\n";
-                  msg+="Clés d'une position de mirror :\n"+Object.keys(m.positions[0]).join(", ");
+                  msg+="\nClés d'une position de mirror :\n"+Object.keys(m.positions[0]).join(", ");
                 }
               }
               window.alert(msg.slice(0,7000));
