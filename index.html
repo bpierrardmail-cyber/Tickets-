@@ -2634,6 +2634,18 @@
     setInterval(fetchAllStockPrices, 900000);
     fetchEtoroSilent();
     setInterval(fetchEtoroSilent, 900000);
+    var lastRefresh=Date.now();
+    function refreshOnReturn(){
+      if(document.hidden) return;
+      if(Date.now()-lastRefresh < 20000) return; // évite les doublons si plusieurs events se déclenchent d'un coup
+      lastRefresh=Date.now();
+      tickBourse();
+      fetchAllStockPrices();
+      fetchEtoroSilent();
+    }
+    document.addEventListener("visibilitychange", refreshOnReturn);
+    window.addEventListener("pageshow", refreshOnReturn);
+    window.addEventListener("focus", refreshOnReturn);
     document.addEventListener("click", function(e){
       var t=e.target;
       while(t && t.nodeType===1){
