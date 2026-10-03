@@ -485,8 +485,17 @@
     }
     function toggleEpargneLink(id){
       var c=epargne.filter(function(x){ return String(x.id)===String(id); })[0]; if(!c) return;
-      if(c.bourseLink){ c.bourseLink=false; window.alert("Compte délié de la Bourse. Sa valeur est conservée, à toi de la mettre à jour."); }
-      else { if(!window.confirm("Lier « "+c.nom+" » au total de l'onglet Bourse ?\\nSa valeur suivra le portefeuille automatiquement.")) return; c.bourseLink=true; if(!c.vals) c.vals={}; c.vals[monthKey(todayISO())]=bourseTotalLive(); }
+      var m=monthKey(todayISO());
+      if(!c.vals) c.vals={};
+      if(c.bourseLink){
+        c.bourseLink=false;
+        var pl=c.preLink; delete c.preLink;
+        if(window.confirm("Compte délié de la Bourse.\n\nAnnuler aussi la valeur Bourse copiée ce mois-ci et revenir à la valeur d'avant ?")){
+          if(pl && pl.month===m && pl.had) c.vals[m]=pl.val;
+          else delete c.vals[m];
+        }
+      }
+      else { if(!window.confirm("Lier « "+c.nom+" » au total de l'onglet Bourse ?\\nSa valeur suivra le portefeuille automatiquement.")) return; c.preLink={ month:m, had:(m in c.vals), val:c.vals[m] }; c.bourseLink=true; c.vals[m]=bourseTotalLive(); }
       persistEpargne(); render();
     }
     function delEpargne(id){
