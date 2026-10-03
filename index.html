@@ -25,7 +25,7 @@
     .total .val, .leader .val, .entry .amt, .lgd .lv, .lgd .lp, .bar-top .bv,
     .checkrow .ctot, .prow .pfam{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
     /* En-tête */
-    .head{ position:relative; text-align:center; padding:16px 0 10px; }
+    .head{ position:relative; text-align:center; padding:16px 0 10px; min-height:52px; box-sizing:border-box; z-index:2; }
     .hback{ position:absolute; left:0; top:14px; background:var(--card2); border:1px solid var(--line);
       color:var(--ink-soft); font-family:var(--sans); font-size:13px; padding:7px 12px; border-radius:10px; }
     .head h1{ font-size:20px; margin:0; font-weight:700; letter-spacing:-.01em; color:var(--ink); }
@@ -2482,7 +2482,8 @@
       var start=p.startMonth||m;
       var acc=Number(p.soldeInitial)||0;
       var cur=start, guard=0;
-      while(cur<m && guard<600){ cur=nextMonthKey(cur); acc+=mensuelAt(p, cur); guard++; }
+      var sk=p.skips||[];
+      while(cur<m && guard<600){ cur=nextMonthKey(cur); if(sk.indexOf(cur)<0) acc+=mensuelAt(p, cur); guard++; }
       var out=0; (p.prelevements||[]).forEach(function(pr){ if((pr.month||"")<=m) out+=Number(pr.montant)||0; });
       return acc-out;
     }
@@ -2523,6 +2524,13 @@
       p.prelevements=(p.prelevements||[]).filter(function(x){ return String(x.id)!==String(prid); });
       persistProvisions(); render();
     }
+    function toggleSkip(id, mk){
+      var p=provisions.filter(function(x){ return String(x.id)===String(id); })[0]; if(!p) return;
+      if(!p.skips) p.skips=[];
+      var i=p.skips.indexOf(mk);
+      if(i>=0) p.skips.splice(i,1); else p.skips.push(mk);
+      persistProvisions(); render();
+    }
     function renderProvisions(){
       var curM=monthKey(todayISO());
       var month=(state.months&&state.months.provisions)||curM;
@@ -2537,7 +2545,13 @@
            '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px;color:'+(bal<0?"#f4796b":"#4fd6a0")+'">'+fmt(bal)+'</span>'+
            '<button class="btn ghost predit" type="button" data-id="'+esc(p.id)+'">✎</button>'+
            '<button class="btn ghost prdel" type="button" data-id="'+esc(p.id)+'">✕</button></div>';
-        h+='<div class="muted" style="font-size:10px;margin:1px 6px 0">+ '+fmt(mensuelAt(p, month))+' / mois</div>';
+        var canSkip=(month>(p.startMonth||month));
+        var skipped=canSkip && (p.skips||[]).indexOf(month)>=0;
+        h+='<div style="display:flex;align-items:center;gap:8px;margin:1px 6px 0">';
+        if(skipped) h+='<span style="flex:1;font-size:10px;color:#e6b450">⏸ Rien mis de côté en '+esc(monthLabelOf(month))+' (au lieu de '+fmt(mensuelAt(p, month))+')</span>';
+        else h+='<span class="muted" style="flex:1;font-size:10px">+ '+fmt(mensuelAt(p, month))+' / mois</span>';
+        if(canSkip) h+='<button class="btn ghost prskip" type="button" data-id="'+esc(p.id)+'" style="padding:5px 9px;font-size:11px;flex:0 0 auto">'+(skipped?'↺ Rétablir ce mois':'⏸ Sauter ce mois')+'</button>';
+        h+='</div>';
         var prs=(p.prelevements||[]).slice().sort(function(a,b){ return (a.month<b.month)?1:-1; });
         prs.forEach(function(pr){
           h+='<div style="display:flex;align-items:center;gap:6px;padding:6px 4px 0 12px;font-size:12px">'+
@@ -2560,6 +2574,7 @@
       wireMonthNav(month, curM, "provisions");
       [].forEach.call(document.querySelectorAll(".predit"), function(b){ b.onclick=function(){ editProvision(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".prdel"), function(b){ b.onclick=function(){ delProvision(b.getAttribute("data-id")); }; });
+      [].forEach.call(document.querySelectorAll(".prskip"), function(b){ b.onclick=function(){ toggleSkip(b.getAttribute("data-id"), month); }; });
       [].forEach.call(document.querySelectorAll(".addprl"), function(b){ b.onclick=function(){ addPrelevement(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".prldel"), function(b){ b.onclick=function(){ delPrelevement(b.getAttribute("data-id"), b.getAttribute("data-pr")); }; });
     }
