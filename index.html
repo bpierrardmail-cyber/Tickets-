@@ -791,6 +791,8 @@
         var cb=computeCompteMonth("Benoit", month);
         var ccol=cb.solde<0?"var(--coral)":"var(--accent)";
         h += '<div class="leader"><span class="lbl" style="font-weight:700">Compte</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+ccol+'">'+fmt(cb.solde)+'</span></div>';
+        var lq=liquideAt("Benoit", month);
+        if(lq) h += '<div class="leader"><span class="lbl" style="font-weight:700">💶 Liquide</span><span class="fill"></span><span class="val" style="font-weight:700;color:var(--accent)">'+fmt(lq.val)+'</span></div>';
       })();
       if(epargne.length){
         var epTot=0; epargne.forEach(function(c){ epTot+=epAt(c, month); });
@@ -1414,11 +1416,10 @@
       h+='<hr class="rule"><div class="leader"><span class="lbl" style="font-weight:700;text-transform:uppercase;letter-spacing:.05em">Total dépenses</span><span class="fill"></span><span class="val" style="font-weight:700">'+fmt(depenses)+'</span></div>';
       h+='<div class="leader total"><span class="lbl">Solde de fin de mois</span><span class="fill"></span><span class="val" style="color:'+(soldeFin<0?"#f4796b":"#4fd6a0")+'">'+fmt(soldeFin)+'</span></div>';
       h+='<div class="muted" style="font-size:9px;margin:2px 2px 0">'+(liq?'dont '+fmt(liqV)+' en liquide · la partie banque ('+fmt(fl.closing)+') se reporte au mois suivant':'se reporte automatiquement au mois suivant')+'</div>';
-      h+='<hr class="rule" style="opacity:.4"><div class="leader"><span class="lbl" style="font-weight:700">Solde bancaire estimé</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+(soldeBanque<0?"#f4796b":"#4fd6a0")+'">'+fmt(soldeBanque)+'</span></div>';
-      h+='<div class="muted" style="font-size:9px;margin:2px 2px 0">reporté + virements faits − tickets − frais faits · devient le solde de fin de mois quand tout est coché</div>';
       h+='<div class="leader" id="liqrow" style="cursor:pointer;margin-top:8px"><span class="lbl" style="font-weight:700">💶 Argent liquide ✎</span><span class="fill"></span><span class="val" style="font-weight:700">'+(liq?fmt(liqV):"—")+'</span></div>';
       h+='<div class="muted" style="font-size:9px;margin:0 2px 2px">'+(!liq?"touche pour indiquer tes espèces du mois":(liq.month===month?"saisi pour ce mois":"repris de "+esc(monthLabelOf(liq.month))))+'</div>';
-      if(liq) h+='<div class="leader" style="margin-top:4px"><span class="lbl" style="font-weight:700">Total disponible</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+((soldeBanque+liqV)<0?"#f4796b":"#4fd6a0")+'">'+fmt(soldeBanque+liqV)+'</span></div><div class="muted" style="font-size:9px;margin:0 2px 2px">solde bancaire estimé + liquide</div>';
+      h+='<hr class="rule" style="opacity:.4"><div class="leader"><span class="lbl" style="font-weight:700">Solde bancaire estimé</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+(soldeBanque<0?"#f4796b":"#4fd6a0")+'">'+fmt(soldeBanque)+'</span></div>';
+      h+='<div class="muted" style="font-size:9px;margin:2px 2px 0">argent sur ton compte, sans le liquide · reporté + virements faits − tickets − frais faits</div>';
 
       h+='<hr class="rule"><div class="leader cptToggle" data-key="ep" style="cursor:pointer"><span class="lbl" style="font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:11px">Épargne</span><span class="fill"></span><span class="val" style="color:var(--ink-soft);font-size:13px">'+(cptOpen.ep?"▲":"▼")+'</span></div>';
       h+='<div class="cptBody" style="'+(cptOpen.ep?"":"display:none")+'">';
