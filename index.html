@@ -1358,7 +1358,8 @@
       var prodPart=prodOwed/2;
 
       var depenses=paidTotal + fraisTotal;
-      var soldeFin=fl.closing;
+      var liq=liquideAt(person, month), liqV=liq?liq.val:0;
+      var soldeFin=fl.closing + liqV;
       var virDone=virs.reduce(function(t,v){ return t+(v.done?(Number(v.montant)||0):0); },0);
       var fraisDoneFull=0;
       fraisThis.forEach(function(f){ if(!fraisDone(f, month)) return; var dwho=(f.personne||"").trim()||"Commun"; if(dwho===person || dwho==="Commun") fraisDoneFull+=fraisMontant(f, month); });
@@ -1412,10 +1413,9 @@
 
       h+='<hr class="rule"><div class="leader"><span class="lbl" style="font-weight:700;text-transform:uppercase;letter-spacing:.05em">Total dépenses</span><span class="fill"></span><span class="val" style="font-weight:700">'+fmt(depenses)+'</span></div>';
       h+='<div class="leader total"><span class="lbl">Solde de fin de mois</span><span class="fill"></span><span class="val" style="color:'+(soldeFin<0?"#f4796b":"#4fd6a0")+'">'+fmt(soldeFin)+'</span></div>';
-      h+='<div class="muted" style="font-size:9px;margin:2px 2px 0">se reporte automatiquement au mois suivant</div>';
+      h+='<div class="muted" style="font-size:9px;margin:2px 2px 0">'+(liq?'dont '+fmt(liqV)+' en liquide · la partie banque ('+fmt(fl.closing)+') se reporte au mois suivant':'se reporte automatiquement au mois suivant')+'</div>';
       h+='<hr class="rule" style="opacity:.4"><div class="leader"><span class="lbl" style="font-weight:700">Solde bancaire estimé</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+(soldeBanque<0?"#f4796b":"#4fd6a0")+'">'+fmt(soldeBanque)+'</span></div>';
       h+='<div class="muted" style="font-size:9px;margin:2px 2px 0">reporté + virements faits − tickets − frais faits · devient le solde de fin de mois quand tout est coché</div>';
-      var liq=liquideAt(person, month), liqV=liq?liq.val:0;
       h+='<div class="leader" id="liqrow" style="cursor:pointer;margin-top:8px"><span class="lbl" style="font-weight:700">💶 Argent liquide ✎</span><span class="fill"></span><span class="val" style="font-weight:700">'+(liq?fmt(liqV):"—")+'</span></div>';
       h+='<div class="muted" style="font-size:9px;margin:0 2px 2px">'+(!liq?"touche pour indiquer tes espèces du mois":(liq.month===month?"saisi pour ce mois":"repris de "+esc(monthLabelOf(liq.month))))+'</div>';
       if(liq) h+='<div class="leader" style="margin-top:4px"><span class="lbl" style="font-weight:700">Total disponible</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+((soldeBanque+liqV)<0?"#f4796b":"#4fd6a0")+'">'+fmt(soldeBanque+liqV)+'</span></div><div class="muted" style="font-size:9px;margin:0 2px 2px">solde bancaire estimé + liquide</div>';
