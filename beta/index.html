@@ -971,6 +971,24 @@
       var t=document.createElement("div"); t.className="ui-toast"; t.textContent=msg; document.body.appendChild(t);
       setTimeout(function(){ try{ document.body.removeChild(t); }catch(e){} }, 2600);
     }
+    // ---------- Geste / bouton retour d'Android ----------
+    // Une entrée d'historique « garde » : le geste retour ferme d'abord la fenêtre ouverte,
+    // puis revient à l'écran précédent, puis à l'accueil ; depuis l'accueil, un 2e geste quitte l'app.
+    var backArmed=false, backExitAt=0;
+    function armBack(){ if(backArmed) return; try{ history.pushState({tk:Date.now()}, ""); backArmed=true; }catch(e){} }
+    window.addEventListener("popstate", function(){
+      backArmed=false;
+      if(document.getElementById("lockscreen")){ armBack(); return; }
+      var ovs=document.querySelectorAll(".sheet-overlay");
+      if(ovs.length){ var top=ovs[ovs.length-1]; top.dispatchEvent(new MouseEvent("click", {bubbles:true})); if(top.parentNode) top.parentNode.removeChild(top); armBack(); return; }
+      var lb=document.getElementById("lbclose"); if(lb){ lb.click(); armBack(); return; }
+      var hb=document.getElementById("hback"); if(hb){ hb.click(); armBack(); return; }
+      if(state.view!=="list"){ state.view="list"; render(); window.scrollTo(0,0); return; }
+      if(Date.now()-backExitAt<2500){ try{ history.back(); }catch(e){} return; }
+      backExitAt=Date.now(); uiToast("Refais le geste retour pour quitter");
+      setTimeout(function(){ if(!backArmed && Date.now()-backExitAt>=2500) armBack(); }, 2600);
+    });
+
     function personOptions(current){
       var ex=uniquePersons(); if(ex.indexOf("Commun")<0) ex.unshift("Commun");
       if(current && ex.indexOf(current)<0) ex.push(current);
@@ -1049,6 +1067,7 @@
     function bindBack(fn){ var hb=document.getElementById("hback"); if(hb) hb.onclick=fn; }
 
     function render(){
+      armBack();
       syncBourseEpargne();
       if(state.view==="form") return renderForm();
       if(state.view==="articles") return renderArticles();
