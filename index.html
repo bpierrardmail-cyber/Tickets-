@@ -339,13 +339,18 @@
       virements=virements.filter(function(x){ return String(x.id)!==String(id); });
       persistVirements(); render();
     }
+    // Dépassements de provisions : surplus des factures payé depuis le compte de Benoit
+    function provOverMonth(person, m){
+      if(person!=="Benoit" || typeof provisions==="undefined" || !provisions) return 0;
+      var t=0; provisions.forEach(function(p){ var o=provState(p, m).over[m]; if(o) t+=o; }); return t;
+    }
     function computeDepensesMonth(person, month){
       var me=state.entries.filter(function(e){ return monthKey(e.date)===month; });
       var paid=0; me.forEach(function(e){ if((e.payePar||"").trim()===person) paid+=Number(e.montant)||0; });
       var fr=fraisCommuns.filter(function(f){ return fraisActif(f, month); });
       var fp=0, fc=0; fr.forEach(function(f){ var who=(f.personne||"").trim()||"Commun"; var m=fraisMontant(f, month); if(who===person) fp+=m; else if(who==="Commun") fc+=m; });
       var po=0; me.forEach(function(e){ if((e.payePar||"").trim()===person) return; (e.articles||[]).forEach(function(a){ if(a.commun) po+=Number(a.prix)||0; }); });
-      return paid+fp+fc;
+      return paid+fp+fc+provOverMonth(person, month);
     }
     function compteMonths(person, upto){
       var set={};
@@ -372,7 +377,7 @@
       var paid=0; me.forEach(function(e){ if((e.payePar||"").trim()===person) paid+=Number(e.montant)||0; });
       var fr=fraisCommuns.filter(function(f){ return fraisActif(f, month) && fraisDone(f, month); });
       var fp=0, fc=0; fr.forEach(function(f){ var who=(f.personne||"").trim()||"Commun"; var m=fraisMontant(f, month); if(who===person) fp+=m; else if(who==="Commun") fc+=m; });
-      return paid+fp+fc;
+      return paid+fp+fc+provOverMonth(person, month);
     }
     function soldeFlowDone(person, upto){
       var ms=compteMonths(person, upto), closing=0, oOut=0, cOut=0;
@@ -1359,14 +1364,15 @@
       monthEntries.forEach(function(e){ if((e.payePar||"").trim()===person) return; (e.articles||[]).forEach(function(a){ if(a.commun) prodOwed+=Number(a.prix)||0; }); });
       var prodPart=prodOwed/2;
 
-      var depenses=paidTotal + fraisTotal;
+      var provOver=provOverMonth(person, month);
+      var depenses=paidTotal + fraisTotal + provOver;
       var liq=liquideAt(person, month), liqV=liq?liq.val:0;
       var soldeFin=fl.closing + liqV;
       var virDone=virs.reduce(function(t,v){ return t+(v.done?(Number(v.montant)||0):0); },0);
       var fraisDoneFull=0;
       fraisThis.forEach(function(f){ if(!fraisDone(f, month)) return; var dwho=(f.personne||"").trim()||"Commun"; if(dwho===person || dwho==="Commun") fraisDoneFull+=fraisMontant(f, month); });
       var reporteReel=soldeFlowDone(person, month).opening;
-      var soldeBanque=reporteReel + virDone - paidTotal - fraisDoneFull;
+      var soldeBanque=reporteReel + virDone - paidTotal - fraisDoneFull - provOver;
 
       var cptOpen = state.cptOpen || (state.cptOpen={});
       var h=header()+'<section class="paper torn">';
@@ -1411,6 +1417,7 @@
       h+='<div class="leader fam" style="margin-top:12px"><span class="lbl">Frais fixes</span><span class="fill"></span><span class="val">'+fmt(fraisTotal)+'</span></div>';
       h+='<div class="leader item"><span class="lbl">Ses frais</span><span class="fill"></span><span class="val">'+fmt(fraisPerso)+'</span></div>';
       h+='<div class="leader item"><span class="lbl">Frais communs</span><span class="fill"></span><span class="val">'+fmt(fraisCommun)+'</span></div>';
+      if(provOver>0) h+='<div class="leader fam" style="margin-top:12px"><span class="lbl">Dépassement provisions</span><span class="fill"></span><span class="val" style="color:#e6b450">'+fmt(provOver)+'</span></div><div class="muted" style="font-size:9px;margin:0 2px 2px">facture plus élevée que la somme mise de côté</div>';
 
 
       h+='<hr class="rule"><div class="leader"><span class="lbl" style="font-weight:700;text-transform:uppercase;letter-spacing:.05em">Total dépenses</span><span class="fill"></span><span class="val" style="font-weight:700">'+fmt(depenses)+'</span></div>';
