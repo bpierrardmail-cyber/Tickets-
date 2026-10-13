@@ -11,7 +11,7 @@
     :root{
       --bg:#13151b; --bg0:#0e0f14; --card:#1b1e26; --card2:#20242e;
       --line:rgba(255,255,255,.075); --line2:rgba(255,255,255,.13);
-      --ink:#eceef3; --ink-soft:#9298a5; --muted:#656b78;
+      --ink:#eceef3; --ink-soft:#a4aab6; --muted:#7c828e;
       --accent:#4fd6a0; --accent-dim:rgba(79,214,160,.14); --coral:#f4796b;
       --mono: ui-monospace, "SFMono-Regular", "Roboto Mono", Menlo, Consolas, monospace;
       --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, system-ui, sans-serif;
@@ -220,6 +220,55 @@
       padding:16px 16px calc(20px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:10px; box-shadow:0 -10px 30px rgba(0,0,0,.45); }
     .sheet-title{ text-align:center; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:4px; }
     .sheet .btn{ width:100%; padding:14px; font-size:15px; }
+    /* ---------- Lisibilité des onglets ---------- */
+    .total .val, .leader .val, .entry .amt, .lgd .lv, .lgd .lp, .bar-top .bv,
+    .checkrow .ctot, .prow .pfam{ font-family:var(--sans) !important; font-variant-numeric:tabular-nums; }
+    .leader{ font-size:14.5px; padding:7px 0; align-items:center; }
+    .leader .fill{ border-bottom:0; }
+    .leader.fam .val{ color:var(--ink); }
+    .leader.item{ font-size:13.5px; padding-left:12px; }
+    .total .val{ font-size:26px; letter-spacing:-.02em; }
+    .rule{ margin:16px 0; }
+    .prow{ padding:12px 2px; gap:10px; }
+    .prow .pname{ font-size:15px; }
+    .app .lbl[style*="uppercase"]{ text-transform:none !important; letter-spacing:0 !important; }
+    .app div.muted[style*="uppercase"]{ text-transform:none !important; letter-spacing:0 !important; font-size:13px !important; font-weight:700; color:var(--ink-soft) !important; }
+    .app div.center.muted[style*="uppercase"]{ font-size:17px !important; color:var(--ink) !important; }
+    .cptToggle, .comToggle{ padding:12px 0 !important; }
+    .cptToggle .lbl, .comToggle .lbl{ font-size:16px !important; font-weight:700 !important; }
+    .btn.more{ flex:0 0 auto; width:44px; padding:8px 0; font-size:18px; line-height:1; letter-spacing:1px; }
+    /* Navigation de mois */
+    .mnav{ display:flex; align-items:center; gap:10px; }
+    .mn-t{ flex:1; text-align:center; font-size:16px; font-weight:700; color:var(--ink); line-height:1.25; }
+    .mn-t::first-letter{ text-transform:uppercase; }
+    .mn-a{ flex:0 0 auto; width:40px; height:40px; border-radius:12px; border:1px solid var(--line); background:var(--card2); color:var(--ink); font-size:20px; line-height:1; padding:0; }
+    .mn-a:active{ background:var(--card); }
+    .mn-today{ display:inline-block; margin-top:8px; font-size:12px; color:var(--accent); cursor:pointer; }
+    .tabtop{ margin:0 0 12px; }
+    /* Bandeau de synthèse des onglets */
+    .thero{ margin-bottom:12px; }
+    .thero .dash-big{ font-size:38px; }
+    .hstats{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:14px; }
+    .hstat{ background:rgba(255,255,255,.04); border:1px solid var(--line); border-radius:12px; padding:8px 10px; min-width:0; }
+    .hstat span{ display:block; font-size:10.5px; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .hstat i{ display:block; font-style:normal; font-size:10.5px; margin-top:1px; opacity:.85; }
+    .hstat b{ display:block; font-size:14px; margin-top:3px; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    /* Articles par famille */
+    .fgrp{ margin:4px 0 16px; }
+    .fgrp .fh{ display:flex; align-items:baseline; gap:8px; font-size:15px; font-weight:700; }
+    .fgrp .fh .fn{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .fgrp .fh .fp{ font-size:11px; color:var(--muted); font-weight:600; width:34px; text-align:right; }
+    .fgrp .cb-bar{ height:5px; border-radius:3px; background:rgba(255,255,255,.05); margin:6px 0 4px; overflow:hidden; }
+    .fgrp .cb-bar i{ display:block; height:100%; border-radius:3px; }
+    .frow{ display:flex; align-items:center; gap:8px; padding:8px 2px 8px 10px; font-size:14px; color:#c9cdd6; border-bottom:1px solid var(--line); cursor:pointer; }
+    .frow:last-child{ border-bottom:0; }
+    .frow .fnm{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .frow .fq{ font-size:11px; color:var(--muted); }
+    .frow .fv{ font-variant-numeric:tabular-nums; font-weight:600; color:var(--ink); }
+    .frow::after{ content:"›"; color:var(--muted); margin-left:2px; }
+    /* Provisions en cartes */
+    .pcard{ background:var(--card); border:1px solid var(--line); border-radius:18px; padding:6px 14px 14px; margin-bottom:12px; }
+    .pcard .prow{ border-bottom:0; }
     /* Budgets, échéances, objectifs */
     .cbar .cb-sub{ font-size:10px; margin-top:3px; color:var(--muted); }
     .bud-line{ display:flex; justify-content:space-between; font-size:11px; color:var(--ink-soft); margin:-4px 0 12px; }
@@ -233,7 +282,7 @@
     .obj{ margin:-2px 2px 10px; }
     .obj .ob-bar{ height:6px; border-radius:3px; background:rgba(255,255,255,.06); overflow:hidden; }
     .obj .ob-bar i{ display:block; height:100%; background:var(--accent); border-radius:3px; }
-    .obj .ob-t{ font-size:10.5px; color:var(--ink-soft); margin-top:4px; }
+    .obj .ob-t{ font-size:12px; color:var(--ink-soft); margin-top:4px; }
     .rec-row{ display:flex; align-items:center; gap:10px; padding:7px 0; border-top:1px solid var(--line); font-size:13px; }
     .rec-row:first-of-type{ border-top:0; }
     .rec-row .rn{ flex:1; min-width:0; }
@@ -379,12 +428,10 @@
     function nextMonthKey(m){ var a=m.split("-"), Y=+a[0], M=+a[1]+1; if(M>12){ M=1; Y++; } return Y+"-"+(M<10?"0"+M:M); }
     function monthLabelOf(mk){ var p=mk.split("-"); return new Date(+p[0], +p[1]-1, 1).toLocaleDateString("fr-FR",{month:"long",year:"numeric"}); }
     function monthNavHTML(title, month, curM){
-      var x='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:10px">'+
-        '<span id="mn-prev" style="cursor:pointer;font-size:18px;line-height:1;padding:0 6px;color:var(--ink-soft)">‹</span>'+
-        '<span>'+title+'</span>'+
-        '<span id="mn-next" style="font-size:18px;line-height:1;padding:0 6px;'+'cursor:pointer;color:var(--ink-soft)'+'">›</span>'+
-        '</div>';
-      if(month!==curM) x+='<div class="center" style="margin:2px 0 0"><span id="mn-today" style="cursor:pointer;font-size:10px;color:var(--accent)">↩ revenir au mois en cours</span></div>';
+      var x='<div class="mnav"><button type="button" id="mn-prev" class="mn-a" aria-label="Mois précédent">‹</button>'+
+        '<div class="mn-t">'+title+'</div>'+
+        '<button type="button" id="mn-next" class="mn-a" aria-label="Mois suivant">›</button></div>';
+      if(month!==curM) x+='<div class="center"><span id="mn-today" class="mn-today">↩ Revenir au mois en cours</span></div>';
       return x;
     }
     function wireMonthNav(month, curM, key){
@@ -534,7 +581,7 @@
     function bBadge(from,to,label){
       if(from===null||from===undefined) return "";
       var diff=to-from, pct=bPct(from,to), col=bPctCol(from,to);
-      return '<span style="font-size:10px;color:'+col+'">'+label+' '+(diff>=0?"+":"")+diff.toFixed(2).replace(".",",")+'€'+(pct?" ("+pct+")":"")+'</span>';
+      return '<span style="color:var(--ink-soft)">'+label+'</span> <span style="color:'+col+';font-weight:600">'+(diff>=0?"+":"")+fmtK(diff)+(pct?" ("+pct+")":"")+'</span>';
     }
     function addBourse(){
       var nom=(window.prompt("Nom du compte bourse (ex. Boursorama, PEA, Solana) :")||"").trim();
@@ -1066,7 +1113,8 @@
     }
     function bindBack(fn){ var hb=document.getElementById("hback"); if(hb) hb.onclick=fn; }
 
-    function render(){
+    function render(){ renderView(); try{ compactRowActions(); }catch(err){ console.warn(err); } }
+    function renderView(){
       armBack();
       syncBourseEpargne();
       if(state.view==="form") return renderForm();
@@ -1107,6 +1155,48 @@
       if(m("anim","véto","veto","chien","chat")) return {e:"🐾",col:"#d4a05b"};
       return {e:"🧾",col:"#9298a5"};
     }
+    // ---------- Bandeau de synthèse des onglets ----------
+    function fmtK(n){ return fmt(n).replace(/\B(?=(\d{3})+,)/g, " "); }
+    function moneyBig(n){ var neg=n<0; n=Math.abs(Number(n)||0); var e=Math.floor(n), c=Math.round((n-e)*100); if(c===100){ e++; c=0; }
+      return (neg?"−":"")+String(e).replace(/\B(?=(\d{3})+(?!\d))/g," ")+'<span class="cts">,'+(c<10?"0":"")+c+' €</span>'; }
+    function signK(n){ return (n>0?"+":"")+fmtK(n); }
+    function fmtS(n){ n=Number(n)||0; return Math.abs(n)>=1000 ? (n<0?"−":"")+String(Math.round(Math.abs(n))).replace(/\B(?=(\d{3})+(?!\d))/g,"\u202f")+" €" : fmt(n); }
+    function signS(n){ return (n>0?"+":"")+fmtS(n); }
+    function tabHero(o){
+      var h='<section class="dash-hero thero"><div class="dash-cap">'+o.label+'</div>';
+      h+='<div class="dash-big" style="margin-top:6px;color:'+(o.color||"var(--ink)")+'">'+moneyBig(o.big)+'</div>';
+      if(o.sub) h+='<div class="dash-cap" style="margin-top:2px">'+o.sub+'</div>';
+      if(o.stats && o.stats.length){
+        h+='<div class="hstats">';
+        o.stats.forEach(function(s){ h+='<div class="hstat"><span>'+s.l+'</span><b'+(s.c?' style="color:'+s.c+'"':'')+'>'+s.v+'</b>'+(s.d?'<i'+(s.c?' style="color:'+s.c+'"':'')+'>'+s.d+'</i>':'')+'</div>'; });
+        h+='</div>';
+      }
+      return h+'</section>';
+    }
+    function heroCol(n){ return n>0.004?"var(--accent)":(n<-0.004?"var(--coral)":"var(--ink)"); }
+    // Regroupe les boutons ✎ 🔗 ✕ d'une ligne dans un menu « ⋯ »
+    function compactRowActions(){
+      [].forEach.call(app.querySelectorAll(".prow"), function(row){
+        if(row.getAttribute("data-compact")) return;
+        var acts=[].filter.call(row.querySelectorAll("button"), function(b){ var t=(b.textContent||"").trim(); return t==="✎"||t==="✕"||t==="🔗"; });
+        if(acts.length<2) return;
+        row.setAttribute("data-compact","1");
+        acts.forEach(function(b){ b.style.display="none"; });
+        var more=document.createElement("button"); more.type="button"; more.className="btn ghost more"; more.textContent="⋯"; more.setAttribute("aria-label","Actions");
+        row.appendChild(more);
+        more.onclick=function(ev){
+          ev.stopPropagation();
+          var nm=row.querySelector(".pname"), title="Actions";
+          if(nm){ var t0=nm.childNodes[0]; title=((t0 && t0.nodeType===3 && t0.textContent.trim()) ? t0.textContent : (nm.firstElementChild?nm.firstElementChild.textContent:nm.textContent)).trim().slice(0,40); }
+          var linked=(row.textContent||"").indexOf("● Bourse")>=0, order={"✎":0,"🔗":1,"✕":2};
+          uiChoice(title, "", acts.slice().sort(function(a,b){ return order[a.textContent.trim()]-order[b.textContent.trim()]; }).map(function(b){
+            var t=b.textContent.trim();
+            return { l:(t==="✎"?"Modifier":(t==="🔗"?(linked?"Délier de la Bourse":"Lier à la Bourse"):"Supprimer")), danger:(t==="✕"), fn:function(){ b.click(); } };
+          }));
+        };
+      });
+    }
+
     // ---------- Budgets par catégorie ----------
     var budgets = store.read("budgets", {});
     function persistBudgets(){ store.write("budgets", budgets); }
@@ -1629,19 +1719,25 @@
         });
       });
       var famKeys=Object.keys(fams).sort(function(a,b){ return fams[b].total-fams[a].total; });
-      var h=header()+'<section class="paper torn">';
-      h+=monthNavHTML('Articles · '+esc(monthLabel), month, curM)+'<hr class="rule">';
+      var nArt=0; famKeys.forEach(function(f){ Object.keys(fams[f].items).forEach(function(k){ nArt+=fams[f].items[k].n; }); });
+      var h=header()+'<div class="tabtop">'+monthNavHTML('Articles · '+esc(monthLabel), month, curM)+'</div>';
+      if(famKeys.length) h+=tabHero({ label:"Articles achetés ce mois", big:grand, sub:nArt+" article"+(nArt>1?"s":"")+" · "+famKeys.length+" famille"+(famKeys.length>1?"s":""),
+        stats:famKeys.slice(0,3).map(function(f){ return {l:esc(f), v:fmtS(fams[f].total)}; }) });
+      h+='<section class="paper torn">';
       if(famKeys.length===0) h+='<div class="center muted" style="font-size:12px">Aucun article rangé ce mois-ci.<br>Scanne un ticket et classe ses lignes par produit.</div>';
       if(famKeys.length) h+='<div class="muted" style="font-size:11px;margin:0 2px 6px">Touche un produit pour voir son détail.</div>';
-      famKeys.forEach(function(f){
-        h+='<div class="leader fam"><span class="lbl">'+esc(f)+'</span><span class="fill"></span><span class="val">'+fmt(fams[f].total)+'</span></div>';
+      var famMax=famKeys.length?fams[famKeys[0]].total:1;
+      famKeys.forEach(function(f,fi){
+        var col=PALETTE[fi%PALETTE.length], pc=grand?Math.round(fams[f].total/grand*100):0;
+        h+='<div class="fgrp"><div class="fh"><span class="fn">'+esc(f)+'</span><span>'+fmt(fams[f].total)+'</span><span class="fp">'+pc+' %</span></div>';
+        h+='<div class="cb-bar"><i style="width:'+Math.max(2,Math.round(fams[f].total/famMax*100))+'%;background:'+col+'"></i></div>';
         var names=Object.keys(fams[f].items).sort(function(a,b){ return fams[f].items[b].total-fams[f].items[a].total; });
         names.forEach(function(nm){
           var it=fams[f].items[nm];
-          h+='<div class="leader item itemclk" data-fam="'+esc(f)+'" data-name="'+esc(nm)+'"><span class="lbl">'+esc(nm)+' ×'+it.n+'</span><span class="fill"></span><span class="val">'+fmt(it.total)+'</span></div>';
+          h+='<div class="frow itemclk" data-fam="'+esc(f)+'" data-name="'+esc(nm)+'"><span class="fnm">'+esc(nm)+'</span><span class="fq">×'+it.n+'</span><span class="fv">'+fmt(it.total)+'</span></div>';
         });
+        h+='</div>';
       });
-      if(famKeys.length) h+='<hr class="rule"><div class="leader total"><span class="lbl">Total articles</span><span class="fill"></span><span class="val">'+fmt(grand)+'</span></div>';
       h+='</section>';
       app.innerHTML=h;
       [].forEach.call(document.querySelectorAll(".itemclk"), function(row){ row.onclick=function(){ state.artSel={fam:row.getAttribute("data-fam"), name:row.getAttribute("data-name")}; state.view="artDetail"; render(); }; });
@@ -1783,8 +1879,7 @@
       }
 
       var comOpen = state.comOpen || (state.comOpen={});
-      var h=header()+'<section class="paper torn">';
-      h+=monthNavHTML('Dépenses communes · '+esc(monthLabel), month, curM)+'<hr class="rule">';
+      var h=header()+'<div class="tabtop">'+monthNavHTML('Commun · '+esc(monthLabel), month, curM)+'</div>%%HERO%%<section class="paper torn">';
 
       h+='<div class="leader fam comToggle" data-key="commun" style="cursor:pointer"><span class="lbl">Commun</span><span class="fill"></span><span class="val">'+fmt(communTotal)+'</span><span class="muted" style="font-size:11px;margin-left:6px">'+(comOpen.commun?"▲":"▼")+'</span></div>';
       h+='<div class="comBody" style="'+(comOpen.commun?"":"display:none")+'">';
@@ -1792,7 +1887,7 @@
       else h+='<div class="muted" style="font-size:11px;margin:4px 2px">Aucun frais commun. Touche « + Ajouter un frais fixe » et garde « Commun ».</div>';
       h+='</div>';
 
-      h+='<hr class="rule"><div class="leader fam comToggle" data-key="prod" style="cursor:pointer"><span class="lbl">Produit en communs</span><span class="fill"></span><span class="val">'+fmt(prodTotal)+'</span><span class="muted" style="font-size:11px;margin-left:6px">'+(comOpen.prod?"▲":"▼")+'</span></div>';
+      h+='<hr class="rule"><div class="leader fam comToggle" data-key="prod" style="cursor:pointer"><span class="lbl">Produits en commun</span><span class="fill"></span><span class="val">'+fmt(prodTotal)+'</span><span class="muted" style="font-size:11px;margin-left:6px">'+(comOpen.prod?"▲":"▼")+'</span></div>';
       h+='<div class="comBody" style="'+(comOpen.prod?"":"display:none")+'">';
       if(rows.length===0){
         h+='<div class="muted" style="font-size:11px;margin:2px 2px 4px">Aucun produit coché ce mois-ci. Coche « Dépense à deux » sur les articles d\'un ticket.</div>';
@@ -1823,14 +1918,13 @@
       fraisCommuns.forEach(function(f){ var fp=(f.personne||"").trim(); if(fp && fp!=="Commun" && totPersons.indexOf(fp)<0) totPersons.push(fp); });
       state.entries.forEach(function(e){ var pp=(e.payePar||"").trim(); if(pp && pp!=="Commun" && totPersons.indexOf(pp)<0) totPersons.push(pp); });
       totPersons.sort();
-      if(totPersons.length){
-        h+='<hr class="rule"><div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:0 2px 2px">Total du mois par personne</div>';
-        h+='<div class="muted" style="font-size:10px;margin:0 2px 8px">frais perso + ½ commun + ½ produits communs</div>';
-        totPersons.forEach(function(who){
-          var tot=(byPerson[who]?byPerson[who].total:0) + communHalf + prodHalf;
-          h+='<div class="leader"><span class="lbl" style="font-weight:700;text-transform:uppercase;letter-spacing:.04em">'+esc(who)+'</span><span class="fill"></span><span class="val" style="font-weight:700;color:var(--accent)">'+fmt(tot)+'</span></div>';
-        });
-      }
+      var me=totPersons.indexOf("Benoit")>=0?"Benoit":(totPersons[0]||"Benoit");
+      function partOf(who){ return (byPerson[who]?byPerson[who].total:0) + communHalf + prodHalf; }
+      var hst=[];
+      totPersons.forEach(function(who){ if(who!==me) hst.push({l:"Part de "+esc(who), v:fmtS(partOf(who))}); });
+      hst.push({l:"Frais communs", v:fmtS(communTotal)}); hst.push({l:"Produits partagés", v:fmtS(prodTotal)});
+      var heroHtml=tabHero({ label:"Ta part ce mois ("+esc(me)+")", big:partOf(me), sub:"frais perso + ½ frais communs + ½ produits en commun", stats:hst.slice(0,3) });
+      h=h.replace("%%HERO%%", heroHtml);
 
       h+='</section>';
       app.innerHTML=h;
@@ -1879,14 +1973,11 @@
       var soldeBanque=reporteReel + virDone - paidTotal - fraisDoneFull;
 
       var cptOpen = state.cptOpen || (state.cptOpen={});
-      var h=header()+'<section class="paper torn">';
-      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:10px">'+
-         '<span id="cm-prev" style="cursor:pointer;font-size:18px;line-height:1;padding:0 6px;color:var(--ink-soft)">\u2039</span>'+
-         '<span>Compte · '+esc(person)+' · '+esc(monthLabel)+'</span>'+
-         '<span id="cm-next" style="font-size:18px;line-height:1;padding:0 6px;'+'cursor:pointer;color:var(--ink-soft)'+'">\u203a</span>'+
-         '</div>';
-      if(month!==curM) h+='<div class="center" style="margin:2px 0 0"><span id="cm-today" style="cursor:pointer;font-size:10px;color:var(--accent)">\u21a9 revenir au mois en cours</span></div>';
-      h+='<hr class="rule">';
+      var h=header()+'<div class="tabtop">'+monthNavHTML('Compte · '+esc(monthLabel), month, curM).replace(/id="mn-/g,'id="cm-')+'</div>';
+      h+=tabHero({ label:"Solde de fin de mois prévu", big:soldeFin, color:(soldeFin<0?"var(--coral)":"var(--ink)"),
+        sub:(liq?"Banque "+fmtK(fl.closing)+" · Liquide "+fmtK(liqV):""),
+        stats:[ {l:"Virements", v:signS(virTotal), c:heroCol(virTotal)}, {l:"Dépenses", v:fmtS(depenses)}, {l:"Banque estimée", v:fmtS(soldeBanque), c:(soldeBanque<0?"var(--coral)":"")} ] });
+      h+='<section class="paper torn">';
       h+='<div class="leader" id="reporterow" style="cursor:pointer"><span class="lbl" style="font-weight:700;text-transform:uppercase;letter-spacing:.05em">Solde reporté ✎</span><span class="fill"></span><span class="val" style="font-weight:700">'+fmt(reporte)+'</span></div>';
       h+='<div class="muted" style="font-size:9px;margin:0 2px 2px">'+(getSoldeInit(person,month)!==null?"valeur modifiée manuellement":"repris du mois précédent")+'</div>';
       h+='<hr class="rule"><div class="leader cptToggle" data-key="vir" style="cursor:pointer"><span class="lbl" style="font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:11px">Virements</span><span class="fill"></span><span class="val" style="color:var(--ink-soft);font-size:13px">'+(cptOpen.vir?"▲":"▼")+'</span></div>';
@@ -1943,7 +2034,7 @@
         var parts=[];
         var pm=pctStr(prev,cur); if(pm) parts.push('<span style="color:'+pctColor(prev,cur)+'">préc. '+fmt(prev)+' ('+pm+')</span>');
         var pc=pctStr(first,cur); if(pc && epMonthsOf(c).length>1) parts.push('<span style="color:'+pctColor(first,cur)+'">création '+pc+'</span>');
-        if(parts.length) h+='<div class="muted" style="font-size:10px;margin:0 2px 7px">'+parts.join(" · ")+'</div>';
+        if(parts.length) h+='<div class="muted" style="font-size:12px;margin:2px 2px 8px">'+parts.join(" · ")+'</div>';
         if(c.objectif && c.objectif.montant>0){
           var oT=c.objectif.montant, oR=cur/oT, oP=Math.min(100, Math.round(oR*100)), oTxt;
           if(cur>=oT) oTxt='✓ Objectif de '+fmt(oT)+' atteint';
@@ -2249,8 +2340,7 @@
         });
         if(ch) persistBourse();
       }
-      var h=header()+'<section class="paper torn">';
-      h+=monthNavHTML('Bourse · '+esc(monthLabel), month, curM)+'<hr class="rule">';
+      var h=header()+'<div class="tabtop">'+monthNavHTML('Bourse · '+esc(monthLabel), month, curM)+'</div>%%HERO%%<section class="paper torn">';
       (function(){
         function portVal(mk){ var t=0; bourse.forEach(function(c){ var a=bAt(c,mk); if(a) t+=Number(a.valeur)||0; }); return t; }
         var allM={}; bourse.forEach(function(c){ bMonths(c).forEach(function(mk){ allM[mk]=1; }); });
@@ -2284,12 +2374,12 @@
            '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px">'+fmt(val)+'</span>'+
            '<button class="btn ghost bedit" type="button" data-id="'+esc(c.id)+'">✎</button>'+
            '<button class="btn ghost bdel" type="button" data-id="'+esc(c.id)+'">✕</button></div>';
-        h+='<div style="font-size:10px;color:var(--ink-soft);margin:2px 6px 0">Capital investi : '+fmt(cap)+'</div>';
+        h+='<div style="font-size:12.5px;color:var(--ink-soft);margin:2px 6px 0">Capital investi : '+fmt(cap)+'</div>';
         var badges=[];
         badges.push(bBadge(cap,val,"Plus-value :"));
         if(prev) badges.push(bBadge(Number(prev.valeur||0),val,"Mois préc. :"));
         if(first&&bMonths(c).length>1) badges.push(bBadge(Number(first.valeur||0),val,"Depuis création :"));
-        badges.forEach(function(b){ if(b) h+='<div style="font-size:10px;margin:2px 6px 0">'+b+'</div>'; });
+        badges.forEach(function(b){ if(b) h+='<div style="font-size:12.5px;margin:3px 6px 0">'+b+'</div>'; });
         h+='</div>';
         h+='<hr class="rule" style="margin:6px 0;opacity:.3">';
       });
@@ -2298,20 +2388,12 @@
         var c=etoroCfg(), has=!!(c.url&&c.secret);
         h+='<div class="center" style="margin-top:10px"><button class="btn ghost" id="etorotest" type="button">'+(has?"🔗 Tester la connexion eToro":"🔗 Connecter eToro (via relais)")+'</button>'+(has?' <button class="btn ghost" id="etoroforget" type="button" style="margin-top:6px">Oublier la config eToro</button>':'')+'</div>';
       })();
-      h+='<hr class="rule"><div class="leader fam"><span class="lbl">Total portefeuille</span><span class="fill"></span><span class="val">'+fmt(totVal)+'</span></div>';
-      h+='<div class="leader item"><span class="lbl">Capital total investi</span><span class="fill"></span><span class="val">'+fmt(totCap)+'</span></div>';
-      if(totCap>0){
-        var pvTot=totVal-totCap, pvPct=bPct(totCap,totVal);
-        h+='<div class="leader item"><span class="lbl">Plus-value totale</span><span class="fill"></span><span class="val" style="color:'+bPctCol(totCap,totVal)+'">'+(pvTot>=0?"+":"")+pvTot.toFixed(2).replace(".",",")+'€'+(pvPct?" ("+pvPct+")":" ")+'</span></div>';
-      }
-      if(totPrevVal!==null){
-        var diffPrev=totVal-totPrevVal, pctPrev=bPct(totPrevVal,totVal);
-        h+='<div class="leader item"><span class="lbl">vs mois précédent</span><span class="fill"></span><span class="val" style="color:'+bPctCol(totPrevVal,totVal)+'">'+(diffPrev>=0?"+":"")+diffPrev.toFixed(2).replace(".",",")+'€'+(pctPrev?" ("+pctPrev+")":" ")+'</span></div>';
-      }
-      if(totFirstVal!==null&&bourse.some(function(c){ return bMonths(c).length>1; })){
-        var diffFirst=totVal-totFirstVal, pctFirst=bPct(totFirstVal,totVal);
-        h+='<div class="leader item"><span class="lbl">Depuis création</span><span class="fill"></span><span class="val" style="color:'+bPctCol(totFirstVal,totVal)+'">'+(diffFirst>=0?"+":"")+diffFirst.toFixed(2).replace(".",",")+'€'+(pctFirst?" ("+pctFirst+")":" ")+'</span></div>';
-      }
+      (function(){
+        var st=[{l:"Capital investi", v:fmtS(totCap)}];
+        if(totCap>0){ var pv=totVal-totCap; st.push({l:"Plus-value", v:signS(pv), d:(bPct(totCap,totVal)||""), c:heroCol(pv)}); }
+        if(totPrevVal!==null){ var dp=totVal-totPrevVal; st.push({l:"vs mois préc.", v:signS(dp), d:(bPct(totPrevVal,totVal)||""), c:heroCol(dp)}); }
+        h=h.replace("%%HERO%%", bourse.length?tabHero({ label:"Total portefeuille", big:totVal, sub:(totFirstVal!==null&&bourse.some(function(c){ return bMonths(c).length>1; }))?("Depuis la création : "+signK(totVal-totFirstVal)+" ("+(bPct(totFirstVal,totVal)||"")+")"):"", stats:st }):"");
+      })();
       if(!state.solLoading && state.solPrice===null && !state.solError) fetchSolPrice();
       var NB_ACTIONS=3.10105935, PRIX_ACHAT=160.91275389;
       var valAct=state.prixActuel?num(state.prixActuel):0;
@@ -2573,8 +2655,11 @@
       if(sel.indexOf("cat:")===0) selLabel=sel.slice(4);
       else if(sel.indexOf("fam:")===0) selLabel=sel.slice(4);
       else if(sel.indexOf("prod:")===0) selLabel=sel.slice(5);
-      var h=header()+'<section class="paper torn">';
-      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Historique · '+esc(selLabel)+'</div><hr class="rule">';
+      var shown=data.slice(); while(shown.length>1 && shown[0].total===0) shown.shift();
+      var best=null; shown.forEach(function(d){ if(!best || d.total>best.total) best=d; });
+      var h=header()+'<div class="tabtop"><div class="mnav"><div class="mn-t">Historique · '+esc(selLabel)+'</div></div></div>';
+      h+=tabHero({ label:"Total sur "+shown.length+" mois", big:grand, stats:[ {l:"Moyenne / mois", v:fmtS(avg)}, {l:"Mois record", v:(best&&best.total>0?esc(best.label):"—"), d:(best&&best.total>0?fmtS(best.total):"")}, {l:"Mois actifs", v:String(active)} ] });
+      h+='<section class="paper torn">';
       h+='<label class="f">Filtrer par</label><select class="f" id="histcat">';
       h+='<option value=""'+(sel===""?" selected":"")+'>Tout (total dépenses)</option>';
       if(catList.length){ h+='<optgroup label="Catégories ticket">'; catList.forEach(function(c){ var v="cat:"+c; h+='<option value="'+esc(v)+'"'+(sel===v?" selected":"")+'>'+esc(c)+'</option>'; }); h+='</optgroup>'; }
@@ -2582,13 +2667,12 @@
       if(prodList.length){ h+='<optgroup label="Produits">'; prodList.forEach(function(p){ var v="prod:"+p; h+='<option value="'+esc(v)+'"'+(sel===v?" selected":"")+'>'+esc(p)+'</option>'; }); h+='</optgroup>'; }
       h+='</select>';
       h+='<div class="muted" style="font-size:11px;margin:12px 2px 2px">Touche un mois pour voir son détail.</div>';
-      data.forEach(function(d){
+      shown.forEach(function(d){
         var pct=Math.max(d.total>0?2:0, Math.round(d.total/maxV*100));
         h+='<div class="bar-row clk" data-month="'+esc(d.key)+'"><div class="bar-top"><span class="bl">'+esc(d.label)+'</span><span class="bv">'+fmt(d.total)+'</span></div>'+
            '<div class="bar-track"><i style="width:'+pct+'%"></i></div></div>';
       });
-      h+='<hr class="rule"><div class="leader"><span class="lbl">Moyenne / mois actif</span><span class="fill"></span><span class="val">'+fmt(avg)+'</span></div>';
-      h+='<div class="leader total"><span class="lbl">Total 12 mois</span><span class="fill"></span><span class="val">'+fmt(grand)+'</span></div>';
+
       h+='</section>';
       app.innerHTML=h;
       var hc=document.getElementById("histcat"); if(hc) hc.onchange=function(){ state.histCat=hc.value; render(); };
@@ -3208,14 +3292,13 @@
     function renderProvisions(){
       var curM=monthKey(todayISO());
       var month=(state.months&&state.months.provisions)||curM;
-      var h=header("list")+'<section class="paper">';
-      h+=monthNavHTML('Provisions · mise de côté', month, curM)+'<hr class="rule">';
+      var h=header("list")+'<div class="tabtop">'+monthNavHTML('Provisions · '+esc(monthLabelOf(month)), month, curM)+'</div>%%HERO%%<div>';
       if(!provisions.length){ h+='<div class="empty">Aucune provision.<br>Crée une enveloppe pour tes frais annuels (taxe foncière, assurance, eau…) : tu mets un montant de côté chaque mois, le solde monte tout seul.</div>'; }
       var total=0, overTot=0;
       provisions.forEach(function(p){
         var pst=provState(p, month), bal=pst.bal; total+=bal;
         for(var ok in pst.over){ if(ok<=month) overTot+=pst.over[ok]; }
-        h+='<div style="margin:14px 0 2px">';
+        h+='<div class="pcard">';
         h+='<div class="prow"><span class="pname" style="font-weight:700">'+esc(p.nom)+'</span>'+
            '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px;color:'+(bal<0?"#f4796b":"#4fd6a0")+'">'+fmt(bal)+'</span>'+
            '<button class="btn ghost predit" type="button" data-id="'+esc(p.id)+'">✎</button>'+
@@ -3251,13 +3334,19 @@
         });
         if(pst.over[month]) h+='<div style="font-size:11px;color:#e6b450;padding:6px 4px 0 12px">⚠ Dépassement : '+fmt(pst.over[month])+' pris sur le total des provisions</div>';
         h+='<button class="btn ghost addprl" type="button" data-id="'+esc(p.id)+'" style="margin-top:8px;font-size:12px">+ Prélèvement (facture payée)</button>';
-        h+='<hr class="rule" style="margin:12px 0 0;opacity:.3"></div>';
+        h+='</div>';
       });
       h+='<button class="btn ghost" id="addprov" type="button" style="margin-top:8px">+ Ajouter une provision</button>';
       total-=overTot;
-      h+='<hr class="rule"><div class="leader total"><span class="lbl">Total provisionné</span><span class="fill"></span><span class="val" style="color:'+(total<0?"#f4796b":"#4fd6a0")+'">'+fmt(total)+'</span></div>'+(overTot>0?'<div class="muted" style="font-size:10px;margin:2px 2px 0">dépassements déduits : −'+fmt(overTot)+'</div>':'');
-      h+='<div class="muted" style="font-size:10px;margin:6px 2px 0">Le solde monte tout seul du montant mensuel. Enregistre un prélèvement quand la facture est payée.</div>';
-      h+='</section>';
+      (function(){
+        var mensTot=0, next=null;
+        provisions.forEach(function(p){ if((p.skips||[]).indexOf(month)<0) mensTot+=mensuelAt(p, month); var ec=provEcheance(p, month); if(ec && (!next || ec.due<next.due)) next={due:ec.due, nom:p.nom}; });
+        h=h.replace("%%HERO%%", provisions.length?tabHero({ label:"Total mis de côté", big:total, color:(total<0?"var(--coral)":"var(--ink)"), sub:(overTot>0?"Dépassements déduits : −"+fmtK(overTot):""),
+          stats:[ {l:"Enveloppes", v:String(provisions.length)}, {l:"Ce mois-ci", v:"+"+fmtS(mensTot)}, {l:"Échéance", v:(next?esc(next.nom):"—"), d:(next?esc(monthLabelOf(next.due)):"")} ] }):"");
+      })();
+      h+='<hr class="rule" style="display:none"><div class="leader total" style="display:none"><span class="lbl">Total provisionné</span><span class="fill"></span><span class="val" style="color:'+(total<0?"#f4796b":"#4fd6a0")+'">'+fmt(total)+'</span></div>';
+      h+='<div class="muted" style="font-size:11px;margin:10px 4px 0;line-height:1.5">Le solde monte tout seul du montant mensuel. Enregistre un prélèvement quand la facture est payée.</div>';
+      h+='</div>';
       app.innerHTML=h;
       setNav(null,false);
       bindBack(function(){ state.view="compte"; render(); });
