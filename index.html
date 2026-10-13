@@ -2507,16 +2507,25 @@
       if(p.mensuelChanges){ var best=null; for(var k in p.mensuelChanges){ if(k<=mk && (best===null||k>best)) best=k; } if(best!==null) v=Number(p.mensuelChanges[best])||0; }
       return v;
     }
-    function provBalance(p, month){
+    // Solde calculé mois par mois : jamais sous 0, le surplus d'une facture est noté comme dépassement (payé depuis le compte)
+    function provState(p, month, excludePrId){
       var m=month||monthKey(todayISO());
       var start=p.startMonth||m;
-      var acc=Number(p.soldeInitial)||0;
+      var sk=p.skips||[], prs=p.prelevements||[];
+      function outOf(fn){ var o=0; prs.forEach(function(pr){ if(excludePrId!=null && String(pr.id)===String(excludePrId)) return; if(fn(pr.month||"")) o+=Number(pr.montant)||0; }); return o; }
+      var acc=Number(p.soldeInitial)||0, over={};
       var cur=start, guard=0;
-      var sk=p.skips||[];
-      while(cur<m && guard<600){ cur=nextMonthKey(cur); if(sk.indexOf(cur)<0) acc+=mensuelAt(p, cur); guard++; }
-      var out=0; (p.prelevements||[]).forEach(function(pr){ if((pr.month||"")<=m) out+=Number(pr.montant)||0; });
-      return acc-out;
+      acc-=outOf(function(pm){ return pm<=start; });
+      if(acc<0){ over[start]=-acc; acc=0; }
+      while(cur<m && guard<600){
+        cur=nextMonthKey(cur); guard++;
+        if(sk.indexOf(cur)<0) acc+=mensuelAt(p, cur);
+        var c=cur; acc-=outOf(function(pm){ return pm===c; });
+        if(acc<0){ over[cur]=-acc; acc=0; }
+      }
+      return { bal:acc, over:over };
     }
+    function provBalance(p, month){ return provState(p, month).bal; }
     function addProvision(){
       var nom=(window.prompt("Nom de la provision (ex. Impôt foncier, Assurance, Eau) :")||"").trim();
       if(!nom) return;
@@ -2545,6 +2554,11 @@
       var mv=window.prompt("Montant prélevé (€) :",""); if(mv===null) return;
       var mois=window.prompt("Mois du prélèvement (AAAA-MM) — vide = ce mois-ci :","");
       var m=(mois && /^[0-9]{4}-[0-9]{2}$/.test(mois.trim()))?mois.trim():monthKey(todayISO());
+      var mt=Math.abs(num(mv));
+      var dispo=provState(p, m).bal;
+      if(mt>dispo+0.004){
+        if(!window.confirm("Cette facture dépasse la provision de "+fmt(mt-dispo)+".\nDisponible : "+fmt(dispo)+".\n\nLe surplus sera considéré comme payé depuis le compte. Valider ?")) return;
+      }
       if(!p.prelevements) p.prelevements=[];
       p.prelevements.push({ id:Date.now(), month:m, montant:Math.abs(num(mv)), label:(label||"").trim()||"Prélèvement" });
       persistProvisions(); render();
@@ -2569,7 +2583,7 @@
       if(!provisions.length){ h+='<div class="empty">Aucune provision.<br>Crée une enveloppe pour tes frais annuels (taxe foncière, assurance, eau…) : tu mets un montant de côté chaque mois, le solde monte tout seul.</div>'; }
       var total=0;
       provisions.forEach(function(p){
-        var bal=provBalance(p, month); total+=bal;
+        var pst=provState(p, month), bal=pst.bal; total+=bal;
         h+='<div style="margin:14px 0 2px">';
         h+='<div class="prow"><span class="pname" style="font-weight:700">'+esc(p.nom)+'</span>'+
            '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px;color:'+(bal<0?"#f4796b":"#4fd6a0")+'">'+fmt(bal)+'</span>'+
@@ -2590,6 +2604,7 @@
              '<button class="btn ghost prldel" type="button" data-id="'+esc(p.id)+'" data-pr="'+esc(pr.id)+'" style="padding:6px 9px;flex:0 0 auto">✕</button>'+
              '</div>';
         });
+        if(pst.over[month]) h+='<div style="font-size:11px;color:#e6b450;padding:6px 4px 0 12px">⚠ Dépassement : '+fmt(pst.over[month])+' payés en plus depuis le compte</div>';
         h+='<button class="btn ghost addprl" type="button" data-id="'+esc(p.id)+'" style="margin-top:8px;font-size:12px">+ Prélèvement (facture payée)</button>';
         h+='<hr class="rule" style="margin:12px 0 0;opacity:.3"></div>';
       });
