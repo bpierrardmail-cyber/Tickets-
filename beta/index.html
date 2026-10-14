@@ -675,7 +675,7 @@
         if(!ok) return;
         if(!c.vals) c.vals={};
         var cur=c.vals[m0]||{}, capPrev=cur.capital; if(capPrev===undefined){ var bl=bLast(c); capPrev=bl?bl.capital:0; }
-        var capital=capOk?Math.round(cap*100)/100:(Number(capPrev)||0), valeur=Math.round(tot*100)/100;
+        var capital=(capOk && !c.capManual)?Math.round(cap*100)/100:(Number(capPrev)||0), valeur=Math.round(tot*100)/100;
         if(Number(cur.valeur)!==valeur || Number(cur.capital)!==capital){ bSnap(c, m0, capital, valeur); ch=true; }
       });
       if(ch) persistBourse();
@@ -906,16 +906,18 @@
       function snapAt(m){ return c.vals[m]||bAt(c,m)||{}; }
       function autoVal(m){ return m===m0 && !!(hasPos || (c.sol&&c.solQty&&state.solPrice) || (c.stock&&c.stock.symbol&&state.stockPrices[c.stock.symbol])); }
       function nz(v){ return (v===undefined||v===null)?"":v; }
+      function autoCap(){ if(!hasPos) return null; var t=0; for(var i=0;i<c.positions.length;i++){ var p=c.positions[i]; if(!(p.pru>0)) return null; t+=p.pru*(Number(p.qte)||0); } return Math.round(t*100)/100; }
+      var aCap=autoCap();
       var s0=snapAt(mv);
       uiForm({ title:"Modifier « "+c.nom+" »", fields:[
         {key:"nom", label:"Nom du compte", value:c.nom, required:true},
         {key:"mois", label:"Mois", type:"month", value:mv,
           onChange:function(v,api){ if(!/^[0-9]{4}-[0-9]{2}$/.test(v||"")) return; var s=snapAt(v); api.set("cap", nz(s.capital)); api.set("val", nz(s.valeur)); api.set("cash", bCash(s)||""); api.show("val", !autoVal(v)); }},
-        {key:"cap", label:"Capital investi", type:"money", value:nz(s0.capital), help:(hasPos?"Recalculé tout seul si chaque position a un prix de revient.":"Ce que tu as placé en actions / cryptos.")},
+        {key:"cap", label:"Capital investi", type:"money", value:nz(s0.capital), help:(aCap!==null?"Calculé depuis le prix d'achat de tes positions ("+fmt(aCap)+"). Tape un autre montant pour le fixer toi-même, vide = calcul automatique.":"Ce que tu as placé en actions / cryptos.")},
         {key:"val", label:"Valeur des placements", type:"money", value:nz(s0.valeur), hidden:autoVal(mv), help:"Sans le reste à investir."},
         {key:"sol", label:"Nombre de SOL détenus", type:"qty", value:nz(c.solQty), hidden:!c.sol},
         {key:"cash", label:"Reste à investir", type:"money", value:(bCash(s0)||""), help:"Argent disponible sur le compte, pas encore placé. Vide = rien."}
-      ]}, function(r){
+      ], focus:false }, function(r){
         c.nom=r.nom||c.nom;
         if(c.sol && r.sol>0) c.solQty=r.sol;
         var m=(r.mois && /^[0-9]{4}-[0-9]{2}$/.test(r.mois))?r.mois:mv, s=snapAt(m);
@@ -923,6 +925,10 @@
         var valeur=(r.val===null)?(Number(s.valeur)||0):r.val;
         if(m===m0 && c.stock && c.stock.symbol && state.stockPrices[c.stock.symbol]) valeur=(c.stock.qty||0)*state.stockPrices[c.stock.symbol]+(Number(c.stock.cash)||0);
         else if(m===m0 && c.sol && c.solQty && state.solPrice) valeur=c.solQty*state.solPrice;
+        if(aCap!==null && m===m0){
+          if(r.cap===null || (!c.capManual && Math.abs(r.cap-aCap)<0.005)){ delete c.capManual; if(r.cap===null) r.cap=aCap; }
+          else c.capManual=true;
+        }
         var o={ capital:(r.cap===null?(Number(s.capital)||0):r.cap), valeur:valeur };
         if(r.cash>0) o.cash=r.cash;
         c.vals[m]=o;
@@ -2546,7 +2552,7 @@
         var pmSnap=bAt(c,pm); if(pmSnap){ totPrevVal=(totPrevVal||0)+Number(pmSnap.valeur||0); }
         if(first){ totFirstVal=(totFirstVal||0)+Number(first.valeur||0); totFirstCap=(totFirstCap||0)+Number(first.capital||0); }
         h+='<div style="margin:10px 0 2px">';
-        h+='<div class="prow"><span class="pname" style="font-weight:700">'+esc(c.nom)+(c.closed?' <span style="font-size:9.5px;color:var(--muted);font-weight:600">clôturé en '+esc(monthLabelOf(c.closed).split(" ")[0])+'</span>':'')+((c.sol&&month===curM)?' <span style="font-size:9px;color:var(--accent);font-weight:600">● live</span>':'')+'</span>'+
+        h+='<div class="prow bhead" data-bid="'+esc(c.id)+'" style="cursor:pointer"><span class="pname" style="font-weight:700">'+esc(c.nom)+(c.closed?' <span style="font-size:9.5px;color:var(--muted);font-weight:600">clôturé en '+esc(monthLabelOf(c.closed).split(" ")[0])+'</span>':'')+((c.sol&&month===curM)?' <span style="font-size:9px;color:var(--accent);font-weight:600">● live</span>':'')+'</span>'+
            '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px">'+fmt(tot)+'</span>'+
            '<button class="btn ghost bedit" type="button" data-id="'+esc(c.id)+'">✎</button>'+
            '<button class="btn ghost bdel" type="button" data-id="'+esc(c.id)+'">✕</button></div>';
@@ -2576,6 +2582,7 @@
       var pa=document.getElementById("prixact"); if(pa){ pa.oninput=function(){ state.prixActuel=pa.value; render(); }; }
       var ab=document.getElementById("addbrs"); if(ab) ab.onclick=addBourse;
       var rb=document.getElementById("recbrs"); if(rb) rb.onclick=recoverBourse;
+      [].forEach.call(document.querySelectorAll(".bhead"), function(row){ row.onclick=function(ev){ var t=ev.target; while(t && t!==row){ if(t.tagName==="BUTTON") return; t=t.parentNode; } editBourse(row.getAttribute("data-bid")); }; });
       [].forEach.call(document.querySelectorAll(".bedit"), function(b){ b.onclick=function(){ editBourse(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".bdel"), function(b){ b.onclick=function(){ delBourse(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".bmonth"), function(sp){ sp.onclick=function(){ if(!state.months) state.months={}; var mk=sp.getAttribute("data-m"); state.months.bourse=(mk===curM?null:mk); render(); }; });
