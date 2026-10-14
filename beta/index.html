@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 14:25" />
+  <meta name="build" content="14/10 14:30" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -294,6 +294,11 @@
     .ad .btn{ margin-top:14px; }
     .pos.prow{ cursor:pointer; }
     .bch-note{ font-size:11px; color:var(--muted); margin-top:10px; line-height:1.45; }
+    /* Comptes bourse : une carte par compte */
+    .bacct{ margin-top:14px; padding:6px 14px 10px; border-left:3px solid var(--accent); }
+    .bacct .bhead{ border-bottom:1px solid var(--line2); padding:12px 2px 11px; }
+    .bacct .bhead .pname{ font-size:17px; }
+    .bacct .poslist{ margin-top:8px; }
     /* Positions (cryptos, actions) */
     .pos{ display:flex; align-items:center; gap:10px; padding:10px 2px; border-bottom:1px solid var(--line); }
     .pos:last-of-type{ border-bottom:0; }
@@ -2747,7 +2752,7 @@
         });
         if(ch) persistBourse();
       }
-      var h=header()+'<div class="tabtop">'+monthNavHTML('Bourse · '+esc(monthLabel), month, curM)+'</div>%%HERO%%<section class="paper torn">';
+      var h=header()+'<div class="tabtop">'+monthNavHTML('Bourse · '+esc(monthLabel), month, curM)+'</div>%%HERO%%';
       (function(){
         function portVal(mk){ var t=0; bourse.forEach(function(c){ var a=bAt(c,mk); if(a) t+=Number(a.valeur)||0; }); return t; }
         var allM={}; bourse.forEach(function(c){ bMonths(c).forEach(function(mk){ allM[mk]=1; }); });
@@ -2764,7 +2769,7 @@
         });
         h=h.replace("%%HERO%%", '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 12px">'+strip+'</div>%%HERO%%');
       })();
-      if(!bourse.some(function(c){ return bAt(c,month) && !bClosedAt(c,month); })) h+='<div class="muted" style="font-size:12px;margin:4px 2px">Aucun compte'+(month===curM?". Ajoute ton premier compte bourse.":" ce mois-ci.")+'</div>';
+      var emptyB=''; if(!bourse.some(function(c){ return bAt(c,month) && !bClosedAt(c,month); })) emptyB='<div class="muted" style="font-size:12px;margin:4px 2px 8px">Aucun compte'+(month===curM?". Ajoute ton premier compte bourse.":" ce mois-ci.")+'</div>';
       var totCap=0, totVal=0, totCash=0, totPrevVal=null, totFirstVal=null, totFirstCap=null;
       var pm=prevMonthKey(month);
       var visB=bourse.filter(function(c){ return bAt(c,month) && !bClosedAt(c,month); });
@@ -2775,7 +2780,7 @@
         totCap+=cap; totVal+=val; totCash+=cash;
         var pmSnap=bAt(c,pm); if(pmSnap){ totPrevVal=(totPrevVal||0)+Number(pmSnap.valeur||0); }
         if(first){ totFirstVal=(totFirstVal||0)+Number(first.valeur||0); totFirstCap=(totFirstCap||0)+Number(first.capital||0); }
-        h+='<div style="margin:10px 0 2px">';
+        h+='<section class="paper bacct"><div style="margin:0 0 2px">';
         h+='<div class="prow bhead" data-bid="'+esc(c.id)+'" style="cursor:pointer"><span class="pname" style="font-weight:700">'+esc(c.nom)+(c.closed?' <span style="font-size:9.5px;color:var(--muted);font-weight:600">clôturé en '+esc(monthLabelOf(c.closed).split(" ")[0])+'</span>':'')+((c.sol&&month===curM)?' <span style="font-size:9px;color:var(--accent);font-weight:600">● live</span>':'')+'</span>'+
            '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px">'+fmt(tot)+'</span>'+
            '<button class="btn ghost bedit" type="button" data-id="'+esc(c.id)+'">✎</button>'+
@@ -2791,9 +2796,10 @@
         badges.forEach(function(b){ if(b) h+='<div style="font-size:12.5px;margin:3px 6px 0">'+b+'</div>'; });
         h+='</div>';
         h+=positionsHTML(c);
-        h+='<hr class="rule" style="margin:6px 0;opacity:.3">';
+        h+='</section>';
       });
-      h+='<button class="btn primary" id="addpos" type="button" style="margin-top:6px;width:100%">+ Ajouter une crypto, une action ou autre</button>';
+      h+='<section class="paper" style="margin-top:14px">'+emptyB;
+      h+='<button class="btn primary" id="addpos" type="button" style="width:100%">+ Ajouter une crypto, une action ou autre</button>';
       h+='<button class="btn ghost" id="addbrs" type="button" style="margin-top:10px">+ Ajouter un compte bourse</button>';
       h+='<div class="center" style="margin-top:12px"><button class="btn ghost" id="recbrs" type="button" style="font-size:11px;padding:6px 12px;opacity:.75">Récupérer un compte supprimé (sauvegarde)</button></div>';
       (function(){
