@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 15:00" />
+  <meta name="build" content="14/10 15:20" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -300,7 +300,7 @@
     .bacct .bhead .pname{ font-size:17px; }
     .bacct .poslist{ margin-top:8px; }
     .pos.pos-man{ background:rgba(124,156,244,.13); border:1px solid rgba(124,156,244,.28); border-radius:12px; margin:6px -6px; padding:10px 8px; }
-    .btn.posval{ flex:0 0 auto; width:46px; padding:8px 0; font-size:13px; font-weight:700; background:rgba(124,156,244,.24); border-color:rgba(124,156,244,.45); color:#d3ddff; }
+    .btn.posval{ flex:0 0 auto; min-width:46px; padding:8px 6px; font-size:13px; font-weight:700; background:rgba(124,156,244,.24); border-color:rgba(124,156,244,.45); color:#d3ddff; }
     .pos.pos-man .pos-ic{ background:rgba(124,156,244,.22); color:#b8c8fa; }
     /* Positions (cryptos, actions) */
     .pos{ display:flex; align-items:center; gap:10px; padding:10px 2px; border-bottom:1px solid var(--line); }
@@ -440,6 +440,24 @@
       write: function(k, val){ try{ localStorage.setItem(k, JSON.stringify(val)); storageFull=false; }catch(e){ mem[k]=val; storageFull=true; } }
     };
 
+    // ---------- Devise principale (tous les montants de l'appli sont dans cette devise) ----------
+    var CURS={ EUR:{s:"€",l:"Euro",c:"€ Euro"}, USD:{s:"$",l:"Dollar US",c:"$ Dollar"}, GBP:{s:"£",l:"Livre sterling",c:"£ Livre"}, CHF:{s:"CHF",l:"Franc suisse",c:"CHF Franc"}, CAD:{s:"$ CA",l:"Dollar canadien",c:"$ CA"} };
+    var BASE=store.read("devise","EUR"); if(!CURS[BASE]) BASE="EUR";
+    function curSym(c){ c=c||BASE; return (CURS[c]&&CURS[c].s)||c; }
+    // Devises proposées quand on saisit un montant étranger : la devise principale, puis $ et €
+    function chooseCurrency(){
+      uiForm({ title:"Devise principale", intro:"Tous les montants de l'appli s'affichent dans cette devise : tickets, budget, comptes, bourse.", fields:[
+        { key:"dev", label:"Devise", type:"select", value:BASE, options:Object.keys(CURS).map(function(c){ return { v:c, l:CURS[c].s+" · "+CURS[c].l }; }),
+          help:"Les montants déjà saisis ne sont pas convertis : change-la seulement si tu les as saisis dans cette devise. Les cours des actions et cryptos, eux, sont convertis automatiquement." }
+      ], ok:"Enregistrer", focus:false }, function(r){
+        if(!r.dev || !CURS[r.dev] || r.dev===BASE) return;
+        BASE=r.dev; store.write("devise", BASE);
+        state.solPrice=null; state.stockPrices={};
+        if(typeof refreshPositions==="function") refreshPositions(true);
+        render(); uiToast("Devise : "+CURS[BASE].l);
+      });
+    }
+    function curOpts(extra){ var l=[BASE]; ["USD","EUR"].concat(extra?[extra]:[]).forEach(function(c){ if(c && l.indexOf(c)<0) l.push(c); }); return l.map(function(c){ return { v:c, l:(CURS[c]?CURS[c].c:c) }; }); }
     var CATS = store.read("cats", null) || ["Alimentation","Restaurant","Carburant","Maison","Santé","Transport","Loisirs","Autre"];
     if(CATS.indexOf("Autre")<0) CATS.push("Autre");
     function persistCats(){ store.write("cats", CATS); }
@@ -516,7 +534,11 @@
     function bAt(c, mk){ var ms=bMonthsUpto(c,mk); return ms.length?c.vals[ms[ms.length-1]]:null; }
     function bPrevAt(c, mk){ var ms=bMonthsUpto(c,mk); return ms.length>1?c.vals[ms[ms.length-2]]:null; }
     // Reste à investir (liquidités du compte bourse) : compté dans la valeur et dans le capital, donc sans effet sur la plus-value
-    function bCash(a){ return a?(Number(a.cash)||0):0; }
+    function bCash(a){
+      if(!a) return 0;
+      if(a.cashCur && a.cashOrig!=null){ if(a.cashCur===BASE) return Number(a.cashOrig)||0; var v=toBase(Number(a.cashOrig), a.cashCur); if(v!==null) return Math.round(v*100)/100; }
+      return Number(a.cash)||0;
+    }
     function bTot(a){ return a?((Number(a.valeur)||0)+bCash(a)):0; }
     // Compte clôturé : il reste dans l'historique jusqu'au mois précédent et vaut 0 à partir de son mois de clôture
     function bClosedAt(c, mk){ return !!(c && c.closed && mk>=c.closed); }
@@ -527,7 +549,7 @@
       c.vals[m]={ capital:0, valeur:0 }; c.closed=m;
       delete c.positions; c.sol=false; delete c.solQty; delete c.stock;
     }
-    function bSnap(c, m, capital, valeur){ var cash=bCash((c.vals&&c.vals[m])||bAt(c,m)); if(!c.vals) c.vals={}; var o={ capital:capital, valeur:valeur }; if(cash) o.cash=cash; c.vals[m]=o; }
+    function bSnap(c, m, capital, valeur){ var src=(c.vals&&c.vals[m])||bAt(c,m), cash=bCash(src); if(!c.vals) c.vals={}; var o={ capital:capital, valeur:valeur }; if(cash) o.cash=cash; if(src && src.cashCur){ o.cashCur=src.cashCur; o.cashOrig=src.cashOrig; } c.vals[m]=o; }
     function fraisMontant(f, month){
       if(f && f.amounts){ var best=null; for(var k in f.amounts){ if(k<=month && (best===null||k>best)) best=k; } if(best!==null) return Number(f.amounts[best])||0; }
       return Number(f&&f.montant)||0;
@@ -688,16 +710,19 @@
     var pxCache = store.read("coursCache", {});   // { "cg:solana": {p, chg, cur, t} }
     var fxCache = store.read("fxCache", { t:0, rates:{} });  // taux EUR -> devise
     function posKey(p){ return p.src+":"+p.ref; }
-    function toEUR(amount, cur){
+    // Convertit un montant dans la devise principale (taux BCE du jour, base EUR)
+    function toBase(amount, cur){
+      if(amount===null || amount===undefined || !isFinite(amount)) return null;
       if(cur==="GBp"||cur==="GBX"){ amount=amount/100; cur="GBP"; }
-      if(!cur || cur==="EUR") return amount;
-      var r=fxCache.rates&&fxCache.rates[cur]; return r ? amount/r : null;
+      cur=cur||"EUR"; if(cur===BASE) return amount;
+      var R=fxCache.rates||{}, rc=(cur==="EUR")?1:R[cur], rb=(BASE==="EUR")?1:R[BASE];
+      return (rc && rb) ? amount/rc*rb : null;
     }
-    function posPrice(p){ if(p.src==="man") return null; var c=pxCache[posKey(p)]; if(!c) return null; var e=toEUR(c.p, c.cur); return e===null?null:e; }
-    // Prix d'achat : saisi en € ou en $ (p.pruCur). En $, converti au taux du jour, comme le fait eToro.
-    function pruEUR(p){ if(!(p.pru>0)) return null; return p.pruCur==="USD" ? toEUR(Number(p.pru),"USD") : Number(p.pru); }
-    function costEUR(p){ var u=pruEUR(p); return u===null?null:u*(Number(p.qte)||0); }
-    function fmtCur(n,cur){ return cur==="USD" ? (Math.round(n*100)/100).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" $" : fmt(n); }
+    function posPrice(p){ if(p.src==="man") return null; var c=pxCache[posKey(p)]; if(!c) return null; return toBase(c.p, c.cur); }
+    // Prix d'achat : saisi dans la devise principale ou une autre (p.pruCur). Autre devise : convertie au taux du jour, comme le fait eToro.
+    function pruBase(p){ if(!(p.pru>0)) return null; var c=p.pruCur||BASE; return c===BASE ? Number(p.pru) : toBase(Number(p.pru), c); }
+    function costBase(p){ var u=pruBase(p); return u===null?null:u*(Number(p.qte)||0); }
+    function fmtCur(n,cur){ return (cur && cur!==BASE) ? (Math.round(n*100)/100).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" "+curSym(cur) : fmt(n); }
     function posValue(p){ if(p.src==="man") return Number(p.valeur)||0; var pr=posPrice(p); return pr===null?null:pr*(Number(p.qte)||0); }
     function allPositions(){ var out=[]; bourse.forEach(function(c){ if(!bOpen(c)) return; (c.positions||[]).forEach(function(p){ out.push(p); }); }); return out; }
     function applyPositions(){
@@ -705,7 +730,7 @@
       bourse.forEach(function(c){
         if(!c.positions || !c.positions.length || !bOpen(c)) return;
         var tot=0, ok=true, cap=0, capOk=true;
-        c.positions.forEach(function(p){ var v=posValue(p); if(v===null) ok=false; else tot+=v; if(p.src==="man"){ if(p.investi>0) cap+=Number(p.investi); else capOk=false; } else { var ce=costEUR(p); if(ce!==null) cap+=ce; else capOk=false; } });
+        c.positions.forEach(function(p){ var v=posValue(p); if(v===null) ok=false; else tot+=v; if(p.src==="man"){ if(p.investi>0) cap+=Number(p.investi); else capOk=false; } else { var ce=costBase(p); if(ce!==null) cap+=ce; else capOk=false; } });
         if(!ok) return;
         if(!c.vals) c.vals={};
         var cur=c.vals[m0]||{}, capPrev=cur.capital; if(capPrev===undefined){ var bl=bLast(c); capPrev=bl?bl.capital:0; }
@@ -832,10 +857,10 @@
       var withPos=bourse.filter(function(c){ return c.positions && c.positions.length; });
       var curAcc=existing?existing.acc:(withPos.length?String(withPos[withPos.length-1].id):"__new");
       var invPre=(existing&&existing.p.pru>0)?Math.round(existing.p.pru*existing.p.qte*100)/100:"";
-      var cur0=(existing&&existing.p.pruCur==="USD")?"USD":"EUR", sym0=(cur0==="USD"?"$":"€");
+      var cur0=(existing&&existing.p.pruCur)||BASE, sym0=curSym(cur0);
       uiForm({ title:(existing?"Modifier · ":"")+it.nom+" ("+it.sym+")", fields:[
         { key:"qte", label:(it.type==="crypto"?"Quantité détenue":"Nombre d'actions"), type:"qty", value:(existing?String(existing.p.qte).replace(".",","):""), required:true, placeholder:"ex. 3,1" },
-        { key:"cur", label:"Devise du prix d'achat", type:"seg", value:cur0, options:[{v:"EUR",l:"€ Euro"},{v:"USD",l:"$ Dollar"}], help:"Prends celle affichée par ton courtier (sur eToro, le prix après « @ » est en $).", onChange:function(v,api){ var sy=(v==="USD"?"$":"€"); api.suffix("pru",sy); api.suffix("inv",sy); } },
+        { key:"cur", label:"Devise du prix d'achat", type:"seg", value:cur0, options:curOpts(cur0), help:"Prends celle affichée par ton courtier (sur eToro, le prix après « @ » est en $).", onChange:function(v,api){ var sy=curSym(v); api.suffix("pru",sy); api.suffix("inv",sy); } },
         { key:"pru", label:"Prix d'achat moyen (optionnel)", type:"money", suffix:sym0, value:(existing&&existing.p.pru?existing.p.pru:""), help:"Par "+(it.type==="crypto"?"unité":"action")+". Sert à calculer la plus-value." },
         { key:"inv", label:"… ou montant investi total", type:"money", suffix:sym0, value:invPre, help:"Ce que tu as payé au total : le prix moyen se calcule tout seul." },
         { key:"acc", label:"Compte", type:"select", value:curAcc, options:accOpts, help:"La valeur de ce compte sera calculée automatiquement à partir de ses positions.", onChange:function(v,api){ api.show("accNew", v==="__new"); } },
@@ -850,7 +875,7 @@
         p.qte=r.qte;
         var invChanged=(r.inv>0) && (invPre==="" || Math.abs(r.inv-invPre)>0.005);
         if(invChanged) p.pru=r.inv/r.qte; else if(r.pru>0) p.pru=r.pru; else delete p.pru;
-        if(r.cur==="USD" && p.pru>0) p.pruCur="USD"; else delete p.pruCur;
+        if(r.cur && r.cur!==BASE && p.pru>0) p.pruCur=r.cur; else delete p.pruCur;
         if(existing && String(existing.acc)!==String(acc.id)){ var old=bourse.filter(function(c){ return String(c.id)===String(existing.acc); })[0]; if(old) old.positions=(old.positions||[]).filter(function(x){ return x!==p; }); }
         if(!acc.positions) acc.positions=[];
         if(acc.positions.indexOf(p)<0) acc.positions.push(p);
@@ -874,7 +899,7 @@
         var man=(p.src==="man");
         var left=man ? ((p.investi>0?"Investi "+fmtK(p.investi):"Saisie manuelle")+(p.maj?" · "+new Date(p.maj).toLocaleDateString("fr-FR",{day:"numeric",month:"short"}):""))
                      : qtxt+(pr!==null?" × "+fmtK(pr):" "+esc(String(p.sym).replace(/\..*$/,"")));
-        var pv=man ? (p.investi>0?v-p.investi:null) : ((v!==null && costEUR(p)!==null)?v-costEUR(p):null), right=[];
+        var pv=man ? (p.investi>0?v-p.investi:null) : ((v!==null && costBase(p)!==null)?v-costBase(p):null), right=[];
         if(man && p.investi>0) right.push('<span style="color:'+(pv>=0?"var(--accent)":"var(--coral)")+'">'+(pv>=0?"+":"")+(pv/p.investi*100).toFixed(1).replace(".",",")+' %</span>');
         if(px && px.chg!=null) right.push('<span style="color:'+(px.chg>=0?"var(--accent)":"var(--coral)")+'">'+(px.chg>=0?"▲ +":"▼ ")+px.chg.toFixed(2).replace(".",",")+' %</span>');
         if(pv!==null) right.push('<span style="color:'+(pv>=0?"var(--accent)":"var(--coral)")+'">'+signK(pv)+'</span>');
@@ -882,7 +907,7 @@
         h+='<div class="pos prow'+(man?' pos-man':'')+'" data-a="'+esc(c.id)+'" data-p="'+esc(p.id)+'">'+posIcon(p)+
            '<div class="pbody"><div class="pl1"><span class="pname"><b>'+esc(p.nom)+'</b></span><span class="pv">'+(v!==null?fmtK(v):'<span style="color:var(--muted);font-weight:500">…</span>')+'</span></div>'+
            '<div class="pl2"><span>'+left+'</span><span>'+right.join(' · ')+'</span></div></div>'+
-           (man?'<button class="btn posval" type="button" aria-label="Mettre à jour la valeur" data-a="'+esc(c.id)+'" data-p="'+esc(p.id)+'">✎€</button>':'')+
+           (man?'<button class="btn posval" type="button" aria-label="Mettre à jour la valeur" data-a="'+esc(c.id)+'" data-p="'+esc(p.id)+'">✎'+esc(curSym())+'</button>':'')+
            '<button class="btn ghost posedit" type="button" data-a="'+esc(c.id)+'" data-p="'+esc(p.id)+'">✎</button>'+
            '<button class="btn ghost posdel" type="button" data-a="'+esc(c.id)+'" data-p="'+esc(p.id)+'">✕</button></div>';
       });
@@ -949,12 +974,12 @@
         if(pv!=null && price!=null){ var d=price-pv, pc=pv?d/pv*100:0; el.style.color=d>=0?"var(--accent)":"var(--coral)"; el.textContent=(d>=0?"▲ +":"▼ ")+fmtPx(d, cur(), price)+" ("+(pc>=0?"+":"")+pc.toFixed(2).replace(".",",")+" %) "+(day&&day.crypto&&day.prev==null?"sur 24 h":"aujourd'hui"); }
         else if(px0 && px0.chg!=null){ el.style.color=px0.chg>=0?"var(--accent)":"var(--coral)"; el.textContent=(px0.chg>=0?"▲ +":"▼ ")+px0.chg.toFixed(2).replace(".",",")+" % aujourd'hui"; }
         var tm=(day&&day.time)||null, fresh=tm && (Date.now()-tm<20*60000);
-        s.q("#adTime").innerHTML=(fresh?'<span class="ad-live"></span>':'')+(tm?(fresh?"En direct · ":"Dernier cours · ")+esc(new Date(tm).toLocaleString("fr-FR",{ weekday:"short", hour:"2-digit", minute:"2-digit" })):"")+(cur()!=="EUR"?" · cours en "+esc(cur()):"");
+        s.q("#adTime").innerHTML=(fresh?'<span class="ad-live"></span>':'')+(tm?(fresh?"En direct · ":"Dernier cours · ")+esc(new Date(tm).toLocaleString("fr-FR",{ weekday:"short", hour:"2-digit", minute:"2-digit" })):"")+(cur()!==BASE?" · cours en "+esc(cur()):"");
         // ma position (en €)
         var v=posValue(p), q=Number(p.qte)||0, h='<h5>Ma position</h5>';
         h+='<div class="ad-row"><span>Quantité</span><b>'+String(Math.round(q*1e8)/1e8).replace(".",",")+'</b></div>';
         h+='<div class="ad-row"><span>Valeur</span><b>'+(v!==null?fmt(v):"—")+'</b></div>';
-        if(p.pru>0){ var pe=pruEUR(p), ce=costEUR(p); h+='<div class="ad-row"><span>Prix d\'achat moyen</span><b>'+fmtCur(p.pru,p.pruCur)+(p.pruCur==="USD"&&pe!==null?' <span style="color:var(--muted);font-weight:500">≈ '+fmt(pe)+'</span>':'')+'</b></div>';
+        if(p.pru>0){ var pe=pruBase(p), ce=costBase(p); h+='<div class="ad-row"><span>Prix d\'achat moyen</span><b>'+fmtCur(p.pru,p.pruCur)+((p.pruCur&&p.pruCur!==BASE)&&pe!==null?' <span style="color:var(--muted);font-weight:500">≈ '+fmt(pe)+'</span>':'')+'</b></div>';
           if(v!==null && ce!==null){ var g=v-ce, gp=ce?g/ce*100:0; h+='<div class="ad-row"><span>Plus-value</span><b style="color:'+(g>=0?"var(--accent)":"var(--coral)")+'">'+signK(g)+' ('+(gp>=0?"+":"")+gp.toFixed(1).replace(".",",")+' %)</b></div>'; } }
         s.q("#adPos").innerHTML=h;
         // statistiques clés
@@ -1159,17 +1184,18 @@
       function snapAt(m){ return c.vals[m]||bAt(c,m)||{}; }
       function autoVal(m){ return m===m0 && !!(hasPos || (c.sol&&c.solQty&&state.solPrice) || (c.stock&&c.stock.symbol&&state.stockPrices[c.stock.symbol])); }
       function nz(v){ return (v===undefined||v===null)?"":v; }
-      function autoCap(){ if(!hasPos) return null; var t=0; for(var i=0;i<c.positions.length;i++){ var p=c.positions[i]; if(p.src==="man"){ if(!(p.investi>0)) return null; t+=Number(p.investi); continue; } var ce=costEUR(p); if(ce===null) return null; t+=ce; } return Math.round(t*100)/100; }
+      function autoCap(){ if(!hasPos) return null; var t=0; for(var i=0;i<c.positions.length;i++){ var p=c.positions[i]; if(p.src==="man"){ if(!(p.investi>0)) return null; t+=Number(p.investi); continue; } var ce=costBase(p); if(ce===null) return null; t+=ce; } return Math.round(t*100)/100; }
       var aCap=autoCap();
-      var s0=snapAt(mv);
+      var s0=snapAt(mv), cc0=s0.cashCur||BASE;
       uiForm({ title:"Modifier « "+c.nom+" »", fields:[
         {key:"nom", label:"Nom du compte", value:c.nom, required:true},
         {key:"mois", label:"Mois", type:"month", value:mv,
-          onChange:function(v,api){ if(!/^[0-9]{4}-[0-9]{2}$/.test(v||"")) return; var s=snapAt(v); api.set("cap", nz(s.capital)); api.set("val", nz(s.valeur)); api.set("cash", bCash(s)||""); api.show("val", !autoVal(v)); }},
+          onChange:function(v,api){ if(!/^[0-9]{4}-[0-9]{2}$/.test(v||"")) return; var s=snapAt(v), cc=s.cashCur||BASE; api.set("cap", nz(s.capital)); api.set("val", nz(s.valeur)); api.set("cashCur", cc); api.suffix("cash", curSym(cc)); api.set("cash", (cc!==BASE?s.cashOrig:bCash(s))||""); api.show("val", !autoVal(v)); }},
         {key:"cap", label:"Capital investi", type:"money", value:nz(s0.capital), help:(aCap!==null?"Calculé depuis le prix d'achat de tes positions ("+fmt(aCap)+"). Tape un autre montant pour le fixer toi-même, vide = calcul automatique.":"Ce que tu as placé en actions / cryptos.")},
         {key:"val", label:"Valeur des placements", type:"money", value:nz(s0.valeur), hidden:autoVal(mv), help:"Sans le reste à investir."},
         {key:"sol", label:"Nombre de SOL détenus", type:"qty", value:nz(c.solQty), hidden:!c.sol},
-        {key:"cash", label:"Reste à investir", type:"money", value:(bCash(s0)||""), help:"Argent disponible sur le compte, pas encore placé. Vide = rien."}
+        {key:"cashCur", label:"Devise du reste à investir", type:"seg", value:cc0, options:curOpts(cc0), onChange:function(v,api){ api.suffix("cash", curSym(v)); }},
+        {key:"cash", label:"Reste à investir", type:"money", suffix:curSym(cc0), value:((cc0!==BASE?s0.cashOrig:bCash(s0))||""), help:"Argent disponible sur le compte, pas encore placé. Vide = rien."+(BASE!=="USD"?" Sur eToro, il est en $.":"")}
       ], focus:false }, function(r){
         c.nom=r.nom||c.nom;
         if(c.sol && r.sol>0) c.solQty=r.sol;
@@ -1183,7 +1209,10 @@
           else c.capManual=true;
         }
         var o={ capital:(r.cap===null?(Number(s.capital)||0):r.cap), valeur:valeur };
-        if(r.cash>0) o.cash=r.cash;
+        if(r.cash>0){
+          if(r.cashCur && r.cashCur!==BASE){ var cv=toBase(r.cash, r.cashCur); o.cashCur=r.cashCur; o.cashOrig=r.cash; o.cash=(cv!==null?Math.round(cv*100)/100:r.cash); }
+          else o.cash=r.cash;
+        }
         c.vals[m]=o;
         persistBourse(); applyPositions(); syncBourseEpargne(); render();
       });
@@ -1413,7 +1442,7 @@
     }
 
     function todayISO(){ var d=new Date(), m=d.getMonth()+1, j=d.getDate(); return d.getFullYear()+"-"+(m<10?"0":"")+m+"-"+(j<10?"0":"")+j; }
-    function fmt(n){ return (Number(n)||0).toFixed(2).replace(".",",")+" €"; }
+    function fmt(n){ return (Number(n)||0).toFixed(2).replace(".",",")+" "+curSym(); }
     function monthKey(iso){ return (iso||todayISO()).slice(0,7); }
     function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
     function num(x){ return parseFloat(String(x).replace(",","."))||0; }
@@ -1549,7 +1578,7 @@
           h+='</select>';
         } else {
           var typ = (f.type==="money"||f.type==="qty") ? 'type="text" inputmode="decimal"' : f.type==="pin" ? 'type="password" inputmode="numeric" maxlength="6"' : f.type==="month" ? 'type="month"' : 'type="text"';
-          h+='<div class="ui-inp'+(f.type==="money"?' money':'')+'"><input class="f" id="'+id+'" '+typ+' value="'+esc(f.type==="money"?moneyStr(v):v)+'"'+(f.placeholder?' placeholder="'+esc(f.placeholder)+'"':'')+'>'+(f.type==="money"?'<span>'+esc(f.suffix||"€")+'</span>':'')+'</div>';
+          h+='<div class="ui-inp'+(f.type==="money"?' money':'')+'"><input class="f" id="'+id+'" '+typ+' value="'+esc(f.type==="money"?moneyStr(v):v)+'"'+(f.placeholder?' placeholder="'+esc(f.placeholder)+'"':'')+'>'+(f.type==="money"?'<span>'+esc(f.suffix||curSym())+'</span>':'')+'</div>';
         }
         if(f.help) h+='<div class="ui-help">'+f.help+'</div>';
         h+='</div>';
@@ -1753,9 +1782,9 @@
     // ---------- Bandeau de synthèse des onglets ----------
     function fmtK(n){ return fmt(n).replace(/\B(?=(\d{3})+,)/g, " "); }
     function moneyBig(n){ var neg=n<0; n=Math.abs(Number(n)||0); var e=Math.floor(n), c=Math.round((n-e)*100); if(c===100){ e++; c=0; }
-      return (neg?"−":"")+String(e).replace(/\B(?=(\d{3})+(?!\d))/g," ")+'<span class="cts">,'+(c<10?"0":"")+c+' €</span>'; }
+      return (neg?"−":"")+String(e).replace(/\B(?=(\d{3})+(?!\d))/g," ")+'<span class="cts">,'+(c<10?"0":"")+c+' '+curSym()+'</span>'; }
     function signK(n){ return (n>0?"+":"")+fmtK(n); }
-    function fmtS(n){ n=Number(n)||0; return Math.abs(n)>=1000 ? (n<0?"−":"")+String(Math.round(Math.abs(n))).replace(/\B(?=(\d{3})+(?!\d))/g,"\u202f")+" €" : fmt(n); }
+    function fmtS(n){ n=Number(n)||0; return Math.abs(n)>=1000 ? (n<0?"−":"")+String(Math.round(Math.abs(n))).replace(/\B(?=(\d{3})+(?!\d))/g,"\u202f")+" "+curSym() : fmt(n); }
     function signS(n){ return (n>0?"+":"")+fmtS(n); }
     function tabHero(o){
       var h='<section class="dash-hero thero"><div class="dash-cap">'+o.label+'</div>';
@@ -1871,7 +1900,7 @@
         var prTot=provTotalAt(month);
 
         function money(n){ var neg=n<0; n=Math.abs(n); var e=Math.floor(n), c=Math.round((n-e)*100); if(c===100){ e++; c=0; }
-          return (neg?"−":"")+String(e).replace(/\B(?=(\d{3})+(?!\d))/g," ")+'<span class="cts">,'+(c<10?"0":"")+c+' €</span>'; }
+          return (neg?"−":"")+String(e).replace(/\B(?=(\d{3})+(?!\d))/g," ")+'<span class="cts">,'+(c<10?"0":"")+c+' '+curSym()+'</span>'; }
         function fk(n){ return fmt(n).replace(/\B(?=(\d{3})+,)/g,"\u202f"); }
         function delta(cur, prev, invert){
           if(!prev) return '<span>—</span>';
@@ -1921,7 +1950,7 @@
           var top, w, col, sub="";
           if(bud>0){
             var r=sp/bud; w=Math.min(100, Math.round(r*100)); col=budgetColor(r, "var(--accent)");
-            top='<span class="v">'+fmt(sp)+' <span style="color:var(--muted)">/ '+Math.round(bud)+' €</span></span><span class="p" style="color:'+(r>=0.8?col:"var(--muted)")+'">'+Math.round(r*100)+' %</span>';
+            top='<span class="v">'+fmt(sp)+' <span style="color:var(--muted)">/ '+Math.round(bud)+' '+curSym()+'</span></span><span class="p" style="color:'+(r>=0.8?col:"var(--muted)")+'">'+Math.round(r*100)+' %</span>';
             sub = r>1 ? '<div class="cb-sub" style="color:var(--coral)">Dépassé de '+fmt(sp-bud)+'</div>' : (r>=0.8 ? '<div class="cb-sub" style="color:#e6b450">Plus que '+fmt(bud-sp)+'</div>' : '');
           } else {
             var pc=totalMois?Math.round(sp/totalMois*100):0; w=Math.max(2,Math.round(sp/maxC*100)); col=ic.col;
@@ -2060,6 +2089,8 @@
         }
         h += '<div class="center" style="font-size:10px;margin-top:6px;color:'+col+'">'+esc(txt)+'</div>';
       })();
+      h += '<hr class="rule"><div class="center muted" style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">Devise</div>';
+      h += '<div class="center"><button class="btn ghost" id="devBtn" type="button">'+esc(curSym())+' · '+esc(CURS[BASE].l)+' · changer</button></div>';
       h += '<hr class="rule"><div class="center muted" style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">Sécurité</div>';
       if(!lockCfg){
         h += '<div class="center"><button class="btn ghost" id="lockSetup" type="button">🔒 Verrouiller l\'app par un code</button></div>';
@@ -2105,6 +2136,7 @@
       var gf=document.getElementById("goFrais"); if(gf) gf.onclick=function(){ state.view="communes"; render(); };
       var gb=document.getElementById("goBilan"); if(gb) gb.onclick=function(){ state.bilanMonth=month; state.view="bilan"; render(); window.scrollTo(0,0); };
       var lkSet=document.getElementById("lockSetup"); if(lkSet) lkSet.onclick=lockSetup;
+      var devB=document.getElementById("devBtn"); if(devB) devB.onclick=chooseCurrency;
       var lkOff=document.getElementById("lockOff"); if(lkOff) lkOff.onclick=lockDisable;
       var lkBio=document.getElementById("lockBio"); if(lkBio) lkBio.onclick=lockEnableBio;
       [].forEach.call(document.querySelectorAll(".mcol"), function(c){ c.onclick=function(){ var m=c.getAttribute("data-m"); if(!state.months) state.months={}; state.months.list=(m===curM?null:m); render(); }; });
@@ -2141,7 +2173,7 @@
                '<div class="progress"><i id="bar" style="width:'+state.prog+'%"></i></div>'+
                '<div class="muted" style="font-size:11px;margin-top:8px">Tu peux déjà corriger les champs ci-dessous.</div></div>';
       }
-      h += '<label class="f">Montant (€)</label><input class="f" id="f-montant" inputmode="decimal" value="'+esc(d.montant)+'" placeholder="0,00">';
+      h += '<label class="f">Montant ('+curSym()+')</label><input class="f" id="f-montant" inputmode="decimal" value="'+esc(d.montant)+'" placeholder="0,00">';
       h += '<label class="f">Enseigne</label><input class="f" id="f-marchand" value="'+esc(d.marchand)+'" placeholder="Nom du magasin">';
       h += '<label class="f">Date</label><input class="f" id="f-date" type="date" value="'+esc(d.date)+'">';
       h += '<label class="f">Photo du ticket</label>';
@@ -2701,6 +2733,7 @@
         .then(function(j){
           var p=j&&j.solana&&j.solana.eur;
           if(!p) throw new Error("Donnée manquante");
+          p=toBase(p,"EUR"); if(p===null) throw new Error("Taux de change indisponible");
           state.solPrice=p;
           state.prixActuel=String(p).replace(".",",");
           state.solTime=new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
@@ -2723,13 +2756,12 @@
           var cols=lines[1].split(",");
           var close=parseFloat(cols[6]);
           if(!isFinite(close) || close<=0) throw new Error("Cours indisponible pour "+symbol);
-          return fetch("https://api.frankfurter.dev/v1/latest?base=USD&symbols=EUR")
+          if(BASE==="USD") return close;
+          function fb(){ var v=toBase(close,"USD"); return v!==null?v:(BASE==="EUR"?close*0.87:close); }
+          return fetch("https://api.frankfurter.dev/v1/latest?base=USD&symbols="+BASE)
             .then(function(r){ return r.json(); })
-            .then(function(fx){
-              var rate=(fx && fx.rates && fx.rates.EUR) ? fx.rates.EUR : 0.87;
-              return close*rate;
-            })
-            .catch(function(){ return close*0.87; });
+            .then(function(fx){ var rate=fx && fx.rates && fx.rates[BASE]; return rate ? close*rate : fb(); })
+            .catch(fb);
         })
         .then(function(priceEUR){
           state.stockPrices[symbol]=priceEUR;
@@ -2814,7 +2846,7 @@
            (vi<visB.length-1?'<button class="btn ghost bmove" type="button" data-id="'+esc(c.id)+'" data-to="'+esc(visB[vi+1].id)+'" style="display:none">▼</button>':'')+
            '<button class="btn ghost bdel" type="button" data-id="'+esc(c.id)+'">✕</button></div>';
         h+='<div style="font-size:12.5px;color:var(--ink-soft);margin:2px 6px 0">Capital investi : '+fmt(cap)+'</div>';
-        h+='<div style="font-size:12.5px;color:var(--ink-soft);margin:3px 6px 0">Reste à investir : <span style="color:'+(cash?'var(--ink)':'var(--muted)')+';font-weight:600">'+fmt(cash)+'</span></div>';
+        h+='<div style="font-size:12.5px;color:var(--ink-soft);margin:3px 6px 0">Reste à investir : <span style="color:'+(cash?'var(--ink)':'var(--muted)')+';font-weight:600">'+((last.cashCur&&last.cashCur!==BASE&&last.cashOrig!=null)?fmtCur(Number(last.cashOrig),last.cashCur)+'</span> <span style="color:var(--muted)">≈ '+fmt(cash):fmt(cash))+'</span></div>';
         var badges=[];
         badges.push(bBadge(cap,val,"Plus-value :"));
         if(prev) badges.push(bBadge(Number(prev.valeur||0),val,"Mois préc. :"));
@@ -3018,7 +3050,7 @@
         h+='<hr class="rule"><div class="leader item"><span class="lbl">Valeur totale</span><span class="fill"></span><span class="val">'+fmt(totVal+totCash)+'</span></div>';
         if(totCash) h+='<div class="leader item"><span class="lbl">dont reste à investir</span><span class="fill"></span><span class="val">'+fmt(totCash)+'</span></div>';
         h+='<div class="leader item"><span class="lbl">Capital investi</span><span class="fill"></span><span class="val">'+fmt(totCap)+'</span></div>';
-        if(totCap>0){ var pv=totVal-totCap, pct=(pv/totCap*100); h+='<div class="leader"><span class="lbl" style="font-weight:700;text-transform:uppercase;font-size:12px">Plus-value</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+(pv>=0?"#4fd6a0":"#f4796b")+'">'+(pv>=0?"+":"")+pv.toFixed(2).replace(".",",")+'€ ('+(pct>=0?"+":"")+pct.toFixed(1).replace(".",",")+'%)</span></div>'; }
+        if(totCap>0){ var pv=totVal-totCap, pct=(pv/totCap*100); h+='<div class="leader"><span class="lbl" style="font-weight:700;text-transform:uppercase;font-size:12px">Plus-value</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+(pv>=0?"#4fd6a0":"#f4796b")+'">'+(pv>=0?"+":"")+pv.toFixed(2).replace(".",",")+' '+curSym()+' ('+(pct>=0?"+":"")+pct.toFixed(1).replace(".",",")+'%)</span></div>'; }
         h+='<div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:16px 2px 4px">Valeur par compte</div>';
         h+=gBlock(bourse.filter(bOpen).map(function(c){ return {name:c.nom, value:bTot(bLast(c))}; }));
       }
@@ -3861,7 +3893,7 @@
       fetch("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=eur")
         .then(function(r){ return r.json(); })
         .then(function(j){
-          var p=j&&j.solana&&j.solana.eur; if(!p) return;
+          var p=j&&j.solana&&j.solana.eur; if(!p) return; p=toBase(p,"EUR"); if(p===null) return;
           state.solPrice=p; state.solTime=new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
           var ae=document.activeElement, typing=ae&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName||"");
           if(!typing) state.prixActuel=String(p).replace(".",",");
