@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 14:40" />
+  <meta name="build" content="14/10 14:45" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2819,7 +2819,9 @@
       (function(){
         var st=[{l:"Capital investi", v:fmtS(totCap)}];
         if(totCap>0){ var pv=totVal-totCap; st.push({l:"Plus-value", v:signS(pv), d:(bPct(totCap,totVal)||""), c:heroCol(pv)}); }
-        if(totPrevVal!==null){ var dp=totVal-totPrevVal; st.push({l:"vs mois préc.", v:signS(dp), d:(bPct(totPrevVal,totVal)||""), c:heroCol(dp)}); }
+        // Total du mois précédent tel qu'affiché ce mois-là (tous les comptes ouverts alors, y compris ceux clôturés depuis)
+        var prevTot=null; bourse.forEach(function(c){ var sp=bAt(c,pm); if(!sp || bClosedAt(c,pm)) return; prevTot=(prevTot||0)+(Number(sp.valeur)||0)+bCash(sp); });
+        if(prevTot!==null){ var curTot=totVal+totCash, dp=curTot-prevTot; st.push({l:"vs mois préc.", v:signS(dp), d:(bPct(prevTot,curTot)||""), c:heroCol(dp)}); }
         h=h.replace("%%HERO%%", bourse.length?tabHero({ label:"Total portefeuille", big:totVal+totCash, sub:(totCash?"dont "+fmt(totCash)+" à investir":""), extra:bourseChartHTML(), stats:st }):"");
       })();
       h+='</section>';
