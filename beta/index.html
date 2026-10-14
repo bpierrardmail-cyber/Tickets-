@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 19:10" />
+  <meta name="build" content="14/10 19:25" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -53,7 +53,8 @@
     .bacts{ margin-top:10px; padding:10px 10px 2px; }
     .beta-tag{ display:inline-block; font-size:11px; font-weight:700; color:#0a130f; background:var(--accent); padding:4px 9px; border-radius:999px; }
     .htitle{ height:36px; line-height:36px; font-size:18px; font-weight:700; letter-spacing:-.01em; color:var(--ink); padding:0 58px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .head.hasback .htitle{ padding:0 150px 0 150px; }
+    .head.hasback .htitle{ padding:0 100px; }
+    .hleft .hback{ width:42px; height:36px; padding:0; font-size:22px; line-height:1; display:grid; place-items:center; color:var(--ink); }
     .drawer{ display:flex; flex-direction:column; }
     .dr-foot{ margin-top:auto; padding-top:22px; text-align:center; font-size:11px; color:var(--muted); }
     .rule{ border:0; border-top:1px solid var(--line); margin:14px 0; }
@@ -364,6 +365,7 @@
     .cdon-r .n{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .cdon-r .p{ flex:0 0 auto; color:var(--muted); font-size:11px; }
     .cdon-r .a{ flex:0 0 auto; font-weight:700; font-variant-numeric:tabular-nums; min-width:46px; text-align:right; }
+    .cpage{ padding:12px 16px 6px; }
     .cacc-b .cstack{ height:6px; margin:2px 0 8px; }
     .clink{ display:flex; align-items:center; justify-content:space-between; font-size:12.5px; color:var(--accent); margin:10px 2px 0; cursor:pointer; }
     .bacct{ margin-top:14px; padding:6px 14px 10px; border-left:3px solid var(--accent); }
@@ -1849,11 +1851,11 @@
     }
     var VIEW_TITLES={ list:"Accueil", form:"Ticket", articles:"Articles", produits:"Produits & catégories", graph:"Graphes", history:"Historique", month:"Historique", communes:"Commun", compte:"Compte", bourse:"Bourse", gallery:"Galerie", photo:"Photo", patrimoine:"Patrimoine", provisions:"Provisions", bilan:"Bilan" };
     function capFirst(t){ t=String(t||""); return t.charAt(0).toUpperCase()+t.slice(1); }
-    function header(back){
-      var b = back ? '<button class="hback" id="hback" type="button">‹ Retour</button>' : '';
+    function header(back, title){
+      var b = back ? '<button class="hback" id="hback" type="button" aria-label="Retour">‹</button>' : '';
       var lb=store.read("lastBackup", null), bkOld=!lb || (Date.now()-new Date(lb).getTime())>=7*86400000;
       b='<div class="hleft"><button class="hmenu" id="hmenu" type="button" aria-label="Menu"><span></span>'+(bkOld?'<i class="hdot"></i>':'')+'</button>'+b+'</div>';
-      return '<header class="head'+(back?' hasback':'')+'">'+b+'<div class="htitle">'+esc(VIEW_TITLES[state.view]||"Tickets")+'</div></header>';
+      return '<header class="head'+(back?' hasback':'')+'">'+b+'<div class="htitle">'+esc(title||VIEW_TITLES[state.view]||"Tickets")+'</div></header>';
     }
     function bindBack(fn){ var hb=document.getElementById("hback"); if(hb) hb.onclick=fn; }
 
@@ -1869,7 +1871,7 @@
       if(state.view==="month") return renderMonth();
       if(state.view==="artDetail") return renderArtDetail();
       if(state.view==="communes") return renderCommunes();
-      if(state.view==="compte") return renderCompte();
+      if(state.view==="compte" || state.view==="comptedet") return renderCompte();
       if(state.view==="bourse") return renderBourse();
       if(state.view==="gallery") return renderGallery();
       if(state.view==="photo") return renderPhoto();
@@ -2795,7 +2797,9 @@
       dParts.sort(function(x,y){ return y.v-x.v; }).forEach(function(x,i){ x.col=DCOL[i%DCOL.length]; });
       var cmode=state.cptChart||store.read("cptChart","mois"); if(cmode==="6m") cmode="es";
       if(!CMODES.some(function(x){ return x[0]===cmode; })) cmode="mois";
-      var h=header()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM).replace(/id="mn-/g,'id="cm-')+'</div>';
+      var page=(state.view==="comptedet")?state.cptPage:null, PAGE_T={ es:"Entrées / Sorties", dep:"Dépenses", res:"Solde bancaire", ep:"Épargne" };
+      if(page && !PAGE_T[page]) page=null;
+      var h=header(page?"compte":null, page?PAGE_T[page]:null)+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM).replace(/id="mn-/g,'id="cm-')+'</div>';
       // 6 derniers mois (jusqu'au mois affiché)
       var six=[], mk6=month; for(var i6=0;i6<6;i6++){ six.unshift(mk6); mk6=prevMonthKey(mk6); }
       function mShort(m){ var pm=m.split("-"); return new Date(+pm[0], +pm[1]-1, 1).toLocaleDateString("fr-FR",{month:"short"}).replace(".",""); }
@@ -2835,16 +2839,13 @@
       }
       chart+='</div>';
       hero.extra=chart;
-      h+=tabHero(hero);
+      var heroMain=hero;
       // Corps : une seule carte, une ligne par catégorie qui se déplie au toucher
       var C_T="#e0a458", C_P="#c78bd6", C_C="#7c9cf4";
-      function sec(key, dot, title, val, valCol, body){
-        var open=!!cptOpen[key];
-        var x='<div class="cacc-sec"><div class="cacc-h cptToggle" data-key="'+key+'"><i class="cdot" style="background:'+dot+';margin:0"></i><span class="t">'+title+'</span><span class="v" style="color:'+(valCol||"var(--ink)")+'">'+val+'</span><span class="ch">'+(body===null?'›':(open?'▲':'▼'))+'</span></div>';
-        if(body!==null && open) x+='<div class="cacc-b">'+body+'</div>';
-        return x+'</div>';
+      function sec(key, dot, title, val, valCol){
+        return '<div class="cacc-sec"><div class="cacc-h cptGo" data-page="'+key+'"><i class="cdot" style="background:'+dot+';margin:0"></i><span class="t">'+title+'</span><span class="v" style="color:'+(valCol||"var(--ink)")+'">'+val+'</span><span class="ch">›</span></div></div>';
       }
-      h+='<section class="paper cacc">';
+      var acc='<section class="paper cacc">';
 
       // ---- Entrées ----
       var bIn='<div class="leader" id="reporterow" style="cursor:pointer"><span class="lbl">Solde reporté ✎</span><span class="fill"></span><span class="val">'+fmt(reporte)+'</span></div>';
@@ -2858,20 +2859,26 @@
       });
       if(!virs.length) bIn+='<div class="muted" style="font-size:11px;margin:4px 0">Aucun virement ce mois-ci.</div>';
       bIn+='<div class="clink" id="addvir"><span>+ Ajouter un virement</span><span></span></div>';
-      h+=sec("vir", "var(--accent)", "Entrées / Sorties", signS(virTotal), (virTotal<0?"var(--coral)":"var(--accent)"), bIn);
+      acc+=sec("es", "var(--accent)", "Entrées / Sorties", signS(virTotal), (virTotal<0?"var(--coral)":"var(--accent)"));
 
       // ---- Dépenses ----
       var bOut='';
-      bOut+='<div class="leader"><span class="lbl">Tickets payés'+(paid.length?' ('+paid.length+')':'')+'</span><span class="fill"></span><span class="val">'+fmt(paidTotal)+'</span></div>';
+      bOut+='<div class="leader"><span class="lbl">Tickets payés</span><span class="fill"></span><span class="val">'+fmt(paidTotal)+'</span></div>';
       bOut+='<div class="leader"><span class="lbl">Frais fixes perso</span><span class="fill"></span><span class="val">'+fmt(fraisPerso)+'</span></div>';
       bOut+='<div class="leader"><span class="lbl">Frais fixes communs</span><span class="fill"></span><span class="val">'+fmt(fraisCommun)+'</span></div>';
-      bOut+='<div class="clink cptToggle" data-key="tickets" style="margin-top:4px"><span>'+(cptOpen.tickets?"Masquer":"Voir")+' les tickets payés</span><span>'+(cptOpen.tickets?"▲":"▼")+'</span></div>';
-      if(cptOpen.tickets){
+      bOut+='<div class="leader" style="font-weight:700"><span class="lbl">Total</span><span class="fill"></span><span class="val" style="color:var(--coral)">'+fmt(depenses)+'</span></div>';
+      if(fraisThis.length){
+        bOut+='<div class="dr-sec" style="margin:14px 0 6px">Frais fixes du mois</div>';
+        fraisThis.slice().sort(function(x,y){ return fraisMontant(y,month)-fraisMontant(x,month); }).forEach(function(f){ var who=(f.personne||"").trim()||"Commun";
+          bOut+='<div class="leader"><span class="lbl">'+esc(f.label)+' <span class="muted" style="font-size:11px">· '+esc(who===person?"perso":(who==="Commun"?"commun":who))+'</span></span><span class="fill"></span><span class="val">'+fmt(fraisMontant(f, month))+'</span></div>'; });
+      }
+      bOut+='<div class="dr-sec" style="margin:14px 0 6px">Tickets payés'+(paid.length?' ('+paid.length+')':'')+'</div>';
+      if(true){
         paid.forEach(function(e){ var dd=(e.date||"").split("-"); bOut+='<div class="entry ecomp" data-id="'+esc(e.id)+'"><span class="n">'+esc(e.marchand)+'</span><span class="d">'+esc(dd.length===3?dd[2]+"/"+dd[1]:"")+'</span><span class="a">'+fmt(e.montant)+'</span></div>'; });
         if(!paid.length) bOut+='<div class="muted" style="font-size:11px;margin:4px 0">Aucun ticket « payé par '+esc(person)+' » ce mois-ci.</div>';
       }
       bOut+='<div class="clink" id="cptFrais"><span>Gérer les frais fixes</span><span>›</span></div>';
-      h+=sec("dep", "var(--coral)", "Dépenses", "−"+fmtS(depenses), "var(--coral)", bOut);
+      acc+=sec("dep", "var(--coral)", "Dépenses", "−"+fmtS(depenses), "var(--coral)");
 
       // ---- Résultat ----
       var bRes='<div class="leader"><span class="lbl">Solde de fin de mois</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+(soldeFin<0?"var(--coral)":"var(--accent)")+'">'+fmt(soldeFin)+'</span></div>';
@@ -2880,7 +2887,7 @@
       bRes+='<div class="muted note">'+(!liq?"touche pour indiquer tes espèces du mois":(liq.month===month?"saisi pour ce mois":"repris de "+esc(monthLabelOf(liq.month))))+'</div>';
       bRes+='<div class="leader"><span class="lbl">Solde bancaire estimé</span><span class="fill"></span><span class="val" style="color:'+(soldeBanque<0?"var(--coral)":"var(--accent)")+'">'+fmt(soldeBanque)+'</span></div>';
       bRes+='<div class="muted note">sans le liquide · reporté + virements faits − tickets − frais faits</div>';
-      h+=sec("res", "#e6b450", "Solde bancaire estimé", fmtS(soldeBanque), (soldeBanque<0?"var(--coral)":"var(--ink)"), bRes);
+      acc+=sec("res", "#e6b450", "Solde bancaire estimé", fmtS(soldeBanque), (soldeBanque<0?"var(--coral)":"var(--ink)"));
 
       // ---- Épargne ----
       var epAllM={}; epargne.forEach(function(c){ Object.keys(c.vals||{}).forEach(function(m){ epAllM[m]=true; }); });
@@ -2903,12 +2910,36 @@
       if(!epargne.length) bEp+='<div class="muted" style="font-size:11px;margin:4px 0">Aucun compte épargne.</div>';
       var tpm=pctStr(totPrev,totCur); if(tpm && epargne.length>1) bEp+='<div class="muted" style="font-size:10.5px;margin:2px 0"><span style="color:'+pctColor(totPrev,totCur)+'">Total '+tpm+' vs mois préc.</span></div>';
       bEp+='<div class="clink" id="addep"><span>+ Ajouter un compte épargne</span><span></span></div>';
-      h+=sec("ep", "#7c9cf4", "Épargne", fmtS(totCur), "var(--ink)", bEp);
+      acc+=sec("ep", "#7c9cf4", "Épargne", fmtS(totCur), "var(--ink)");
 
       // ---- Provisions (ouvre l'écran dédié) ----
       var provT=0; try{ provT=provTotalAt(month); }catch(e){}
-      h+='<div class="cacc-sec"><div class="cacc-h" id="goprov"><i class="cdot" style="background:#c78bd6;margin:0"></i><span class="t">Provisions</span><span class="v">'+fmtS(provT)+'</span><span class="ch">›</span></div></div>';
-      h+='</section>';
+      acc+='<div class="cacc-sec"><div class="cacc-h" id="goprov"><i class="cdot" style="background:#c78bd6;margin:0"></i><span class="t">Provisions</span><span class="v">'+fmtS(provT)+'</span><span class="ch">›</span></div></div>';
+      acc+='</section>';
+      if(!page){ h+=tabHero(heroMain)+acc; }
+      else {
+        var ph, pb;
+        if(page==="es"){
+          var esRows=six.map(function(m){ var x=inOut(m); return { m:m, lbl:mShort(m), inn:x.inn, out:x.out }; });
+          ph={ label:"Virements du mois (net)", big:virTotal, color:(virTotal<0?"var(--coral)":"var(--accent)"), sub:"Reçu "+fmtK(virIn)+" · Envoyé "+fmtK(-virOut),
+               extra:'<div class="cch">'+compteSixMonthsSVG(esRows, month)+'<div class="cch-leg"><span><i style="background:var(--accent)"></i>Entrées</span><span><i style="background:var(--coral)"></i>Sorties (dépenses + virements envoyés)</span></div></div>' };
+          pb=bIn;
+        } else if(page==="dep"){
+          ph={ label:"Dépenses du mois", big:depenses, color:"var(--coral)", sub:"Tickets "+fmtK(paidTotal)+" · Frais fixes "+fmtK(fraisTotal),
+               extra:(depenses>0?'<div class="cdon cdon-big">'+compteDonutSVG(dParts, depenses)+'<div class="cdon-l">'+dParts.map(function(x){ return '<div class="cdon-r"><i class="cdot" style="background:'+x.col+';margin:0"></i><span class="n">'+esc(x.l)+'</span><span class="p">'+Math.round(x.v/depenses*100)+' %</span><span class="a">'+cptK(x.v)+' '+esc(curSym())+'</span></div>'; }).join("")+'</div></div>':'') };
+          pb=bOut;
+        } else if(page==="res"){
+          ph={ label:"Solde bancaire estimé", big:soldeBanque, color:(soldeBanque<0?"var(--coral)":"var(--ink)"), sub:"Fin de mois prévue "+fmtK(soldeFin)+(liq?" · Liquide "+fmtK(liqV):""),
+               extra:'<div class="cch">'+compteBarsSVG(six.map(function(m){ var lq=liquideAt(person,m); return { m:m, lbl:mShort(m), v:soldeFlow(person,m).closing+(lq?lq.val:0) }; }), month)+'<div class="cch-note">Solde de fin de mois (banque + liquide), sur 6 mois</div></div>' };
+          pb=bRes;
+        } else {
+          var epR=six.map(function(m){ return { m:m, lbl:mShort(m), v:epTotAt(m) }; });
+          ph={ label:"Épargne totale", big:totCur, color:"var(--ink)", sub:(totPrev!==null?(totCur-totPrev>=0?"+":"")+fmtK(totCur-totPrev)+" vs mois précédent":""),
+               extra:'<div class="cch">'+compteLineSVG(epR, month, "#7c9cf4")+'<div class="cch-note">Total de tes comptes épargne, sur 6 mois</div></div>' };
+          pb=bEp;
+        }
+        h+=tabHero(ph)+'<section class="paper cacc cpage"><div class="cacc-b">'+pb+'</div></section>';
+      }
       app.innerHTML=h;
       var rr=document.getElementById("reporterow"); if(rr) rr.onclick=function(){
         var auto=soldeFlow(person, prevMonthKey(month)).closing;
@@ -2930,6 +2961,8 @@
       var gprov=document.getElementById("goprov"); if(gprov) gprov.onclick=function(){ state.view="provisions"; render(); window.scrollTo(0,0); };
       var cfr=document.getElementById("cptFrais"); if(cfr) cfr.onclick=function(){ state.view="communes"; render(); window.scrollTo(0,0); };
       var cOn=document.querySelector(".cch-tabs button.on"); if(cOn && cOn.parentNode){ var tb=cOn.parentNode; tb.scrollLeft=Math.max(0, cOn.offsetLeft-(tb.clientWidth-cOn.offsetWidth)/2); }
+      [].forEach.call(document.querySelectorAll(".cptGo"), function(r){ r.onclick=function(){ state.cptPage=r.getAttribute("data-page"); state.view="comptedet"; render(); window.scrollTo(0,0); }; });
+      if(page) bindBack(function(){ state.view="compte"; render(); window.scrollTo(0,0); });
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.cptChart=bt.getAttribute("data-m"); store.write("cptChart", state.cptChart); render(); }; });
       var lr=document.getElementById("liqrow"); if(lr) lr.onclick=function(){
         var o=liquideMois[person]||{};
