@@ -272,6 +272,29 @@
     .bch-mode{ position:absolute; top:14px; right:14px; background:rgba(255,255,255,.05); border:1px solid var(--line); color:var(--ink-soft); font-family:var(--sans); font-size:11.5px; padding:5px 10px; border-radius:999px; }
     .bch-mode b{ color:var(--ink); font-weight:600; }
     .bch-note{ font-size:11px; color:var(--muted); margin-top:10px; line-height:1.45; }
+    /* Positions (cryptos, actions) */
+    .pos{ display:flex; align-items:center; gap:10px; padding:10px 2px; border-bottom:1px solid var(--line); }
+    .pos:last-of-type{ border-bottom:0; }
+    .pos-ic{ flex:0 0 auto; width:34px; height:34px; border-radius:50%; background:var(--card2); display:grid; place-items:center; font-size:11px; font-weight:700; color:var(--ink-soft); overflow:hidden; }
+    .pos-ic img{ width:100%; height:100%; object-fit:cover; }
+    .pos .pbody{ flex:1; min-width:0; }
+    .pos .pl1, .pos .pl2{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+    .pos .pl1 .pname{ flex:1; min-width:0; font-size:14.5px; overflow:hidden; }
+    .pos .pl1 .pv{ flex:0 0 auto; font-weight:700; font-size:14.5px; font-variant-numeric:tabular-nums; }
+    .pos .pl2{ font-size:11.5px; color:var(--ink-soft); margin-top:3px; font-variant-numeric:tabular-nums; }
+    .pos .pl2 span:first-child{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .pos .pl2 span:last-child{ flex:0 0 auto; white-space:nowrap; font-weight:600; }
+    .pos .pname{ flex:1; min-width:0; font-size:14.5px; overflow:hidden; }
+    .pos .pname b{ display:block; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .pos .pname small{ display:block; font-size:11.5px; color:var(--ink-soft); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-variant-numeric:tabular-nums; }
+    .pos-v{ flex:0 0 auto; text-align:right; font-weight:700; font-size:14.5px; font-variant-numeric:tabular-nums; }
+    .pos-v small{ display:block; font-size:11.5px; font-weight:600; margin-top:2px; }
+    .poslist{ margin:8px 0 4px; padding:2px 10px; background:rgba(255,255,255,.025); border:1px solid var(--line); border-radius:14px; }
+    .psr{ margin-top:12px; max-height:52vh; overflow:auto; }
+    .psr h4{ font-size:12px; color:var(--ink-soft); margin:12px 2px 6px; font-weight:700; }
+    .psr button{ display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:none; border:0; border-bottom:1px solid var(--line); color:var(--ink); padding:10px 2px; font-family:var(--sans); font-size:14.5px; }
+    .psr button small{ display:block; font-size:11.5px; color:var(--muted); margin-top:2px; }
+    .psr .psr-m{ font-size:12px; color:var(--muted); padding:10px 2px; }
     /* Articles par famille */
     .fgrp{ margin:4px 0 16px; }
     .fgrp .fh{ display:flex; align-items:baseline; gap:8px; font-size:15px; font-weight:700; }
@@ -616,6 +639,147 @@
       if(!bourseHist.length){ var v=bourseTotalLive(); if(v>0) pts.push({ t:now, v:v, c:bourseCapNow() }); }
       return pts;
     }
+    // ---------- Positions : cryptos (CoinGecko) et actions / ETF (relais Yahoo) ----------
+    var COURS_API = "";   // adresse du relais des cours (actions et ETF), intégrée à l'app
+    function coursApi(){ return (store.read("coursApi","")||COURS_API||"").replace(/\/+$/,""); }
+    var pxCache = store.read("coursCache", {});   // { "cg:solana": {p, chg, cur, t} }
+    var fxCache = store.read("fxCache", { t:0, rates:{} });  // taux EUR -> devise
+    function posKey(p){ return p.src+":"+p.ref; }
+    function toEUR(amount, cur){
+      if(cur==="GBp"||cur==="GBX"){ amount=amount/100; cur="GBP"; }
+      if(!cur || cur==="EUR") return amount;
+      var r=fxCache.rates&&fxCache.rates[cur]; return r ? amount/r : null;
+    }
+    function posPrice(p){ var c=pxCache[posKey(p)]; if(!c) return null; var e=toEUR(c.p, c.cur); return e===null?null:e; }
+    function posValue(p){ var pr=posPrice(p); return pr===null?null:pr*(Number(p.qte)||0); }
+    function allPositions(){ var out=[]; bourse.forEach(function(c){ (c.positions||[]).forEach(function(p){ out.push(p); }); }); return out; }
+    function applyPositions(){
+      var m0=monthKey(todayISO()), ch=false;
+      bourse.forEach(function(c){
+        if(!c.positions || !c.positions.length) return;
+        var tot=0, ok=true, cap=0, capOk=true;
+        c.positions.forEach(function(p){ var v=posValue(p); if(v===null) ok=false; else tot+=v; if(p.pru>0) cap+=p.pru*(Number(p.qte)||0); else capOk=false; });
+        if(!ok) return;
+        if(!c.vals) c.vals={};
+        var cur=c.vals[m0]||{}, capPrev=cur.capital; if(capPrev===undefined){ var bl=bLast(c); capPrev=bl?bl.capital:0; }
+        var capital=capOk?Math.round(cap*100)/100:(Number(capPrev)||0), valeur=Math.round(tot*100)/100;
+        if(Number(cur.valeur)!==valeur || Number(cur.capital)!==capital){ c.vals[m0]={ capital:capital, valeur:valeur }; ch=true; }
+      });
+      if(ch) persistBourse();
+      return ch;
+    }
+    var posBusy=false, posLast=0;
+    function refreshPositions(force){
+      var ps=allPositions(); if(!ps.length || posBusy) return;
+      if(!force && Date.now()-posLast<60000) return;
+      posBusy=true; posLast=Date.now();
+      var cg={}, yf={};
+      ps.forEach(function(p){ if(p.src==="cg") cg[p.ref]=1; else if(p.src==="yf") yf[p.ref]=1; });
+      var jobs=[];
+      var cgIds=Object.keys(cg);
+      if(cgIds.length) jobs.push(fetch("https://api.coingecko.com/api/v3/simple/price?ids="+encodeURIComponent(cgIds.join(","))+"&vs_currencies=eur&include_24hr_change=true")
+        .then(function(r){ return r.json(); }).then(function(j){ cgIds.forEach(function(id){ var x=j&&j[id]; if(x && x.eur!=null) pxCache["cg:"+id]={ p:x.eur, chg:(x.eur_24h_change!=null?x.eur_24h_change:null), cur:"EUR", t:Date.now() }; }); }).catch(function(){}));
+      var yfS=Object.keys(yf), api=coursApi();
+      if(yfS.length && api) jobs.push(fetch(api+"/quote?symbols="+encodeURIComponent(yfS.join(",")))
+        .then(function(r){ return r.json(); }).then(function(j){ var q=(j&&j.quotes)||{}; yfS.forEach(function(s){ var x=q[s]; if(x && x.price!=null) pxCache["yf:"+s]={ p:x.price, chg:(x.prev?((x.price-x.prev)/x.prev*100):null), cur:x.currency||"USD", t:Date.now() }; }); }).catch(function(){}));
+      if(Date.now()-(fxCache.t||0)>12*3600000) jobs.push(fetch("https://api.frankfurter.dev/v1/latest?base=EUR")
+        .then(function(r){ return r.json(); }).then(function(j){ if(j && j.rates){ fxCache={ t:Date.now(), rates:j.rates }; store.write("fxCache", fxCache); } }).catch(function(){}));
+      Promise.all(jobs).then(function(){
+        posBusy=false; store.write("coursCache", pxCache);
+        applyPositions(); syncBourseEpargne();
+        var ae=document.activeElement, typing=ae&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName||"");
+        if(!typing && !document.querySelector(".sheet-overlay") && (state.view==="bourse"||state.view==="list"||state.view==="compte")) render();
+      });
+    }
+    function searchAssets(q){
+      var cgP=fetch("https://api.coingecko.com/api/v3/search?query="+encodeURIComponent(q)).then(function(r){ return r.json(); })
+        .then(function(j){ return ((j&&j.coins)||[]).slice(0,6).map(function(c){ return { type:"crypto", src:"cg", ref:c.id, sym:String(c.symbol||"").toUpperCase(), nom:c.name, thumb:c.thumb||"", info:"Crypto"+(c.market_cap_rank?" · n°"+c.market_cap_rank:"") }; }); })
+        .catch(function(){ return null; });
+      var api=coursApi();
+      var yfP=api ? fetch(api+"/search?q="+encodeURIComponent(q)).then(function(r){ return r.json(); })
+        .then(function(j){ return ((j&&j.results)||[]).slice(0,8).map(function(x){ return { type:"action", src:"yf", ref:x.symbol, sym:x.symbol, nom:x.name, info:[x.type, x.exch].filter(Boolean).join(" · ") }; }); })
+        .catch(function(){ return null; }) : Promise.resolve("off");
+      return Promise.all([cgP, yfP]);
+    }
+    function posIcon(p){ return '<span class="pos-ic">'+(p.thumb?'<img src="'+esc(p.thumb)+'" alt="" loading="lazy">':esc(String(p.sym||"?").replace(/\..*$/,"").slice(0,4)))+'</span>'; }
+    function openPositionSearch(){
+      var s=uiSheet('<div class="sheet-title">Ajouter une position</div>'+
+        '<input class="f" id="psq" placeholder="Nom ou symbole : bitcoin, apple, LVMH…" autocomplete="off" autocapitalize="off" spellcheck="false">'+
+        '<div class="psr" id="psr"><div class="psr-m">Tape au moins 2 lettres.</div></div>'+
+        '<div class="ui-actions"><button type="button" class="btn ghost ui-cancel">Annuler</button></div>');
+      s.q(".ui-cancel").onclick=s.close;
+      var inp=s.q("#psq"), box=s.q("#psr"), timer=null, seq=0, items=[];
+      function draw(res){
+        var cr=res[0], ac=res[1], h="";
+        items=[];
+        function sect(title, list, msg){
+          h+='<h4>'+title+'</h4>';
+          if(list===null){ h+='<div class="psr-m">Recherche indisponible (connexion ?).</div>'; return; }
+          if(list==="off"){ h+='<div class="psr-m">'+msg+'</div>'; return; }
+          if(!list.length){ h+='<div class="psr-m">Aucun résultat.</div>'; return; }
+          list.forEach(function(it){ items.push(it); h+='<button type="button" data-i="'+(items.length-1)+'">'+posIcon(it)+'<span><b>'+esc(it.nom)+'</b> <span style="color:var(--muted)">'+esc(it.sym)+'</span><small>'+esc(it.info||"")+'</small></span></button>'; });
+        }
+        sect("Cryptos", cr);
+        sect("Actions & ETF", ac, "Bientôt disponible.");
+        box.innerHTML=h;
+        [].forEach.call(box.querySelectorAll("button[data-i]"), function(b){ b.onclick=function(){ var it=items[+b.getAttribute("data-i")]; s.close(); positionForm(it, null); }; });
+      }
+      inp.oninput=function(){
+        clearTimeout(timer); var q=inp.value.trim();
+        if(q.length<2){ box.innerHTML='<div class="psr-m">Tape au moins 2 lettres.</div>'; return; }
+        box.innerHTML='<div class="psr-m">Recherche…</div>';
+        timer=setTimeout(function(){ var my=++seq; searchAssets(q).then(function(res){ if(my===seq) draw(res); }); }, 350);
+      };
+      setTimeout(function(){ try{ inp.focus(); }catch(e){} }, 60);
+    }
+    function positionForm(it, existing){
+      var accOpts=bourse.map(function(c){ return { v:String(c.id), l:c.nom }; }).concat([{ v:"__new", l:"Nouveau compte…" }]);
+      var withPos=bourse.filter(function(c){ return c.positions && c.positions.length; });
+      var curAcc=existing?existing.acc:(withPos.length?String(withPos[withPos.length-1].id):"__new");
+      uiForm({ title:(existing?"Modifier · ":"")+it.nom+" ("+it.sym+")", fields:[
+        { key:"qte", label:(it.type==="crypto"?"Quantité détenue":"Nombre d'actions"), type:"qty", value:(existing?String(existing.p.qte).replace(".",","):""), required:true, placeholder:"ex. 3,1" },
+        { key:"pru", label:"Prix d'achat moyen (optionnel)", type:"money", value:(existing&&existing.p.pru?existing.p.pru:""), help:"Par "+(it.type==="crypto"?"unité":"action")+", en €. Sert à calculer la plus-value." },
+        { key:"acc", label:"Compte", type:"select", value:curAcc, options:accOpts, help:"La valeur de ce compte sera calculée automatiquement à partir de ses positions.", onChange:function(v,api){ api.show("accNew", v==="__new"); } },
+        { key:"accNew", label:"Nom du nouveau compte", hidden:(curAcc!=="__new"), value:(it.type==="crypto"?"Mes cryptos":"Mes actions"), placeholder:"Boursorama, Binance, PEA…" }
+      ], ok:(existing?"Enregistrer":"Ajouter") }, function(r){
+        if(!(r.qte>0)) return "Indique une quantité supérieure à 0.";
+        var acc;
+        if(r.acc==="__new"){ var nm=(r.accNew||"").trim()||"Mon portefeuille", nv={}; nv[monthKey(todayISO())]={ capital:0, valeur:0 }; acc={ id:Date.now(), nom:nm, vals:nv }; bourse.push(acc); }
+        else acc=bourse.filter(function(c){ return String(c.id)===String(r.acc); })[0];
+        if(!acc) return "Choisis un compte.";
+        var p=existing?existing.p:{ id:Date.now()+1, type:it.type, src:it.src, ref:it.ref, sym:it.sym, nom:it.nom, thumb:it.thumb||"" };
+        p.qte=r.qte; if(r.pru>0) p.pru=r.pru; else delete p.pru;
+        if(existing && String(existing.acc)!==String(acc.id)){ var old=bourse.filter(function(c){ return String(c.id)===String(existing.acc); })[0]; if(old) old.positions=(old.positions||[]).filter(function(x){ return x!==p; }); }
+        if(!acc.positions) acc.positions=[];
+        if(acc.positions.indexOf(p)<0) acc.positions.push(p);
+        persistBourse(); applyPositions(); render(); refreshPositions(true);
+      });
+    }
+    function findPosition(accId, posId){
+      var c=bourse.filter(function(x){ return String(x.id)===String(accId); })[0]; if(!c) return null;
+      var p=(c.positions||[]).filter(function(x){ return String(x.id)===String(posId); })[0];
+      return p?{ c:c, p:p, acc:String(c.id) }:null;
+    }
+    function positionsHTML(c){
+      if(!c.positions || !c.positions.length) return "";
+      var h='<div class="poslist">';
+      c.positions.forEach(function(p){
+        var px=pxCache[posKey(p)], pr=posPrice(p), v=posValue(p);
+        var qtxt=String(Math.round((Number(p.qte)||0)*1e8)/1e8).replace(".",",");
+        var left=qtxt+(pr!==null?" × "+fmtK(pr):" "+esc(String(p.sym).replace(/\..*$/,"")));
+        var pv=(v!==null && p.pru>0)?v-p.pru*p.qte:null, right=[];
+        if(px && px.chg!=null) right.push('<span style="color:'+(px.chg>=0?"var(--accent)":"var(--coral)")+'">'+(px.chg>=0?"▲ +":"▼ ")+px.chg.toFixed(2).replace(".",",")+' %</span>');
+        if(pv!==null) right.push('<span style="color:'+(pv>=0?"var(--accent)":"var(--coral)")+'">'+signK(pv)+'</span>');
+        if(p.src==="yf" && !coursApi()) right.push('<span style="color:var(--muted)">cours bientôt</span>');
+        h+='<div class="pos prow">'+posIcon(p)+
+           '<div class="pbody"><div class="pl1"><span class="pname"><b>'+esc(p.nom)+'</b></span><span class="pv">'+(v!==null?fmtK(v):'<span style="color:var(--muted);font-weight:500">…</span>')+'</span></div>'+
+           '<div class="pl2"><span>'+left+'</span><span>'+right.join(' · ')+'</span></div></div>'+
+           '<button class="btn ghost posedit" type="button" data-a="'+esc(c.id)+'" data-p="'+esc(p.id)+'">✎</button>'+
+           '<button class="btn ghost posdel" type="button" data-a="'+esc(c.id)+'" data-p="'+esc(p.id)+'">✕</button></div>';
+      });
+      return h+'</div>';
+    }
+
     var BRANGES=[["1S",7,"sur 7 jours"],["1M",30,"sur 1 mois"],["3M",91,"sur 3 mois"],["6M",182,"sur 6 mois"],["1A",365,"sur 1 an"],["Max",0,"depuis le début"]];
     var bChart=null;
     function bDateLabel(t, long){
@@ -1077,7 +1241,7 @@
           f.options.forEach(function(op){ h+='<option value="'+esc(op.v)+'"'+(String(op.v)===String(v)?' selected':'')+'>'+esc(op.l)+'</option>'; });
           h+='</select>';
         } else {
-          var typ = f.type==="money" ? 'type="text" inputmode="decimal"' : f.type==="pin" ? 'type="password" inputmode="numeric" maxlength="6"' : f.type==="month" ? 'type="month"' : 'type="text"';
+          var typ = (f.type==="money"||f.type==="qty") ? 'type="text" inputmode="decimal"' : f.type==="pin" ? 'type="password" inputmode="numeric" maxlength="6"' : f.type==="month" ? 'type="month"' : 'type="text"';
           h+='<div class="ui-inp'+(f.type==="money"?' money':'')+'"><input class="f" id="'+id+'" '+typ+' value="'+esc(f.type==="money"?moneyStr(v):v)+'"'+(f.placeholder?' placeholder="'+esc(f.placeholder)+'"':'')+'>'+(f.type==="money"?'<span>€</span>':'')+'</div>';
         }
         if(f.help) h+='<div class="ui-help">'+f.help+'</div>';
@@ -1090,7 +1254,7 @@
       function el(i){ return s.q("#uif_"+i); }
       function idx(k){ for(var i=0;i<fs.length;i++){ if(fs[i].key===k) return i; } return -1; }
       function rawOf(i){ var f=fs[i], x=el(i); if(!x) return ""; if(f.type==="seg"){ var on=x.querySelector("button.on"); return on?on.getAttribute("data-v"):""; } return x.value; }
-      function valOf(i){ var f=fs[i], r=rawOf(i); if(f.type==="money"){ r=String(r).trim(); return r===""?null:num(r); } return (typeof r==="string")?r.trim():r; }
+      function valOf(i){ var f=fs[i], r=rawOf(i); if(f.type==="money"||f.type==="qty"){ r=String(r).trim(); return r===""?null:num(r); } return (typeof r==="string")?r.trim():r; }
       var api={
         get:function(k){ var i=idx(k); return i<0?null:valOf(i); },
         set:function(k,v){ var i=idx(k); if(i<0) return; var f=fs[i], x=el(i); if(f.type==="seg"){ [].forEach.call(x.querySelectorAll("button"), function(b){ b.className=(b.getAttribute("data-v")===String(v))?"on":""; }); } else x.value=(f.type==="money"?moneyStr(v):(v==null?"":v)); },
@@ -1110,7 +1274,7 @@
         for(var i=0;i<fs.length;i++){
           var f=fs[i], v=valOf(i);
           if(!f.hidden && f.required && (v===null || v==="")){ api.error("Indique : "+(f.label||f.key).toLowerCase()); var x=el(i); if(x&&x.focus) x.focus(); return; }
-          if(!f.hidden && f.type==="money" && v!==null && isNaN(v)){ api.error("Montant invalide : "+(f.label||"")); return; }
+          if(!f.hidden && (f.type==="money"||f.type==="qty") && v!==null && isNaN(v)){ api.error("Montant invalide : "+(f.label||"")); return; }
           r[f.key]=f.hidden?null:v;
         }
         var res=onOk(r, api);
@@ -2503,9 +2667,11 @@
         if(first&&bMonths(c).length>1) badges.push(bBadge(Number(first.valeur||0),val,"Depuis création :"));
         badges.forEach(function(b){ if(b) h+='<div style="font-size:12.5px;margin:3px 6px 0">'+b+'</div>'; });
         h+='</div>';
+        h+=positionsHTML(c);
         h+='<hr class="rule" style="margin:6px 0;opacity:.3">';
       });
-      h+='<button class="btn ghost" id="addbrs" type="button" style="margin-top:6px">+ Ajouter un compte bourse</button>';
+      h+='<button class="btn primary" id="addpos" type="button" style="margin-top:6px;width:100%">+ Ajouter une crypto ou une action</button>';
+      h+='<button class="btn ghost" id="addbrs" type="button" style="margin-top:10px">+ Ajouter un compte bourse</button>';
       (function(){
         var c=etoroCfg(), has=!!(c.url&&c.secret);
         h+='<div class="center" style="margin-top:10px"><button class="btn ghost" id="etorotest" type="button">'+(has?"🔗 Tester la connexion eToro":"🔗 Connecter eToro (via relais)")+'</button>'+(has?' <button class="btn ghost" id="etoroforget" type="button" style="margin-top:6px">Oublier la config eToro</button>':'')+'</div>';
@@ -2528,6 +2694,11 @@
       [].forEach.call(document.querySelectorAll(".bmonth"), function(sp){ sp.onclick=function(){ if(!state.months) state.months={}; var mk=sp.getAttribute("data-m"); state.months.bourse=(mk===curM?null:mk); render(); }; });
       wireMonthNav(month, curM, "bourse");
       wireBourseChart();
+      var apz=document.getElementById("addpos"); if(apz) apz.onclick=openPositionSearch;
+      [].forEach.call(document.querySelectorAll(".posedit"), function(b){ b.onclick=function(){ var f=findPosition(b.getAttribute("data-a"), b.getAttribute("data-p")); if(f) positionForm(f.p, f); }; });
+      [].forEach.call(document.querySelectorAll(".posdel"), function(b){ b.onclick=function(){ var f=findPosition(b.getAttribute("data-a"), b.getAttribute("data-p")); if(!f) return;
+        uiConfirm("Retirer « "+esc(f.p.nom)+" » du compte "+esc(f.c.nom)+" ?", function(){ f.c.positions=f.c.positions.filter(function(x){ return x!==f.p; }); persistBourse(); render(); }, { ok:"Retirer", danger:true }); }; });
+      refreshPositions(false);
       setNav("bourse", true);
     }
 
@@ -3546,6 +3717,8 @@
     setInterval(fetchAllStockPrices, 900000);
     fetchEtoroSilent();
     setInterval(fetchEtoroSilent, 900000);
+    refreshPositions(true);
+    setInterval(function(){ refreshPositions(true); }, 900000);
     var lastRefresh=Date.now();
     function refreshOnReturn(){
       if(document.hidden) return;
