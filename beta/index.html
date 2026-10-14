@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 19:30" />
+  <meta name="build" content="14/10 19:40" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2839,6 +2839,13 @@
       }
       chart+='</div>';
       hero.extra=chart;
+      // Petites cases sous le graphique (comme Provisions)
+      var vTodo=virs.filter(function(v){ return !v.done; }), vTodoSum=vTodo.reduce(function(t,v){ return t+(Number(v.montant)||0); },0);
+      hero.stats=[
+        { l:"Report", v:fmtS(reporte), d:"du mois dernier", go:"es" },
+        { l:"Banque estimée", v:fmtS(soldeBanque), c:(soldeBanque<0?"var(--coral)":""), d:"sans le liquide", go:"res" },
+        vTodo.length ? { l:"À faire", v:signS(vTodoSum), d:vTodo.length+" virement"+(vTodo.length>1?"s":""), go:"es" } : { l:"À faire", v:"Rien", d:"virements faits", go:"es" }
+      ];
       var heroMain=hero;
       // Corps : une seule carte, une ligne par catégorie qui se déplie au toucher
       var C_T="#e0a458", C_P="#c78bd6", C_C="#7c9cf4";
@@ -2961,6 +2968,7 @@
       var gprov=document.getElementById("goprov"); if(gprov) gprov.onclick=function(){ state.view="provisions"; render(); window.scrollTo(0,0); };
       var cfr=document.getElementById("cptFrais"); if(cfr) cfr.onclick=function(){ state.view="communes"; render(); window.scrollTo(0,0); };
       var cOn=document.querySelector(".cch-tabs button.on"); if(cOn && cOn.parentNode){ var tb=cOn.parentNode; tb.scrollLeft=Math.max(0, cOn.offsetLeft-(tb.clientWidth-cOn.offsetWidth)/2); }
+      if(!page) [].forEach.call(document.querySelectorAll(".thero .hstat"), function(t,i){ var g=(heroMain.stats[i]||{}).go; if(!g) return; t.style.cursor="pointer"; t.onclick=function(){ state.cptPage=g; state.view="comptedet"; render(); window.scrollTo(0,0); }; });
       [].forEach.call(document.querySelectorAll(".cptGo"), function(r){ r.onclick=function(){ state.cptPage=r.getAttribute("data-page"); state.view="comptedet"; render(); window.scrollTo(0,0); }; });
       if(page) bindBack(function(){ state.view="compte"; render(); window.scrollTo(0,0); });
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.cptChart=bt.getAttribute("data-m"); store.write("cptChart", state.cptChart); render(); }; });
