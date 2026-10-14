@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 21:05" />
+  <meta name="build" content="14/10 22:00" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -340,6 +340,11 @@
     .cch-note{ font-size:10.5px; color:var(--muted); text-align:center; margin-top:6px; }
     /* Compte : accordéon compact */
     .cacc{ margin-top:14px; padding:4px 14px; }
+    .acc-chips{ display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin:0 0 12px; padding:2px 0; }
+    .acc-chips::-webkit-scrollbar{ display:none; }
+    .acc-chips button{ flex:0 0 auto; white-space:nowrap; font-family:var(--sans); font-size:13px; font-weight:600; padding:8px 13px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--ink-soft); cursor:pointer; }
+    .acc-chips button.on{ background:var(--ink); color:var(--bg0); border-color:var(--ink); }
+    .acc-chips button.add{ font-weight:500; color:var(--accent); border-style:dashed; }
     .cacc-h{ display:flex; align-items:center; gap:10px; padding:13px 2px; cursor:pointer; }
     .cacc-h .t{ flex:1; font-size:15px; font-weight:700; }
     .cacc-h .v{ font-variant-numeric:tabular-nums; font-weight:700; font-size:15px; }
@@ -631,6 +636,24 @@
     function clearSoldeInit(p,m){ if(soldeInit[p]) delete soldeInit[p][m]; persistSoldeInit(); }
     function virementsOf(p,m){ return virements.filter(function(v){ return v.person===p && v.month===m; }); }
     function virementsSum(p,m){ return virementsOf(p,m).reduce(function(t,v){ return t+(Number(v.montant)||0); },0); }
+    // ---------- Comptes bancaires ----------
+    // Chaque compte a une clé : virements, liquide et solde reporté y sont rattachés. Le compte d'origine garde la clé « Benoit » : aucune donnée ne bouge.
+    var comptes = store.read("comptes", null);
+    if(!comptes || !comptes.length){ comptes=[{ key:"Benoit", nom:"Compte courant", payer:"Benoit", main:true }]; store.write("comptes", comptes); }
+    function persistComptes(){ store.write("comptes", comptes); }
+    function acctByKey(k){ for(var i=0;i<comptes.length;i++){ if(comptes[i].key===k) return comptes[i]; } return null; }
+    function mainAcct(){ return comptes.filter(function(c){ return c.main; })[0] || comptes[0]; }
+    function curAcctKey(){ var k=state.compteSel||store.read("compteSel", null), a=k&&acctByKey(k); return (a||mainAcct()).key; }
+    // Ticket : compte choisi sur le ticket, sinon selon « payé par »
+    function ticketInAcct(e, key){ if(e.compte && acctByKey(e.compte)) return e.compte===key; var a=acctByKey(key); return !!(a && a.payer && (e.payePar||"").trim()===a.payer); }
+    // Frais fixe : compte choisi sur le frais, sinon frais perso du titulaire et frais « Commun » sur le compte principal
+    function fraisKind(f, key){
+      var a=acctByKey(key); if(!a) return null;
+      var who=(f.personne||"").trim()||"Commun", kind=(who==="Commun")?"commun":"perso";
+      if(f.compte && acctByKey(f.compte)) return f.compte===key ? kind : null;
+      if(who==="Commun") return a.main ? "commun" : null;
+      return (who===a.payer || who===a.key) ? "perso" : null;
+    }
     function prevMonthKey(m){ var a=m.split("-"), Y=+a[0], M=+a[1]-1; if(M<1){ M=12; Y--; } return Y+"-"+(M<10?"0"+M:M); }
     function nextMonthKey(m){ var a=m.split("-"), Y=+a[0], M=+a[1]+1; if(M>12){ M=1; Y++; } return Y+"-"+(M<10?"0"+M:M); }
     function monthLabelOf(mk){ var p=mk.split("-"); return new Date(+p[0], +p[1]-1, 1).toLocaleDateString("fr-FR",{month:"long",year:"numeric"}); }
@@ -711,7 +734,7 @@
         {key:"ep", label:"Compte épargne lié", type:"select", value:"", options:epargneOptions(), hidden:!hasEp, help:"Le montant y est retiré (entrée) ou versé (sortie) automatiquement."}
       ]}, function(r){
         var m=Math.abs(r.montant);
-        var v={ id:Date.now(), person:"Benoit", month:((state.months&&state.months.compte)||monthKey(todayISO())), label:r.label||"Virement", note:r.note||"", montant:(r.sens==="out"?-m:m) };
+        var v={ id:Date.now(), person:curAcctKey(), month:((state.months&&state.months.compte)||monthKey(todayISO())), label:r.label||"Virement", note:r.note||"", montant:(r.sens==="out"?-m:m) };
         var ep=r.ep?epargneById(r.ep):null;
         if(ep){ v.epargneId=ep.id; v.epApplied=0; }
         virements.push(v); persistVirements(); render();
@@ -742,11 +765,10 @@
     }
     function computeDepensesMonth(person, month){
       var me=state.entries.filter(function(e){ return monthKey(e.date)===month; });
-      var paid=0; me.forEach(function(e){ if((e.payePar||"").trim()===person) paid+=Number(e.montant)||0; });
+      var paid=0; me.forEach(function(e){ if(ticketInAcct(e, person)) paid+=Number(e.montant)||0; });
       var fr=fraisCommuns.filter(function(f){ return fraisActif(f, month); });
-      var fp=0, fc=0; fr.forEach(function(f){ var who=(f.personne||"").trim()||"Commun"; var m=fraisMontant(f, month); if(who===person) fp+=m; else if(who==="Commun") fc+=m; });
-      var po=0; me.forEach(function(e){ if((e.payePar||"").trim()===person) return; (e.articles||[]).forEach(function(a){ if(a.commun) po+=Number(a.prix)||0; }); });
-      return paid+fp+fc;
+      var fx=0; fr.forEach(function(f){ if(fraisKind(f, person)) fx+=fraisMontant(f, month); });
+      return paid+fx;
     }
     function compteMonths(person, upto){
       var set={};
@@ -754,7 +776,8 @@
       virements.forEach(function(v){ if(v.person===person && v.month<=upto) set[v.month]=true; });
       if(soldeInit[person]) Object.keys(soldeInit[person]).forEach(function(m){ if(m<=upto) set[m]=true; });
       set[upto]=true;
-      return Object.keys(set).sort();
+      var ac=acctByKey(person);
+      return Object.keys(set).filter(function(m){ return !(ac && ac.since) || m>=ac.since || m===upto; }).sort();
     }
     function soldeFlow(person, upto){
       var ms=compteMonths(person, upto), closing=0, oOut=0, cOut=0;
@@ -770,10 +793,10 @@
     function virementsSumDone(p,m){ return virementsOf(p,m).reduce(function(t,v){ return t+(v.done?(Number(v.montant)||0):0); },0); }
     function computeDepensesMonthDone(person, month){
       var me=state.entries.filter(function(e){ return monthKey(e.date)===month; });
-      var paid=0; me.forEach(function(e){ if((e.payePar||"").trim()===person) paid+=Number(e.montant)||0; });
+      var paid=0; me.forEach(function(e){ if(ticketInAcct(e, person)) paid+=Number(e.montant)||0; });
       var fr=fraisCommuns.filter(function(f){ return fraisActif(f, month) && fraisDone(f, month); });
-      var fp=0, fc=0; fr.forEach(function(f){ var who=(f.personne||"").trim()||"Commun"; var m=fraisMontant(f, month); if(who===person) fp+=m; else if(who==="Commun") fc+=m; });
-      return paid+fp+fc;
+      var fx=0; fr.forEach(function(f){ if(fraisKind(f, person)) fx+=fraisMontant(f, month); });
+      return paid+fx;
     }
     function soldeFlowDone(person, upto){
       var ms=compteMonths(person, upto), closing=0, oOut=0, cOut=0;
@@ -1790,6 +1813,11 @@
         {key:"whoNew", label:"Nom", hidden:true, placeholder:"Prénom"}
       ];
     }
+    function acctFields(cur){
+      if(comptes.length<2) return [];
+      return [{ key:"acct", label:"Prélevé sur", type:"select", value:cur||"", options:[{v:"",l:"Automatique"}].concat(comptes.map(function(a){ return {v:a.key, l:a.nom}; })),
+        help:"Automatique : frais communs sur « "+esc(mainAcct().nom)+" », frais perso sur le compte de la personne." }];
+    }
     function whoOf(r){ return (r.who==="__autre") ? ((r.whoNew||"").trim()||"Commun") : (r.who||"Commun"); }
     function epargneOptions(){
       var o=[{v:"",l:"Aucun"}];
@@ -1982,7 +2010,7 @@
     }
     function fraisFixesMois(person, month){
       var t=0, n=0;
-      fraisCommuns.forEach(function(f){ if(!f.recurrent || !fraisActif(f, month)) return; var who=(f.personne||"").trim()||"Commun"; if(who===person || who==="Commun"){ t+=fraisMontant(f, month); n++; } });
+      fraisCommuns.forEach(function(f){ if(!f.recurrent || !fraisActif(f, month)) return; if(fraisKind(f, person)){ t+=fraisMontant(f, month); n++; } });
       return { total:t, n:n };
     }
     // ---------- Sauvegarde : rappel + partage ----------
@@ -2008,8 +2036,8 @@
         var dim=new Date(Y, M, 0).getDate();
         var day=isCur?_now.getDate():dim;
         var pctM=Math.round(day/dim*100);
-        var cb=computeCompteMonth("Benoit", month);
-        var lq=liquideAt("Benoit", month), lqV=lq?lq.val:0;
+        var cb=computeCompteMonth(mainAcct().key, month);
+        var lq=liquideAt(mainAcct().key, month), lqV=lq?lq.val:0;
         var solde=cb.solde+lqV;
         // Mois précédent pour comparaison
         var pm=prevMonthKey(month);
@@ -2109,7 +2137,7 @@
         }
 
         // --- Dépenses qui reviennent
-        var recs=detectRecurrents(month), ff=fraisFixesMois("Benoit", month);
+        var recs=detectRecurrents(month), ff=fraisFixesMois(mainAcct().key, month);
         if(recs.length || ff.n){
           var recYear=ff.total*12; recs.forEach(function(r){ recYear+=r.avg*12; });
           var recOpen=!!state.recOpen, recShown=recOpen?recs:recs.slice(0,4);
@@ -2291,6 +2319,11 @@
       payers.forEach(function(p){ h += '<button class="chip'+(d.payePar===p?" on":"")+'" data-payer="'+esc(p)+'">'+esc(p)+'</button>'; });
       h += '<button class="chip" data-payer="__new">+ Autre</button>';
       h += '</div>';
+      if(comptes.length>1){
+        h += '<label class="f">Compte</label><div class="chips" id="acctc"><button class="chip'+(!d.compte?" on":"")+'" data-acct="">Auto</button>';
+        comptes.forEach(function(a){ h += '<button class="chip'+(d.compte===a.key?" on":"")+'" data-acct="'+esc(a.key)+'">'+esc(a.nom)+'</button>'; });
+        h += '</div><div class="muted" style="font-size:10.5px;margin:4px 2px 0">Auto = selon « payé par »</div>';
+      }
       h += '<label class="f">Articles (rangés par produit)</label><div id="arts">';
       (d.articles||[]).forEach(function(a){ h += artRow(a); });
       h += '</div><button class="btn ghost" id="addart" type="button" style="margin-top:10px">+ Ajouter un article</button>'+
@@ -2325,6 +2358,9 @@
           [].forEach.call(document.querySelectorAll("#payer .chip"), function(b){ b.classList.remove("on"); });
           btn.classList.add("on");
         };
+      });
+      [].forEach.call(document.querySelectorAll("#acctc .chip"), function(btn){
+        btn.onclick=function(){ state.draft.compte=btn.getAttribute("data-acct")||""; [].forEach.call(document.querySelectorAll("#acctc .chip"), function(b){ b.classList.remove("on"); }); btn.classList.add("on"); };
       });
       [].forEach.call(document.querySelectorAll(".art-del"), function(b,i){
         b.onclick=function(){ readForm(); state.draft.articles.splice(i,1); render(); };
@@ -2385,7 +2421,7 @@
     function editEntry(id){
       var e=state.entries.filter(function(x){ return String(x.id)===String(id); })[0];
       if(!e) return;
-      state.draft={id:e.id,montant:e.montant,date:e.date,marchand:e.marchand,categorie:e.categorie,payePar:e.payePar||"",photo:photoOf(e),
+      state.draft={id:e.id,montant:e.montant,date:e.date,marchand:e.marchand,categorie:e.categorie,payePar:e.payePar||"",compte:e.compte||"",photo:photoOf(e),
         articles:(e.articles||[]).map(function(a){ return {label:a.label,prix:a.prix,produit:a.produit,commun:!!a.commun}; })};
       state.view="form"; render();
     }
@@ -2418,6 +2454,7 @@
         if(a.produit && a.produit!=="Remise" && FAMILLES.indexOf(a.produit)<0 && PRODUITS.indexOf(a.produit)<0){ PRODUITS.push(a.produit); persistProd(); if(!(a.produit in FAMILLE_DE)){ FAMILLE_DE[a.produit]="Divers"; persistFamille(); } }
       });
       persistAppris();
+      if(state.draft.compte && acctByKey(state.draft.compte)) entry.compte=state.draft.compte;
       var isNew=!entry.id;
       if(isNew) entry.id=Date.now();
       var dp=state.draft.photo;
@@ -2527,11 +2564,13 @@
       uiForm({ title:"Nouveau frais fixe", fields:[
         {key:"label", label:"Nom", placeholder:"Loyer, Internet…", required:true},
         {key:"montant", label:"Montant", type:"money", required:true}
-      ].concat(whoFields(null)).concat([
+      ].concat(whoFields(null)).concat(acctFields("")).concat([
         {key:"rec", label:"Fréquence", type:"seg", value:"1", options:[{v:"1",l:"Chaque mois"},{v:"0",l:"Ce mois-ci"}]}
       ])}, function(r){
         var rec=(r.rec==="1");
-        fraisCommuns.push({ id:Date.now(), label:r.label, montant:r.montant, personne:whoOf(r), recurrent:rec, month: rec?null:monthKey(todayISO()) });
+        var nf={ id:Date.now(), label:r.label, montant:r.montant, personne:whoOf(r), recurrent:rec, month: rec?null:monthKey(todayISO()) };
+        if(r.acct) nf.compte=r.acct;
+        fraisCommuns.push(nf);
         persistFrais(); render();
       });
     }
@@ -2542,11 +2581,12 @@
       uiForm({ title:"Modifier le frais", fields:[
         {key:"label", label:"Nom", value:f.label, required:true},
         {key:"montant", label:"Montant", type:"money", value:cur, required:true, help:(f.recurrent?"À partir de "+esc(monthLabelOf(emonth))+". Les mois précédents ne changent pas.":"")}
-      ].concat(whoFields(f.personne||"Commun"))}, function(r){
+      ].concat(whoFields(f.personne||"Commun")).concat(acctFields(f.compte||""))}, function(r){
         f.label=r.label||f.label;
         if(f.recurrent){ if(Math.abs(r.montant-cur)>0.001){ if(!f.amounts) f.amounts={}; f.amounts[emonth]=r.montant; } }
         else f.montant=r.montant;
         f.personne=whoOf(r);
+        if(r.acct) f.compte=r.acct; else delete f.compte;
         persistFrais(); render();
       });
     }
@@ -2749,8 +2789,51 @@
       });
       return '<svg viewBox="0 0 '+W+' '+H+'" role="img">'+g+'</svg>';
     }
+    function acctPayerOpts(cur){
+      var o=[{v:"",l:"Aucun (choix sur chaque ticket)"}], seen={};
+      uniquePersons().concat(["Commun"]).concat(cur?[cur]:[]).forEach(function(p){ if(p && !seen[p]){ seen[p]=1; o.push({v:p, l:p}); } });
+      return o;
+    }
+    function acctForm(a){
+      uiForm({ title:a?"Modifier « "+a.nom+" »":"Nouveau compte bancaire", intro:a?"":"Compte joint, compte pro, autre banque…", fields:[
+        { key:"nom", label:"Nom du compte", value:a?a.nom:"", required:true, placeholder:"Compte joint, Compte pro…" },
+        { key:"payer", label:"Tickets « payé par »", type:"select", value:a?(a.payer||""):"", options:acctPayerOpts(a&&a.payer), help:"Les tickets payés par cette personne vont automatiquement sur ce compte. Tu peux aussi choisir le compte sur chaque ticket." }
+      ].concat(a?[]:[{ key:"start", label:"Solde en début de mois (optionnel)", type:"money", value:"", help:"Ce qu'il y avait sur le compte au 1er "+esc(monthLabelOf(monthKey(todayISO())))+". Modifiable ensuite (« Solde reporté »)." }]),
+        ok:a?"Enregistrer":"Créer le compte", focus:!a }, function(r){
+        var nm=(r.nom||"").trim(); if(!nm) return "Donne un nom au compte.";
+        if(a){ a.nom=nm; a.payer=r.payer||""; }
+        else {
+          var m0=monthKey(todayISO());
+          a={ key:"acc"+Date.now(), nom:nm, payer:r.payer||"", since:m0 }; comptes.push(a); state.compteSel=a.key; store.write("compteSel", a.key);
+          if(r.start!==null && r.start!==undefined && !isNaN(r.start)) setSoldeInit(a.key, m0, r.start);
+          state.months=state.months||{}; state.months.compte=null;
+        }
+        persistComptes(); render();
+      });
+    }
+    function manageAccts(){
+      uiChoice("Mes comptes", "Touche un compte pour le modifier.", comptes.map(function(a){
+        return { l:a.nom+(a.main?" · principal":""), fn:function(){ acctMenu(a); } };
+      }).concat([{ l:"＋ Ajouter un compte", fn:function(){ acctForm(null); } }]));
+    }
+    function acctMenu(a){
+      var ch=[{ l:"Modifier", fn:function(){ acctForm(a); } }];
+      if(!a.main) ch.push({ l:"Définir comme compte principal", fn:function(){ comptes.forEach(function(c){ c.main=(c===a); }); persistComptes(); uiToast("« "+a.nom+" » est le compte principal"); render(); } });
+      if(!a.main) ch.push({ l:"Supprimer", danger:true, fn:function(){
+        var nv=virements.filter(function(v){ return v.person===a.key; }).length;
+        uiConfirm("Supprimer « "+esc(a.nom)+" »"+(nv===1?" et son virement":(nv?" et ses "+nv+" virements":""))+" ?<br>Les tickets et frais rattachés à ce compte repasseront en automatique.", function(){
+          virements=virements.filter(function(v){ return v.person!==a.key; }); persistVirements();
+          state.entries.forEach(function(e){ if(e.compte===a.key) delete e.compte; }); persist();
+          fraisCommuns.forEach(function(f){ if(f.compte===a.key) delete f.compte; }); persistFrais();
+          delete liquideMois[a.key]; persistLiquide(); delete soldeInit[a.key]; persistSoldeInit();
+          comptes=comptes.filter(function(c){ return c!==a; }); persistComptes();
+          state.compteSel=mainAcct().key; store.write("compteSel", state.compteSel); render();
+        }, { ok:"Supprimer", danger:true });
+      } });
+      uiChoice(a.nom, a.main?"Compte principal : il reçoit les frais communs et s'affiche sur l'Accueil.":"", ch);
+    }
     function renderCompte(){
-      var person="Benoit";
+      var person=curAcctKey(), acct=acctByKey(person), multi=comptes.length>1;
       var curM=monthKey(todayISO());
       var month=(state.months&&state.months.compte)||curM;
       var _mp=month.split("-");
@@ -2762,16 +2845,16 @@
       var monthEntries=state.entries.filter(function(e){ return monthKey(e.date)===month; });
 
       var paid=[], paidTotal=0;
-      monthEntries.forEach(function(e){ if((e.payePar||"").trim()===person){ paid.push(e); paidTotal+=Number(e.montant)||0; } });
+      monthEntries.forEach(function(e){ if(ticketInAcct(e, person)){ paid.push(e); paidTotal+=Number(e.montant)||0; } });
       paid.sort(function(a,b){ return String(b.date||"").localeCompare(String(a.date||"")); });
 
-      var fraisThis=fraisCommuns.filter(function(f){ return fraisActif(f, month); });
+      var fraisThis=fraisCommuns.filter(function(f){ return fraisActif(f, month) && fraisKind(f, person); });
       var fraisPerso=0, fraisCommun=0;
-      fraisThis.forEach(function(f){ var who=(f.personne||"").trim()||"Commun"; var m=fraisMontant(f, month); if(who===person) fraisPerso+=m; else if(who==="Commun") fraisCommun+=m; });
+      fraisThis.forEach(function(f){ var m=fraisMontant(f, month); if(fraisKind(f, person)==="perso") fraisPerso+=m; else fraisCommun+=m; });
       var fraisTotal=fraisPerso + fraisCommun;
 
       var prodOwed=0;
-      monthEntries.forEach(function(e){ if((e.payePar||"").trim()===person) return; (e.articles||[]).forEach(function(a){ if(a.commun) prodOwed+=Number(a.prix)||0; }); });
+      monthEntries.forEach(function(e){ if(ticketInAcct(e, person)) return; (e.articles||[]).forEach(function(a){ if(a.commun) prodOwed+=Number(a.prix)||0; }); });
       var prodPart=prodOwed/2;
 
       var depenses=paidTotal + fraisTotal;
@@ -2779,7 +2862,7 @@
       var soldeFin=fl.closing + liqV;
       var virDone=virs.reduce(function(t,v){ return t+(v.done?(Number(v.montant)||0):0); },0);
       var fraisDoneFull=0;
-      fraisThis.forEach(function(f){ if(!fraisDone(f, month)) return; var dwho=(f.personne||"").trim()||"Commun"; if(dwho===person || dwho==="Commun") fraisDoneFull+=fraisMontant(f, month); });
+      fraisThis.forEach(function(f){ if(fraisDone(f, month)) fraisDoneFull+=fraisMontant(f, month); });
       var reporteReel=soldeFlowDone(person, month).opening;
       var soldeBanque=reporteReel + virDone - paidTotal - fraisDoneFull;
 
@@ -2807,7 +2890,7 @@
       function provAt(m){ try{ return provTotalAt(m); }catch(e){ return 0; } }
       function inOut(m){ var inn=0, out=computeDepensesMonth(person,m); virementsOf(person,m).forEach(function(v){ var x=Number(v.montant)||0; if(x>=0) inn+=x; else out+=-x; }); return { inn:inn, out:out }; }
       var chart='<div class="cch-tabs">'+CMODES.map(function(x){ return '<button type="button" data-m="'+x[0]+'"'+(x[0]===cmode?' class="on"':'')+'>'+x[1]+'</button>'; }).join("")+'</div><div class="cch">';
-      var hero={ label:"Solde du compte (banque estimée)", big:soldeBanque, color:(soldeBanque<0?"var(--coral)":"var(--ink)"), sub:"Estimé, sans le liquide" };
+      var hero={ label:(multi?esc(acct.nom):"Solde du compte")+" (banque estimée)", big:soldeBanque, color:(soldeBanque<0?"var(--coral)":"var(--ink)"), sub:"Estimé, sans le liquide" };
       if(cmode==="mois"){
         var steps=[{l:"Report", v:reporte, t:"base"}];
         if(virIn) steps.push({l:"Reçu", v:virIn});
@@ -2877,7 +2960,7 @@
       if(fraisThis.length){
         bOut+='<div class="dr-sec" style="margin:14px 0 6px">Frais fixes du mois</div>';
         fraisThis.slice().sort(function(x,y){ return fraisMontant(y,month)-fraisMontant(x,month); }).forEach(function(f){ var who=(f.personne||"").trim()||"Commun";
-          bOut+='<div class="leader"><span class="lbl">'+esc(f.label)+' <span class="muted" style="font-size:11px">· '+esc(who===person?"perso":(who==="Commun"?"commun":who))+'</span></span><span class="fill"></span><span class="val">'+fmt(fraisMontant(f, month))+'</span></div>'; });
+          bOut+='<div class="leader"><span class="lbl">'+esc(f.label)+' <span class="muted" style="font-size:11px">· '+esc(fraisKind(f, person)==="perso"?"perso":"commun")+'</span></span><span class="fill"></span><span class="val">'+fmt(fraisMontant(f, month))+'</span></div>'; });
       }
       bOut+='<div class="dr-sec" style="margin:14px 0 6px">Tickets payés'+(paid.length?' ('+paid.length+')':'')+'</div>';
       if(true){
@@ -2917,13 +3000,17 @@
       if(!epargne.length) bEp+='<div class="muted" style="font-size:11px;margin:4px 0">Aucun compte épargne.</div>';
       var tpm=pctStr(totPrev,totCur); if(tpm && epargne.length>1) bEp+='<div class="muted" style="font-size:10.5px;margin:2px 0"><span style="color:'+pctColor(totPrev,totCur)+'">Total '+tpm+' vs mois préc.</span></div>';
       bEp+='<div class="clink" id="addep"><span>+ Ajouter un compte épargne</span><span></span></div>';
-      acc+=sec("ep", "#7c9cf4", "Épargne", fmtS(totCur), "var(--ink)");
+      if(acct.main) acc+=sec("ep", "#7c9cf4", "Épargne", fmtS(totCur), "var(--ink)");
 
       // ---- Provisions (ouvre l'écran dédié) ----
       var provT=0; try{ provT=provTotalAt(month); }catch(e){}
-      acc+='<div class="cacc-sec"><div class="cacc-h" id="goprov"><i class="cdot" style="background:#c78bd6;margin:0"></i><span class="t">Provisions</span><span class="v">'+fmtS(provT)+'</span><span class="ch">›</span></div></div>';
+      if(acct.main) acc+='<div class="cacc-sec"><div class="cacc-h" id="goprov"><i class="cdot" style="background:#c78bd6;margin:0"></i><span class="t">Provisions</span><span class="v">'+fmtS(provT)+'</span><span class="ch">›</span></div></div>';
       acc+='</section>';
-      if(!page){ h+=tabHero(heroMain)+acc; }
+      if(!page){
+        h+='<div class="acc-chips">'+comptes.map(function(a){ return '<button type="button" data-acct="'+esc(a.key)+'"'+(a.key===person?' class="on"':'')+'>'+esc(a.nom)+'</button>'; }).join("")+
+           '<button type="button" data-acct="__add" class="add" aria-label="Ajouter un compte">'+(multi?'＋':'＋ Compte')+'</button>'+(multi?'<button type="button" data-acct="__manage" class="add" aria-label="Gérer les comptes">⚙︎</button>':'')+'</div>';
+        h+=tabHero(heroMain)+acc;
+      }
       else {
         var ph, pb;
         if(page==="es"){
@@ -2945,6 +3032,7 @@
                extra:'<div class="cch">'+compteLineSVG(epR, month, "#7c9cf4")+'<div class="cch-note">Total de tes comptes épargne, sur 6 mois</div></div>' };
           pb=bEp;
         }
+        if(multi) ph.label+=' · '+esc(acct.nom);
         h+=tabHero(ph)+'<section class="paper cacc cpage"><div class="cacc-b">'+pb+'</div></section>';
       }
       app.innerHTML=h;
@@ -2969,6 +3057,10 @@
       var cfr=document.getElementById("cptFrais"); if(cfr) cfr.onclick=function(){ state.view="communes"; render(); window.scrollTo(0,0); };
       var cOn=document.querySelector(".cch-tabs button.on"); if(cOn && cOn.parentNode){ var tb=cOn.parentNode; tb.scrollLeft=Math.max(0, cOn.offsetLeft-(tb.clientWidth-cOn.offsetWidth)/2); }
       if(!page) [].forEach.call(document.querySelectorAll(".thero .hstat"), function(t,i){ var g=(heroMain.stats[i]||{}).go; if(!g) return; t.style.cursor="pointer"; t.onclick=function(){ state.cptPage=g; state.view="comptedet"; render(); window.scrollTo(0,0); }; });
+      [].forEach.call(document.querySelectorAll(".acc-chips button"), function(bt){ bt.onclick=function(){ var k=bt.getAttribute("data-acct");
+        if(k==="__add") return acctForm(null);
+        if(k==="__manage") return manageAccts();
+        state.compteSel=k; store.write("compteSel", k); render(); }; });
       [].forEach.call(document.querySelectorAll(".cptGo"), function(r){ r.onclick=function(){ state.cptPage=r.getAttribute("data-page"); state.view="comptedet"; render(); window.scrollTo(0,0); }; });
       if(page) bindBack(function(){ state.view="compte"; render(); window.scrollTo(0,0); });
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.cptChart=bt.getAttribute("data-m"); store.write("cptChart", state.cptChart); render(); }; });
@@ -3321,10 +3413,10 @@
         h+=gBlock(bourse.filter(bOpen).map(function(c){ return {name:c.nom, value:bTot(bLast(c))}; }));
       }
       else if(view==="compte"){
-        var rows=lastMonths(12).map(function(mo){ var r=computeCompteMonth("Benoit", mo.key); return {label:mo.date.toLocaleDateString("fr-FR",{month:"short",year:"2-digit"}), value:r.solde, sub:fmt(r.solde)}; });
+        var rows=lastMonths(12).map(function(mo){ var r=computeCompteMonth(mainAcct().key, mo.key); return {label:mo.date.toLocaleDateString("fr-FR",{month:"short",year:"2-digit"}), value:r.solde, sub:fmt(r.solde)}; });
         h+='<div class="muted" style="font-size:10px;margin:8px 2px 0">Solde de fin de mois · Benoit</div>';
         h+=gMonthBars(rows, function(v){ return v>=0?"#4fd6a0":"#f4796b"; });
-        var cur=computeCompteMonth("Benoit", monthKey(todayISO()));
+        var cur=computeCompteMonth(mainAcct().key, monthKey(todayISO()));
         h+='<hr class="rule"><div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:0 2px 4px">Ce mois-ci</div>';
         h+='<div class="leader item"><span class="lbl">Solde reporté</span><span class="fill"></span><span class="val">'+fmt(cur.reporte)+'</span></div>';
         h+='<div class="leader item"><span class="lbl">Virements</span><span class="fill"></span><span class="val">'+fmt(cur.argent)+'</span></div>';
@@ -3814,7 +3906,7 @@
     }
     function renderPatrimoine(){
       var month=monthKey(todayISO());
-      var solde=computeCompteMonth("Benoit", month).solde;
+      var solde=computeCompteMonth(mainAcct().key, month).solde;
       var epManuel=0, epLies=0;
       epargne.forEach(function(c){ if(c.bourseLink) epLies+=epCurrent(c); else epManuel+=epCurrent(c); });
       var bourseTot=bourseTotalLive();
@@ -3866,7 +3958,7 @@
       if(!from || !to){ from=to=(state.bilanMonth||curM); }
       var ms=[], mk=from; while(mk<=to && ms.length<120){ ms.push(mk); mk=nextMonthKey(mk); }
       var single=(ms.length===1), month=to, inP={}; ms.forEach(function(m){ inP[m]=1; });
-      var label=single?monthLabelOf(month):((from.slice(0,4)===to.slice(0,4)?monthLabelOf(from).split(" ")[0]:monthLabelOf(from))+" – "+monthLabelOf(to)), person="Benoit";
+      var label=single?monthLabelOf(month):((from.slice(0,4)===to.slice(0,4)?monthLabelOf(from).split(" ")[0]:monthLabelOf(from))+" – "+monthLabelOf(to)), person=mainAcct().key;
       var mois=state.entries.filter(function(x){ return inP[monthKey(x.date)]; });
       var tickets=mois.reduce(function(t,x){ return t+(Number(x.montant)||0); },0);
       var parCat={}; mois.forEach(function(x){ parCat[x.categorie]=(parCat[x.categorie]||0)+(Number(x.montant)||0); });
@@ -4107,7 +4199,7 @@
       [].forEach.call(document.querySelectorAll(".prldel"), function(b){ b.onclick=function(){ delPrelevement(b.getAttribute("data-id"), b.getAttribute("data-pr")); }; });
     }
     function backupData(){
-      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2"];
+      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise"];
       var dump={ _app:"tickets", _version:1, _date:new Date().toISOString(), data:{} };
       keys.forEach(function(k){ var v=store.read(k, null); if(v!==null) dump.data[k]=v; });
       dump.photos = PHOTOS;
@@ -4140,7 +4232,7 @@
           if(!data || typeof data!=="object") throw new Error("format non reconnu");
           var n=(data.entries && data.entries.length) ? data.entries.length : 0;
           if(!window.confirm("Restaurer cette sauvegarde ?\n"+n+" ticket(s) vont REMPLACER les données actuelles.")) return;
-          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2"].forEach(function(k){
+          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise"].forEach(function(k){
             if(k in data) store.write(k, data[k]);
           });
           if(data.taxoV2!==2) store.write("taxoV2", null);
