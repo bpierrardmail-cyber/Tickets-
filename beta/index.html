@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 19:50" />
+  <meta name="build" content="14/10 20:55" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2725,7 +2725,7 @@
         var cx=slot*i+slot/2, y1=Math.min(y(r.v),z), hgt=Math.max(2,Math.abs(z-y(r.v))), on=(r.m===sel);
         var col=color || (r.v<0?"var(--coral)":"var(--accent)");
         g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+y1.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hgt.toFixed(1)+'" rx="4" style="fill:'+col+';opacity:'+(on?1:0.55)+'"/>';
-        var ly=r.v<0?(y1+hgt+12):(y1-5);
+        var ly=y1-5;   // toujours au-dessus du rectangle (pour un négatif : juste au-dessus de la ligne zéro)
         g+='<text x="'+cx.toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="middle" style="fill:'+(on?"var(--ink)":"var(--ink-soft)")+';font-size:10px;font-weight:'+(on?700:500)+';font-family:var(--sans)">'+cptK(r.v)+'</text>';
         g+='<text x="'+cx.toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" style="fill:'+(on?"var(--ink)":"var(--muted)")+';font-size:10px;font-weight:'+(on?700:400)+';font-family:var(--sans)">'+esc(r.lbl)+'</text>';
       });
