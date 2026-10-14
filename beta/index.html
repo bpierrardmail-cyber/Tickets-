@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 19:25" />
+  <meta name="build" content="14/10 19:30" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2797,7 +2797,7 @@
       dParts.sort(function(x,y){ return y.v-x.v; }).forEach(function(x,i){ x.col=DCOL[i%DCOL.length]; });
       var cmode=state.cptChart||store.read("cptChart","mois"); if(cmode==="6m") cmode="es";
       if(!CMODES.some(function(x){ return x[0]===cmode; })) cmode="mois";
-      var page=(state.view==="comptedet")?state.cptPage:null, PAGE_T={ es:"Entrées / Sorties", dep:"Dépenses", res:"Solde bancaire", ep:"Épargne" };
+      var page=(state.view==="comptedet")?state.cptPage:null, PAGE_T={ es:"Virements", dep:"Dépenses", res:"Solde bancaire", ep:"Épargne" };
       if(page && !PAGE_T[page]) page=null;
       var h=header(page?"compte":null, page?PAGE_T[page]:null)+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM).replace(/id="mn-/g,'id="cm-')+'</div>';
       // 6 derniers mois (jusqu'au mois affiché)
@@ -2859,7 +2859,7 @@
       });
       if(!virs.length) bIn+='<div class="muted" style="font-size:11px;margin:4px 0">Aucun virement ce mois-ci.</div>';
       bIn+='<div class="clink" id="addvir"><span>+ Ajouter un virement</span><span></span></div>';
-      acc+=sec("es", "var(--accent)", "Entrées / Sorties", signS(virTotal), (virTotal<0?"var(--coral)":"var(--accent)"));
+      acc+=sec("es", "var(--accent)", "Virements", signS(virTotal), (virTotal<0?"var(--coral)":"var(--accent)"));
 
       // ---- Dépenses ----
       var bOut='';
