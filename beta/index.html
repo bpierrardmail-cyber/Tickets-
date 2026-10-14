@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
+  <meta name="build" content="14/10 13:25" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -1450,7 +1451,7 @@
     }
     function header(back){
       var b = back ? '<button class="hback" id="hback" type="button">‹ Retour</button>' : '';
-      return '<header class="head">'+b+'<span class="beta-tag">Version β</span><div class="barcode"></div></header>';
+      return '<header class="head">'+b+'<span class="beta-tag">Version β · '+((document.querySelector('meta[name=build]')||{}).content||'')+'</span><div class="barcode"></div></header>';
     }
     function bindBack(fn){ var hb=document.getElementById("hback"); if(hb) hb.onclick=fn; }
 
@@ -2557,12 +2558,13 @@
            '<button class="btn ghost bedit" type="button" data-id="'+esc(c.id)+'">✎</button>'+
            '<button class="btn ghost bdel" type="button" data-id="'+esc(c.id)+'">✕</button></div>';
         h+='<div style="font-size:12.5px;color:var(--ink-soft);margin:2px 6px 0">Capital investi : '+fmt(cap)+'</div>';
-        if(cash) h+='<div style="font-size:12.5px;color:var(--ink-soft);margin:3px 6px 0">Reste à investir : <span style="color:var(--ink);font-weight:600">'+fmt(cash)+'</span></div>';
+        h+='<div style="font-size:12.5px;color:var(--ink-soft);margin:3px 6px 0">Reste à investir : <span style="color:'+(cash?'var(--ink)':'var(--muted)')+';font-weight:600">'+fmt(cash)+'</span></div>';
         var badges=[];
         badges.push(bBadge(cap,val,"Plus-value :"));
         if(prev) badges.push(bBadge(Number(prev.valeur||0),val,"Mois préc. :"));
         if(first&&bMonths(c).length>1) badges.push(bBadge(Number(first.valeur||0),val,"Depuis création :"));
         badges.forEach(function(b){ if(b) h+='<div style="font-size:12.5px;margin:3px 6px 0">'+b+'</div>'; });
+        h+='<button class="btn ghost bedit2" type="button" data-id="'+esc(c.id)+'" style="font-size:12.5px;padding:7px 14px;margin:10px 6px 2px">✎ Modifier le compte</button>';
         h+='</div>';
         h+=positionsHTML(c);
         h+='<hr class="rule" style="margin:6px 0;opacity:.3">';
@@ -2582,6 +2584,7 @@
       var pa=document.getElementById("prixact"); if(pa){ pa.oninput=function(){ state.prixActuel=pa.value; render(); }; }
       var ab=document.getElementById("addbrs"); if(ab) ab.onclick=addBourse;
       var rb=document.getElementById("recbrs"); if(rb) rb.onclick=recoverBourse;
+      [].forEach.call(document.querySelectorAll(".bedit2"), function(b){ b.onclick=function(){ editBourse(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".bhead"), function(row){ row.onclick=function(ev){ var t=ev.target; while(t && t!==row){ if(t.tagName==="BUTTON") return; t=t.parentNode; } editBourse(row.getAttribute("data-bid")); }; });
       [].forEach.call(document.querySelectorAll(".bedit"), function(b){ b.onclick=function(){ editBourse(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".bdel"), function(b){ b.onclick=function(){ delBourse(b.getAttribute("data-id")); }; });
