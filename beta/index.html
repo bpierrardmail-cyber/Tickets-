@@ -640,7 +640,7 @@
       return pts;
     }
     // ---------- Positions : cryptos (CoinGecko) et actions / ETF (relais Yahoo) ----------
-    var COURS_API = "";   // adresse du relais des cours (actions et ETF), intégrée à l'app
+    var COURS_API = "https://tickets.bpierrard-mail.workers.dev";   // relais des cours (actions et ETF), intégré à l'app
     function coursApi(){ return (store.read("coursApi","")||COURS_API||"").replace(/\/+$/,""); }
     var pxCache = store.read("coursCache", {});   // { "cg:solana": {p, chg, cur, t} }
     var fxCache = store.read("fxCache", { t:0, rates:{} });  // taux EUR -> devise
