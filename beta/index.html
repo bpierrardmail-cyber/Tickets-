@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 18:35" />
+  <meta name="build" content="14/10 18:55" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -332,6 +332,10 @@
     .cch{ margin-top:14px; } .cch svg{ display:block; width:100%; height:auto; overflow:visible; }
     .cch-leg{ display:flex; flex-wrap:wrap; gap:6px 14px; justify-content:center; font-size:11px; color:var(--ink-soft); margin-top:8px; }
     .cch-leg i{ display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
+    .cch-tabs{ display:flex; flex-wrap:nowrap; gap:6px; margin:14px -18px 0; padding:0 18px 2px; overflow-x:auto; scrollbar-width:none; -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 22px),transparent 100%); mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 22px),transparent 100%); }
+    .cch-tabs::-webkit-scrollbar{ display:none; }
+    .cch-tabs button{ flex:0 0 auto; white-space:nowrap; font-family:var(--sans); font-size:12px; padding:6px 11px; border-radius:999px; border:1px solid var(--line); background:rgba(255,255,255,.04); color:var(--ink-soft); cursor:pointer; }
+    .cch-tabs button.on{ background:var(--accent); border-color:var(--accent); color:#0a130f; font-weight:700; }
     .cch-note{ font-size:10.5px; color:var(--muted); text-align:center; margin-top:6px; }
     /* Compte : accordéon compact */
     .cacc{ margin-top:14px; padding:4px 14px; }
@@ -2675,7 +2679,7 @@
     // 6 mois : entrées et sorties de chaque mois, avec le solde de fin de mois
     function compteSixMonthsSVG(rows, sel){
       var W=340, H=178, top=20, bot=24, ph=H-top-bot, vals=[0];
-      rows.forEach(function(r){ vals.push(r.inn, r.out, r.sol); });
+      rows.forEach(function(r){ vals.push(r.inn, r.out); });
       var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals); if(hi-lo<1) hi=lo+1;
       function y(v){ return top+(hi-v)/(hi-lo)*ph; }
       var n=rows.length, slot=W/n, bw=Math.min(14, slot*0.26), g='', line=[];
@@ -2687,12 +2691,43 @@
         line.push(cx.toFixed(1)+','+y(r.sol).toFixed(1));
         g+='<text x="'+cx.toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" style="fill:'+(r.m===sel?"var(--ink)":"var(--muted)")+';font-size:10px;font-weight:'+(r.m===sel?700:400)+';font-family:var(--sans)">'+esc(r.lbl)+'</text>';
       });
-      g+='<polyline points="'+line.join(" ")+'" style="fill:none;stroke:var(--ink);stroke-width:1.6;opacity:.75"/>';
-      rows.forEach(function(r,i){ var cx=slot*i+slot/2, cy=y(r.sol);
-        g+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+(r.m===sel?4:3)+'" style="fill:'+(r.sol<0?"var(--coral)":"var(--ink)")+';stroke:var(--card);stroke-width:1.5"/>';
-        if(r.m===sel) g+='<text x="'+cx.toFixed(1)+'" y="'+(cy-8).toFixed(1)+'" text-anchor="middle" style="fill:var(--ink);font-size:10.5px;font-weight:700;font-family:var(--sans)">'+cptK(r.sol)+'</text>';
-      });
+
       return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="6 derniers mois">'+g+'</svg>';
+    }
+    function compteBarsSVG(rows, sel, color){
+      var W=340, H=178, top=22, bot=24, ph=H-top-bot, vals=[0];
+      rows.forEach(function(r){ vals.push(r.v); });
+      var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals); if(hi-lo<1) hi=lo+1;
+      function y(v){ return top+(hi-v)/(hi-lo)*ph; }
+      var n=rows.length, slot=W/n, bw=Math.min(30, slot*0.55), g='', z=y(0);
+      if(lo<0) g+='<line x1="0" x2="'+W+'" y1="'+z.toFixed(1)+'" y2="'+z.toFixed(1)+'" style="stroke:var(--line2);stroke-width:1"/>';
+      rows.forEach(function(r,i){
+        var cx=slot*i+slot/2, y1=Math.min(y(r.v),z), hgt=Math.max(2,Math.abs(z-y(r.v))), on=(r.m===sel);
+        var col=color || (r.v<0?"var(--coral)":"var(--accent)");
+        g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+y1.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hgt.toFixed(1)+'" rx="4" style="fill:'+col+';opacity:'+(on?1:0.55)+'"/>';
+        var ly=r.v<0?(y1+hgt+12):(y1-5);
+        g+='<text x="'+cx.toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="middle" style="fill:'+(on?"var(--ink)":"var(--ink-soft)")+';font-size:10px;font-weight:'+(on?700:500)+';font-family:var(--sans)">'+cptK(r.v)+'</text>';
+        g+='<text x="'+cx.toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" style="fill:'+(on?"var(--ink)":"var(--muted)")+';font-size:10px;font-weight:'+(on?700:400)+';font-family:var(--sans)">'+esc(r.lbl)+'</text>';
+      });
+      return '<svg viewBox="0 0 '+W+' '+H+'" role="img">'+g+'</svg>';
+    }
+    function compteLineSVG(rows, sel, color){
+      var W=340, H=178, top=24, bot=24, ph=H-top-bot, padX=20, vals=[];
+      rows.forEach(function(r){ vals.push(r.v); });
+      var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals);
+      var pad=(hi-lo)*0.15 || Math.max(1,Math.abs(hi)*0.1); lo-=pad; hi+=pad; if(lo>0 && Math.min.apply(null,vals)>=0) lo=Math.max(0,lo);
+      function y(v){ return top+(hi-v)/(hi-lo)*ph; }
+      var n=rows.length, step=(W-2*padX)/Math.max(1,n-1), pts=[], g='';
+      rows.forEach(function(r,i){ pts.push([padX+i*step, y(r.v)]); });
+      var line=pts.map(function(p){ return p[0].toFixed(1)+','+p[1].toFixed(1); }).join(" ");
+      g+='<polygon points="'+pts[0][0].toFixed(1)+','+(top+ph)+' '+line+' '+pts[n-1][0].toFixed(1)+','+(top+ph)+'" style="fill:'+color+';opacity:.14"/>';
+      g+='<polyline points="'+line+'" style="fill:none;stroke:'+color+';stroke-width:2.2;stroke-linejoin:round"/>';
+      rows.forEach(function(r,i){ var on=(r.m===sel), cx=pts[i][0], cy=pts[i][1];
+        g+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+(on?4.5:3)+'" style="fill:'+(on?color:"var(--card)")+';stroke:'+color+';stroke-width:2"/>';
+        g+='<text x="'+cx.toFixed(1)+'" y="'+(cy-9).toFixed(1)+'" text-anchor="middle" style="fill:'+(on?"var(--ink)":"var(--ink-soft)")+';font-size:10px;font-weight:'+(on?700:500)+';font-family:var(--sans)">'+cptK(r.v)+'</text>';
+        g+='<text x="'+cx.toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" style="fill:'+(on?"var(--ink)":"var(--muted)")+';font-size:10px;font-weight:'+(on?700:400)+';font-family:var(--sans)">'+esc(r.lbl)+'</text>';
+      });
+      return '<svg viewBox="0 0 '+W+' '+H+'" role="img">'+g+'</svg>';
     }
     function renderCompte(){
       var person="Benoit";
@@ -2730,10 +2765,18 @@
 
       var cptOpen = state.cptOpen || (state.cptOpen={});
       var virIn=0, virOut=0; virs.forEach(function(v){ var x=Number(v.montant)||0; if(x>=0) virIn+=x; else virOut+=x; });
-      var cmode=(state.cptChart==="6m")?"6m":"mois";
+      var CMODES=[["mois","Ce mois"],["solde","Solde"],["es","Entrées-sorties"],["ep","Épargne"],["prov","Provisions"]];
+      var cmode=state.cptChart||store.read("cptChart","mois"); if(cmode==="6m") cmode="es";
+      if(!CMODES.some(function(x){ return x[0]===cmode; })) cmode="mois";
       var h=header()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM).replace(/id="mn-/g,'id="cm-')+'</div>';
-      // En-tête : solde + graphique (cascade du mois ou 6 derniers mois)
-      var chart='<button type="button" class="bch-mode" id="cptMode">Graphique : <b>'+(cmode==="6m"?"6 mois":"ce mois")+'</b> ⇄</button><div class="cch">';
+      // 6 derniers mois (jusqu'au mois affiché)
+      var six=[], mk6=month; for(var i6=0;i6<6;i6++){ six.unshift(mk6); mk6=prevMonthKey(mk6); }
+      function mShort(m){ var pm=m.split("-"); return new Date(+pm[0], +pm[1]-1, 1).toLocaleDateString("fr-FR",{month:"short"}).replace(".",""); }
+      function epTotAt(m){ var t=0; epargne.forEach(function(c){ var ms=Object.keys(c.vals||{}).filter(function(mm){ return mm<=m; }).sort(); if(ms.length) t+=Number(c.vals[ms[ms.length-1]])||0; }); return t; }
+      function provAt(m){ try{ return provTotalAt(m); }catch(e){ return 0; } }
+      function inOut(m){ var inn=0, out=computeDepensesMonth(person,m); virementsOf(person,m).forEach(function(v){ var x=Number(v.montant)||0; if(x>=0) inn+=x; else out+=-x; }); return { inn:inn, out:out }; }
+      var chart='<div class="cch-tabs">'+CMODES.map(function(x){ return '<button type="button" data-m="'+x[0]+'"'+(x[0]===cmode?' class="on"':'')+'>'+x[1]+'</button>'; }).join("")+'</div><div class="cch">';
+      var hero={ label:"Solde de fin de mois prévu", big:soldeFin, color:(soldeFin<0?"var(--coral)":"var(--ink)"), sub:(liq?"Banque "+fmtK(fl.closing)+" · Liquide "+fmtK(liqV):"") };
       if(cmode==="mois"){
         var steps=[{l:"Report", v:reporte, t:"base"}];
         if(virIn) steps.push({l:"Reçu", v:virIn});
@@ -2743,19 +2786,25 @@
         if(liqV) steps.push({l:"Liquide", v:liqV});
         steps.push({l:"Solde", v:soldeFin, t:"end"});
         chart+=compteWaterfallSVG(steps)+'<div class="cch-note">Report + virements − tickets − frais fixes = solde de fin de mois</div>';
+      } else if(cmode==="solde"){
+        hero.label="Solde de fin de mois";
+        chart+=compteBarsSVG(six.map(function(m){ var lq=liquideAt(person,m); return { m:m, lbl:mShort(m), v:soldeFlow(person,m).closing+(lq?lq.val:0) }; }), month)+'<div class="cch-note">Ce qui reste en fin de mois (banque + liquide), sur 6 mois</div>';
+      } else if(cmode==="es"){
+        var rows=six.map(function(m){ var x=inOut(m); return { m:m, lbl:mShort(m), inn:x.inn, out:x.out }; }), cur=rows[rows.length-1], net=cur.inn-cur.out;
+        hero={ label:"Entrées − sorties du mois", big:net, color:(net<0?"var(--coral)":"var(--accent)"), sub:"Entrées "+fmtK(cur.inn)+" · Sorties "+fmtK(cur.out) };
+        chart+=compteSixMonthsSVG(rows, month)+'<div class="cch-leg"><span><i style="background:var(--accent)"></i>Entrées (virements reçus)</span><span><i style="background:var(--coral)"></i>Sorties (dépenses + virements envoyés)</span></div>';
+      } else if(cmode==="ep"){
+        var epRows=six.map(function(m){ return { m:m, lbl:mShort(m), v:epTotAt(m) }; }), e0=epRows[epRows.length-2].v, e1=epRows[epRows.length-1].v;
+        hero={ label:"Épargne totale", big:e1, color:"var(--ink)", sub:(epRows.length>1?(e1-e0>=0?"+":"")+fmtK(e1-e0)+" vs mois précédent":"") };
+        chart+=compteLineSVG(epRows, month, "#7c9cf4")+'<div class="cch-note">Total de tes comptes épargne, sur 6 mois</div>';
       } else {
-        var rows=[], mk=month; for(var i=0;i<6;i++){ rows.unshift(mk); mk=prevMonthKey(mk); }
-        rows=rows.map(function(m){
-          var inn=0, out=computeDepensesMonth(person,m), lq=liquideAt(person,m);
-          virementsOf(person,m).forEach(function(v){ var x=Number(v.montant)||0; if(x>=0) inn+=x; else out+=-x; });
-          var pm=m.split("-");
-          return { m:m, inn:inn, out:out, sol:soldeFlow(person,m).closing+(lq?lq.val:0), lbl:new Date(+pm[0], +pm[1]-1, 1).toLocaleDateString("fr-FR",{month:"short"}).replace(".","") };
-        });
-        chart+=compteSixMonthsSVG(rows, month)+'<div class="cch-leg"><span><i style="background:var(--accent)"></i>Entrées</span><span><i style="background:var(--coral)"></i>Sorties</span><span><i style="background:var(--ink);border-radius:50%"></i>Solde fin de mois</span></div>';
+        var pRows=six.map(function(m){ return { m:m, lbl:mShort(m), v:provAt(m) }; }), p0=pRows[pRows.length-2].v, p1=pRows[pRows.length-1].v;
+        hero={ label:"Provisions mises de côté", big:p1, color:"var(--ink)", sub:(p1-p0>=0?"+":"")+fmtK(p1-p0)+" vs mois précédent" };
+        chart+=compteBarsSVG(pRows, month, "#c78bd6")+'<div class="cch-note">Total mis de côté dans tes provisions, sur 6 mois</div>';
       }
       chart+='</div>';
-      h+=tabHero({ label:"Solde de fin de mois prévu", big:soldeFin, color:(soldeFin<0?"var(--coral)":"var(--ink)"),
-        sub:(liq?"Banque "+fmtK(fl.closing)+" · Liquide "+fmtK(liqV):""), extra:chart });
+      hero.extra=chart;
+      h+=tabHero(hero);
       // Corps : une seule carte, une ligne par catégorie qui se déplie au toucher
       var C_T="#e0a458", C_P="#c78bd6", C_C="#7c9cf4";
       function sec(key, dot, title, val, valCol, body){
@@ -2849,7 +2898,8 @@
       [].forEach.call(document.querySelectorAll(".epdel"), function(b){ b.onclick=function(){ delEpargne(b.getAttribute("data-id")); }; });
       var gprov=document.getElementById("goprov"); if(gprov) gprov.onclick=function(){ state.view="provisions"; render(); window.scrollTo(0,0); };
       var cfr=document.getElementById("cptFrais"); if(cfr) cfr.onclick=function(){ state.view="communes"; render(); window.scrollTo(0,0); };
-      var cmo=document.getElementById("cptMode"); if(cmo) cmo.onclick=function(){ state.cptChart=(state.cptChart==="6m"?"mois":"6m"); render(); };
+      var cOn=document.querySelector(".cch-tabs button.on"); if(cOn && cOn.parentNode){ var tb=cOn.parentNode; tb.scrollLeft=Math.max(0, cOn.offsetLeft-(tb.clientWidth-cOn.offsetWidth)/2); }
+      [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.cptChart=bt.getAttribute("data-m"); store.write("cptChart", state.cptChart); render(); }; });
       var lr=document.getElementById("liqrow"); if(lr) lr.onclick=function(){
         var o=liquideMois[person]||{};
         uiForm({ title:"Argent liquide", intro:"Laisse vide pour reprendre la valeur du mois précédent.", fields:[
