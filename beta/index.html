@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 14:00" />
+  <meta name="build" content="14/10 14:20" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -1743,7 +1743,7 @@
     function compactRowActions(){
       [].forEach.call(app.querySelectorAll(".prow"), function(row){
         if(row.getAttribute("data-compact")) return;
-        var acts=[].filter.call(row.querySelectorAll("button"), function(b){ var t=(b.textContent||"").trim(); return t==="✎"||t==="✕"||t==="🔗"; });
+        var acts=[].filter.call(row.querySelectorAll("button"), function(b){ var t=(b.textContent||"").trim(); return t==="✎"||t==="✕"||t==="🔗"||t==="▲"||t==="▼"; });
         if(acts.length<2) return;
         row.setAttribute("data-compact","1");
         acts.forEach(function(b){ b.style.display="none"; });
@@ -1753,10 +1753,10 @@
           ev.stopPropagation();
           var nm=row.querySelector(".pname"), title="Actions";
           if(nm){ var t0=nm.childNodes[0]; title=((t0 && t0.nodeType===3 && t0.textContent.trim()) ? t0.textContent : (nm.firstElementChild?nm.firstElementChild.textContent:nm.textContent)).trim().slice(0,40); }
-          var linked=(row.textContent||"").indexOf("● Bourse")>=0, order={"✎":0,"🔗":1,"✕":2};
+          var linked=(row.textContent||"").indexOf("● Bourse")>=0, order={"✎":0,"▲":1,"▼":2,"🔗":3,"✕":4};
           uiChoice(title, "", acts.slice().sort(function(a,b){ return order[a.textContent.trim()]-order[b.textContent.trim()]; }).map(function(b){
             var t=b.textContent.trim();
-            return { l:(t==="✎"?"Modifier":(t==="🔗"?(linked?"Délier de la Bourse":"Lier à la Bourse"):"Supprimer")), danger:(t==="✕"), fn:function(){ b.click(); } };
+            return { l:(t==="✎"?"Modifier":(t==="▲"?"↑ Monter":(t==="▼"?"↓ Descendre":(t==="🔗"?(linked?"Délier de la Bourse":"Lier à la Bourse"):"Supprimer")))), danger:(t==="✕"), fn:function(){ b.click(); } };
           }));
         };
       });
@@ -2767,8 +2767,9 @@
       if(!bourse.some(function(c){ return bAt(c,month) && !bClosedAt(c,month); })) h+='<div class="muted" style="font-size:12px;margin:4px 2px">Aucun compte'+(month===curM?". Ajoute ton premier compte bourse.":" ce mois-ci.")+'</div>';
       var totCap=0, totVal=0, totCash=0, totPrevVal=null, totFirstVal=null, totFirstCap=null;
       var pm=prevMonthKey(month);
+      var visB=bourse.filter(function(c){ return bAt(c,month) && !bClosedAt(c,month); });
       bourse.forEach(function(c){
-        var atSnap=bAt(c,month); if(!atSnap || bClosedAt(c,month)) return; var last=atSnap, prev=bPrevAt(c,month), first=bFirst(c);
+        var atSnap=bAt(c,month); if(!atSnap || bClosedAt(c,month)) return; var last=atSnap, vi=visB.indexOf(c), prev=bPrevAt(c,month), first=bFirst(c);
         var cap=Number(last.capital)||0, val=Number(last.valeur)||0, cash=bCash(last), tot=val+cash;
         var pv=val-cap;
         totCap+=cap; totVal+=val; totCash+=cash;
@@ -2778,6 +2779,8 @@
         h+='<div class="prow bhead" data-bid="'+esc(c.id)+'" style="cursor:pointer"><span class="pname" style="font-weight:700">'+esc(c.nom)+(c.closed?' <span style="font-size:9.5px;color:var(--muted);font-weight:600">clôturé en '+esc(monthLabelOf(c.closed).split(" ")[0])+'</span>':'')+((c.sol&&month===curM)?' <span style="font-size:9px;color:var(--accent);font-weight:600">● live</span>':'')+'</span>'+
            '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px">'+fmt(tot)+'</span>'+
            '<button class="btn ghost bedit" type="button" data-id="'+esc(c.id)+'">✎</button>'+
+           (vi>0?'<button class="btn ghost bmove" type="button" data-id="'+esc(c.id)+'" data-to="'+esc(visB[vi-1].id)+'" style="display:none">▲</button>':'')+
+           (vi<visB.length-1?'<button class="btn ghost bmove" type="button" data-id="'+esc(c.id)+'" data-to="'+esc(visB[vi+1].id)+'" style="display:none">▼</button>':'')+
            '<button class="btn ghost bdel" type="button" data-id="'+esc(c.id)+'">✕</button></div>';
         h+='<div style="font-size:12.5px;color:var(--ink-soft);margin:2px 6px 0">Capital investi : '+fmt(cap)+'</div>';
         h+='<div style="font-size:12.5px;color:var(--ink-soft);margin:3px 6px 0">Reste à investir : <span style="color:'+(cash?'var(--ink)':'var(--muted)')+';font-weight:600">'+fmt(cash)+'</span></div>';
@@ -2786,7 +2789,6 @@
         if(prev) badges.push(bBadge(Number(prev.valeur||0),val,"Mois préc. :"));
         if(first&&bMonths(c).length>1) badges.push(bBadge(Number(first.valeur||0),val,"Depuis création :"));
         badges.forEach(function(b){ if(b) h+='<div style="font-size:12.5px;margin:3px 6px 0">'+b+'</div>'; });
-        h+='<button class="btn ghost bedit2" type="button" data-id="'+esc(c.id)+'" style="font-size:12.5px;padding:7px 14px;margin:10px 6px 2px">✎ Modifier le compte</button>';
         h+='</div>';
         h+=positionsHTML(c);
         h+='<hr class="rule" style="margin:6px 0;opacity:.3">';
@@ -2806,10 +2808,13 @@
       var pa=document.getElementById("prixact"); if(pa){ pa.oninput=function(){ state.prixActuel=pa.value; render(); }; }
       var ab=document.getElementById("addbrs"); if(ab) ab.onclick=addBourse;
       var rb=document.getElementById("recbrs"); if(rb) rb.onclick=recoverBourse;
-      [].forEach.call(document.querySelectorAll(".bedit2"), function(b){ b.onclick=function(){ editBourse(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".bhead"), function(row){ row.onclick=function(ev){ var t=ev.target; while(t && t!==row){ if(t.tagName==="BUTTON") return; t=t.parentNode; } editBourse(row.getAttribute("data-bid")); }; });
       [].forEach.call(document.querySelectorAll(".bedit"), function(b){ b.onclick=function(){ editBourse(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".bdel"), function(b){ b.onclick=function(){ delBourse(b.getAttribute("data-id")); }; });
+      [].forEach.call(document.querySelectorAll(".bmove"), function(b){ b.onclick=function(){
+        var a=b.getAttribute("data-id"), z=b.getAttribute("data-to"), i=-1, j=-1;
+        bourse.forEach(function(c,k){ if(c.id===a) i=k; if(c.id===z) j=k; });
+        if(i<0||j<0) return; var t=bourse[i]; bourse[i]=bourse[j]; bourse[j]=t; persistBourse(); render(); }; });
       [].forEach.call(document.querySelectorAll(".bmonth"), function(sp){ sp.onclick=function(){ if(!state.months) state.months={}; var mk=sp.getAttribute("data-m"); state.months.bourse=(mk===curM?null:mk); render(); }; });
       wireMonthNav(month, curM, "bourse");
       wireBourseChart();
