@@ -2516,28 +2516,6 @@
         if(totPrevVal!==null){ var dp=totVal-totPrevVal; st.push({l:"vs mois préc.", v:signS(dp), d:(bPct(totPrevVal,totVal)||""), c:heroCol(dp)}); }
         h=h.replace("%%HERO%%", bourse.length?tabHero({ label:"Total portefeuille", big:totVal, extra:bourseChartHTML(), stats:st }):"");
       })();
-      if(!state.solLoading && state.solPrice===null && !state.solError) fetchSolPrice();
-      var NB_ACTIONS=3.10105935, PRIX_ACHAT=160.91275389;
-      var valAct=state.prixActuel?num(state.prixActuel):0;
-      var vActuelle=valAct*NB_ACTIONS, vInvest=PRIX_ACHAT*NB_ACTIONS;
-      var pvCalc=vActuelle-vInvest, pvPct=vInvest>0?(pvCalc/vInvest*100):0;
-      h+='<hr class="rule"><div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:0 2px 6px">Calculette · Solana (SOL)</div>';
-      h+='<div class="leader item"><span class="lbl">Nb actions</span><span class="fill"></span><span class="val">'+NB_ACTIONS.toFixed(8)+'</span></div>';
-      h+='<div class="leader item"><span class="lbl">Prix achat</span><span class="fill"></span><span class="val">'+PRIX_ACHAT.toFixed(5)+' €</span></div>';
-      h+='<div class="leader item"><span class="lbl">Investi</span><span class="fill"></span><span class="val">'+fmt(vInvest)+'</span></div>';
-      h+='<label class="f" style="margin-top:14px">Prix actuel SOL (€)'+
-         (state.solTime?' <span style="font-size:9px;color:var(--ink-soft);font-weight:400">· mis à jour '+esc(state.solTime)+'</span>':'')+'</label>';
-      h+='<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">';
-      h+='<input class="f" id="prixact" inputmode="decimal" value="'+esc(state.prixActuel)+'" placeholder="0,00" style="flex:1;margin-bottom:0">';
-      h+='<button class="btn ghost" id="refreshsol" type="button" style="flex:0 0 auto;padding:10px 12px;font-size:11px">'+(state.solLoading?"…":"↻ SOL")+'</button>';
-      h+='</div>';
-      if(state.solError) h+='<div style="font-size:10px;color:var(--accent);margin:0 2px 6px">'+esc(state.solError)+'</div>';
-      if(valAct>0){
-        h+='<div class="leader item"><span class="lbl">Valeur actuelle</span><span class="fill"></span><span class="val">'+fmt(vActuelle)+'</span></div>';
-        h+='<div class="leader"><span class="lbl" style="font-weight:700;text-transform:uppercase;font-size:12px">'+(pvCalc>=0?"Bénéfice":"Perte")+'</span><span class="fill"></span>';
-        h+='<span class="val" style="font-weight:700;font-size:18px;color:'+(pvCalc>=0?"#4fd6a0":"#f4796b")+'">'+(pvCalc>=0?"+":"")+pvCalc.toFixed(2).replace(".",",")+'€</span></div>';
-        h+='<div class="leader"><span class="lbl muted" style="font-size:11px">Variation</span><span class="fill"></span><span class="val" style="color:'+(pvCalc>=0?"#4fd6a0":"#f4796b")+'">'+(pvPct>=0?"+":"")+pvPct.toFixed(2).replace(".",",")+' %</span></div>';
-      }
       h+='</section>';
       app.innerHTML=h;
       var rs=document.getElementById("refreshsol"); if(rs) rs.onclick=function(){ state.solPrice=null; fetchSolPrice(); };
