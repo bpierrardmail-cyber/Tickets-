@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 18:20" />
+  <meta name="build" content="14/10 18:35" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -333,6 +333,26 @@
     .cch-leg{ display:flex; flex-wrap:wrap; gap:6px 14px; justify-content:center; font-size:11px; color:var(--ink-soft); margin-top:8px; }
     .cch-leg i{ display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
     .cch-note{ font-size:10.5px; color:var(--muted); text-align:center; margin-top:6px; }
+    /* Compte : accordéon compact */
+    .cacc{ margin-top:14px; padding:4px 14px; }
+    .cacc-h{ display:flex; align-items:center; gap:10px; padding:13px 2px; cursor:pointer; }
+    .cacc-h .t{ flex:1; font-size:15px; font-weight:700; }
+    .cacc-h .v{ font-variant-numeric:tabular-nums; font-weight:700; font-size:15px; }
+    .cacc-h .ch{ width:14px; text-align:center; color:var(--muted); font-size:12px; }
+    .cacc-sec + .cacc-sec{ border-top:1px solid var(--line); }
+    .cacc-b{ padding:0 2px 12px; }
+    .cacc-b .leader{ font-size:13px; margin:5px 0; }
+    .cacc-b .prow{ padding:6px 0; gap:6px; font-size:13.5px; }
+    .cacc-b .prow .btn.ghost, .cacc-b .prow .btn.more{ width:32px; min-width:32px; height:30px; padding:0; font-size:13px; border-radius:9px; }
+    .cacc-b .prow .btn.more{ font-size:15px; }
+    .cacc-b .entry{ padding:8px 10px; margin:5px 0; }
+    .cacc-b .entry.ecomp{ display:flex; flex-wrap:nowrap; align-items:center; gap:10px; padding:7px 10px; margin:4px 0; }
+    .ecomp .n{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; font-size:13.5px; }
+    .ecomp .d{ flex:0 0 auto; font-size:11px; color:var(--muted); }
+    .ecomp .a{ flex:0 0 auto; font-weight:700; font-size:13.5px; font-variant-numeric:tabular-nums; }
+    .cacc-b .muted.note{ font-size:9.5px; margin:-3px 0 6px; }
+    .cacc-b .obj{ margin:2px 0 8px; }
+    .cacc-b .cstack{ height:6px; margin:2px 0 8px; }
     .clink{ display:flex; align-items:center; justify-content:space-between; font-size:12.5px; color:var(--accent); margin:10px 2px 0; cursor:pointer; }
     .bacct{ margin-top:14px; padding:6px 14px 10px; border-left:3px solid var(--accent); }
     .bacct .bhead{ border-bottom:1px solid var(--line2); padding:12px 2px 11px; }
@@ -2736,106 +2756,79 @@
       chart+='</div>';
       h+=tabHero({ label:"Solde de fin de mois prévu", big:soldeFin, color:(soldeFin<0?"var(--coral)":"var(--ink)"),
         sub:(liq?"Banque "+fmtK(fl.closing)+" · Liquide "+fmtK(liqV):""), extra:chart });
-      function secH(t, right){ return '<div class="bsec-h">'+t+(right?'<small>'+right+'</small>':'')+'</div>'; }
+      // Corps : une seule carte, une ligne par catégorie qui se déplie au toucher
+      var C_T="#e0a458", C_P="#c78bd6", C_C="#7c9cf4";
+      function sec(key, dot, title, val, valCol, body){
+        var open=!!cptOpen[key];
+        var x='<div class="cacc-sec"><div class="cacc-h cptToggle" data-key="'+key+'"><i class="cdot" style="background:'+dot+';margin:0"></i><span class="t">'+title+'</span><span class="v" style="color:'+(valCol||"var(--ink)")+'">'+val+'</span><span class="ch">'+(body===null?'›':(open?'▲':'▼'))+'</span></div>';
+        if(body!==null && open) x+='<div class="cacc-b">'+body+'</div>';
+        return x+'</div>';
+      }
+      h+='<section class="paper cacc">';
 
       // ---- Entrées ----
-      h+=secH("Entrées", '<span style="color:'+(virTotal<0?"var(--coral)":"var(--accent)")+'">'+signS(virTotal)+'</span> nets');
-      h+='<section class="paper ccard c-in">';
-      h+='<div class="leader" id="reporterow" style="cursor:pointer"><span class="lbl" style="font-weight:700">Solde reporté ✎</span><span class="fill"></span><span class="val" style="font-weight:700">'+fmt(reporte)+'</span></div>';
-      h+='<div class="muted" style="font-size:9.5px;margin:0 2px 6px">'+(getSoldeInit(person,month)!==null?"valeur modifiée manuellement":"repris du mois précédent")+'</div>';
-      if(virs.length){
-        virs.forEach(function(v){
-          h+='<div class="prow"><span class="pname" style="display:flex;flex-direction:column;min-width:0;gap:1px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(v.label)+'</span>'+(v.note?'<span style="font-size:10px;color:var(--ink-soft);font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(v.note)+'</span>':'')+(v.epargneId?'<span style="font-size:9px;color:var(--accent);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">↔ '+esc(epNameOf(v.epargneId))+'</span>':'')+'</span>'+
-             '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px;color:'+(Number(v.montant)<0?"var(--coral)":"var(--ink)")+'">'+(Number(v.montant)>0?"+":"")+fmt(v.montant)+'</span>'+
+      var bIn='<div class="leader" id="reporterow" style="cursor:pointer"><span class="lbl">Solde reporté ✎</span><span class="fill"></span><span class="val">'+fmt(reporte)+'</span></div>';
+      bIn+='<div class="muted note">'+(getSoldeInit(person,month)!==null?"valeur modifiée manuellement":"repris du mois précédent")+'</div>';
+      virs.forEach(function(v){
+        bIn+='<div class="prow"><span class="pname" style="display:flex;flex-direction:column;min-width:0;gap:1px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(v.label)+'</span>'+(v.note?'<span style="font-size:10px;color:var(--ink-soft);font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(v.note)+'</span>':'')+(v.epargneId?'<span style="font-size:9px;color:var(--accent);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">↔ '+esc(epNameOf(v.epargneId))+'</span>':'')+'</span>'+
+             '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:2px;color:'+(Number(v.montant)<0?"var(--coral)":"var(--ink)")+'">'+(Number(v.montant)>0?"+":"")+fmt(v.montant)+'</span>'+
              '<button class="btn ghost virdone" type="button" data-id="'+esc(v.id)+'" title="'+(v.done?"Fait":"Pas encore fait")+'" style="flex:0 0 auto;'+(v.done?"color:var(--accent);border-color:var(--accent)":"color:var(--muted)")+'">'+(v.done?"✓":"○")+'</button>'+
              '<button class="btn ghost viredit" type="button" data-id="'+esc(v.id)+'">✎</button>'+
              '<button class="btn ghost virdel" type="button" data-id="'+esc(v.id)+'">✕</button></div>';
-        });
-      } else {
-        h+='<div class="muted" style="font-size:11px;margin:2px 2px 4px">Aucun virement ce mois-ci.</div>';
-      }
-      h+='<button class="btn ghost" id="addvir" type="button" style="margin-top:10px">+ Ajouter un virement</button>';
-      h+='<div class="leader fam" style="margin-top:10px"><span class="lbl">Total virements</span><span class="fill"></span><span class="val" style="color:'+(virTotal<0?"var(--coral)":"var(--accent)")+'">'+(virTotal>0?"+":"")+fmt(virTotal)+'</span></div>';
-      h+='</section>';
+      });
+      if(!virs.length) bIn+='<div class="muted" style="font-size:11px;margin:4px 0">Aucun virement ce mois-ci.</div>';
+      bIn+='<div class="clink" id="addvir"><span>+ Ajouter un virement</span><span></span></div>';
+      h+=sec("vir", "var(--accent)", "Entrées <span class=\"muted\" style=\"font-weight:400;font-size:12px\">virements nets</span>", signS(virTotal), (virTotal<0?"var(--coral)":"var(--accent)"), bIn);
 
       // ---- Dépenses ----
-      var C_T="#e0a458", C_P="#c78bd6", C_C="#7c9cf4";
-      h+=secH("Dépenses", '<span style="color:var(--coral)">−'+fmtS(depenses)+'</span>');
-      h+='<section class="paper ccard c-out">';
-      if(depenses>0){
-        h+='<div class="cstack">'+[[paidTotal,C_T],[fraisPerso,C_P],[fraisCommun,C_C]].map(function(x){ return x[0]>0?'<i style="width:'+(x[0]/depenses*100).toFixed(2)+'%;background:'+x[1]+'"></i>':''; }).join("")+'</div>';
+      var bOut='';
+      if(depenses>0) bOut+='<div class="cstack">'+[[paidTotal,C_T],[fraisPerso,C_P],[fraisCommun,C_C]].map(function(x){ return x[0]>0?'<i style="width:'+(x[0]/depenses*100).toFixed(2)+'%;background:'+x[1]+'"></i>':''; }).join("")+'</div>';
+      bOut+='<div class="leader cptToggle" data-key="tickets" style="cursor:pointer"><span class="lbl"><i class="cdot" style="background:'+C_T+'"></i>Tickets payés'+(paid.length?' ('+paid.length+')':'')+' <span class="muted">'+(cptOpen.tickets?"▲":"▼")+'</span></span><span class="fill"></span><span class="val">'+fmt(paidTotal)+'</span></div>';
+      if(cptOpen.tickets){
+        paid.forEach(function(e){ var dd=(e.date||"").split("-"); bOut+='<div class="entry ecomp" data-id="'+esc(e.id)+'"><span class="n">'+esc(e.marchand)+'</span><span class="d">'+esc(dd.length===3?dd[2]+"/"+dd[1]:"")+'</span><span class="a">'+fmt(e.montant)+'</span></div>'; });
+        if(!paid.length) bOut+='<div class="muted" style="font-size:11px;margin:4px 0">Aucun ticket « payé par '+esc(person)+' » ce mois-ci.</div>';
       }
-      h+='<div class="leader fam cptToggle" data-key="tickets" style="cursor:pointer"><span class="lbl"><i class="cdot" style="background:'+C_T+'"></i>Tickets payés'+(paid.length?' <span class="muted" style="font-weight:400">('+paid.length+')</span>':'')+'</span><span class="fill"></span><span class="val">'+fmt(paidTotal)+'</span><span class="muted" style="font-size:11px;margin-left:6px">'+(cptOpen.tickets?"▲":"▼")+'</span></div>';
-      h+='<div class="cptBody" style="'+(cptOpen.tickets?"":"display:none")+'">';
-      if(paid.length){
-        paid.forEach(function(e){
-          h+='<div class="entry" data-id="'+esc(e.id)+'"><div class="row1"><span class="name">'+esc(e.marchand)+'</span><span class="amt">'+fmt(e.montant)+'</span></div><div class="row2"><span class="cat">'+esc(e.categorie)+'</span><span>'+esc((e.date||"").split("-").reverse().join("/"))+'</span></div></div>';
-        });
-      } else {
-        h+='<div class="muted" style="font-size:11px;margin:2px 2px 4px">Aucun ticket « payé par '+esc(person)+' » ce mois-ci.</div>';
-      }
-      h+='</div>';
-      h+='<div class="leader fam" style="margin-top:8px"><span class="lbl"><i class="cdot" style="background:'+C_P+'"></i>Frais fixes perso</span><span class="fill"></span><span class="val">'+fmt(fraisPerso)+'</span></div>';
-      h+='<div class="leader fam" style="margin-top:8px"><span class="lbl"><i class="cdot" style="background:'+C_C+'"></i>Frais fixes communs</span><span class="fill"></span><span class="val">'+fmt(fraisCommun)+'</span></div>';
-      h+='<hr class="rule"><div class="leader"><span class="lbl" style="font-weight:700">Total dépenses</span><span class="fill"></span><span class="val" style="font-weight:700">'+fmt(depenses)+'</span></div>';
-      h+='<div class="clink" id="cptFrais"><span>Gérer les frais fixes</span><span>›</span></div>';
-      h+='</section>';
+      bOut+='<div class="leader"><span class="lbl"><i class="cdot" style="background:'+C_P+'"></i>Frais fixes perso</span><span class="fill"></span><span class="val">'+fmt(fraisPerso)+'</span></div>';
+      bOut+='<div class="leader"><span class="lbl"><i class="cdot" style="background:'+C_C+'"></i>Frais fixes communs</span><span class="fill"></span><span class="val">'+fmt(fraisCommun)+'</span></div>';
+      bOut+='<div class="clink" id="cptFrais"><span>Gérer les frais fixes</span><span>›</span></div>';
+      h+=sec("dep", "var(--coral)", "Dépenses", "−"+fmtS(depenses), "var(--coral)", bOut);
 
       // ---- Résultat ----
-      h+=secH("Résultat");
-      h+='<section class="paper ccard c-res">';
-      h+='<div class="leader total"><span class="lbl">Solde de fin de mois</span><span class="fill"></span><span class="val" style="color:'+(soldeFin<0?"var(--coral)":"var(--accent)")+'">'+fmt(soldeFin)+'</span></div>';
-      h+='<div class="muted" style="font-size:9.5px;margin:2px 2px 0">'+(liq?'dont '+fmt(liqV)+' en liquide · la partie banque ('+fmt(fl.closing)+') se reporte au mois suivant':'se reporte automatiquement au mois suivant')+'</div>';
-      h+='<hr class="rule" style="opacity:.4"><div class="leader" id="liqrow" style="cursor:pointer"><span class="lbl" style="font-weight:700">💶 Argent liquide ✎</span><span class="fill"></span><span class="val" style="font-weight:700">'+(liq?fmt(liqV):"—")+'</span></div>';
-      h+='<div class="muted" style="font-size:9.5px;margin:0 2px 2px">'+(!liq?"touche pour indiquer tes espèces du mois":(liq.month===month?"saisi pour ce mois":"repris de "+esc(monthLabelOf(liq.month))))+'</div>';
-      h+='<hr class="rule" style="opacity:.4"><div class="leader"><span class="lbl" style="font-weight:700">Solde bancaire estimé</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+(soldeBanque<0?"var(--coral)":"var(--accent)")+'">'+fmt(soldeBanque)+'</span></div>';
-      h+='<div class="muted" style="font-size:9.5px;margin:2px 2px 0">argent sur ton compte, sans le liquide · reporté + virements faits − tickets − frais faits</div>';
-      h+='</section>';
+      var bRes='<div class="leader"><span class="lbl">Solde de fin de mois</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+(soldeFin<0?"var(--coral)":"var(--accent)")+'">'+fmt(soldeFin)+'</span></div>';
+      bRes+='<div class="muted note">'+(liq?'dont '+fmt(liqV)+' en liquide · la partie banque ('+fmt(fl.closing)+') se reporte au mois suivant':'se reporte automatiquement au mois suivant')+'</div>';
+      bRes+='<div class="leader" id="liqrow" style="cursor:pointer"><span class="lbl">💶 Argent liquide ✎</span><span class="fill"></span><span class="val">'+(liq?fmt(liqV):"—")+'</span></div>';
+      bRes+='<div class="muted note">'+(!liq?"touche pour indiquer tes espèces du mois":(liq.month===month?"saisi pour ce mois":"repris de "+esc(monthLabelOf(liq.month))))+'</div>';
+      bRes+='<div class="leader"><span class="lbl">Solde bancaire estimé</span><span class="fill"></span><span class="val" style="color:'+(soldeBanque<0?"var(--coral)":"var(--accent)")+'">'+fmt(soldeBanque)+'</span></div>';
+      bRes+='<div class="muted note">sans le liquide · reporté + virements faits − tickets − frais faits</div>';
+      h+=sec("res", "#e6b450", "Solde bancaire estimé", fmtS(soldeBanque), (soldeBanque<0?"var(--coral)":"var(--ink)"), bRes);
 
       // ---- Épargne ----
       var epAllM={}; epargne.forEach(function(c){ Object.keys(c.vals||{}).forEach(function(m){ epAllM[m]=true; }); });
       var epMs=Object.keys(epAllM).sort();
       function epTotalAt(month){ var t=0; epargne.forEach(function(c){ var ms=Object.keys(c.vals||{}).filter(function(mm){ return mm<=month; }).sort(); if(ms.length) t+=Number(c.vals[ms[ms.length-1]])||0; }); return t; }
-      var totCur=epTotalAt(month);
-      var totPrev=epMs.length?epTotalAt(prevMonthKey(month)):null;
-      var totFirst=epMs.length?epTotalAt(epMs[0]):null;
-      h+=secH("Épargne", fmtS(totCur));
-      h+='<section class="paper ccard c-ep">';
+      var totCur=epTotalAt(month), totPrev=epMs.length?epTotalAt(prevMonthKey(month)):null;
+      var bEp='';
       epargne.forEach(function(c){
-        var cur=epAt(c, month), prev=epPrevAt(c, month), first=epFirst(c);
-        h+='<div class="prow"><span class="pname">'+esc(c.nom)+(c.bourseLink?' <span style="font-size:9px;color:var(--accent);font-weight:600">● Bourse</span>':'')+'</span>'+
-           '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px">'+fmt(cur)+'</span>'+
+        var cur=epAt(c, month), prev=epPrevAt(c, month), pm=pctStr(prev,cur);
+        bEp+='<div class="prow"><span class="pname" style="display:flex;flex-direction:column;min-width:0;gap:1px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.nom)+(c.bourseLink?' <span style="font-size:9px;color:var(--accent);font-weight:600">● Bourse</span>':'')+'</span>'+(pm?'<span style="font-size:10px;font-weight:500;color:'+pctColor(prev,cur)+'">'+pm+' vs mois préc.</span>':'')+'</span>'+
+           '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:2px">'+fmt(cur)+'</span>'+
            '<button class="btn ghost eplink" type="button" data-id="'+esc(c.id)+'" title="Lier/délier la Bourse">🔗</button>'+
            '<button class="btn ghost epedit" type="button" data-id="'+esc(c.id)+'">✎</button>'+
            '<button class="btn ghost epdel" type="button" data-id="'+esc(c.id)+'">✕</button></div>';
-        var parts=[];
-        var pm=pctStr(prev,cur); if(pm) parts.push('<span style="color:'+pctColor(prev,cur)+'">préc. '+fmt(prev)+' ('+pm+')</span>');
-        var pc=pctStr(first,cur); if(pc && epMonthsOf(c).length>1) parts.push('<span style="color:'+pctColor(first,cur)+'">création '+pc+'</span>');
-        if(parts.length) h+='<div class="muted" style="font-size:12px;margin:2px 2px 8px">'+parts.join(" · ")+'</div>';
         if(c.objectif && c.objectif.montant>0){
-          var oT=c.objectif.montant, oR=cur/oT, oP=Math.min(100, Math.round(oR*100)), oTxt;
-          if(cur>=oT) oTxt='✓ Objectif de '+fmt(oT)+' atteint';
-          else {
-            oTxt='🎯 '+Math.round(oR*100)+' % de '+fmt(oT)+' · reste '+fmt(oT-cur);
-            if(c.objectif.mois){ var oN=monthsBetween(month, c.objectif.mois); oTxt += oN>0 ? ' · ≈ '+fmt((oT-cur)/oN)+' / mois jusqu\'à '+monthLabelOf(c.objectif.mois) : ' · échéance dépassée'; }
-          }
-          h+='<div class="obj"><div class="ob-bar"><i style="width:'+oP+'%"></i></div><div class="ob-t">'+oTxt+'</div></div>';
+          var oT=c.objectif.montant, oP=Math.min(100, Math.round(cur/oT*100));
+          bEp+='<div class="obj"><div class="ob-bar"><i style="width:'+oP+'%"></i></div><div class="ob-t">'+(cur>=oT?'✓ Objectif de '+fmt(oT)+' atteint':'🎯 '+oP+' % de '+fmt(oT)+' · reste '+fmt(oT-cur)+(c.objectif.mois?(monthsBetween(month, c.objectif.mois)>0?' · ≈ '+fmt((oT-cur)/monthsBetween(month, c.objectif.mois))+' / mois':' · échéance dépassée'):''))+'</div></div>';
         }
       });
-      if(epargne.length===0) h+='<div class="muted" style="font-size:11px;margin:2px 2px 4px">Aucun compte épargne.</div>';
-      h+='<button class="btn ghost" id="addep" type="button" style="margin-top:10px">+ Ajouter un compte épargne</button>';
-      h+='<div class="leader total" style="margin-top:8px"><span class="lbl">Total épargne</span><span class="fill"></span><span class="val" style="color:var(--accent)">'+fmt(totCur)+'</span></div>';
-      var tparts=[];
-      var tpm=pctStr(totPrev,totCur); if(tpm) tparts.push('<span style="color:'+pctColor(totPrev,totCur)+'">préc. '+fmt(totPrev)+' ('+tpm+')</span>');
-      var tpc=pctStr(totFirst,totCur); if(tpc && epMs.length>1) tparts.push('<span style="color:'+pctColor(totFirst,totCur)+'">création '+tpc+'</span>');
-      if(tparts.length) h+='<div class="muted" style="font-size:10px;margin:3px 2px 0">'+tparts.join(" · ")+'</div>';
-      h+='</section>';
+      if(!epargne.length) bEp+='<div class="muted" style="font-size:11px;margin:4px 0">Aucun compte épargne.</div>';
+      var tpm=pctStr(totPrev,totCur); if(tpm && epargne.length>1) bEp+='<div class="muted" style="font-size:10.5px;margin:2px 0"><span style="color:'+pctColor(totPrev,totCur)+'">Total '+tpm+' vs mois préc.</span></div>';
+      bEp+='<div class="clink" id="addep"><span>+ Ajouter un compte épargne</span><span></span></div>';
+      h+=sec("ep", "#7c9cf4", "Épargne", fmtS(totCur), "var(--ink)", bEp);
 
-      // ---- Provisions ----
+      // ---- Provisions (ouvre l'écran dédié) ----
       var provT=0; try{ provT=provTotalAt(month); }catch(e){}
-      h+=secH("Provisions", fmtS(provT));
-      h+='<section class="paper ccard c-prov"><div class="leader" id="goprov" style="cursor:pointer"><span class="lbl" style="font-weight:700">🐷 Total mis de côté</span><span class="fill"></span><span class="val" style="font-weight:700">'+fmt(provT)+'</span></div>';
-      h+='<div class="clink" id="goprov2"><span>Voir et gérer les provisions</span><span>›</span></div></section>';
+      h+='<div class="cacc-sec"><div class="cacc-h" id="goprov"><i class="cdot" style="background:#c78bd6;margin:0"></i><span class="t">Provisions</span><span class="v">'+fmtS(provT)+'</span><span class="ch">›</span></div></div>';
+      h+='</section>';
       app.innerHTML=h;
       var rr=document.getElementById("reporterow"); if(rr) rr.onclick=function(){
         var auto=soldeFlow(person, prevMonthKey(month)).closing;
@@ -2855,7 +2848,6 @@
       [].forEach.call(document.querySelectorAll(".epedit"), function(b){ b.onclick=function(){ editEpargne(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".epdel"), function(b){ b.onclick=function(){ delEpargne(b.getAttribute("data-id")); }; });
       var gprov=document.getElementById("goprov"); if(gprov) gprov.onclick=function(){ state.view="provisions"; render(); window.scrollTo(0,0); };
-      var gprov2=document.getElementById("goprov2"); if(gprov2) gprov2.onclick=gprov.onclick;
       var cfr=document.getElementById("cptFrais"); if(cfr) cfr.onclick=function(){ state.view="communes"; render(); window.scrollTo(0,0); };
       var cmo=document.getElementById("cptMode"); if(cmo) cmo.onclick=function(){ state.cptChart=(state.cptChart==="6m"?"mois":"6m"); render(); };
       var lr=document.getElementById("liqrow"); if(lr) lr.onclick=function(){
