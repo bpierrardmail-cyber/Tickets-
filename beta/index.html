@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 14:20" />
+  <meta name="build" content="14/10 14:25" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2813,7 +2813,7 @@
       [].forEach.call(document.querySelectorAll(".bdel"), function(b){ b.onclick=function(){ delBourse(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".bmove"), function(b){ b.onclick=function(){
         var a=b.getAttribute("data-id"), z=b.getAttribute("data-to"), i=-1, j=-1;
-        bourse.forEach(function(c,k){ if(c.id===a) i=k; if(c.id===z) j=k; });
+        bourse.forEach(function(c,k){ if(String(c.id)===a) i=k; if(String(c.id)===z) j=k; });
         if(i<0||j<0) return; var t=bourse[i]; bourse[i]=bourse[j]; bourse[j]=t; persistBourse(); render(); }; });
       [].forEach.call(document.querySelectorAll(".bmonth"), function(sp){ sp.onclick=function(){ if(!state.months) state.months={}; var mk=sp.getAttribute("data-m"); state.months.bourse=(mk===curM?null:mk); render(); }; });
       wireMonthNav(month, curM, "bourse");
