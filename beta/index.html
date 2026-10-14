@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 17:45" />
+  <meta name="build" content="14/10 17:50" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -1784,7 +1784,7 @@
       '</div>';
     document.body.appendChild(navEl);
     [].forEach.call(navEl.querySelectorAll(".navi"), function(b){
-      b.onclick=function(){ var v=b.getAttribute("data-view"); if(v==="history") state.histMonth=null; if(v==="articles") state.artSel=null; state.view=v; render(); };
+      b.onclick=function(){ var v=b.getAttribute("data-view"); if(v==="history") state.histMonth=null; if(v==="articles") state.artSel=null; state.view=v; render(); window.scrollTo(0,0); };
     });
     document.getElementById("navscan").onclick=function(){ openScanChooser(); };
     function setNav(active, show){
@@ -2181,7 +2181,7 @@
       var ct=document.getElementById("catsToggle"); if(ct) ct.onclick=function(){ state.catsOpen=!state.catsOpen; render(); };
       [].forEach.call(document.querySelectorAll(".tile"), function(t){ t.onclick=function(){ var g=t.getAttribute("data-go");
         if(g==="tickets"){ state.ticketsOpen=true; render(); var tb=document.getElementById("ticketsToggle"); if(tb && tb.scrollIntoView) tb.scrollIntoView({behavior:"smooth", block:"start"}); }
-        else { state.view=g; render(); } }; });
+        else { state.view=g; render(); window.scrollTo(0,0); } }; });
       var be=document.getElementById("budEdit"); if(be) be.onclick=function(ev){ ev.stopPropagation(); editBudgets(month); };
       var bkn=document.getElementById("bkNow"); if(bkn) bkn.onclick=backupData;
       var rt=document.getElementById("recToggle"); if(rt) rt.onclick=function(){ state.recOpen=!state.recOpen; render(); };
