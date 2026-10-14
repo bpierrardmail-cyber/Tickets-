@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 22:00" />
+  <meta name="build" content="14/10 22:10" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2798,10 +2798,12 @@
       uiForm({ title:a?"Modifier « "+a.nom+" »":"Nouveau compte bancaire", intro:a?"":"Compte joint, compte pro, autre banque…", fields:[
         { key:"nom", label:"Nom du compte", value:a?a.nom:"", required:true, placeholder:"Compte joint, Compte pro…" },
         { key:"payer", label:"Tickets « payé par »", type:"select", value:a?(a.payer||""):"", options:acctPayerOpts(a&&a.payer), help:"Les tickets payés par cette personne vont automatiquement sur ce compte. Tu peux aussi choisir le compte sur chaque ticket." }
-      ].concat(a?[]:[{ key:"start", label:"Solde en début de mois (optionnel)", type:"money", value:"", help:"Ce qu'il y avait sur le compte au 1er "+esc(monthLabelOf(monthKey(todayISO())))+". Modifiable ensuite (« Solde reporté »)." }]),
+      ].concat(!a ? [{ key:"start", label:"Solde en début de mois (optionnel)", type:"money", value:"", help:"Ce qu'il y avait sur le compte au 1er "+esc(monthLabelOf(monthKey(todayISO())))+". Modifiable ensuite." }]
+              : (a.since ? [{ key:"start", label:"Solde au 1er "+esc(monthLabelOf(a.since)), type:"money", value:(getSoldeInit(a.key, a.since)!==null?getSoldeInit(a.key, a.since):""), help:"Ce qu'il y avait sur le compte à son démarrage dans l'appli. Vide = 0." }] : [])),
         ok:a?"Enregistrer":"Créer le compte", focus:!a }, function(r){
         var nm=(r.nom||"").trim(); if(!nm) return "Donne un nom au compte.";
-        if(a){ a.nom=nm; a.payer=r.payer||""; }
+        if(a){ a.nom=nm; a.payer=r.payer||"";
+          if(a.since){ if(r.start===null || r.start===undefined || isNaN(r.start)) clearSoldeInit(a.key, a.since); else setSoldeInit(a.key, a.since, r.start); } }
         else {
           var m0=monthKey(todayISO());
           a={ key:"acc"+Date.now(), nom:nm, payer:r.payer||"", since:m0 }; comptes.push(a); state.compteSel=a.key; store.write("compteSel", a.key);
