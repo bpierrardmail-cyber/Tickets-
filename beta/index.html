@@ -872,10 +872,16 @@
       var api=coursApi();
       function yahoo(sym){ if(!api) return Promise.reject(new Error("api")); return fetch(api+"/chart?symbol="+encodeURIComponent(sym)+"&range="+range).then(function(r){ return r.json(); }).then(function(j){ if(!j || !j.t || j.t.length<2) throw new Error("vide"); return j; }); }
       if(p.src==="yf") return yahoo(p.ref);
-      var days={ "1d":"1", "5d":"7", "1mo":"30", "1y":"365" }[range];
-      if(!days) return yahoo(String(p.sym).toUpperCase()+"-EUR").then(function(j){ j.currency="EUR"; j.crypto=1; return j; });
-      return cgGet("/coins/"+encodeURIComponent(p.ref)+"/market_chart?vs_currency=eur&days="+days, "/crypto/chart?id="+encodeURIComponent(p.ref)+"&days="+days, function(j){ return j && Array.isArray(j.prices) && j.prices.length>1; })
+      // Crypto : cours Yahoo en € (SYMBOLE-EUR) s'il correspond bien à la même crypto, sinon CoinGecko
+      var days={ "1d":"1", "5d":"7", "1mo":"30", "1y":"365" }[range], known=pxCache[posKey(p)];
+      return yahoo(String(p.sym).toUpperCase()+"-EUR").then(function(j){
+        if(known && known.p && j.price && Math.abs(j.price/known.p-1)>0.15) throw new Error("autre crypto");
+        j.currency="EUR"; j.crypto=1; delete j.exch; return j;
+      }).catch(function(){
+        if(!days) throw new Error("indisponible");
+        return cgGet("/coins/"+encodeURIComponent(p.ref)+"/market_chart?vs_currency=eur&days="+days, "/crypto/chart?id="+encodeURIComponent(p.ref)+"&days="+days, function(j){ return j && Array.isArray(j.prices) && j.prices.length>1; })
         .then(function(j){ var t=[], c=[]; j.prices.forEach(function(x){ if(x && x[1]!=null){ t.push(x[0]); c.push(x[1]); } }); return { t:t, c:c, currency:"EUR", price:c[c.length-1], time:t[t.length-1], crypto:1 }; });
+      });
     }
     function openAssetDetail(accId, posId){
       var f=findPosition(accId, posId); if(!f) return;
@@ -910,7 +916,7 @@
         var price=(day&&day.price!=null)?day.price:(data&&data.price!=null?data.price:(px0?px0.p:null));
         s.q("#adPx").textContent=fmtPx(price, cur());
         var pv=dayPrev(), el=s.q("#adChg");
-        if(pv!=null && price!=null){ var d=price-pv, pc=pv?d/pv*100:0; el.style.color=d>=0?"var(--accent)":"var(--coral)"; el.textContent=(d>=0?"▲ +":"▼ ")+fmtPx(d, cur(), price)+" ("+(pc>=0?"+":"")+pc.toFixed(2).replace(".",",")+" %) "+(day&&day.crypto?"sur 24 h":"aujourd'hui"); }
+        if(pv!=null && price!=null){ var d=price-pv, pc=pv?d/pv*100:0; el.style.color=d>=0?"var(--accent)":"var(--coral)"; el.textContent=(d>=0?"▲ +":"▼ ")+fmtPx(d, cur(), price)+" ("+(pc>=0?"+":"")+pc.toFixed(2).replace(".",",")+" %) "+(day&&day.crypto&&day.prev==null?"sur 24 h":"aujourd'hui"); }
         else if(px0 && px0.chg!=null){ el.style.color=px0.chg>=0?"var(--accent)":"var(--coral)"; el.textContent=(px0.chg>=0?"▲ +":"▼ ")+px0.chg.toFixed(2).replace(".",",")+" % aujourd'hui"; }
         var tm=(day&&day.time)||null, fresh=tm && (Date.now()-tm<20*60000);
         s.q("#adTime").innerHTML=(fresh?'<span class="ad-live"></span>':'')+(tm?(fresh?"En direct · ":"Dernier cours · ")+esc(new Date(tm).toLocaleString("fr-FR",{ weekday:"short", hour:"2-digit", minute:"2-digit" })):"")+(cur()!=="EUR"?" · cours en "+esc(cur()):"");
@@ -924,7 +930,7 @@
         // statistiques clés
         if(day){
           var st='<h5>Statistiques clés</h5>', mn, mx;
-          if(day.crypto){ mn=Math.min.apply(null, day.c); mx=Math.max.apply(null, day.c);
+          if(day.crypto && day.dayHigh==null){ mn=Math.min.apply(null, day.c); mx=Math.max.apply(null, day.c);
             st+='<div class="ad-row"><span>Plus bas / haut 24 h</span><b>'+fmtPx(mn,"EUR")+' – '+fmtPx(mx,"EUR")+'</b></div>';
             st+='<div class="ad-row"><span>Il y a 24 h</span><b>'+fmtPx(day.c[0],"EUR")+'</b></div>';
           } else {
