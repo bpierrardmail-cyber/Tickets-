@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 14:45" />
+  <meta name="build" content="14/10 14:50" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -827,9 +827,11 @@
       var accOpts=bourse.filter(bOpen).map(function(c){ return { v:String(c.id), l:c.nom }; }).concat([{ v:"__new", l:"Nouveau compte…" }]);
       var withPos=bourse.filter(function(c){ return c.positions && c.positions.length; });
       var curAcc=existing?existing.acc:(withPos.length?String(withPos[withPos.length-1].id):"__new");
+      var invPre=(existing&&existing.p.pru>0)?Math.round(existing.p.pru*existing.p.qte*100)/100:"";
       uiForm({ title:(existing?"Modifier · ":"")+it.nom+" ("+it.sym+")", fields:[
         { key:"qte", label:(it.type==="crypto"?"Quantité détenue":"Nombre d'actions"), type:"qty", value:(existing?String(existing.p.qte).replace(".",","):""), required:true, placeholder:"ex. 3,1" },
         { key:"pru", label:"Prix d'achat moyen (optionnel)", type:"money", value:(existing&&existing.p.pru?existing.p.pru:""), help:"Par "+(it.type==="crypto"?"unité":"action")+", en €. Sert à calculer la plus-value." },
+        { key:"inv", label:"… ou montant investi total (€)", type:"money", value:invPre, help:"À utiliser si ton courtier affiche le prix d'achat en dollars (sur eToro, le prix après « @ » est en $). Mets ce que tu as payé en € : le prix moyen se calcule tout seul." },
         { key:"acc", label:"Compte", type:"select", value:curAcc, options:accOpts, help:"La valeur de ce compte sera calculée automatiquement à partir de ses positions.", onChange:function(v,api){ api.show("accNew", v==="__new"); } },
         { key:"accNew", label:"Nom du nouveau compte", hidden:(curAcc!=="__new"), value:(it.type==="crypto"?"Mes cryptos":"Mes actions"), placeholder:"Boursorama, Binance, PEA…" }
       ], ok:(existing?"Enregistrer":"Ajouter") }, function(r){
@@ -839,7 +841,9 @@
         else acc=bourse.filter(function(c){ return String(c.id)===String(r.acc); })[0];
         if(!acc) return "Choisis un compte.";
         var p=existing?existing.p:{ id:Date.now()+1, type:it.type, src:it.src, ref:it.ref, sym:it.sym, nom:it.nom, thumb:it.thumb||"" };
-        p.qte=r.qte; if(r.pru>0) p.pru=r.pru; else delete p.pru;
+        p.qte=r.qte;
+        var invChanged=(r.inv>0) && (invPre==="" || Math.abs(r.inv-invPre)>0.005);
+        if(invChanged) p.pru=r.inv/r.qte; else if(r.pru>0) p.pru=r.pru; else delete p.pru;
         if(existing && String(existing.acc)!==String(acc.id)){ var old=bourse.filter(function(c){ return String(c.id)===String(existing.acc); })[0]; if(old) old.positions=(old.positions||[]).filter(function(x){ return x!==p; }); }
         if(!acc.positions) acc.positions=[];
         if(acc.positions.indexOf(p)<0) acc.positions.push(p);
