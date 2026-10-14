@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 19:05" />
+  <meta name="build" content="14/10 19:10" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -358,6 +358,7 @@
     .cacc-b .obj{ margin:2px 0 8px; }
     .cdon{ display:flex; align-items:center; gap:14px; margin:2px 0 10px; }
     .cdon svg{ flex:0 0 112px; width:112px; height:112px; }
+    .cdon-big{ margin:6px 0 4px; } .cdon-big svg{ flex:0 0 128px; width:128px; height:128px; }
     .cdon-l{ flex:1; min-width:0; }
     .cdon-r{ display:flex; align-items:center; gap:7px; font-size:12.5px; padding:3px 0; }
     .cdon-r .n{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -2782,7 +2783,16 @@
 
       var cptOpen = state.cptOpen || (state.cptOpen={});
       var virIn=0, virOut=0; virs.forEach(function(v){ var x=Number(v.montant)||0; if(x>=0) virIn+=x; else virOut+=x; });
-      var CMODES=[["mois","Ce mois"],["solde","Solde"],["es","Entrées-sorties"],["ep","Épargne"],["prov","Provisions"]];
+      var CMODES=[["mois","Ce mois"],["dep","Dépenses"],["solde","Solde"],["es","Entrées-sorties"],["ep","Épargne"],["prov","Provisions"]];
+      // Répartition des dépenses du mois (catégories de tickets + frais fixes), de la plus grosse à la plus petite
+      var dParts=[], byCat={};
+      paid.forEach(function(e){ var c=(e.categorie||"Autre"); byCat[c]=(byCat[c]||0)+(Number(e.montant)||0); });
+      Object.keys(byCat).sort(function(x,y){ return byCat[y]-byCat[x]; }).forEach(function(c){ dParts.push({ l:c, v:byCat[c] }); });
+      if(dParts.length>5){ var rest=dParts.slice(4).reduce(function(t,x){ return t+x.v; },0); dParts=dParts.slice(0,4).concat([{ l:"Autres tickets", v:rest }]); }
+      if(fraisPerso>0) dParts.push({ l:"Frais fixes perso", v:fraisPerso });
+      if(fraisCommun>0) dParts.push({ l:"Frais fixes communs", v:fraisCommun });
+      var DCOL=["#7c9cf4","#e0a458","#4fd6a0","#c78bd6","#5bc0d4","#e88fb0","#9bd35e","#f4796b"];
+      dParts.sort(function(x,y){ return y.v-x.v; }).forEach(function(x,i){ x.col=DCOL[i%DCOL.length]; });
       var cmode=state.cptChart||store.read("cptChart","mois"); if(cmode==="6m") cmode="es";
       if(!CMODES.some(function(x){ return x[0]===cmode; })) cmode="mois";
       var h=header()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM).replace(/id="mn-/g,'id="cm-')+'</div>';
@@ -2803,6 +2813,10 @@
         if(liqV) steps.push({l:"Liquide", v:liqV});
         steps.push({l:"Solde", v:soldeFin, t:"end"});
         chart+=compteWaterfallSVG(steps)+'<div class="cch-note">Report + virements − tickets − frais fixes = solde de fin de mois</div>';
+      } else if(cmode==="dep"){
+        hero={ label:"Dépenses du mois", big:depenses, color:"var(--coral)", sub:"Tickets "+fmtK(paidTotal)+" · Frais fixes "+fmtK(fraisTotal) };
+        if(depenses>0) chart+='<div class="cdon cdon-big">'+compteDonutSVG(dParts, depenses)+'<div class="cdon-l">'+dParts.map(function(x){ return '<div class="cdon-r"><i class="cdot" style="background:'+x.col+';margin:0"></i><span class="n">'+esc(x.l)+'</span><span class="p">'+Math.round(x.v/depenses*100)+' %</span><span class="a">'+cptK(x.v)+' '+esc(curSym())+'</span></div>'; }).join("")+'</div></div>';
+        else chart+='<div class="cch-note" style="margin:30px 0">Aucune dépense ce mois-ci.</div>';
       } else if(cmode==="solde"){
         hero.label="Solde de fin de mois";
         chart+=compteBarsSVG(six.map(function(m){ var lq=liquideAt(person,m); return { m:m, lbl:mShort(m), v:soldeFlow(person,m).closing+(lq?lq.val:0) }; }), month)+'<div class="cch-note">Ce qui reste en fin de mois (banque + liquide), sur 6 mois</div>';
@@ -2847,19 +2861,11 @@
       h+=sec("vir", "var(--accent)", "Entrées / Sorties", signS(virTotal), (virTotal<0?"var(--coral)":"var(--accent)"), bIn);
 
       // ---- Dépenses ----
-      var bOut='', dParts=[], byCat={};
-      paid.forEach(function(e){ var c=(e.categorie||"Autre"); byCat[c]=(byCat[c]||0)+(Number(e.montant)||0); });
-      Object.keys(byCat).sort(function(x,y){ return byCat[y]-byCat[x]; }).forEach(function(c){ dParts.push({ l:c, v:byCat[c], col:catIcon(c).col }); });
-      if(dParts.length>5){ var rest=dParts.slice(4).reduce(function(t,x){ return t+x.v; },0); dParts=dParts.slice(0,4).concat([{ l:"Autres tickets", v:rest, col:"#9298a5" }]); }
-      if(fraisPerso>0) dParts.push({ l:"Frais fixes perso", v:fraisPerso, col:"#d98c5f" });
-      if(fraisCommun>0) dParts.push({ l:"Frais fixes communs", v:fraisCommun, col:"#8a92e0" });
-      // du plus gros au plus petit, une couleur bien distincte par part
-      var DCOL=["#7c9cf4","#e0a458","#4fd6a0","#c78bd6","#5bc0d4","#e88fb0","#9bd35e","#f4796b"];
-      dParts.sort(function(x,y){ return y.v-x.v; }).forEach(function(x,i){ x.col=DCOL[i%DCOL.length]; });
-      if(depenses>0){
-        bOut+='<div class="cdon">'+compteDonutSVG(dParts, depenses)+'<div class="cdon-l">'+dParts.map(function(x){ return '<div class="cdon-r"><i class="cdot" style="background:'+x.col+';margin:0"></i><span class="n">'+esc(x.l)+'</span><span class="p">'+Math.round(x.v/depenses*100)+' %</span><span class="a">'+cptK(x.v)+' '+esc(curSym())+'</span></div>'; }).join("")+'</div></div>';
-      } else bOut+='<div class="muted" style="font-size:11px;margin:4px 0 8px">Aucune dépense ce mois-ci.</div>';
-      bOut+='<div class="clink cptToggle" data-key="tickets" style="margin-top:4px"><span>'+(cptOpen.tickets?"Masquer":"Voir")+' les tickets payés'+(paid.length?' ('+paid.length+')':'')+' · '+fmt(paidTotal)+'</span><span>'+(cptOpen.tickets?"▲":"▼")+'</span></div>';
+      var bOut='';
+      bOut+='<div class="leader"><span class="lbl">Tickets payés'+(paid.length?' ('+paid.length+')':'')+'</span><span class="fill"></span><span class="val">'+fmt(paidTotal)+'</span></div>';
+      bOut+='<div class="leader"><span class="lbl">Frais fixes perso</span><span class="fill"></span><span class="val">'+fmt(fraisPerso)+'</span></div>';
+      bOut+='<div class="leader"><span class="lbl">Frais fixes communs</span><span class="fill"></span><span class="val">'+fmt(fraisCommun)+'</span></div>';
+      bOut+='<div class="clink cptToggle" data-key="tickets" style="margin-top:4px"><span>'+(cptOpen.tickets?"Masquer":"Voir")+' les tickets payés</span><span>'+(cptOpen.tickets?"▲":"▼")+'</span></div>';
       if(cptOpen.tickets){
         paid.forEach(function(e){ var dd=(e.date||"").split("-"); bOut+='<div class="entry ecomp" data-id="'+esc(e.id)+'"><span class="n">'+esc(e.marchand)+'</span><span class="d">'+esc(dd.length===3?dd[2]+"/"+dd[1]:"")+'</span><span class="a">'+fmt(e.montant)+'</span></div>'; });
         if(!paid.length) bOut+='<div class="muted" style="font-size:11px;margin:4px 0">Aucun ticket « payé par '+esc(person)+' » ce mois-ci.</div>';
