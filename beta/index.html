@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 19:40" />
+  <meta name="build" content="14/10 19:45" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2816,7 +2816,7 @@
         if(fraisTotal) steps.push({l:"Frais fixes", v:-fraisTotal});
         if(liqV) steps.push({l:"Liquide", v:liqV});
         steps.push({l:"Solde", v:soldeFin, t:"end"});
-        chart+=compteWaterfallSVG(steps)+'<div class="cch-note">Report + virements − tickets − frais fixes = solde de fin de mois</div>';
+        chart+=compteWaterfallSVG(steps);
       } else if(cmode==="dep"){
         hero={ label:"Dépenses du mois", big:depenses, color:"var(--coral)", sub:"Tickets "+fmtK(paidTotal)+" · Frais fixes "+fmtK(fraisTotal) };
         if(depenses>0) chart+='<div class="cdon cdon-big">'+compteDonutSVG(dParts, depenses)+'<div class="cdon-l">'+dParts.map(function(x){ return '<div class="cdon-r"><i class="cdot" style="background:'+x.col+';margin:0"></i><span class="n">'+esc(x.l)+'</span><span class="p">'+Math.round(x.v/depenses*100)+' %</span><span class="a">'+cptK(x.v)+' '+esc(curSym())+'</span></div>'; }).join("")+'</div></div>';
