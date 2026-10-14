@@ -652,7 +652,6 @@
       h+='<div class="bch-x"><span>'+esc(bDateLabel(t0))+'</span><span>'+esc(bDateLabel(t1))+'</span></div>';
       h+='<div class="bch-ranges">'+BRANGES.map(function(r){ return '<button type="button" class="bchr'+(r[0]===R[0]?' on':'')+'" data-r="'+r[0]+'">'+r[0]+'</button>'; }).join("")+'</div>';
       var since=bourseHist.length?bourseHist[0].t:null;
-      if(!since || now-since<30*86400000) h+='<div class="bch-note">La courbe fine se remplit au fil des jours : l\'app enregistre la valeur à chaque mise à jour'+(since?' depuis le '+esc(new Date(since).toLocaleDateString("fr-FR"))+'':'')+'. Avant, un point par mois.</div>';
       return h+'</div>';
     }
     function bReadDefault(){
@@ -2468,9 +2467,7 @@
           var pm=mk.split("-"); var lbl=new Date(+pm[0], +pm[1]-1, 1).toLocaleDateString("fr-FR",{month:"short"});
           strip+='<span class="bmonth" data-m="'+mk+'" style="cursor:pointer;font-size:11px;padding:4px 9px;border-radius:8px;color:'+col+';background:'+bg+';'+(mk===month?"outline:1px solid "+col+";outline-offset:-1px":"")+'">'+esc(lbl)+'</span>';
         });
-        h+='<div class="muted" style="font-size:10px;text-align:center;margin:0 0 6px">Évolution mensuelle du portefeuille</div>';
-        h+='<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:12px">'+strip+'</div>';
-        h+='<hr class="rule">';
+        h=h.replace("%%HERO%%", '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 12px">'+strip+'</div>%%HERO%%');
       })();
       if(bourse.length===0) h+='<div class="muted" style="font-size:12px;margin:4px 2px">Aucun compte. Ajoute ton premier compte bourse.</div>';
       var totCap=0, totVal=0, totPrevVal=null, totFirstVal=null, totFirstCap=null;
