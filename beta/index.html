@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 14:50" />
+  <meta name="build" content="14/10 15:00" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -694,6 +694,10 @@
       var r=fxCache.rates&&fxCache.rates[cur]; return r ? amount/r : null;
     }
     function posPrice(p){ if(p.src==="man") return null; var c=pxCache[posKey(p)]; if(!c) return null; var e=toEUR(c.p, c.cur); return e===null?null:e; }
+    // Prix d'achat : saisi en € ou en $ (p.pruCur). En $, converti au taux du jour, comme le fait eToro.
+    function pruEUR(p){ if(!(p.pru>0)) return null; return p.pruCur==="USD" ? toEUR(Number(p.pru),"USD") : Number(p.pru); }
+    function costEUR(p){ var u=pruEUR(p); return u===null?null:u*(Number(p.qte)||0); }
+    function fmtCur(n,cur){ return cur==="USD" ? (Math.round(n*100)/100).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" $" : fmt(n); }
     function posValue(p){ if(p.src==="man") return Number(p.valeur)||0; var pr=posPrice(p); return pr===null?null:pr*(Number(p.qte)||0); }
     function allPositions(){ var out=[]; bourse.forEach(function(c){ if(!bOpen(c)) return; (c.positions||[]).forEach(function(p){ out.push(p); }); }); return out; }
     function applyPositions(){
@@ -701,7 +705,7 @@
       bourse.forEach(function(c){
         if(!c.positions || !c.positions.length || !bOpen(c)) return;
         var tot=0, ok=true, cap=0, capOk=true;
-        c.positions.forEach(function(p){ var v=posValue(p); if(v===null) ok=false; else tot+=v; if(p.src==="man"){ if(p.investi>0) cap+=Number(p.investi); else capOk=false; } else if(p.pru>0) cap+=p.pru*(Number(p.qte)||0); else capOk=false; });
+        c.positions.forEach(function(p){ var v=posValue(p); if(v===null) ok=false; else tot+=v; if(p.src==="man"){ if(p.investi>0) cap+=Number(p.investi); else capOk=false; } else { var ce=costEUR(p); if(ce!==null) cap+=ce; else capOk=false; } });
         if(!ok) return;
         if(!c.vals) c.vals={};
         var cur=c.vals[m0]||{}, capPrev=cur.capital; if(capPrev===undefined){ var bl=bLast(c); capPrev=bl?bl.capital:0; }
@@ -828,10 +832,12 @@
       var withPos=bourse.filter(function(c){ return c.positions && c.positions.length; });
       var curAcc=existing?existing.acc:(withPos.length?String(withPos[withPos.length-1].id):"__new");
       var invPre=(existing&&existing.p.pru>0)?Math.round(existing.p.pru*existing.p.qte*100)/100:"";
+      var cur0=(existing&&existing.p.pruCur==="USD")?"USD":"EUR", sym0=(cur0==="USD"?"$":"€");
       uiForm({ title:(existing?"Modifier · ":"")+it.nom+" ("+it.sym+")", fields:[
         { key:"qte", label:(it.type==="crypto"?"Quantité détenue":"Nombre d'actions"), type:"qty", value:(existing?String(existing.p.qte).replace(".",","):""), required:true, placeholder:"ex. 3,1" },
-        { key:"pru", label:"Prix d'achat moyen (optionnel)", type:"money", value:(existing&&existing.p.pru?existing.p.pru:""), help:"Par "+(it.type==="crypto"?"unité":"action")+", en €. Sert à calculer la plus-value." },
-        { key:"inv", label:"… ou montant investi total (€)", type:"money", value:invPre, help:"À utiliser si ton courtier affiche le prix d'achat en dollars (sur eToro, le prix après « @ » est en $). Mets ce que tu as payé en € : le prix moyen se calcule tout seul." },
+        { key:"cur", label:"Devise du prix d'achat", type:"seg", value:cur0, options:[{v:"EUR",l:"€ Euro"},{v:"USD",l:"$ Dollar"}], help:"Prends celle affichée par ton courtier (sur eToro, le prix après « @ » est en $).", onChange:function(v,api){ var sy=(v==="USD"?"$":"€"); api.suffix("pru",sy); api.suffix("inv",sy); } },
+        { key:"pru", label:"Prix d'achat moyen (optionnel)", type:"money", suffix:sym0, value:(existing&&existing.p.pru?existing.p.pru:""), help:"Par "+(it.type==="crypto"?"unité":"action")+". Sert à calculer la plus-value." },
+        { key:"inv", label:"… ou montant investi total", type:"money", suffix:sym0, value:invPre, help:"Ce que tu as payé au total : le prix moyen se calcule tout seul." },
         { key:"acc", label:"Compte", type:"select", value:curAcc, options:accOpts, help:"La valeur de ce compte sera calculée automatiquement à partir de ses positions.", onChange:function(v,api){ api.show("accNew", v==="__new"); } },
         { key:"accNew", label:"Nom du nouveau compte", hidden:(curAcc!=="__new"), value:(it.type==="crypto"?"Mes cryptos":"Mes actions"), placeholder:"Boursorama, Binance, PEA…" }
       ], ok:(existing?"Enregistrer":"Ajouter") }, function(r){
@@ -844,6 +850,7 @@
         p.qte=r.qte;
         var invChanged=(r.inv>0) && (invPre==="" || Math.abs(r.inv-invPre)>0.005);
         if(invChanged) p.pru=r.inv/r.qte; else if(r.pru>0) p.pru=r.pru; else delete p.pru;
+        if(r.cur==="USD" && p.pru>0) p.pruCur="USD"; else delete p.pruCur;
         if(existing && String(existing.acc)!==String(acc.id)){ var old=bourse.filter(function(c){ return String(c.id)===String(existing.acc); })[0]; if(old) old.positions=(old.positions||[]).filter(function(x){ return x!==p; }); }
         if(!acc.positions) acc.positions=[];
         if(acc.positions.indexOf(p)<0) acc.positions.push(p);
@@ -867,7 +874,7 @@
         var man=(p.src==="man");
         var left=man ? ((p.investi>0?"Investi "+fmtK(p.investi):"Saisie manuelle")+(p.maj?" · "+new Date(p.maj).toLocaleDateString("fr-FR",{day:"numeric",month:"short"}):""))
                      : qtxt+(pr!==null?" × "+fmtK(pr):" "+esc(String(p.sym).replace(/\..*$/,"")));
-        var pv=man ? (p.investi>0?v-p.investi:null) : ((v!==null && p.pru>0)?v-p.pru*p.qte:null), right=[];
+        var pv=man ? (p.investi>0?v-p.investi:null) : ((v!==null && costEUR(p)!==null)?v-costEUR(p):null), right=[];
         if(man && p.investi>0) right.push('<span style="color:'+(pv>=0?"var(--accent)":"var(--coral)")+'">'+(pv>=0?"+":"")+(pv/p.investi*100).toFixed(1).replace(".",",")+' %</span>');
         if(px && px.chg!=null) right.push('<span style="color:'+(px.chg>=0?"var(--accent)":"var(--coral)")+'">'+(px.chg>=0?"▲ +":"▼ ")+px.chg.toFixed(2).replace(".",",")+' %</span>');
         if(pv!==null) right.push('<span style="color:'+(pv>=0?"var(--accent)":"var(--coral)")+'">'+signK(pv)+'</span>');
@@ -947,8 +954,8 @@
         var v=posValue(p), q=Number(p.qte)||0, h='<h5>Ma position</h5>';
         h+='<div class="ad-row"><span>Quantité</span><b>'+String(Math.round(q*1e8)/1e8).replace(".",",")+'</b></div>';
         h+='<div class="ad-row"><span>Valeur</span><b>'+(v!==null?fmt(v):"—")+'</b></div>';
-        if(p.pru>0){ h+='<div class="ad-row"><span>Prix d\'achat moyen</span><b>'+fmt(p.pru)+'</b></div>';
-          if(v!==null){ var g=v-p.pru*q, gp=p.pru*q?g/(p.pru*q)*100:0; h+='<div class="ad-row"><span>Plus-value</span><b style="color:'+(g>=0?"var(--accent)":"var(--coral)")+'">'+signK(g)+' ('+(gp>=0?"+":"")+gp.toFixed(1).replace(".",",")+' %)</b></div>'; } }
+        if(p.pru>0){ var pe=pruEUR(p), ce=costEUR(p); h+='<div class="ad-row"><span>Prix d\'achat moyen</span><b>'+fmtCur(p.pru,p.pruCur)+(p.pruCur==="USD"&&pe!==null?' <span style="color:var(--muted);font-weight:500">≈ '+fmt(pe)+'</span>':'')+'</b></div>';
+          if(v!==null && ce!==null){ var g=v-ce, gp=ce?g/ce*100:0; h+='<div class="ad-row"><span>Plus-value</span><b style="color:'+(g>=0?"var(--accent)":"var(--coral)")+'">'+signK(g)+' ('+(gp>=0?"+":"")+gp.toFixed(1).replace(".",",")+' %)</b></div>'; } }
         s.q("#adPos").innerHTML=h;
         // statistiques clés
         if(day){
@@ -1152,7 +1159,7 @@
       function snapAt(m){ return c.vals[m]||bAt(c,m)||{}; }
       function autoVal(m){ return m===m0 && !!(hasPos || (c.sol&&c.solQty&&state.solPrice) || (c.stock&&c.stock.symbol&&state.stockPrices[c.stock.symbol])); }
       function nz(v){ return (v===undefined||v===null)?"":v; }
-      function autoCap(){ if(!hasPos) return null; var t=0; for(var i=0;i<c.positions.length;i++){ var p=c.positions[i]; if(p.src==="man"){ if(!(p.investi>0)) return null; t+=Number(p.investi); continue; } if(!(p.pru>0)) return null; t+=p.pru*(Number(p.qte)||0); } return Math.round(t*100)/100; }
+      function autoCap(){ if(!hasPos) return null; var t=0; for(var i=0;i<c.positions.length;i++){ var p=c.positions[i]; if(p.src==="man"){ if(!(p.investi>0)) return null; t+=Number(p.investi); continue; } var ce=costEUR(p); if(ce===null) return null; t+=ce; } return Math.round(t*100)/100; }
       var aCap=autoCap();
       var s0=snapAt(mv);
       uiForm({ title:"Modifier « "+c.nom+" »", fields:[
@@ -1542,7 +1549,7 @@
           h+='</select>';
         } else {
           var typ = (f.type==="money"||f.type==="qty") ? 'type="text" inputmode="decimal"' : f.type==="pin" ? 'type="password" inputmode="numeric" maxlength="6"' : f.type==="month" ? 'type="month"' : 'type="text"';
-          h+='<div class="ui-inp'+(f.type==="money"?' money':'')+'"><input class="f" id="'+id+'" '+typ+' value="'+esc(f.type==="money"?moneyStr(v):v)+'"'+(f.placeholder?' placeholder="'+esc(f.placeholder)+'"':'')+'>'+(f.type==="money"?'<span>€</span>':'')+'</div>';
+          h+='<div class="ui-inp'+(f.type==="money"?' money':'')+'"><input class="f" id="'+id+'" '+typ+' value="'+esc(f.type==="money"?moneyStr(v):v)+'"'+(f.placeholder?' placeholder="'+esc(f.placeholder)+'"':'')+'>'+(f.type==="money"?'<span>'+esc(f.suffix||"€")+'</span>':'')+'</div>';
         }
         if(f.help) h+='<div class="ui-help">'+f.help+'</div>';
         h+='</div>';
@@ -1558,6 +1565,7 @@
       var api={
         get:function(k){ var i=idx(k); return i<0?null:valOf(i); },
         set:function(k,v){ var i=idx(k); if(i<0) return; var f=fs[i], x=el(i); if(f.type==="seg"){ [].forEach.call(x.querySelectorAll("button"), function(b){ b.className=(b.getAttribute("data-v")===String(v))?"on":""; }); } else x.value=(f.type==="money"?moneyStr(v):(v==null?"":v)); },
+        suffix:function(k,t){ var i=idx(k); if(i<0) return; var sp=s.q('.ui-field[data-i="'+i+'"] .ui-inp span'); if(sp) sp.textContent=t; },
         show:function(k,on){ var i=idx(k); if(i<0) return; s.q('.ui-field[data-i="'+i+'"]').style.display=on?"":"none"; fs[i].hidden=!on; },
         error:function(msg){ var er=s.q(".ui-err"); er.textContent=msg||""; er.style.display=msg?"":"none"; }
       };
