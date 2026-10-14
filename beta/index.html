@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 16:10" />
+  <meta name="build" content="14/10 17:45" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -26,7 +26,7 @@
     .total .val, .leader .val, .entry .amt, .lgd .lv, .lgd .lp, .bar-top .bv,
     .checkrow .ctot, .prow .pfam{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
     /* En-tête */
-    .head{ position:relative; text-align:center; padding:16px 0 10px; min-height:52px; box-sizing:border-box; z-index:2; }
+    .head{ position:relative; text-align:center; padding:12px 0 10px; min-height:52px; box-sizing:border-box; z-index:2; }
     .hback{ position:absolute; left:0; top:14px; background:var(--card2); border:1px solid var(--line);
       color:var(--ink-soft); font-family:var(--sans); font-size:13px; padding:7px 12px; border-radius:10px; }
     .head h1{ font-size:20px; margin:0; font-weight:700; letter-spacing:-.01em; color:var(--ink); }
@@ -51,7 +51,11 @@
     .dr-item.danger{ color:var(--coral); }
     .dr-item .chev{ margin-left:auto; color:var(--muted); font-size:20px; line-height:1; }
     .bacts{ margin-top:10px; padding:10px 10px 2px; }
-    .beta-tag{ position:absolute; right:0; top:18px; font-size:11px; font-weight:700; color:#0a130f; background:var(--accent); padding:4px 9px; border-radius:999px; }
+    .beta-tag{ display:inline-block; font-size:11px; font-weight:700; color:#0a130f; background:var(--accent); padding:4px 9px; border-radius:999px; }
+    .htitle{ height:36px; line-height:36px; font-size:18px; font-weight:700; letter-spacing:-.01em; color:var(--ink); padding:0 58px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .head.hasback .htitle{ padding:0 150px 0 150px; }
+    .drawer{ display:flex; flex-direction:column; }
+    .dr-foot{ margin-top:auto; padding-top:22px; text-align:center; font-size:11px; color:var(--muted); }
     .rule{ border:0; border-top:1px solid var(--line); margin:14px 0; }
     /* Carte principale */
     .paper{ position:relative; background:var(--card); padding:18px 16px; border-radius:20px;
@@ -485,6 +489,7 @@
       }
       h+='<div class="dr-sec">Devise</div>'+it("devise","💱","Devise principale",esc(curSym()+" · "+CURS[BASE].l));
       h+='<div class="dr-sec">Export</div>'+it("pdf","📄","Exporter en PDF",esc("Bilan sur la période de ton choix"));
+      h+='<div class="dr-foot"><span class="beta-tag">Version β · '+esc((document.querySelector('meta[name=build]')||{}).content||'')+'</span></div>';
       h+='</div>';
       var ov=document.createElement("div"); ov.className="drawer-ov"; ov.innerHTML=h; document.body.appendChild(ov);
       setTimeout(function(){ ov.classList.add("open"); }, 10);
@@ -1797,11 +1802,13 @@
       var when=(days<=0)?"aujourd'hui":("il y a "+days+" j");
       return { col:col, label:"sauvegardé "+when };
     }
+    var VIEW_TITLES={ list:"Accueil", form:"Ticket", articles:"Articles", produits:"Produits & catégories", graph:"Graphes", history:"Historique", month:"Historique", communes:"Commun", compte:"Compte", bourse:"Bourse", gallery:"Galerie", photo:"Photo", patrimoine:"Patrimoine", provisions:"Provisions", bilan:"Bilan" };
+    function capFirst(t){ t=String(t||""); return t.charAt(0).toUpperCase()+t.slice(1); }
     function header(back){
       var b = back ? '<button class="hback" id="hback" type="button">‹ Retour</button>' : '';
       var lb=store.read("lastBackup", null), bkOld=!lb || (Date.now()-new Date(lb).getTime())>=7*86400000;
       b='<div class="hleft"><button class="hmenu" id="hmenu" type="button" aria-label="Menu"><span></span>'+(bkOld?'<i class="hdot"></i>':'')+'</button>'+b+'</div>';
-      return '<header class="head">'+b+'<span class="beta-tag">Version β · '+((document.querySelector('meta[name=build]')||{}).content||'')+'</span><div class="barcode"></div></header>';
+      return '<header class="head'+(back?' hasback':'')+'">'+b+'<div class="htitle">'+esc(VIEW_TITLES[state.view]||"Tickets")+'</div></header>';
     }
     function bindBack(fn){ var hb=document.getElementById("hback"); if(hb) hb.onclick=fn; }
 
@@ -2393,7 +2400,7 @@
       });
       var famKeys=Object.keys(fams).sort(function(a,b){ return fams[b].total-fams[a].total; });
       var nArt=0; famKeys.forEach(function(f){ Object.keys(fams[f].items).forEach(function(k){ nArt+=fams[f].items[k].n; }); });
-      var h=header()+'<div class="tabtop">'+monthNavHTML('Articles · '+esc(monthLabel), month, curM)+'</div>';
+      var h=header()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>';
       if(famKeys.length) h+=tabHero({ label:"Articles achetés ce mois", big:grand, sub:nArt+" article"+(nArt>1?"s":"")+" · "+famKeys.length+" famille"+(famKeys.length>1?"s":""),
         stats:famKeys.slice(0,3).map(function(f){ return {l:esc(f), v:fmtS(fams[f].total)}; }) });
       h+='<section class="paper torn">';
@@ -2552,7 +2559,7 @@
       }
 
       var comOpen = state.comOpen || (state.comOpen={});
-      var h=header()+'<div class="tabtop">'+monthNavHTML('Commun · '+esc(monthLabel), month, curM)+'</div>%%HERO%%<section class="paper torn">';
+      var h=header()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>%%HERO%%<section class="paper torn">';
 
       h+='<div class="leader fam comToggle" data-key="commun" style="cursor:pointer"><span class="lbl">Commun</span><span class="fill"></span><span class="val">'+fmt(communTotal)+'</span><span class="muted" style="font-size:11px;margin-left:6px">'+(comOpen.commun?"▲":"▼")+'</span></div>';
       h+='<div class="comBody" style="'+(comOpen.commun?"":"display:none")+'">';
@@ -2646,7 +2653,7 @@
       var soldeBanque=reporteReel + virDone - paidTotal - fraisDoneFull;
 
       var cptOpen = state.cptOpen || (state.cptOpen={});
-      var h=header()+'<div class="tabtop">'+monthNavHTML('Compte · '+esc(monthLabel), month, curM).replace(/id="mn-/g,'id="cm-')+'</div>';
+      var h=header()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM).replace(/id="mn-/g,'id="cm-')+'</div>';
       h+=tabHero({ label:"Solde de fin de mois prévu", big:soldeFin, color:(soldeFin<0?"var(--coral)":"var(--ink)"),
         sub:(liq?"Banque "+fmtK(fl.closing)+" · Liquide "+fmtK(liqV):""),
         stats:[ {l:"Virements", v:signS(virTotal), c:heroCol(virTotal)}, {l:"Dépenses", v:fmtS(depenses)}, {l:"Banque estimée", v:fmtS(soldeBanque), c:(soldeBanque<0?"var(--coral)":"")} ] });
@@ -2855,7 +2862,7 @@
         });
         if(ch) persistBourse();
       }
-      var h=header()+'<div class="tabtop">'+monthNavHTML('Bourse · '+esc(monthLabel), month, curM)+'</div>%%HERO%%%%MESC%%';
+      var h=header()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>%%HERO%%%%MESC%%';
       (function(){
         function portVal(mk){ var t=0; bourse.forEach(function(c){ var a=bAt(c,mk); if(a) t+=Number(a.valeur)||0; }); return t; }
         var allM={}; bourse.forEach(function(c){ bMonths(c).forEach(function(mk){ allM[mk]=1; }); });
@@ -3169,7 +3176,7 @@
       else if(sel.indexOf("prod:")===0) selLabel=sel.slice(5);
       var shown=data.slice(); while(shown.length>1 && shown[0].total===0) shown.shift();
       var best=null; shown.forEach(function(d){ if(!best || d.total>best.total) best=d; });
-      var h=header()+'<div class="tabtop"><div class="mnav"><div class="mn-t">Historique · '+esc(selLabel)+'</div></div></div>';
+      var h=header()+'<div class="tabtop"><div class="mnav"><div class="mn-t">'+esc(capFirst(selLabel))+'</div></div></div>';
       h+=tabHero({ label:"Total sur "+shown.length+" mois", big:grand, stats:[ {l:"Moyenne / mois", v:fmtS(avg)}, {l:"Mois record", v:(best&&best.total>0?esc(best.label):"—"), d:(best&&best.total>0?fmtS(best.total):"")}, {l:"Mois actifs", v:String(active)} ] });
       h+='<section class="paper torn">';
       h+='<label class="f">Filtrer par</label><select class="f" id="histcat">';
@@ -3815,7 +3822,7 @@
     function renderProvisions(){
       var curM=monthKey(todayISO());
       var month=(state.months&&state.months.provisions)||curM;
-      var h=header("list")+'<div class="tabtop">'+monthNavHTML('Provisions · '+esc(monthLabelOf(month)), month, curM)+'</div>%%HERO%%<div>';
+      var h=header("list")+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabelOf(month))), month, curM)+'</div>%%HERO%%<div>';
       if(!provisions.length){ h+='<div class="empty">Aucune provision.<br>Crée une enveloppe pour tes frais annuels (taxe foncière, assurance, eau…) : tu mets un montant de côté chaque mois, le solde monte tout seul.</div>'; }
       var total=0, overTot=0;
       provisions.forEach(function(p){
