@@ -3,6 +3,8 @@
 // pour que l'app puisse chercher une action / un ETF par son nom et lire son cours.
 //   GET /search?q=lvmh            -> { results: [{ symbol, name, exch, type }] }
 //   GET /quote?symbols=MC.PA,AAPL -> { quotes: { "MC.PA": { price, prev, currency, name } } }
+//   GET /crypto/search?q=sol       -> recherche CoinGecko (secours quand l'app est limitée par CoinGecko)
+//   GET /crypto/price?ids=solana   -> cours CoinGecko en € (+ variation 24 h)
 // Aucune clé ni donnée personnelle : seuls des noms de titres transitent.
 
 const CORS = {
@@ -60,13 +62,27 @@ export default {
         try { return json({ results: q ? await search(q) : [] }, 3600); }
         catch (e) { return json({ results: [], error: String((e && e.message) || e) }, 5); }
       }
+      if (url.pathname === "/crypto/search") {
+        const q = (url.searchParams.get("q") || "").trim().slice(0, 60);
+        if (!q) return json({ coins: [] }, 3600);
+        const d = await getJSON("https://api.coingecko.com/api/v3/search?query=" + encodeURIComponent(q), 3600);
+        if (!d || !Array.isArray(d.coins)) return json({ error: "indisponible" }, 5);
+        return json({ coins: d.coins.slice(0, 10).map(c => ({ id: c.id, name: c.name, symbol: c.symbol, thumb: c.thumb, market_cap_rank: c.market_cap_rank })) }, 3600);
+      }
+      if (url.pathname === "/crypto/price") {
+        const ids = (url.searchParams.get("ids") || "").split(",").map(s => s.trim().toLowerCase()).filter(s => /^[a-z0-9-]{1,80}$/.test(s)).slice(0, 50);
+        if (!ids.length) return json({}, 60);
+        const d = await getJSON("https://api.coingecko.com/api/v3/simple/price?ids=" + encodeURIComponent(ids.join(",")) + "&vs_currencies=eur&include_24hr_change=true", 60);
+        if (!d || d.status || d.error) return json({ error: "indisponible" }, 5);
+        return json(d, 60);
+      }
       if (url.pathname === "/quote") {
         const syms = (url.searchParams.get("symbols") || "").split(",").map(s => s.trim()).filter(Boolean).slice(0, 40);
         const out = {};
         await Promise.all(syms.map(async s => { try { const q = await quote(s); if (q) out[s] = q; } catch (e) {} }));
         return json({ quotes: out }, 60);
       }
-      return json({ ok: true, usage: ["/search?q=lvmh", "/quote?symbols=MC.PA,AAPL"] }, 300);
+      return json({ ok: true, usage: ["/search?q=lvmh", "/quote?symbols=MC.PA,AAPL", "/crypto/search?q=sol", "/crypto/price?ids=solana"] }, 300);
     } catch (e) {
       return json({ error: String((e && e.message) || e) }, 5);
     }

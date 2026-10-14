@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 13:25" />
+  <meta name="build" content="14/10 13:45" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -664,15 +664,15 @@
       if(!cur || cur==="EUR") return amount;
       var r=fxCache.rates&&fxCache.rates[cur]; return r ? amount/r : null;
     }
-    function posPrice(p){ var c=pxCache[posKey(p)]; if(!c) return null; var e=toEUR(c.p, c.cur); return e===null?null:e; }
-    function posValue(p){ var pr=posPrice(p); return pr===null?null:pr*(Number(p.qte)||0); }
+    function posPrice(p){ if(p.src==="man") return null; var c=pxCache[posKey(p)]; if(!c) return null; var e=toEUR(c.p, c.cur); return e===null?null:e; }
+    function posValue(p){ if(p.src==="man") return Number(p.valeur)||0; var pr=posPrice(p); return pr===null?null:pr*(Number(p.qte)||0); }
     function allPositions(){ var out=[]; bourse.forEach(function(c){ if(!bOpen(c)) return; (c.positions||[]).forEach(function(p){ out.push(p); }); }); return out; }
     function applyPositions(){
       var m0=monthKey(todayISO()), ch=false;
       bourse.forEach(function(c){
         if(!c.positions || !c.positions.length || !bOpen(c)) return;
         var tot=0, ok=true, cap=0, capOk=true;
-        c.positions.forEach(function(p){ var v=posValue(p); if(v===null) ok=false; else tot+=v; if(p.pru>0) cap+=p.pru*(Number(p.qte)||0); else capOk=false; });
+        c.positions.forEach(function(p){ var v=posValue(p); if(v===null) ok=false; else tot+=v; if(p.src==="man"){ if(p.investi>0) cap+=Number(p.investi); else capOk=false; } else if(p.pru>0) cap+=p.pru*(Number(p.qte)||0); else capOk=false; });
         if(!ok) return;
         if(!c.vals) c.vals={};
         var cur=c.vals[m0]||{}, capPrev=cur.capital; if(capPrev===undefined){ var bl=bLast(c); capPrev=bl?bl.capital:0; }
@@ -691,8 +691,8 @@
       ps.forEach(function(p){ if(p.src==="cg") cg[p.ref]=1; else if(p.src==="yf") yf[p.ref]=1; });
       var jobs=[];
       var cgIds=Object.keys(cg);
-      if(cgIds.length) jobs.push(fetch("https://api.coingecko.com/api/v3/simple/price?ids="+encodeURIComponent(cgIds.join(","))+"&vs_currencies=eur&include_24hr_change=true")
-        .then(function(r){ return r.json(); }).then(function(j){ cgIds.forEach(function(id){ var x=j&&j[id]; if(x && x.eur!=null) pxCache["cg:"+id]={ p:x.eur, chg:(x.eur_24h_change!=null?x.eur_24h_change:null), cur:"EUR", t:Date.now() }; }); }).catch(function(){}));
+      if(cgIds.length) jobs.push(cgGet("/simple/price?ids="+encodeURIComponent(cgIds.join(","))+"&vs_currencies=eur&include_24hr_change=true", "/crypto/price?ids="+encodeURIComponent(cgIds.join(",")), function(j){ return j && !j.status && !j.error; })
+        .then(function(j){ cgIds.forEach(function(id){ var x=j&&j[id]; if(x && x.eur!=null) pxCache["cg:"+id]={ p:x.eur, chg:(x.eur_24h_change!=null?x.eur_24h_change:null), cur:"EUR", t:Date.now() }; }); }).catch(function(){}));
       var yfS=Object.keys(yf), api=coursApi();
       if(yfS.length && api) jobs.push(fetch(api+"/quote?symbols="+encodeURIComponent(yfS.join(",")))
         .then(function(r){ return r.json(); }).then(function(j){ var q=(j&&j.quotes)||{}; yfS.forEach(function(s){ var x=q[s]; if(x && x.price!=null) pxCache["yf:"+s]={ p:x.price, chg:(x.prev?((x.price-x.prev)/x.prev*100):null), cur:x.currency||"USD", t:Date.now() }; }); }).catch(function(){}));
@@ -705,8 +705,14 @@
         if(!typing && !document.querySelector(".sheet-overlay") && (state.view==="bourse"||state.view==="list"||state.view==="compte")) render();
       });
     }
+    // CoinGecko en direct, puis via le relais (cache partagé) si CoinGecko refuse (limite de requêtes)
+    function cgGet(path, relayPath, okFn){
+      function viaRelay(){ var api=coursApi(); if(!api) return Promise.reject(new Error("cg")); return fetch(api+relayPath).then(function(r){ return r.json(); }).then(function(j){ if(!okFn(j)) throw new Error("cg"); return j; }); }
+      return fetch("https://api.coingecko.com/api/v3"+path).then(function(r){ if(!r.ok) throw new Error("cg"); return r.json(); })
+        .then(function(j){ if(!okFn(j)) throw new Error("cg"); return j; }).catch(viaRelay);
+    }
     function searchAssets(q){
-      var cgP=fetch("https://api.coingecko.com/api/v3/search?query="+encodeURIComponent(q)).then(function(r){ return r.json(); })
+      var cgP=cgGet("/search?query="+encodeURIComponent(q), "/crypto/search?q="+encodeURIComponent(q), function(j){ return j && Array.isArray(j.coins); })
         .then(function(j){ return ((j&&j.coins)||[]).slice(0,6).map(function(c){ return { type:"crypto", src:"cg", ref:c.id, sym:String(c.symbol||"").toUpperCase(), nom:c.name, thumb:c.thumb||"", info:"Crypto"+(c.market_cap_rank?" · n°"+c.market_cap_rank:"") }; }); })
         .catch(function(){ return null; });
       var api=coursApi();
@@ -735,6 +741,9 @@
         }
         sect("Cryptos", cr);
         sect("Actions & ETF", ac, "Bientôt disponible.");
+        var qv=inp.value.trim();
+        items.push({ type:"manuel", src:"man", nom:qv, sym:manSym(qv) });
+        h+='<h4>Autre placement</h4><button type="button" data-i="'+(items.length-1)+'"><span class="pos-ic">✎</span><span><b>Ajouter « '+esc(qv)+' » à la main</b><small>Copie de trader, fonds, SCPI… Tu indiques le montant investi et la valeur.</small></span></button>';
         box.innerHTML=h;
         [].forEach.call(box.querySelectorAll("button[data-i]"), function(b){ b.onclick=function(){ var it=items[+b.getAttribute("data-i")]; s.close(); positionForm(it, null); }; });
       }
@@ -746,7 +755,36 @@
       };
       setTimeout(function(){ try{ inp.focus(); }catch(e){} }, 60);
     }
+    function manSym(n){ var w=String(n||"").replace(/[^A-Za-zÀ-ÿ0-9 ]+/g," ").trim().split(/\s+/).filter(Boolean); return ((w[0]||"?").charAt(0)+(w[1]?w[1].charAt(0):(w[0]||"").charAt(1))).toUpperCase(); }
+    // Ligne saisie à la main (copie de trader, fonds…) : montant investi + valeur actuelle
+    function manualForm(it, existing){
+      var accOpts=bourse.filter(bOpen).map(function(c){ return { v:String(c.id), l:c.nom }; }).concat([{ v:"__new", l:"Nouveau compte…" }]);
+      var withPos=bourse.filter(function(c){ return bOpen(c) && c.positions && c.positions.length; });
+      var curAcc=existing?existing.acc:(withPos.length?String(withPos[withPos.length-1].id):"__new");
+      var p0=existing?existing.p:{};
+      uiForm({ title:existing?"Modifier · "+p0.nom:"Placement saisi à la main", fields:[
+        { key:"nom", label:"Nom", value:(existing?p0.nom:it.nom), required:true, placeholder:"Copie Altia, fonds…" },
+        { key:"investi", label:"Montant investi", type:"money", value:(existing&&p0.investi?p0.investi:""), help:"Ce que tu y as mis. Sert à calculer la plus-value." },
+        { key:"valeur", label:"Valeur actuelle", type:"money", value:(existing?p0.valeur:""), required:true, help:"Mets-la à jour quand tu veux avec ✎ sur la ligne."+(existing&&p0.maj?" Dernière mise à jour : "+new Date(p0.maj).toLocaleDateString("fr-FR")+".":"") },
+        { key:"acc", label:"Compte", type:"select", value:curAcc, options:accOpts, help:"La valeur de ce compte devient la somme de ses lignes.", onChange:function(v,api){ api.show("accNew", v==="__new"); } },
+        { key:"accNew", label:"Nom du nouveau compte", hidden:(curAcc!=="__new"), value:"eToro", placeholder:"eToro, assurance vie…" }
+      ], ok:(existing?"Enregistrer":"Ajouter"), focus:!existing }, function(r){
+        if(r.valeur===null || isNaN(r.valeur) || r.valeur<0) return "Indique la valeur actuelle.";
+        var acc;
+        if(r.acc==="__new"){ var nm=(r.accNew||"").trim()||"Mon portefeuille", nv={}; nv[monthKey(todayISO())]={ capital:0, valeur:0 }; acc={ id:Date.now(), nom:nm, vals:nv }; bourse.push(acc); }
+        else acc=bourse.filter(function(c){ return String(c.id)===String(r.acc); })[0];
+        if(!acc) return "Choisis un compte.";
+        var p=existing?existing.p:{ id:Date.now()+1, type:"manuel", src:"man", ref:"" };
+        p.nom=r.nom; p.sym=manSym(r.nom); p.valeur=r.valeur; p.maj=new Date().toISOString(); p.qte=1;
+        if(r.investi>0) p.investi=r.investi; else delete p.investi;
+        if(existing && String(existing.acc)!==String(acc.id)){ var old=bourse.filter(function(c){ return String(c.id)===String(existing.acc); })[0]; if(old) old.positions=(old.positions||[]).filter(function(x){ return x!==p; }); }
+        if(!acc.positions) acc.positions=[];
+        if(acc.positions.indexOf(p)<0) acc.positions.push(p);
+        persistBourse(); applyPositions(); syncBourseEpargne(); render();
+      });
+    }
     function positionForm(it, existing){
+      if(it && it.src==="man") return manualForm(it, existing);
       var accOpts=bourse.filter(bOpen).map(function(c){ return { v:String(c.id), l:c.nom }; }).concat([{ v:"__new", l:"Nouveau compte…" }]);
       var withPos=bourse.filter(function(c){ return c.positions && c.positions.length; });
       var curAcc=existing?existing.acc:(withPos.length?String(withPos[withPos.length-1].id):"__new");
@@ -783,8 +821,11 @@
       c.positions.forEach(function(p){
         var px=pxCache[posKey(p)], pr=posPrice(p), v=posValue(p);
         var qtxt=String(Math.round((Number(p.qte)||0)*1e8)/1e8).replace(".",",");
-        var left=qtxt+(pr!==null?" × "+fmtK(pr):" "+esc(String(p.sym).replace(/\..*$/,"")));
-        var pv=(v!==null && p.pru>0)?v-p.pru*p.qte:null, right=[];
+        var man=(p.src==="man");
+        var left=man ? ((p.investi>0?"Investi "+fmtK(p.investi):"Saisie manuelle")+(p.maj?" · "+new Date(p.maj).toLocaleDateString("fr-FR",{day:"numeric",month:"short"}):""))
+                     : qtxt+(pr!==null?" × "+fmtK(pr):" "+esc(String(p.sym).replace(/\..*$/,"")));
+        var pv=man ? (p.investi>0?v-p.investi:null) : ((v!==null && p.pru>0)?v-p.pru*p.qte:null), right=[];
+        if(man && p.investi>0) right.push('<span style="color:'+(pv>=0?"var(--accent)":"var(--coral)")+'">'+(pv>=0?"+":"")+(pv/p.investi*100).toFixed(1).replace(".",",")+' %</span>');
         if(px && px.chg!=null) right.push('<span style="color:'+(px.chg>=0?"var(--accent)":"var(--coral)")+'">'+(px.chg>=0?"▲ +":"▼ ")+px.chg.toFixed(2).replace(".",",")+' %</span>');
         if(pv!==null) right.push('<span style="color:'+(pv>=0?"var(--accent)":"var(--coral)")+'">'+signK(pv)+'</span>');
         if(p.src==="yf" && !coursApi()) right.push('<span style="color:var(--muted)">cours bientôt</span>');
@@ -907,7 +948,7 @@
       function snapAt(m){ return c.vals[m]||bAt(c,m)||{}; }
       function autoVal(m){ return m===m0 && !!(hasPos || (c.sol&&c.solQty&&state.solPrice) || (c.stock&&c.stock.symbol&&state.stockPrices[c.stock.symbol])); }
       function nz(v){ return (v===undefined||v===null)?"":v; }
-      function autoCap(){ if(!hasPos) return null; var t=0; for(var i=0;i<c.positions.length;i++){ var p=c.positions[i]; if(!(p.pru>0)) return null; t+=p.pru*(Number(p.qte)||0); } return Math.round(t*100)/100; }
+      function autoCap(){ if(!hasPos) return null; var t=0; for(var i=0;i<c.positions.length;i++){ var p=c.positions[i]; if(p.src==="man"){ if(!(p.investi>0)) return null; t+=Number(p.investi); continue; } if(!(p.pru>0)) return null; t+=p.pru*(Number(p.qte)||0); } return Math.round(t*100)/100; }
       var aCap=autoCap();
       var s0=snapAt(mv);
       uiForm({ title:"Modifier « "+c.nom+" »", fields:[
@@ -2569,7 +2610,7 @@
         h+=positionsHTML(c);
         h+='<hr class="rule" style="margin:6px 0;opacity:.3">';
       });
-      h+='<button class="btn primary" id="addpos" type="button" style="margin-top:6px;width:100%">+ Ajouter une crypto ou une action</button>';
+      h+='<button class="btn primary" id="addpos" type="button" style="margin-top:6px;width:100%">+ Ajouter une crypto, une action ou autre</button>';
       h+='<button class="btn ghost" id="addbrs" type="button" style="margin-top:10px">+ Ajouter un compte bourse</button>';
       h+='<div class="center" style="margin-top:12px"><button class="btn ghost" id="recbrs" type="button" style="font-size:11px;padding:6px 12px;opacity:.75">Récupérer un compte supprimé (sauvegarde)</button></div>';
       (function(){
