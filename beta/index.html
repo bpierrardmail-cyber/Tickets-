@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 19:45" />
+  <meta name="build" content="14/10 19:50" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2807,7 +2807,7 @@
       function provAt(m){ try{ return provTotalAt(m); }catch(e){ return 0; } }
       function inOut(m){ var inn=0, out=computeDepensesMonth(person,m); virementsOf(person,m).forEach(function(v){ var x=Number(v.montant)||0; if(x>=0) inn+=x; else out+=-x; }); return { inn:inn, out:out }; }
       var chart='<div class="cch-tabs">'+CMODES.map(function(x){ return '<button type="button" data-m="'+x[0]+'"'+(x[0]===cmode?' class="on"':'')+'>'+x[1]+'</button>'; }).join("")+'</div><div class="cch">';
-      var hero={ label:"Solde de fin de mois prévu", big:soldeFin, color:(soldeFin<0?"var(--coral)":"var(--ink)"), sub:(liq?"Banque "+fmtK(fl.closing)+" · Liquide "+fmtK(liqV):"") };
+      var hero={ label:"Solde du compte (banque estimée)", big:soldeBanque, color:(soldeBanque<0?"var(--coral)":"var(--ink)"), sub:"Estimé, sans le liquide" };
       if(cmode==="mois"){
         var steps=[{l:"Report", v:reporte, t:"base"}];
         if(virIn) steps.push({l:"Reçu", v:virIn});
@@ -2822,7 +2822,7 @@
         if(depenses>0) chart+='<div class="cdon cdon-big">'+compteDonutSVG(dParts, depenses)+'<div class="cdon-l">'+dParts.map(function(x){ return '<div class="cdon-r"><i class="cdot" style="background:'+x.col+';margin:0"></i><span class="n">'+esc(x.l)+'</span><span class="p">'+Math.round(x.v/depenses*100)+' %</span><span class="a">'+cptK(x.v)+' '+esc(curSym())+'</span></div>'; }).join("")+'</div></div>';
         else chart+='<div class="cch-note" style="margin:30px 0">Aucune dépense ce mois-ci.</div>';
       } else if(cmode==="solde"){
-        hero.label="Solde de fin de mois";
+        hero={ label:"Solde de fin de mois", big:soldeFin, color:(soldeFin<0?"var(--coral)":"var(--ink)"), sub:(liq?"Banque "+fmtK(fl.closing)+" · Liquide "+fmtK(liqV):"") };
         chart+=compteBarsSVG(six.map(function(m){ var lq=liquideAt(person,m); return { m:m, lbl:mShort(m), v:soldeFlow(person,m).closing+(lq?lq.val:0) }; }), month)+'<div class="cch-note">Ce qui reste en fin de mois (banque + liquide), sur 6 mois</div>';
       } else if(cmode==="es"){
         var rows=six.map(function(m){ var x=inOut(m); return { m:m, lbl:mShort(m), inn:x.inn, out:x.out }; }), cur=rows[rows.length-1], net=cur.inn-cur.out;
@@ -2843,7 +2843,7 @@
       var vTodo=virs.filter(function(v){ return !v.done; }), vTodoSum=vTodo.reduce(function(t,v){ return t+(Number(v.montant)||0); },0);
       hero.stats=[
         { l:"Report", v:fmtS(reporte), d:"du mois dernier", go:"es" },
-        { l:"Banque estimée", v:fmtS(soldeBanque), c:(soldeBanque<0?"var(--coral)":""), d:"sans le liquide", go:"res" },
+        { l:"Fin de mois", v:fmtS(soldeFin), c:(soldeFin<0?"var(--coral)":""), d:"prévu", go:"res" },
         vTodo.length ? { l:"À faire", v:signS(vTodoSum), d:vTodo.length+" virement"+(vTodo.length>1?"s":""), go:"es" } : { l:"À faire", v:"Rien", d:"virements faits", go:"es" }
       ];
       var heroMain=hero;
