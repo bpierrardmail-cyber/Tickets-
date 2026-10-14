@@ -1,0 +1,6 @@
+{
+  // Relais des cours de bourse pour l'app Tickets (déployé par Cloudflare depuis ce dossier)
+  "name": "tickets-cours",
+  "main": "cours-worker.js",
+  "compatibility_date": "2025-01-01"
+}
