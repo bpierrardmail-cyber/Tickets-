@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 14:30" />
+  <meta name="build" content="14/10 14:35" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -299,6 +299,8 @@
     .bacct .bhead{ border-bottom:1px solid var(--line2); padding:12px 2px 11px; }
     .bacct .bhead .pname{ font-size:17px; }
     .bacct .poslist{ margin-top:8px; }
+    .pos.pos-man{ background:rgba(124,156,244,.13); border:1px solid rgba(124,156,244,.28); border-radius:12px; margin:6px -6px; padding:10px 8px; }
+    .pos.pos-man .pos-ic{ background:rgba(124,156,244,.22); color:#b8c8fa; }
     /* Positions (cryptos, actions) */
     .pos{ display:flex; align-items:center; gap:10px; padding:10px 2px; border-bottom:1px solid var(--line); }
     .pos:last-of-type{ border-bottom:0; }
@@ -855,7 +857,7 @@
         if(px && px.chg!=null) right.push('<span style="color:'+(px.chg>=0?"var(--accent)":"var(--coral)")+'">'+(px.chg>=0?"▲ +":"▼ ")+px.chg.toFixed(2).replace(".",",")+' %</span>');
         if(pv!==null) right.push('<span style="color:'+(pv>=0?"var(--accent)":"var(--coral)")+'">'+signK(pv)+'</span>');
         if(p.src==="yf" && !coursApi()) right.push('<span style="color:var(--muted)">cours bientôt</span>');
-        h+='<div class="pos prow" data-a="'+esc(c.id)+'" data-p="'+esc(p.id)+'">'+posIcon(p)+
+        h+='<div class="pos prow'+(man?' pos-man':'')+'" data-a="'+esc(c.id)+'" data-p="'+esc(p.id)+'">'+posIcon(p)+
            '<div class="pbody"><div class="pl1"><span class="pname"><b>'+esc(p.nom)+'</b></span><span class="pv">'+(v!==null?fmtK(v):'<span style="color:var(--muted);font-weight:500">…</span>')+'</span></div>'+
            '<div class="pl2"><span>'+left+'</span><span>'+right.join(' · ')+'</span></div></div>'+
            '<button class="btn ghost posedit" type="button" data-a="'+esc(c.id)+'" data-p="'+esc(p.id)+'">✎</button>'+
