@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 22:10" />
+  <meta name="build" content="14/10 22:30" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2789,6 +2789,50 @@
       });
       return '<svg viewBox="0 0 '+W+' '+H+'" role="img">'+g+'</svg>';
     }
+    function acctFigures(key, month){
+      var fl=soldeFlow(key, month), lq=liquideAt(key, month), lqV=lq?lq.val:0;
+      var banque=soldeFlowDone(key, month).opening + virementsSumDone(key, month) - computeDepensesMonthDone(key, month);
+      return { banque:banque, fin:fl.closing+lqV, liq:lqV };
+    }
+    function epTotalAtM(m){ var t=0; epargne.forEach(function(c){ var ms=Object.keys(c.vals||{}).filter(function(mm){ return mm<=m; }).sort(); if(ms.length) t+=Number(c.vals[ms[ms.length-1]])||0; }); return t; }
+    // Vue « Tous » : total de tous les comptes bancaires, puis avec l'épargne
+    function renderComptesAll(month, curM, monthLabel){
+      var rows=comptes.map(function(a){ return { a:a, f:acctFigures(a.key, month) }; });
+      var totB=0, totF=0; rows.forEach(function(r){ totB+=r.f.banque; totF+=r.f.fin; });
+      var ep=epTotalAtM(month), prov=0; try{ prov=provTotalAt(month); }catch(e){}
+      var h=header()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM).replace(/id="mn-/g,'id="cm-')+'</div>';
+      h+='<div class="acc-chips"><button type="button" data-acct="__all" class="on">Tous</button>'+comptes.map(function(a){ return '<button type="button" data-acct="'+esc(a.key)+'">'+esc(a.nom)+'</button>'; }).join("")+
+         '<button type="button" data-acct="__add" class="add" aria-label="Ajouter un compte">＋</button><button type="button" data-acct="__manage" class="add" aria-label="Gérer les comptes">⚙︎</button></div>';
+      var ACOL=["#4fd6a0","#7c9cf4","#e0a458","#c78bd6","#5bc0d4","#e88fb0"];
+      var pos=rows.filter(function(r){ return r.f.banque>0; }), posT=pos.reduce(function(t,r){ return t+r.f.banque; },0);
+      var extra=posT>0 ? '<div class="cstack" style="height:10px;margin:16px 0 4px">'+rows.map(function(r,i){ return r.f.banque>0?'<i style="width:'+(r.f.banque/posT*100).toFixed(2)+'%;background:'+ACOL[i%ACOL.length]+'"></i>':''; }).join("")+'</div>' : '';
+      h+=tabHero({ label:"Total des comptes (banque estimée)", big:totB, color:(totB<0?"var(--coral)":"var(--ink)"), sub:"Estimé, sans le liquide", extra:extra,
+        stats:[ { l:"Fin de mois", v:fmtS(totF), d:"prévu" }, { l:"Épargne", v:fmtS(ep), d:"totale" }, { l:"Avec épargne", v:fmtS(totB+ep), c:"var(--accent)", d:"au total" } ] });
+      var acc='<section class="paper cacc">';
+      rows.forEach(function(r,i){
+        acc+='<div class="cacc-sec"><div class="cacc-h allGo" data-acct="'+esc(r.a.key)+'"><i class="cdot" style="background:'+ACOL[i%ACOL.length]+';margin:0"></i><span class="t">'+esc(r.a.nom)+(r.a.main?' <span class="muted" style="font-size:11px;font-weight:500">principal</span>':'')+'</span><span class="v" style="color:'+(r.f.banque<0?"var(--coral)":"var(--ink)")+'">'+fmtS(r.f.banque)+'</span><span class="ch">›</span></div></div>';
+      });
+      acc+='<div class="cacc-sec"><div class="cacc-h" style="cursor:default"><span class="t">Total des comptes</span><span class="v" style="color:'+(totB<0?"var(--coral)":"var(--accent)")+'">'+fmtS(totB)+'</span><span class="ch"></span></div></div></section>';
+      acc+='<section class="paper cacc">';
+      acc+='<div class="cacc-sec"><div class="cacc-h allGo" data-acct="'+esc(mainAcct().key)+'" data-page="ep"><i class="cdot" style="background:#7c9cf4;margin:0"></i><span class="t">Épargne</span><span class="v">'+fmtS(ep)+'</span><span class="ch">›</span></div></div>';
+      acc+='<div class="cacc-sec"><div class="cacc-h" id="goprov"><i class="cdot" style="background:#c78bd6;margin:0"></i><span class="t">Provisions</span><span class="v">'+fmtS(prov)+'</span><span class="ch">›</span></div></div>';
+      acc+='<div class="cacc-sec"><div class="cacc-h" style="cursor:default"><span class="t">Comptes + épargne</span><span class="v" style="color:var(--accent)">'+fmtS(totB+ep)+'</span><span class="ch"></span></div></div></section>';
+      h+=acc;
+      app.innerHTML=h;
+      [].forEach.call(document.querySelectorAll(".acc-chips button"), function(bt){ bt.onclick=function(){ var k=bt.getAttribute("data-acct");
+        if(k==="__add") return acctForm(null);
+        if(k==="__manage") return manageAccts();
+        state.compteSel=k; store.write("compteSel", k); render(); }; });
+      [].forEach.call(document.querySelectorAll(".allGo"), function(r){ r.onclick=function(){ var k=r.getAttribute("data-acct"), pg=r.getAttribute("data-page");
+        state.compteSel=k; store.write("compteSel", k);
+        if(pg){ state.cptPage=pg; state.view="comptedet"; state.cptFromAll=true; } render(); window.scrollTo(0,0); }; });
+      var gp=document.getElementById("goprov"); if(gp) gp.onclick=function(){ state.view="provisions"; render(); window.scrollTo(0,0); };
+      if(!state.months) state.months={};
+      var cmp=document.getElementById("cm-prev"); if(cmp) cmp.onclick=function(){ state.months.compte=prevMonthKey(month); render(); };
+      var cmn=document.getElementById("cm-next"); if(cmn) cmn.onclick=function(){ var nx=nextMonthKey(month); state.months.compte=(nx===curM?null:nx); render(); };
+      var cmt=document.getElementById("cm-today"); if(cmt) cmt.onclick=function(){ state.months.compte=null; render(); };
+      setNav("compte", true);
+    }
     function acctPayerOpts(cur){
       var o=[{v:"",l:"Aucun (choix sur chaque ticket)"}], seen={};
       uniquePersons().concat(["Commun"]).concat(cur?[cur]:[]).forEach(function(p){ if(p && !seen[p]){ seen[p]=1; o.push({v:p, l:p}); } });
@@ -2838,6 +2882,7 @@
       var person=curAcctKey(), acct=acctByKey(person), multi=comptes.length>1;
       var curM=monthKey(todayISO());
       var month=(state.months&&state.months.compte)||curM;
+      if(multi && state.view==="compte" && (state.compteSel||store.read("compteSel", null))==="__all"){ var _p=month.split("-"); return renderComptesAll(month, curM, new Date(+_p[0], +_p[1]-1, 1).toLocaleDateString("fr-FR",{month:"long",year:"numeric"})); }
       var _mp=month.split("-");
       var monthLabel=new Date(+_mp[0], +_mp[1]-1, 1).toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
       var fl=soldeFlow(person, month);
@@ -3009,7 +3054,7 @@
       if(acct.main) acc+='<div class="cacc-sec"><div class="cacc-h" id="goprov"><i class="cdot" style="background:#c78bd6;margin:0"></i><span class="t">Provisions</span><span class="v">'+fmtS(provT)+'</span><span class="ch">›</span></div></div>';
       acc+='</section>';
       if(!page){
-        h+='<div class="acc-chips">'+comptes.map(function(a){ return '<button type="button" data-acct="'+esc(a.key)+'"'+(a.key===person?' class="on"':'')+'>'+esc(a.nom)+'</button>'; }).join("")+
+        h+='<div class="acc-chips">'+(multi?'<button type="button" data-acct="__all">Tous</button>':'')+comptes.map(function(a){ return '<button type="button" data-acct="'+esc(a.key)+'"'+(a.key===person?' class="on"':'')+'>'+esc(a.nom)+'</button>'; }).join("")+
            '<button type="button" data-acct="__add" class="add" aria-label="Ajouter un compte">'+(multi?'＋':'＋ Compte')+'</button>'+(multi?'<button type="button" data-acct="__manage" class="add" aria-label="Gérer les comptes">⚙︎</button>':'')+'</div>';
         h+=tabHero(heroMain)+acc;
       }
@@ -3064,7 +3109,7 @@
         if(k==="__manage") return manageAccts();
         state.compteSel=k; store.write("compteSel", k); render(); }; });
       [].forEach.call(document.querySelectorAll(".cptGo"), function(r){ r.onclick=function(){ state.cptPage=r.getAttribute("data-page"); state.view="comptedet"; render(); window.scrollTo(0,0); }; });
-      if(page) bindBack(function(){ state.view="compte"; render(); window.scrollTo(0,0); });
+      if(page) bindBack(function(){ if(state.cptFromAll){ state.cptFromAll=false; state.compteSel="__all"; store.write("compteSel", "__all"); } state.view="compte"; render(); window.scrollTo(0,0); });
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.cptChart=bt.getAttribute("data-m"); store.write("cptChart", state.cptChart); render(); }; });
       var lr=document.getElementById("liqrow"); if(lr) lr.onclick=function(){
         var o=liquideMois[person]||{};
