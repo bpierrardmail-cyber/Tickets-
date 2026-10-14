@@ -4,12 +4,6 @@
 //   GET /search?q=lvmh            -> { results: [{ symbol, name, exch, type }] }
 //   GET /quote?symbols=MC.PA,AAPL -> { quotes: { "MC.PA": { price, prev, currency, name } } }
 // Aucune clé ni donnée personnelle : seuls des noms de titres transitent.
-//
-//   GET /etoro        -> portefeuille eToro + noms des titres + cours en direct
-//   GET /etoro/check  -> diagnostic sans montants
-// Les clés eToro viennent de l'app de l'utilisateur (en-têtes x-etoro-api-key / x-etoro-user-key),
-// sont transmises à eToro et ne sont jamais enregistrées ici.
-// (Option : variables SECRÈTES du Worker ETORO_API_KEY, ETORO_USER_KEY + APP_SECRET.)
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -19,9 +13,6 @@ const CORS = {
 const UA = { "User-Agent": "Mozilla/5.0 (compatible; TicketsApp/1.0)", "Accept": "application/json" };
 const TYPES_OK = ["EQUITY", "ETF", "MUTUALFUND", "INDEX"];
 
-function jsonPrivate(obj) {
-  return new Response(JSON.stringify(obj), { headers: { ...CORS, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "private, no-store" } });
-}
 function json(obj, ttl) {
   return new Response(JSON.stringify(obj), {
     headers: { ...CORS, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "public, max-age=" + (ttl || 60) },
@@ -59,54 +50,6 @@ async function quote(symbol) {
   return { price: m.regularMarketPrice, prev: prev, currency: m.currency || "USD", name: m.longName || m.shortName || symbol };
 }
 
-// ---------- eToro (API officielle) ----------
-const ETORO = "https://public-api.etoro.com/api/v1";
-async function etoroGet(keys, path) {
-  const r = await fetch(ETORO + path, { headers: {
-    "x-api-key": keys.api, "x-user-key": keys.user,
-    "x-request-id": crypto.randomUUID(), "Accept": "application/json" } });
-  const t = await r.text();
-  let j; try { j = JSON.parse(t); } catch (e) { j = null; }
-  if (!r.ok || j === null) throw new Error("eToro " + path.split("?")[0] + " : HTTP " + r.status + " " + t.slice(0, 160));
-  return j;
-}
-function instrumentIdsOf(cp) {
-  const ids = new Set();
-  const add = p => { const id = p && (p.instrumentID != null ? p.instrumentID : p.instrumentId); if (id != null) ids.add(id); };
-  (cp.positions || []).forEach(add);
-  (cp.mirrors || []).forEach(m => (m.positions || []).forEach(add));
-  return [...ids];
-}
-async function etoroInChunks(keys, path, ids) {
-  const out = [];
-  for (let i = 0; i < ids.length; i += 50) {
-    const j = await etoroGet(keys, path + "?instrumentIds=" + ids.slice(i, i + 50).join(","));
-    out.push(j);
-  }
-  return out;
-}
-async function etoroFull(keys) {
-  const pf = await etoroGet(keys, "/trading/info/portfolio");
-  const cp = pf.clientPortfolio || pf;
-  const ids = instrumentIdsOf(cp);
-  let instruments = [], rates = [], errors = [];
-  try { instruments = await etoroInChunks(keys, "/market-data/instruments", ids); } catch (e) { errors.push(String(e.message || e)); }
-  try { rates = await etoroInChunks(keys, "/market-data/instruments/rates", ids); } catch (e) { errors.push(String(e.message || e)); }
-  return { portfolio: pf, instruments, rates, errors, t: Date.now() };
-}
-// Clés fournies par l'app (prioritaires), sinon clés secrètes du Worker protégées par APP_SECRET.
-function etoroKeys(request, env, url) {
-  const api = (request.headers.get("x-etoro-api-key") || "").trim();
-  const user = (request.headers.get("x-etoro-user-key") || "").trim();
-  if (api && user) return { api, user };
-  if (env && env.ETORO_API_KEY && env.ETORO_USER_KEY && env.APP_SECRET) {
-    const k = request.headers.get("x-app-secret") || url.searchParams.get("k") || "";
-    if (k === env.APP_SECRET) return { api: env.ETORO_API_KEY, user: env.ETORO_USER_KEY };
-    return "unauthorized";
-  }
-  return null;
-}
-
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -116,28 +59,6 @@ export default {
         const q = (url.searchParams.get("q") || "").trim().slice(0, 60);
         try { return json({ results: q ? await search(q) : [] }, 3600); }
         catch (e) { return json({ results: [], error: String((e && e.message) || e) }, 5); }
-      }
-      if (url.pathname === "/etoro" || url.pathname === "/etoro/check") {
-        const keys = etoroKeys(request, env, url);
-        if (keys === "unauthorized") return jsonPrivate({ error: "unauthorized" });
-        if (!keys) return jsonPrivate({ error: "no_keys" });
-        try {
-          const full = await etoroFull(keys);
-          if (url.pathname === "/etoro") return jsonPrivate(full);
-          const cp = full.portfolio.clientPortfolio || full.portfolio;
-          const first = a => (Array.isArray(a) && a.length) ? a[0] : null;
-          const inst0 = first(full.instruments), rate0 = first(full.rates);
-          return jsonPrivate({
-            ok: true,
-            portfolioKeys: Object.keys(cp || {}),
-            positions: (cp.positions || []).length,
-            positionKeys: Object.keys(first(cp.positions) || {}),
-            mirrors: (cp.mirrors || []).map(m => ({ parentUsername: m.parentUsername, positions: (m.positions || []).length, keys: Object.keys(m) })),
-            instrumentsShape: inst0 ? JSON.stringify(inst0).slice(0, 600) : null,
-            ratesShape: rate0 ? JSON.stringify(rate0).slice(0, 600) : null,
-            errors: full.errors,
-          });
-        } catch (e) { return jsonPrivate({ error: String((e && e.message) || e) }); }
       }
       if (url.pathname === "/quote") {
         const syms = (url.searchParams.get("symbols") || "").split(",").map(s => s.trim()).filter(Boolean).slice(0, 40);

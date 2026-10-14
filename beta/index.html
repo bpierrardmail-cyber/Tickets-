@@ -760,33 +760,8 @@
       var p=(c.positions||[]).filter(function(x){ return String(x.id)===String(posId); })[0];
       return p?{ c:c, p:p, acc:String(c.id) }:null;
     }
-    // ---------- Compte eToro relié par clés (stockées uniquement sur ce téléphone) ----------
-    function etoroKeys(){ var k=store.read("etoroKeys", null); return (k && k.api && k.user)?k:null; }
-    function etoroHeaders(){ var k=etoroKeys(); return k?{ "x-etoro-api-key":k.api, "x-etoro-user-key":k.user }:null; }
-    function etoroCheck(){
-      var hd=etoroHeaders(), api=coursApi(); if(!hd || !api) return;
-      var s=uiSheet('<div class="sheet-title">Compte eToro</div><div class="ui-intro" id="etckBox">Vérification de la connexion…</div><div class="ui-actions"><button type="button" class="btn ghost ui-cancel">Fermer</button></div>');
-      s.q(".ui-cancel").onclick=s.close;
-      var box=s.q("#etckBox");
-      fetch(api+"/etoro/check", { headers:hd }).then(function(r){ return r.json(); }).then(function(j){
-        if(j.error){ box.innerHTML='<span style="color:var(--coral)">⚠ Connexion refusée par eToro.</span><br><span style="font-size:11px">'+esc(String(j.error)).slice(0,220)+'</span><br><br>Vérifie que les deux clés sont bien copiées en entier et qu\'il s\'agit d\'une clé « Real ».'; return; }
-        var m=(j.mirrors||[]).map(function(x){ return esc(x.parentUsername||"?")+" ("+x.positions+" positions)"; }).join(", ");
-        box.innerHTML='<span style="color:var(--accent);font-weight:700">✓ Compte eToro relié</span><br>'+j.positions+' positions directes'+(m?'<br>Copies : '+m:'<br>Aucune copie')+
-          (j.errors&&j.errors.length?'<br><span style="color:#e6b450;font-size:11px">'+esc(j.errors.join(" / ")).slice(0,300)+'</span>':'')+
-          '<div style="text-align:left;font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-top:10px;word-break:break-all">'+
-          esc("P: "+(j.portfolioKeys||[]).join(",")+" | pos: "+(j.positionKeys||[]).join(",")+" | mir: "+((j.mirrors&&j.mirrors[0]&&j.mirrors[0].keys)||[]).join(",")+" | I: "+(j.instrumentsShape||"-")+" | R: "+(j.ratesShape||"-"))+'</div>';
-      }).catch(function(){ box.innerHTML='<span style="color:var(--coral)">⚠ Relais injoignable.</span> Vérifie ta connexion Internet.'; });
-    }
-    function etoroLink(){
-      uiForm({ title:"Relier mon compte eToro", intro:"Colle les deux clés créées dans eToro (paramètres du compte, partie API). Choisis une clé <b>Real</b> en <b>lecture seule</b>.<br>Elles restent sur ce téléphone et servent uniquement à lire ton portefeuille.",
-        fields:[ { key:"api", label:"Clé API (publique)", required:true, placeholder:"x-api-key" }, { key:"user", label:"Clé utilisateur", required:true, placeholder:"x-user-key" } ], ok:"Relier", focus:false
-      }, function(r){
-        var api=(r.api||"").replace(/\s+/g,""), user=(r.user||"").replace(/\s+/g,"");
-        if(api.length<8 || user.length<8) return "Ces clés semblent incomplètes.";
-        store.write("etoroKeys", { api:api, user:user }); render(); setTimeout(etoroCheck, 50);
-      });
-    }
-    function etoroUnlink(){ uiConfirm("Délier ton compte eToro ? Les clés seront effacées de ce téléphone.", function(){ store.write("etoroKeys", null); render(); }, { ok:"Délier", danger:true }); }
+    // eToro retiré : efface toute ancienne configuration (clés, adresse du relais, secret)
+    try{ ["etoroKeys","etoroSession","etoroPending","etoroWorkerUrl","etoroAppSecret","etoroCorrectionFactor"].forEach(function(k){ localStorage.removeItem(k); }); }catch(e){}
 
     function positionsHTML(c){
       if(!c.positions || !c.positions.length) return "";
@@ -2480,164 +2455,6 @@
       bourse.forEach(function(c){ if(c.stock && c.stock.symbol) symbols[c.stock.symbol]=true; });
       Object.keys(symbols).forEach(function(s){ fetchStockPrice(s); });
     }
-    function etoroCfg(){ return { url: store.read("etoroWorkerUrl",""), secret: store.read("etoroAppSecret","") }; }
-    function fetchEtoroSilent(){
-      var c=etoroCfg();
-      if(!c.url || !c.secret) return;
-      fetch(c.url, { headers: { "x-app-secret": c.secret } })
-        .then(function(r){ return r.text().then(function(t){ return { status:r.status, ok:r.ok, text:t }; }); })
-        .then(function(res){
-          if(!res.ok) return;
-          var data; try{ data=JSON.parse(res.text); }catch(e){ return; }
-          var cp=data.clientPortfolio||data;
-          var invSum=0;
-          (cp.positions||[]).forEach(function(p){ invSum+=Number(p.amount)||0; });
-          var estimSansMirrors=(Number(cp.credit)||0)+(Number(cp.bonusCredit)||0)+invSum+(Number(cp.unrealizedPnL)||0);
-          var totalMirrors=0;
-          (cp.mirrors||[]).forEach(function(m){
-            var s=0; (m.positions||[]).forEach(function(p){ s+=Number(p.amount)||0; });
-            totalMirrors+=s;
-          });
-          var factor=(function(){ var v=parseFloat(localStorage.getItem("etoroCorrectionFactor")); return (isFinite(v)&&v>0)?v:1; })();
-          function apply(rawEstim){
-            var corrected=rawEstim*factor;
-            var acc=bourse.filter(function(x){ return x.nom && x.nom.toLowerCase().indexOf("etoro")>=0; })[0];
-            if(!acc) return;
-            var m=monthKey(todayISO());
-            var ref=(acc.vals && acc.vals[m]) ? acc.vals[m] : (bLast(acc)||{});
-            if(!acc.vals) acc.vals={};
-            acc.vals[m]={capital:ref.capital||0, valeur:corrected};
-            persistBourse();
-            syncBourseEpargne();
-            if(state.view==="bourse"||state.view==="list"||state.view==="compte") render();
-          }
-          if(Number(cp.accountCurrencyId)===1){
-            fetch("https://api.frankfurter.dev/v1/latest?base=USD&symbols=EUR")
-              .then(function(r){ return r.json(); })
-              .then(function(fx){
-                var rate=(fx && fx.rates && fx.rates.EUR) ? fx.rates.EUR : 0.87;
-                apply((estimSansMirrors*rate)+totalMirrors);
-              })
-              .catch(function(){ apply((estimSansMirrors*0.87)+totalMirrors); });
-          } else {
-            apply(estimSansMirrors+totalMirrors);
-          }
-        })
-        .catch(function(){});
-    }
-    function connectEtoroTest(){
-      var c=etoroCfg();
-      if(!c.url || !c.secret){
-        var url=(window.prompt("Colle l'adresse de ton Worker Cloudflare :\n(ex. https://app.xxxxx.workers.dev)","")||"").trim();
-        if(!url) return;
-        var secret=(window.prompt("Colle ton APP_SECRET :","")||"").trim();
-        if(!secret) return;
-        store.write("etoroWorkerUrl", url);
-        store.write("etoroAppSecret", secret);
-        c={ url:url, secret:secret };
-      }
-      window.alert("Test de connexion en cours…");
-      fetch(c.url, { headers: { "x-app-secret": c.secret } })
-        .then(function(r){ return r.text().then(function(t){ return { status:r.status, ok:r.ok, text:t }; }); })
-        .then(function(res){
-          console.log("eToro (via relais) →", res.status, res.text);
-          if(res.ok){
-            try{
-              var data=JSON.parse(res.text);
-              var cp=data.clientPortfolio||data;
-              var msg="✅ HTTP "+res.status+" · "+res.text.length+" caractères\n\n";
-              var invSum=0;
-              (cp.positions||[]).forEach(function(p){ invSum+=Number(p.amount)||0; });
-              var estimSansMirrors=(Number(cp.credit)||0)+(Number(cp.bonusCredit)||0)+invSum+(Number(cp.unrealizedPnL)||0);
-              var totalMirrors=0, mirrorDetails="";
-              if(cp.mirrors && cp.mirrors.length){
-                cp.mirrors.forEach(function(m, idx){
-                  var mirrorPosSum=0;
-                  (m.positions||[]).forEach(function(p){ mirrorPosSum+=Number(p.amount)||0; });
-                  totalMirrors+=mirrorPosSum;
-                  mirrorDetails+="Mirror #"+(idx+1)+" ("+(m.parentUsername||"?")+") : "+((m.positions||[]).length)+" positions, valeur = "+mirrorPosSum.toFixed(2)+"\n";
-                });
-              }
-              var estimTotaleUSD=estimSansMirrors; // uniquement la partie racine est en devise du compte (USD)
-              msg+="credit : "+cp.credit+" | unrealizedPnL : "+cp.unrealizedPnL+"\n";
-              msg+="Positions : "+(cp.positions?cp.positions.length:0)+" (somme "+invSum.toFixed(2)+")\n";
-              msg+=mirrorDetails+"\n";
-              msg+="Racine (devise du compte, id="+cp.accountCurrencyId+") = "+estimSansMirrors.toFixed(2)+"\n";
-              msg+="Mirrors (déjà en EUR) = "+totalMirrors.toFixed(2)+"\n\n";
-
-              var CORRECTION_KEY="etoroCorrectionFactor";
-              function getCorrectionFactor(){
-                var v=parseFloat(localStorage.getItem(CORRECTION_KEY));
-                return (isFinite(v) && v>0) ? v : 1;
-              }
-              function updateEtoroAccount(valeur){
-                var acc=bourse.filter(function(c){ return c.nom && c.nom.toLowerCase().indexOf("etoro")>=0; })[0];
-                if(!acc) return false;
-                var m=monthKey(todayISO());
-                var ref=(acc.vals && acc.vals[m]) ? acc.vals[m] : (bLast(acc)||{});
-                if(!acc.vals) acc.vals={};
-                acc.vals[m]={capital:ref.capital||0, valeur:valeur};
-                persistBourse();
-                render();
-                return true;
-              }
-              function finalizeAndOffer(rawEstim, rateInfo){
-                var factor=getCorrectionFactor();
-                var corrected=rawEstim*factor;
-                var updated=updateEtoroAccount(corrected);
-                msg+=rateInfo;
-                msg+="Estimation brute = "+rawEstim.toFixed(2)+" €\n";
-                msg+="Facteur de correction actuel = "+factor.toFixed(5)+"\n";
-                msg+="=== ESTIMATION CORRIGÉE = "+corrected.toFixed(2)+" € ===\n";
-                msg+=(updated ? "✅ Ligne \"eToro\" mise à jour automatiquement.\n" : "⚠️ Aucun compte \"eToro\" trouvé dans Bourse — création manuelle nécessaire.\n");
-                window.alert(msg.slice(0,7800));
-                var real=window.prompt("Calibration (optionnel) : quelle est la vraie valeur eToro actuelle en € ? (laisse vide pour ignorer)","");
-                if(real!==null && real.trim()!==""){
-                  var realNum=parseFloat(real.replace(",","."));
-                  if(isFinite(realNum) && realNum>0 && rawEstim>0){
-                    var newFactor=realNum/rawEstim;
-                    localStorage.setItem(CORRECTION_KEY, newFactor.toFixed(5));
-                    updateEtoroAccount(realNum);
-                    window.alert("Nouveau facteur de correction enregistré : "+newFactor.toFixed(5)+"\nLigne \"eToro\" mise à jour avec la valeur exacte saisie.");
-                  }
-                }
-              }
-
-              var isUSDAccount = Number(cp.accountCurrencyId)===1;
-              if(!isUSDAccount){
-                var estimEUR=estimTotaleUSD+totalMirrors;
-                finalizeAndOffer(estimEUR, "");
-              } else {
-                fetch("https://api.frankfurter.dev/v1/latest?base=USD&symbols=EUR")
-                  .then(function(r){ return r.json(); })
-                  .then(function(fx){
-                    var rate=(fx && fx.rates && fx.rates.EUR) ? fx.rates.EUR : 0.87;
-                    var estimEUR=(estimTotaleUSD*rate)+totalMirrors;
-                    finalizeAndOffer(estimEUR, "Taux USD→EUR utilisé (racine uniquement) : "+rate+"\n");
-                  })
-                  .catch(function(){
-                    var rate=0.87;
-                    var estimEUR=(estimTotaleUSD*rate)+totalMirrors;
-                    finalizeAndOffer(estimEUR, "⚠️ Taux en direct indisponible, taux approximatif utilisé : "+rate+"\n");
-                  });
-              }
-            }catch(e){
-              window.alert("✅ HTTP "+res.status+" mais JSON illisible : "+e.message+"\n\n"+res.text.slice(0,2000));
-            }
-          } else {
-            window.alert("⚠️ Réponse HTTP "+res.status+" :\n"+res.text.slice(0,400));
-          }
-        })
-        .catch(function(err){
-          console.error("eToro relais erreur", err);
-          window.alert("❌ Échec de l'appel au relais.\n\nDétail : "+err.message);
-        });
-    }
-    function forgetEtoro(){
-      if(!window.confirm("Oublier la configuration eToro (adresse + APP_SECRET) enregistrée ?")) return;
-      store.write("etoroWorkerUrl",""); store.write("etoroAppSecret","");
-      render();
-    }
     function renderBourse(){
       var curM=monthKey(todayISO());
       var month=(state.months&&state.months.bourse)||curM;
@@ -2700,12 +2517,6 @@
       });
       h+='<button class="btn primary" id="addpos" type="button" style="margin-top:6px;width:100%">+ Ajouter une crypto ou une action</button>';
       h+='<button class="btn ghost" id="addbrs" type="button" style="margin-top:10px">+ Ajouter un compte bourse</button>';
-      h+=etoroKeys() ? '<div class="center" style="margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn ghost" id="etck" type="button">✓ eToro relié · Vérifier</button><button class="btn ghost" id="etul" type="button">Délier</button></div>'
-                     : '<div class="center" style="margin-top:10px"><button class="btn ghost" id="etlink" type="button">🔑 Relier mon compte eToro</button></div>';
-      (function(){
-        var c=etoroCfg(), has=!!(c.url&&c.secret);
-        h+='<div class="center" style="margin-top:10px"><button class="btn ghost" id="etorotest" type="button">'+(has?"🔗 Tester la connexion eToro":"🔗 Connecter eToro (via relais)")+'</button>'+(has?' <button class="btn ghost" id="etoroforget" type="button" style="margin-top:6px">Oublier la config eToro</button>':'')+'</div>';
-      })();
       (function(){
         var st=[{l:"Capital investi", v:fmtS(totCap)}];
         if(totCap>0){ var pv=totVal-totCap; st.push({l:"Plus-value", v:signS(pv), d:(bPct(totCap,totVal)||""), c:heroCol(pv)}); }
@@ -2717,17 +2528,12 @@
       var rs=document.getElementById("refreshsol"); if(rs) rs.onclick=function(){ state.solPrice=null; fetchSolPrice(); };
       var pa=document.getElementById("prixact"); if(pa){ pa.oninput=function(){ state.prixActuel=pa.value; render(); }; }
       var ab=document.getElementById("addbrs"); if(ab) ab.onclick=addBourse;
-      var et=document.getElementById("etorotest"); if(et) et.onclick=connectEtoroTest;
-      var ef=document.getElementById("etoroforget"); if(ef) ef.onclick=forgetEtoro;
       [].forEach.call(document.querySelectorAll(".bedit"), function(b){ b.onclick=function(){ editBourse(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".bdel"), function(b){ b.onclick=function(){ delBourse(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".bmonth"), function(sp){ sp.onclick=function(){ if(!state.months) state.months={}; var mk=sp.getAttribute("data-m"); state.months.bourse=(mk===curM?null:mk); render(); }; });
       wireMonthNav(month, curM, "bourse");
       wireBourseChart();
       var apz=document.getElementById("addpos"); if(apz) apz.onclick=openPositionSearch;
-      var etl=document.getElementById("etlink"); if(etl) etl.onclick=etoroLink;
-      var etc=document.getElementById("etck"); if(etc) etc.onclick=etoroCheck;
-      var etu=document.getElementById("etul"); if(etu) etu.onclick=etoroUnlink;
       [].forEach.call(document.querySelectorAll(".posedit"), function(b){ b.onclick=function(){ var f=findPosition(b.getAttribute("data-a"), b.getAttribute("data-p")); if(f) positionForm(f.p, f); }; });
       [].forEach.call(document.querySelectorAll(".posdel"), function(b){ b.onclick=function(){ var f=findPosition(b.getAttribute("data-a"), b.getAttribute("data-p")); if(!f) return;
         uiConfirm("Retirer « "+esc(f.p.nom)+" » du compte "+esc(f.c.nom)+" ?", function(){ f.c.positions=f.c.positions.filter(function(x){ return x!==f.p; }); persistBourse(); render(); }, { ok:"Retirer", danger:true }); }; });
@@ -3748,8 +3554,6 @@
     setInterval(tickBourse, 60000);
     fetchAllStockPrices();
     setInterval(fetchAllStockPrices, 900000);
-    fetchEtoroSilent();
-    setInterval(fetchEtoroSilent, 900000);
     refreshPositions(true);
     setInterval(function(){ refreshPositions(true); }, 900000);
     var lastRefresh=Date.now();
@@ -3759,7 +3563,6 @@
       lastRefresh=Date.now();
       tickBourse();
       fetchAllStockPrices();
-      fetchEtoroSilent();
     }
     document.addEventListener("visibilitychange", refreshOnReturn);
     window.addEventListener("pageshow", refreshOnReturn);
