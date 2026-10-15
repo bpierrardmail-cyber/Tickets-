@@ -2880,6 +2880,34 @@
     // Montant arrondi à l'euro, séparateur de milliers fin (pour les graphiques)
     function cptK(n){ n=Math.round(Number(n)||0); return (n<0?"−":"")+String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g," "); }
     // Cascade : d'où vient l'argent du mois et où il part
+    // Compte : glisser à gauche / à droite dans la carte du haut pour changer de graphique (sauf sur la rangée des onglets, qui défile)
+    function wireCptSwipe(cmode, keys){
+      var hero=document.querySelector(".thero"), ch=hero && hero.querySelector(".cch"); if(!hero || !ch) return;
+      var i=keys.indexOf(cmode), x0=null, y0=0, dx=0, lock=null, moved=false;
+      hero.style.touchAction="pan-y";
+      hero.addEventListener("click", function(ev){ if(moved){ moved=false; ev.stopPropagation(); ev.preventDefault(); } }, true);
+      hero.addEventListener("pointerdown", function(ev){ moved=false; var t=ev.target; while(t && t!==hero){ if(t.classList && t.classList.contains("cch-tabs")) return; t=t.parentNode; } x0=ev.clientX; y0=ev.clientY; dx=0; lock=null; });
+      hero.addEventListener("pointermove", function(ev){
+        if(x0===null) return; dx=ev.clientX-x0; var dy=ev.clientY-y0;
+        if(lock===null && (Math.abs(dx)>8 || Math.abs(dy)>8)) lock=(Math.abs(dx)>Math.abs(dy))?"x":"y";
+        if(lock!=="x") return;
+        var edge=(dx>0 && i===0) || (dx<0 && i===keys.length-1);
+        ch.style.transition="none"; ch.style.transform="translateX("+(edge?dx/4:dx)+"px)"; ch.style.opacity=String(1-Math.min(.5, Math.abs(dx)/500));
+      });
+      function up(){
+        if(x0===null) return; x0=null;
+        if(lock==="x" && Math.abs(dx)>10) moved=true;
+        var ni=i; if(lock==="x" && dx<-50 && i<keys.length-1) ni=i+1; else if(lock==="x" && dx>50 && i>0) ni=i-1;
+        if(ni!==i){ state.cptChart=keys[ni]; store.write("cptChart", keys[ni]); state.cptSwipeDir=(ni>i?1:-1); render(); return; }
+        ch.style.transition="transform .2s ease, opacity .2s ease"; ch.style.transform=""; ch.style.opacity="";
+      }
+      hero.addEventListener("pointerup", up); hero.addEventListener("pointercancel", up);
+      if(state.cptSwipeDir){   // le nouveau graphique arrive du côté du glissé
+        var d=state.cptSwipeDir; state.cptSwipeDir=0;
+        ch.style.transition="none"; ch.style.transform="translateX("+(d*60)+"px)"; ch.style.opacity=".2"; ch.getBoundingClientRect();
+        ch.style.transition="transform .25s ease, opacity .25s ease"; ch.style.transform=""; ch.style.opacity="";
+      }
+    }
     function compteWaterfallSVG(steps){
       var W=340, H=178, top=20, bot=24, ph=H-top-bot, run=0, pts=[0];
       steps.forEach(function(st){ if(st.t==="base"||st.t==="end"){ st.a=0; st.b=st.v; run=st.v; } else { st.a=run; st.b=run+st.v; run=st.b; } pts.push(st.a, st.b); });
@@ -3292,6 +3320,7 @@
       [].forEach.call(document.querySelectorAll(".cptGo"), function(r){ r.onclick=function(){ state.cptPage=r.getAttribute("data-page"); state.view="comptedet"; render(); window.scrollTo(0,0); }; });
       if(page) bindBack(function(){ if(state.cptFromAll){ state.cptFromAll=false; state.compteSel="__all"; store.write("compteSel", "__all"); } state.view="compte"; render(); window.scrollTo(0,0); });
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.cptChart=bt.getAttribute("data-m"); store.write("cptChart", state.cptChart); render(); }; });
+      if(!page && document.querySelector(".cch-tabs")) wireCptSwipe(cmode, CMODES.map(function(x){ return x[0]; }));
       var lr=document.getElementById("liqrow"); if(lr) lr.onclick=function(){
         var o=liquideMois[person]||{};
         uiForm({ title:"Argent liquide", intro:"Laisse vide pour reprendre la valeur du mois précédent.", fields:[
