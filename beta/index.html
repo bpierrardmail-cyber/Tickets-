@@ -3259,7 +3259,6 @@
       if(!fraisThis.length) fB='<div class="muted" style="font-size:11px;margin:4px 2px">Aucun frais fixe ce mois-ci.</div>';
       bOut+=dGrp("f", "Frais fixes", fraisThis.length, fraisTotal, (fraisPerso&&fraisCommun?'Communs '+fmtK(fraisCommun)+' · Perso '+fmtK(fraisPerso):''), fB);
       bOut+='<div class="dtot"><span>Total</span><span class="v">'+fmtK(depenses)+'</span></div>';
-      bOut+='<div class="clink" id="cptFrais"><span>Gérer les frais fixes</span><span>›</span></div>';
       acc+=sec("dep", "var(--coral)", "Dépenses", "−"+fmtS(depenses), "var(--coral)");
 
       // ---- Résultat ----
