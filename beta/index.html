@@ -387,6 +387,27 @@
     .cdon-r .a{ flex:0 0 auto; font-weight:700; font-variant-numeric:tabular-nums; min-width:46px; text-align:right; }
     .cpage{ padding:12px 16px 6px; }
     .cacc-b .cstack{ height:6px; margin:2px 0 8px; }
+    .dgrp{ border-bottom:1px solid var(--line); }
+    .dgh{ display:flex; align-items:center; gap:10px; padding:14px 2px; cursor:pointer; }
+    .dgh .t{ flex:1; font-size:15px; font-weight:700; }
+    .dgh .t small{ font-size:11px; font-weight:600; color:var(--muted); background:rgba(255,255,255,.06); border-radius:999px; padding:2px 7px; margin-left:6px; vertical-align:1px; }
+    .dgh .v{ font-variant-numeric:tabular-nums; font-weight:700; font-size:15px; }
+    .dgh .chev{ width:14px; text-align:center; color:var(--muted); font-size:13px; transition:transform .2s; }
+    .dgrp.open .chev{ transform:rotate(90deg); }
+    .dgs{ font-size:11.5px; color:var(--muted); margin:-9px 26px 12px 2px; }
+    .dgb{ display:none; padding:0 0 8px; }
+    .dgrp.open .dgb{ display:block; }
+    .dgb .entry.ecomp{ background:none; border:0; border-top:1px solid var(--line); border-radius:0; margin:0; padding:10px 2px; box-shadow:none; }
+    .dgb .dsub{ display:flex; justify-content:space-between; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:12px 2px 4px; }
+    .dgb .dfrow{ display:flex; align-items:baseline; gap:8px; padding:10px 2px; border-top:1px solid var(--line); font-size:13.5px; }
+    .dgb .dfrow .n{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .dgb .dfrow .k{ font-size:11px; color:var(--muted); }
+    .dgb .dfrow .a{ font-weight:700; font-variant-numeric:tabular-nums; }
+    .dmode{ display:flex; gap:6px; margin:0 0 6px; }
+    .dmode button{ font-family:var(--sans); font-size:11.5px; padding:5px 10px; border-radius:999px; border:1px solid var(--line); background:none; color:var(--ink-soft); cursor:pointer; }
+    .dmode button.on{ background:var(--ink); color:var(--bg0); border-color:var(--ink); font-weight:700; }
+    .dtot{ display:flex; justify-content:space-between; align-items:baseline; padding:14px 2px 2px; font-weight:700; font-size:15px; }
+    .dtot .v{ color:var(--coral); font-variant-numeric:tabular-nums; }
     .clink{ display:flex; align-items:center; justify-content:space-between; font-size:12.5px; color:var(--accent); margin:10px 2px 0; cursor:pointer; }
     .bacct{ margin-top:14px; padding:6px 14px 10px 17px; }
     .bgauge{ position:absolute; left:0; top:18px; bottom:18px; width:4px; border-radius:0 3px 3px 0; background:rgba(255,255,255,.08); overflow:hidden; pointer-events:none; }
@@ -3208,20 +3229,36 @@
 
       // ---- Dépenses ----
       var bOut='';
-      bOut+='<div class="leader"><span class="lbl">Tickets payés</span><span class="fill"></span><span class="val">'+fmt(paidTotal)+'</span></div>';
-      bOut+='<div class="leader"><span class="lbl">Frais fixes perso</span><span class="fill"></span><span class="val">'+fmt(fraisPerso)+'</span></div>';
-      bOut+='<div class="leader"><span class="lbl">Frais fixes communs</span><span class="fill"></span><span class="val">'+fmt(fraisCommun)+'</span></div>';
-      bOut+='<div class="leader" style="font-weight:700"><span class="lbl">Total</span><span class="fill"></span><span class="val" style="color:var(--coral)">'+fmt(depenses)+'</span></div>';
-      if(fraisThis.length){
-        bOut+='<div class="dr-sec" style="margin:14px 0 6px">Frais fixes du mois</div>';
-        fraisThis.slice().sort(function(x,y){ return fraisMontant(y,month)-fraisMontant(x,month); }).forEach(function(f){ var who=(f.personne||"").trim()||"Commun";
-          bOut+='<div class="leader"><span class="lbl">'+esc(f.label)+' <span class="muted" style="font-size:11px">· '+esc(fraisKind(f, person)==="perso"?"perso":"commun")+'</span></span><span class="fill"></span><span class="val">'+fmt(fraisMontant(f, month))+'</span></div>'; });
+      // Dépenses : deux groupes repliables (tickets, frais fixes) avec leur total, puis le total général
+      var dOpen=state.depOpen||{};
+      function dGrp(key, title, n, total, sub, body){
+        return '<div class="dgrp'+(dOpen[key]?' open':'')+'" data-g="'+key+'"><div class="dgh"><span class="t">'+title+(n?'<small>'+n+'</small>':'')+'</span><span class="v">'+fmtK(total)+'</span><span class="chev">›</span></div>'+
+          (sub?'<div class="dgs">'+sub+'</div>':'')+'<div class="dgb">'+body+'</div></div>';
       }
-      bOut+='<div class="dr-sec" style="margin:14px 0 6px">Tickets payés'+(paid.length?' ('+paid.length+')':'')+'</div>';
-      if(true){
-        paid.forEach(function(e){ var dd=(e.date||"").split("-"); bOut+='<div class="entry ecomp" data-id="'+esc(e.id)+'"><span class="n">'+esc(e.marchand)+'</span><span class="d">'+esc(dd.length===3?dd[2]+"/"+dd[1]:"")+'</span><span class="a">'+fmt(e.montant)+'</span></div>'; });
-        if(!paid.length) bOut+='<div class="muted" style="font-size:11px;margin:4px 0">Aucun ticket « payé par '+esc(person)+' » ce mois-ci.</div>';
+      var tB='';
+      if(!paid.length) tB='<div class="muted" style="font-size:11px;margin:4px 2px">Aucun ticket « payé par '+esc(person)+' » ce mois-ci.</div>';
+      else {
+        var byShop=state.depByShop;
+        tB+='<div class="dmode"><button type="button" data-v="0"'+(byShop?'':' class="on"')+'>Par date</button><button type="button" data-v="1"'+(byShop?' class="on"':'')+'>Par magasin</button></div>';
+        if(!byShop) paid.forEach(function(e){ var dd=(e.date||"").split("-"); tB+='<div class="entry ecomp" data-id="'+esc(e.id)+'"><span class="n">'+esc(e.marchand)+'</span><span class="d">'+esc(dd.length===3?dd[2]+"/"+dd[1]:"")+'</span><span class="a">'+fmtK(e.montant)+'</span></div>'; });
+        else {
+          var shops={}, order=[];
+          paid.forEach(function(e){ var k=String(e.marchand||"?").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim(); if(!shops[k]){ shops[k]={ n:0, t:0, names:{} }; order.push(k); } shops[k].n++; shops[k].t+=Number(e.montant)||0; shops[k].names[e.marchand]=(shops[k].names[e.marchand]||0)+1; });
+          order.sort(function(x,y){ return shops[y].t-shops[x].t; }).forEach(function(k){ var sh=shops[k], nm=Object.keys(sh.names).sort(function(x,y){ return sh.names[y]-sh.names[x]; })[0];
+            tB+='<div class="dfrow"><span class="n">'+esc(nm)+'</span><span class="k">'+(sh.n>1?sh.n+' tickets':'1 ticket')+'</span><span class="a">'+fmtK(sh.t)+'</span></div>'; });
+        }
       }
+      bOut+=dGrp("t", "Tickets payés", paid.length, paidTotal, '', tB);
+      var fB='';
+      ["commun","perso"].forEach(function(kd){
+        var L=fraisThis.filter(function(f){ return fraisKind(f, person)===kd; }).sort(function(x,y){ return fraisMontant(y,month)-fraisMontant(x,month); });
+        if(!L.length) return;
+        fB+='<div class="dsub"><span>'+(kd==="commun"?"Communs":"Perso")+'</span><span>'+fmtK(kd==="commun"?fraisCommun:fraisPerso)+'</span></div>';
+        L.forEach(function(f){ fB+='<div class="dfrow"><span class="n">'+esc(f.label)+'</span><span class="a">'+fmtK(fraisMontant(f, month))+'</span></div>'; });
+      });
+      if(!fraisThis.length) fB='<div class="muted" style="font-size:11px;margin:4px 2px">Aucun frais fixe ce mois-ci.</div>';
+      bOut+=dGrp("f", "Frais fixes", fraisThis.length, fraisTotal, (fraisPerso&&fraisCommun?'Communs '+fmtK(fraisCommun)+' · Perso '+fmtK(fraisPerso):''), fB);
+      bOut+='<div class="dtot"><span>Total</span><span class="v">'+fmtK(depenses)+'</span></div>';
       bOut+='<div class="clink" id="cptFrais"><span>Gérer les frais fixes</span><span>›</span></div>';
       acc+=sec("dep", "var(--coral)", "Dépenses", "−"+fmtS(depenses), "var(--coral)");
 
@@ -3319,6 +3356,8 @@
         state.compteSel=k; store.write("compteSel", k); render(); }; });
       [].forEach.call(document.querySelectorAll(".cptGo"), function(r){ r.onclick=function(){ state.cptPage=r.getAttribute("data-page"); state.view="comptedet"; render(); window.scrollTo(0,0); }; });
       if(page) bindBack(function(){ if(state.cptFromAll){ state.cptFromAll=false; state.compteSel="__all"; store.write("compteSel", "__all"); } state.view="compte"; render(); window.scrollTo(0,0); });
+      [].forEach.call(document.querySelectorAll(".dgrp .dgh"), function(hd){ hd.onclick=function(){ var g=hd.parentNode, k=g.getAttribute("data-g"); if(!state.depOpen) state.depOpen={}; state.depOpen[k]=!state.depOpen[k]; g.classList.toggle("open", !!state.depOpen[k]); }; });
+      [].forEach.call(document.querySelectorAll(".dmode button"), function(bt){ bt.onclick=function(){ state.depByShop=bt.getAttribute("data-v")==="1"; render(); }; });
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.cptChart=bt.getAttribute("data-m"); store.write("cptChart", state.cptChart); render(); }; });
       if(!page && document.querySelector(".cch-tabs")) wireCptSwipe(cmode, CMODES.map(function(x){ return x[0]; }));
       var lr=document.getElementById("liqrow"); if(lr) lr.onclick=function(){
