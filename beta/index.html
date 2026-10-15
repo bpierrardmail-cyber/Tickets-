@@ -625,6 +625,8 @@
         if(!lockCfg.bioId) h+=it("lockBio","👆","Ajouter l'empreinte","");
         h+=it("lockOff","🔓","Désactiver le verrouillage","",true);
       }
+      var plist=uniquePersons(); if(plist.indexOf(mePerson())<0) plist.unshift(mePerson());
+      h+='<div class="dr-sec">Personnes</div>'+it("persons","👥","Personnes",esc(plist.join(", ")+" · ajouter, renommer, supprimer"));
       h+='<div class="dr-sec">Devise</div>'+it("devise","💱","Devise principale",esc(curSym()+" · "+CURS[BASE].l));
       h+='<div class="dr-sec">Export</div>'+it("pdf","📄","Exporter en PDF",esc("Bilan sur la période de ton choix"));
       h+='<div class="dr-foot"><span class="beta-tag">Version β · '+esc((document.querySelector('meta[name=build]')||{}).content||'')+'</span></div>';
@@ -635,8 +637,62 @@
       function closeAnim(){ ov.classList.remove("open"); setTimeout(closeMenu, 200); }
       ov.onclick=function(e){ if(e.target===ov) closeAnim(); };
       ov.querySelector(".dr-x").onclick=closeAnim;
-      var acts={ backup:backupData, restore:function(){ restorein.click(); }, lockSetup:lockSetup, lockBio:lockEnableBio, lockOff:lockDisable, devise:chooseCurrency, pdf:choosePdfPeriod };
+      var acts={ backup:backupData, restore:function(){ restorein.click(); }, lockSetup:lockSetup, lockBio:lockEnableBio, lockOff:lockDisable, devise:chooseCurrency, pdf:choosePdfPeriod, persons:managePersons };
       [].forEach.call(ov.querySelectorAll(".dr-item"), function(b){ b.onclick=function(){ var fn=acts[b.getAttribute("data-k")]; closeMenu(); if(fn) fn(); }; });
+    }
+    function personCounts(n){
+      var t=state.entries.filter(function(e){ return (e.payePar||"").trim()===n; }).length, f=fraisCommuns.filter(function(x){ return (x.personne||"").trim()===n; }).length;
+      return t+" ticket"+(t>1?"s":"")+" · "+f+" frais fixe"+(f>1?"s":"");
+    }
+    function managePersons(){
+      var me=mePerson(), all=uniquePersons(true); if(all.indexOf(me)<0) all.unshift(me);
+      var act=all.filter(function(n){ return !isArchived(n); }).sort(function(a,b){ return a===me?-1:(b===me?1:a.localeCompare(b)); }), old=all.filter(isArchived);
+      function row(n, arch){ var r=personRec(n);
+        return '<button type="button" class="dr-item" data-p="'+esc(n)+'"'+(arch?' style="opacity:.6"':'')+'><span class="ic">'+(n===me?'🙂':'👤')+'</span><span>'+esc(n)+(n===me?' <span style="font-size:11px;color:var(--accent);font-weight:600">· toi</span>':'')+
+          '<small>'+(arch?'supprimée en '+esc(monthLabelOf(r.archived))+' · ':'')+personCounts(n)+'</small></span><span class="chev">›</span></button>'; }
+      var h='<div class="sheet-title">Personnes</div><div class="ui-intro">Elles apparaissent dans « Payé par » et « Pour qui ».</div><div class="ui-stack">';
+      act.forEach(function(n){ h+=row(n,false); });
+      if(old.length){ h+='<div class="dr-sec" style="margin:6px 2px -2px">Anciennes personnes · historique conservé</div>'; old.forEach(function(n){ h+=row(n,true); }); }
+      h+='<button type="button" class="btn ghost" id="pAdd">＋ Ajouter une personne</button><button type="button" class="btn ghost ui-no">Fermer</button></div>';
+      var s=uiSheet(h);
+      s.q(".ui-no").onclick=s.close;
+      s.q("#pAdd").onclick=function(){ s.close(); personForm(null); };
+      [].forEach.call(s.qa("[data-p]"), function(b){ b.onclick=function(){ s.close(); personMenu(b.getAttribute("data-p")); }; });
+    }
+    function personMenu(n){
+      var me=mePerson();
+      if(isArchived(n)) return uiChoice(n, "Supprimée en "+esc(monthLabelOf(personRec(n).archived))+". Ses tickets et frais passés sont conservés.", [{ l:"Rétablir", fn:function(){ restorePerson(n); } }]);
+      var ch=[{ l:"Renommer", fn:function(){ personForm(n); } }];
+      if(n!==me) ch.push({ l:"Supprimer", danger:true, fn:function(){ archivePerson(n); } });
+      uiChoice(n, n===me?"C'est toi : titulaire du compte principal.":personCounts(n), ch);
+    }
+    function personForm(old){
+      uiForm({ title:(old?"Renommer « "+old+" »":"Nouvelle personne"), fields:[{ key:"nom", label:"Prénom", value:(old||""), required:true }], ok:(old?"Renommer":"Ajouter") }, function(r){
+        var nm=(r.nom||"").trim(); if(!nm) return "Indique un prénom.";
+        if(nm.toLowerCase()==="commun") return "« Commun » est réservé aux dépenses partagées.";
+        if(old && nm===old) return;
+        if(uniquePersons(true).concat([mePerson()]).some(function(x){ return x.toLowerCase()===nm.toLowerCase() && x!==old; })) return "Ce prénom existe déjà.";
+        if(!old){ personnes.push({ nom:nm }); persistPersonnes(); uiToast(nm+" ajouté(e)"); render(); return; }
+        state.entries.forEach(function(e){ if((e.payePar||"").trim()===old) e.payePar=nm; }); persist();
+        fraisCommuns.forEach(function(f){ if((f.personne||"").trim()===old) f.personne=nm; }); persistFrais();
+        comptes.forEach(function(a){ if(a.payer===old) a.payer=nm; }); persistComptes();
+        var rec=personRec(old); if(rec) rec.nom=nm; else personnes.push({ nom:nm }); persistPersonnes();
+        uiToast("« "+old+" » s'appelle maintenant « "+nm+" »"); render();
+      });
+    }
+    function archivePerson(n){
+      var curM=monthKey(todayISO());
+      var fx=fraisCommuns.filter(function(f){ return (f.personne||"").trim()===n && f.recurrent && (!f.endMonth || f.endMonth>curM); });
+      uiConfirm("Supprimer « "+esc(n)+" » ?<br>Elle n'apparaîtra plus dans les choix. Ses tickets et frais passés restent dans l'historique."+(fx.length?"<br>Ses "+(fx.length>1?fx.length+" frais fixes mensuels s'arrêtent":"frais fixe mensuel s'arrête")+" après "+esc(monthLabelOf(curM))+".":""), function(){
+        fx.forEach(function(f){ f.endMonth=curM; f.endByArchive=1; }); if(fx.length) persistFrais();
+        var rec=personRec(n); if(rec) rec.archived=curM; else personnes.push({ nom:n, archived:curM }); persistPersonnes();
+        uiToast("« "+n+" » supprimée · historique conservé"); render();
+      }, { ok:"Supprimer", danger:true });
+    }
+    function restorePerson(n){
+      fraisCommuns.forEach(function(f){ if((f.personne||"").trim()===n && f.endByArchive){ delete f.endMonth; delete f.endByArchive; } }); persistFrais();
+      var rec=personRec(n); if(rec) delete rec.archived; persistPersonnes();
+      uiToast("« "+n+" » est de retour"); render();
     }
     function choosePdfPeriod(){
       var curM=monthKey(todayISO());
@@ -728,6 +784,12 @@
     if(!comptes || !comptes.length){ comptes=[{ key:"Benoit", nom:"Compte courant", payer:"Benoit", main:true }]; store.write("comptes", comptes); }
     function persistComptes(){ store.write("comptes", comptes); }
     function acctByKey(k){ for(var i=0;i<comptes.length;i++){ if(comptes[i].key===k) return comptes[i]; } return null; }
+    // Personnes gérées dans le menu : ajoutées à la main, ou « supprimées » (archivées) sans toucher à l'historique
+    var personnes = store.read("personnes", []);   // [{ nom, archived:"AAAA-MM" }]
+    function persistPersonnes(){ store.write("personnes", personnes); }
+    function personRec(n){ return personnes.filter(function(x){ return x.nom===n; })[0]||null; }
+    function isArchived(n){ var r=personRec(n); return !!(r && r.archived); }
+    function mePerson(){ var a=mainAcct(); return (a && a.payer) || "Benoit"; }
     function mainAcct(){ return comptes.filter(function(c){ return c.main; })[0] || comptes[0]; }
     function curAcctKey(){ var k=state.compteSel||store.read("compteSel", null), a=k&&acctByKey(k); return (a||mainAcct()).key; }
     // Ticket : compte choisi sur le ticket, sinon selon « payé par »
@@ -2523,7 +2585,7 @@
       h += '<label class="f">Catégorie</label><div class="chips" id="chips">';
       CATS.forEach(function(c){ h += '<button class="chip'+(d.categorie===c?" on":"")+'" data-cat="'+esc(c)+'">'+esc(c)+'</button>'; });
       h += '</div>';
-      var payers=uniquePersons();
+      var payers=uniquePersons(); if(d.payePar && d.payePar!=="Commun" && payers.indexOf(d.payePar)<0) payers.push(d.payePar);
       h += '<label class="f">Payé par</label><div class="chips" id="payer">';
       h += '<button class="chip'+(!(d.payePar||"")?" on":"")+'" data-payer="">—</button>';
       payers.forEach(function(p){ h += '<button class="chip'+(d.payePar===p?" on":"")+'" data-payer="'+esc(p)+'">'+esc(p)+'</button>'; });
@@ -2752,9 +2814,10 @@
       setNav("articles", true);
     }
 
-    function uniquePersons(){
+    function uniquePersons(withArchived){
       var set={}, arr=[];
-      function add(w){ w=(w||"").trim(); if(w && w!=="Commun" && !set[w]){ set[w]=1; arr.push(w); } }
+      function add(w){ w=(w||"").trim(); if(w && w!=="Commun" && !set[w] && (withArchived || !isArchived(w))){ set[w]=1; arr.push(w); } }
+      personnes.forEach(function(x){ add(x.nom); });
       fraisCommuns.forEach(function(f){ add(f.personne); });
       state.entries.forEach(function(e){ add(e.payePar); });
       arr.sort(); return arr;
@@ -2834,8 +2897,9 @@
       var totPersons=[];
       fraisCommuns.forEach(function(f){ var fp=(f.personne||"").trim(); if(fp && fp!=="Commun" && totPersons.indexOf(fp)<0) totPersons.push(fp); });
       state.entries.forEach(function(e){ var pp=(e.payePar||"").trim(); if(pp && pp!=="Commun" && totPersons.indexOf(pp)<0) totPersons.push(pp); });
+      totPersons=totPersons.filter(function(p){ var r=personRec(p); return !(r && r.archived) || month<r.archived || (D.byP[p] && D.byP[p].items.length); });
       totPersons.sort();
-      var me=totPersons.indexOf("Benoit")>=0?"Benoit":(totPersons[0]||"Benoit");
+      var me=mePerson(); if(totPersons.indexOf(me)<0) totPersons.unshift(me);
       var ppl=[me].concat(totPersons.filter(function(p){ return p!==me; }));
       function persoOf(who){ return D.byP[who]?D.byP[who].total:0; }
       function partOf(who){ return persoOf(who)+D.commun/2+D.prod/2; }
@@ -4599,7 +4663,7 @@
       [].forEach.call(document.querySelectorAll(".prldel"), function(b){ b.onclick=function(){ delPrelevement(b.getAttribute("data-id"), b.getAttribute("data-pr")); }; });
     }
     function backupData(){
-      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise"];
+      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes"];
       var dump={ _app:"tickets", _version:1, _date:new Date().toISOString(), data:{} };
       keys.forEach(function(k){ var v=store.read(k, null); if(v!==null) dump.data[k]=v; });
       dump.photos = PHOTOS;
@@ -4632,7 +4696,7 @@
           if(!data || typeof data!=="object") throw new Error("format non reconnu");
           var n=(data.entries && data.entries.length) ? data.entries.length : 0;
           if(!window.confirm("Restaurer cette sauvegarde ?\n"+n+" ticket(s) vont REMPLACER les données actuelles.")) return;
-          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise"].forEach(function(k){
+          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes"].forEach(function(k){
             if(k in data) store.write(k, data[k]);
           });
           if(data.taxoV2!==2) store.write("taxoV2", null);
