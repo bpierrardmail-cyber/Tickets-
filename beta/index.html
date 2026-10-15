@@ -362,6 +362,7 @@
     .acc-chips button.add{ font-weight:500; color:var(--accent); border-style:dashed; }
     .cacc-h{ display:flex; align-items:center; gap:10px; padding:13px 2px; cursor:pointer; }
     .cacc-h .t{ flex:1; font-size:15px; font-weight:700; }
+    .cacc-h .t small{ display:block; font-size:11.5px; font-weight:500; color:var(--muted); margin-top:2px; }
     .cacc-h .v{ font-variant-numeric:tabular-nums; font-weight:700; font-size:15px; }
     .cacc-h .ch{ width:14px; text-align:center; color:var(--muted); font-size:12px; }
     .cacc-sec + .cacc-sec{ border-top:1px solid var(--line); }
@@ -3042,8 +3043,8 @@
       });
       acc+='<div class="cacc-sec"><div class="cacc-h" style="cursor:default"><span class="t">Total des comptes</span><span class="v" style="color:'+(totB<0?"var(--coral)":"var(--accent)")+'">'+fmtS(totB)+'</span><span class="ch"></span></div></div></section>';
       acc+='<section class="paper cacc">';
-      acc+='<div class="cacc-sec"><div class="cacc-h allGo" data-acct="'+esc(mainAcct().key)+'" data-page="ep"><i class="cdot" style="background:#7c9cf4;margin:0"></i><span class="t">Épargne</span><span class="v">'+fmtS(ep)+'</span><span class="ch">›</span></div></div>';
-      acc+='<div class="cacc-sec"><div class="cacc-h" id="goprov"><i class="cdot" style="background:#c78bd6;margin:0"></i><span class="t">Provisions</span><span class="v">'+fmtS(prov)+'</span><span class="ch">›</span></div></div>';
+      acc+='<div class="cacc-sec"><div class="cacc-h allGo" data-acct="'+esc(mainAcct().key)+'" data-page="ep"><i class="cdot" style="background:#7c9cf4;margin:0"></i><span class="t">Épargne<small>'+epargne.length+' compte'+(epargne.length>1?'s':'')+' épargne</small></span><span class="v">'+fmtS(ep)+'</span><span class="ch">›</span></div></div>';
+      acc+='<div class="cacc-sec"><div class="cacc-h" id="goprov"><i class="cdot" style="background:#c78bd6;margin:0"></i><span class="t">Provisions<small>'+provisions.length+' enveloppe'+(provisions.length>1?'s':'')+'</small></span><span class="v">'+fmtS(prov)+'</span><span class="ch">›</span></div></div>';
       acc+='<div class="cacc-sec"><div class="cacc-h" style="cursor:default"><span class="t">Comptes + épargne</span><span class="v" style="color:var(--accent)">'+fmtS(totB+ep)+'</span><span class="ch"></span></div></div></section>';
       h+=acc;
       app.innerHTML=h;
@@ -3208,8 +3209,9 @@
       var heroMain=hero;
       // Corps : une seule carte, une ligne par catégorie qui se déplie au toucher
       var C_T="#e0a458", C_P="#c78bd6", C_C="#7c9cf4";
-      function sec(key, dot, title, val, valCol){
-        return '<div class="cacc-sec"><div class="cacc-h cptGo" data-page="'+key+'"><i class="cdot" style="background:'+dot+';margin:0"></i><span class="t">'+title+'</span><span class="v" style="color:'+(valCol||"var(--ink)")+'">'+val+'</span><span class="ch">›</span></div></div>';
+      function nb(n, one, many){ return n+" "+(n>1?many:one); }
+      function sec(key, dot, title, val, valCol, sub){
+        return '<div class="cacc-sec"><div class="cacc-h cptGo" data-page="'+key+'"><i class="cdot" style="background:'+dot+';margin:0"></i><span class="t">'+title+(sub?'<small>'+sub+'</small>':'')+'</span><span class="v" style="color:'+(valCol||"var(--ink)")+'">'+val+'</span><span class="ch">›</span></div></div>';
       }
       var acc='<section class="paper cacc">';
 
@@ -3225,7 +3227,7 @@
       });
       if(!virs.length) bIn+='<div class="muted" style="font-size:11px;margin:4px 0">Aucun virement ce mois-ci.</div>';
       bIn+='<div class="clink" id="addvir"><span>+ Ajouter un virement</span><span></span></div>';
-      acc+=sec("es", "var(--accent)", "Virements", signS(virTotal), (virTotal<0?"var(--coral)":"var(--accent)"));
+      acc+=sec("es", "var(--accent)", "Virements", signS(virTotal), (virTotal<0?"var(--coral)":"var(--accent)"), nb(virs.length, "virement", "virements"));
 
       // ---- Dépenses ----
       var bOut='';
@@ -3259,7 +3261,7 @@
       if(!fraisThis.length) fB='<div class="muted" style="font-size:11px;margin:4px 2px">Aucun frais fixe ce mois-ci.</div>';
       bOut+=dGrp("f", "Frais fixes", fraisThis.length, fraisTotal, (fraisPerso&&fraisCommun?'Communs '+fmtK(fraisCommun)+' · Perso '+fmtK(fraisPerso):''), fB);
       bOut+='<div class="dtot"><span>Total</span><span class="v">'+fmtK(depenses)+'</span></div>';
-      acc+=sec("dep", "var(--coral)", "Dépenses", "−"+fmtS(depenses), "var(--coral)");
+      acc+=sec("dep", "var(--coral)", "Dépenses", "−"+fmtS(depenses), "var(--coral)", nb(paid.length, "ticket", "tickets")+" · "+nb(fraisThis.length, "frais fixe", "frais fixes"));
 
       // ---- Résultat ----
       var bRes='<div class="leader"><span class="lbl">Solde de fin de mois</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+(soldeFin<0?"var(--coral)":"var(--accent)")+'">'+fmt(soldeFin)+'</span></div>';
@@ -3291,13 +3293,13 @@
       if(!epargne.length) bEp+='<div class="muted" style="font-size:11px;margin:4px 0">Aucun compte épargne.</div>';
       var tpm=pctStr(totPrev,totCur); if(tpm && epargne.length>1) bEp+='<div class="muted" style="font-size:10.5px;margin:2px 0"><span style="color:'+pctColor(totPrev,totCur)+'">Total '+tpm+' vs mois préc.</span></div>';
       bEp+='<div class="clink" id="addep"><span>+ Ajouter un compte épargne</span><span></span></div>';
-      var accEp=acct.main ? sec("ep", "#7c9cf4", "Épargne", fmtS(totCur), "var(--ink)") : "";
+      var accEp=acct.main ? sec("ep", "#7c9cf4", "Épargne", fmtS(totCur), "var(--ink)", nb(epargne.length, "compte épargne", "comptes épargne")) : "";
 
       // ---- Provisions (ouvre l'écran dédié) ----
       var provT=0; try{ provT=provTotalAt(month); }catch(e){}
       // Groupes : 1. Virements + Dépenses · 2. Provisions + Épargne (compte principal) · 3. Solde bancaire estimé
       acc+='</section>';
-      if(acct.main) acc+='<section class="paper cacc">'+'<div class="cacc-sec"><div class="cacc-h" id="goprov"><i class="cdot" style="background:#c78bd6;margin:0"></i><span class="t">Provisions</span><span class="v">'+fmtS(provT)+'</span><span class="ch">›</span></div></div>'+accEp+'</section>';
+      if(acct.main) acc+='<section class="paper cacc">'+'<div class="cacc-sec"><div class="cacc-h" id="goprov"><i class="cdot" style="background:#c78bd6;margin:0"></i><span class="t">Provisions<small>'+provisions.length+' enveloppe'+(provisions.length>1?'s':'')+'</small></span><span class="v">'+fmtS(provT)+'</span><span class="ch">›</span></div></div>'+accEp+'</section>';
       acc+='<section class="paper cacc">'+accRes+'</section>';
       if(!page){
         h+='<div class="acc-chips"><div class="acc-scroll">'+(multi?'<button type="button" data-acct="__all">Tous</button>':'')+comptes.map(function(a){ return '<button type="button" data-acct="'+esc(a.key)+'"'+(a.key===person?' class="on"':'')+'>'+esc(a.nom)+'</button>'; }).join("")+
