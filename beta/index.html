@@ -3268,7 +3268,7 @@
       bRes+='<div class="muted note">'+(!liq?"touche pour indiquer tes espèces du mois":(liq.month===month?"saisi pour ce mois":"repris de "+esc(monthLabelOf(liq.month))))+'</div>';
       bRes+='<div class="leader"><span class="lbl">Solde bancaire estimé</span><span class="fill"></span><span class="val" style="color:'+(soldeBanque<0?"var(--coral)":"var(--accent)")+'">'+fmt(soldeBanque)+'</span></div>';
       bRes+='<div class="muted note">sans le liquide · reporté + virements faits − tickets − frais faits</div>';
-      acc+=sec("res", "#e6b450", "Solde bancaire estimé", fmtS(soldeBanque), (soldeBanque<0?"var(--coral)":"var(--ink)"));
+      var accRes=sec("res", "#e6b450", "Solde bancaire estimé", fmtS(soldeBanque), (soldeBanque<0?"var(--coral)":"var(--ink)"));
 
       // ---- Épargne ----
       var epAllM={}; epargne.forEach(function(c){ Object.keys(c.vals||{}).forEach(function(m){ epAllM[m]=true; }); });
@@ -3291,12 +3291,14 @@
       if(!epargne.length) bEp+='<div class="muted" style="font-size:11px;margin:4px 0">Aucun compte épargne.</div>';
       var tpm=pctStr(totPrev,totCur); if(tpm && epargne.length>1) bEp+='<div class="muted" style="font-size:10.5px;margin:2px 0"><span style="color:'+pctColor(totPrev,totCur)+'">Total '+tpm+' vs mois préc.</span></div>';
       bEp+='<div class="clink" id="addep"><span>+ Ajouter un compte épargne</span><span></span></div>';
-      if(acct.main) acc+=sec("ep", "#7c9cf4", "Épargne", fmtS(totCur), "var(--ink)");
+      var accEp=acct.main ? sec("ep", "#7c9cf4", "Épargne", fmtS(totCur), "var(--ink)") : "";
 
       // ---- Provisions (ouvre l'écran dédié) ----
       var provT=0; try{ provT=provTotalAt(month); }catch(e){}
-      if(acct.main) acc+='<div class="cacc-sec"><div class="cacc-h" id="goprov"><i class="cdot" style="background:#c78bd6;margin:0"></i><span class="t">Provisions</span><span class="v">'+fmtS(provT)+'</span><span class="ch">›</span></div></div>';
+      // Groupes : 1. Virements + Dépenses · 2. Provisions + Épargne (compte principal) · 3. Solde bancaire estimé
       acc+='</section>';
+      if(acct.main) acc+='<section class="paper cacc">'+'<div class="cacc-sec"><div class="cacc-h" id="goprov"><i class="cdot" style="background:#c78bd6;margin:0"></i><span class="t">Provisions</span><span class="v">'+fmtS(provT)+'</span><span class="ch">›</span></div></div>'+accEp+'</section>';
+      acc+='<section class="paper cacc">'+accRes+'</section>';
       if(!page){
         h+='<div class="acc-chips"><div class="acc-scroll">'+(multi?'<button type="button" data-acct="__all">Tous</button>':'')+comptes.map(function(a){ return '<button type="button" data-acct="'+esc(a.key)+'"'+(a.key===person?' class="on"':'')+'>'+esc(a.nom)+'</button>'; }).join("")+
            '</div><div class="acc-fixed"><button type="button" data-acct="__add" class="add'+(multi?' ico':'')+'" aria-label="Ajouter un compte">'+(multi?'＋':'＋ Compte')+'</button>'+(multi?'<button type="button" data-acct="__manage" class="add ico" aria-label="Gérer les comptes">⚙︎</button>':'')+'</div></div>';
