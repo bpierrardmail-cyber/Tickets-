@@ -317,6 +317,15 @@
     .ad-row b{ font-weight:600; text-align:right; }
     .ad .btn{ margin-top:14px; }
     .pos.prow{ cursor:pointer; }
+    .bsl{ overflow:hidden; margin:0 -18px; touch-action:pan-y; }
+    .bsl-track{ display:flex; width:200%; transition:transform .28s ease; align-items:flex-start; }
+    .bsl-track.drag{ transition:none; }
+    .bsl-pane{ width:50%; padding:0 18px; box-sizing:border-box; overflow:hidden; }
+    .bsl-tog{ display:flex; justify-content:center; margin-top:10px; }
+    .bsl-tog span{ display:flex; gap:2px; padding:3px; border-radius:999px; background:rgba(255,255,255,.05); border:1px solid var(--line); }
+    .bsl-tog button{ width:40px; height:30px; border:0; border-radius:999px; background:none; color:var(--muted); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
+    .bsl-tog button.on{ background:var(--ink); color:var(--bg0); }
+    .bsl-tog svg{ width:17px; height:17px; }
     .bch-note{ font-size:11px; color:var(--muted); margin-top:10px; line-height:1.45; }
     /* Comptes bourse : une carte par compte */
     .bsec-h{ display:flex; align-items:baseline; justify-content:space-between; font-size:17px; font-weight:700; margin:20px 4px 0; }
@@ -1229,6 +1238,65 @@
       var d=new Date(t);
       return long ? d.toLocaleDateString("fr-FR",{day:"numeric",month:"short",year:"numeric"})+" · "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})
                   : d.toLocaleDateString("fr-FR",{day:"numeric",month:"short"});
+    }
+    function bourseBarsHTML(month, curM){
+      var allM={}; bourse.forEach(function(c){ bMonths(c).forEach(function(mk){ allM[mk]=1; }); });
+      var ms=Object.keys(allM).sort(); if(!ms.length) return "";
+      function perf(mk){
+        var pk=prevMonthKey(mk), g=0, base=0, any=false;
+        bourse.forEach(function(c){
+          if(bClosedAt(c,mk)) return; var a=bAt(c,mk); if(!a) return; var p=bAt(c,pk);
+          var v=Number(a.valeur)||0, k=Number(a.capital)||0, pv=p?Number(p.valeur)||0:0, pc=p?Number(p.capital)||0:0;
+          g+=(v-k)-(pv-pc); base+=pv+Math.max(0,k-pc); any=true;
+        });
+        return (any && base>0)?g/base*100:null;
+      }
+      var y=month.slice(0,4), years={}; ms.forEach(function(m){ years[m.slice(0,4)]=1; }); years[curM.slice(0,4)]=1;
+      var ys=Object.keys(years).sort(), vals=[], mx=0, ytd=1, hasY=false;
+      for(var i=1;i<=12;i++){ var mk=y+"-"+(i<10?"0":"")+i, r=(mk<=curM && mk>ms[0])?perf(mk):null; vals.push({mk:mk,r:r}); if(r!==null){ mx=Math.max(mx,Math.abs(r)); ytd*=1+r/100; hasY=true; } }
+      if(!mx) mx=1;
+      var sel=vals.filter(function(v){ return v.mk===month; })[0], LET="JFMAMJJASOND";
+      function pc(r){ return (r>=0?"+":"−")+Math.abs(r).toFixed(1).replace(".",",")+" %"; }
+      var H=70, cols='';
+      vals.forEach(function(v,i){
+        var on=v.mk===month, fut=v.mk>curM, r=v.r, col=r===null?"":(r>=0?"var(--accent)":"var(--coral)");
+        var hh=r===null?0:Math.max(3,Math.abs(r)/mx*(H-16));
+        var bar=r===null?'':'<i style="position:absolute;left:0;right:0;'+(r>=0?'bottom:'+H+'px;height:'+hh+'px;border-radius:5px 5px 2px 2px':'top:'+H+'px;height:'+hh+'px;border-radius:2px 2px 5px 5px')+';background:'+col+';opacity:'+(on?1:.38)+'"></i>';
+        var lab=(on&&r!==null)?'<b style="position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:10.5px;color:'+col+';'+(r>=0?'bottom:'+(H+hh+3)+'px':'top:'+(H+hh+3)+'px')+'">'+pc(r)+'</b>':'';
+        cols+='<div class="bmonth" data-m="'+v.mk+'" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:'+(fut?'default':'pointer')+'">'+
+          '<div style="position:relative;width:100%;height:'+(2*H)+'px;border-radius:6px;background:'+(on?'rgba(255,255,255,.07)':'rgba(255,255,255,.025)')+'">'+
+          '<span style="position:absolute;left:0;right:0;top:'+H+'px;border-top:1px solid var(--line2)"></span>'+bar+lab+'</div>'+
+          '<span style="font-size:10.5px;font-weight:'+(on?700:500)+';color:'+(on?'var(--ink)':fut?'rgba(255,255,255,.22)':'var(--muted)')+'">'+LET[i]+'</span></div>';
+      });
+      var head='<div class="bch-read">'+(hasY?'<span class="bch-badge" style="color:'+(ytd>=1?'var(--accent)':'var(--coral)')+';background:'+(ytd>=1?'var(--accent-dim)':'var(--coral-dim)')+'">'+(ytd>=1?'▲ ':'▼ ')+pc((ytd-1)*100)+'</span><span class="bch-cap">en '+y+'</span>':'<span class="bch-cap">Pas encore de mois complet en '+y+'</span>')+
+        (sel&&sel.r!==null?'<span class="bch-cap" style="margin-left:auto">'+esc(capFirst(monthLabelOf(month).split(" ")[0]))+' <b style="color:'+(sel.r>=0?'var(--accent)':'var(--coral)')+'">'+pc(sel.r)+'</b></span>':'')+'</div>';
+      var yrs=ys.length<2?'':'<div class="bch-ranges" style="justify-content:center">'+ys.map(function(yy){ return '<button type="button" class="bmyear'+(yy===y?' on':'')+'" data-y="'+yy+'" style="flex:0 0 auto;padding:8px 16px">'+yy+'</button>'; }).join("")+'</div>';
+      return '<div class="bch">'+head+'<div style="display:flex;gap:5px;margin-top:10px">'+cols+'</div>'+yrs+'</div>';
+    }
+    function bourseSlides(curve, bars){
+      if(!curve || !bars) return curve||bars;
+      if(!state.bView) state.bView=store.read("bView","curve");
+      var v=state.bView==="bars"?"bars":"curve", mode='';
+      curve=curve.replace(/<button type="button" class="bch-mode"[^]*?<\/button>/, function(m){ mode=m; return ""; });
+      if(v==="bars") mode=mode.replace('class="bch-mode"','class="bch-mode" style="display:none"');
+      var IC='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14 L7 9 L11 12 L18 5"/></svg>';
+      var IB='<svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="9" width="4" height="9" rx="1.2"/><rect x="8" y="3" width="4" height="15" rx="1.2"/><rect x="14" y="11" width="4" height="7" rx="1.2"/></svg>';
+      return mode+'<div class="bsl" id="bsl"><div class="bsl-track" id="bslT" style="transform:translateX('+(v==="bars"?"-50%":"0")+')"><div class="bsl-pane">'+curve+'</div><div class="bsl-pane">'+bars+'</div></div></div>'+
+        '<div class="bsl-tog"><span><button type="button" data-v="curve" class="'+(v==="curve"?"on":"")+'" aria-label="Courbe">'+IC+'</button><button type="button" data-v="bars" class="'+(v==="bars"?"on":"")+'" aria-label="Mois par mois">'+IB+'</button></span></div>';
+    }
+    function wireBourseSlides(curM){
+      var sl=document.getElementById("bsl"), tr=document.getElementById("bslT"); if(!sl||!tr) return;
+      function go(v){ state.bView=v; store.write("bView", v); render(); }
+      [].forEach.call(document.querySelectorAll(".bsl-tog button"), function(b){ b.onclick=function(){ go(b.getAttribute("data-v")); }; });
+      var x0=null, y0=0, dx=0, moved=false, base=(state.bView==="bars")?-sl.clientWidth:0;
+      sl.addEventListener("click", function(ev){ if(moved){ moved=false; ev.stopPropagation(); ev.preventDefault(); } }, true);
+      sl.addEventListener("pointerdown", function(ev){ moved=false; var t=ev.target; while(t&&t!==sl){ if(t.id==="bchPlot") return; t=t.parentNode; } x0=ev.clientX; y0=ev.clientY; dx=0; });
+      sl.addEventListener("pointermove", function(ev){ if(x0===null) return; dx=ev.clientX-x0; if(Math.abs(dx)>8 && Math.abs(dx)>Math.abs(ev.clientY-y0)){ tr.classList.add("drag"); tr.style.transform="translateX("+Math.max(-sl.clientWidth,Math.min(0,base+dx))+"px)"; } });
+      function up(){ if(x0===null) return; x0=null; tr.classList.remove("drag"); if(Math.abs(dx)>10) moved=true;
+        if(dx<-50 && state.bView!=="bars") return go("bars"); if(dx>50 && state.bView==="bars") return go("curve");
+        tr.style.transform="translateX("+(state.bView==="bars"?"-50%":"0")+")"; }
+      sl.addEventListener("pointerup", up); sl.addEventListener("pointercancel", up);
+      [].forEach.call(document.querySelectorAll(".bmyear"), function(b){ b.onclick=function(){ var yy=b.getAttribute("data-y"), mk=(yy===curM.slice(0,4))?curM:yy+"-12"; if(!state.months) state.months={}; state.months.bourse=(mk===curM?null:mk); render(); }; });
     }
     function bourseChartHTML(){
       var mode=state.bMode||store.read("bChartMode","pl"); state.bMode=mode;
@@ -3245,22 +3313,6 @@
         if(ch) persistBourse();
       }
       var h=header()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>%%HERO%%%%MESC%%';
-      (function(){
-        function portVal(mk){ var t=0; bourse.forEach(function(c){ var a=bAt(c,mk); if(a) t+=Number(a.valeur)||0; }); return t; }
-        var allM={}; bourse.forEach(function(c){ bMonths(c).forEach(function(mk){ allM[mk]=1; }); });
-        var ms=Object.keys(allM).sort();
-        if(!ms.length) return;
-        var seq=[], mm=ms[0]; while(mm<=curM){ seq.push(mm); mm=nextMonthKey(mm); if(seq.length>60) break; }
-        var strip='';
-        seq.forEach(function(mk,idx){
-          var tn=portVal(mk), tp=idx>0?portVal(seq[idx-1]):null, col="var(--muted)", bg="transparent";
-          if(tp!==null && tn>tp){ col="var(--accent)"; bg="var(--accent-dim)"; }
-          else if(tp!==null && tn<tp){ col="var(--coral)"; bg="var(--coral-dim)"; }
-          var pm=mk.split("-"); var lbl=new Date(+pm[0], +pm[1]-1, 1).toLocaleDateString("fr-FR",{month:"short"});
-          strip+='<span class="bmonth" data-m="'+mk+'" style="cursor:pointer;font-size:11px;padding:4px 9px;border-radius:8px;color:'+col+';background:'+bg+';'+(mk===month?"outline:1px solid "+col+";outline-offset:-1px":"")+'">'+esc(lbl)+'</span>';
-        });
-        h=h.replace("%%HERO%%", '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 12px">'+strip+'</div>%%HERO%%');
-      })();
       var emptyB=''; if(!bourse.some(function(c){ return bAt(c,month) && !bClosedAt(c,month); })) emptyB='<div class="muted" style="font-size:12px;margin:4px 2px 8px">Aucun compte'+(month===curM?". Ajoute ton premier compte bourse.":" ce mois-ci.")+'</div>';
       var totCap=0, totVal=0, totCash=0, totPrevVal=null, totFirstVal=null, totFirstCap=null;
       var pm=prevMonthKey(month);
@@ -3306,7 +3358,7 @@
         // Total du mois précédent tel qu'affiché ce mois-là (tous les comptes ouverts alors, y compris ceux clôturés depuis)
         var prevTot=null; bourse.forEach(function(c){ var sp=bAt(c,pm); if(!sp || bClosedAt(c,pm)) return; prevTot=(prevTot||0)+(Number(sp.valeur)||0)+bCash(sp); });
         if(prevTot!==null){ var curTot=totVal+totCash, dp=curTot-prevTot; st.push({l:"vs mois préc.", v:signS(dp), d:(bPct(prevTot,curTot)||""), c:heroCol(dp)}); }
-        h=h.replace("%%HERO%%", bourse.length?tabHero({ label:"Total portefeuille", big:totVal+totCash, sub:(totCash?"dont "+fmt(totCash)+" à investir":""), extra:bourseChartHTML(), stats:st }):"");
+        h=h.replace("%%HERO%%", bourse.length?tabHero({ label:"Total portefeuille", big:totVal+totCash, sub:(totCash?"dont "+fmt(totCash)+" à investir":""), extra:bourseSlides(bourseChartHTML(), bourseBarsHTML(month, curM)), stats:st }):"");
       })();
       h+='</section>';
       app.innerHTML=h;
@@ -3322,9 +3374,9 @@
         var a=b.getAttribute("data-id"), z=b.getAttribute("data-to"), i=-1, j=-1;
         bourse.forEach(function(c,k){ if(String(c.id)===a) i=k; if(String(c.id)===z) j=k; });
         if(i<0||j<0) return; var t=bourse[i]; bourse[i]=bourse[j]; bourse[j]=t; persistBourse(); render(); }; });
-      [].forEach.call(document.querySelectorAll(".bmonth"), function(sp){ sp.onclick=function(){ if(!state.months) state.months={}; var mk=sp.getAttribute("data-m"); state.months.bourse=(mk===curM?null:mk); render(); }; });
+      [].forEach.call(document.querySelectorAll(".bmonth"), function(sp){ sp.onclick=function(){ var mk=sp.getAttribute("data-m"); if(mk>curM) return; if(!state.months) state.months={}; state.months.bourse=(mk===curM?null:mk); render(); }; });
       wireMonthNav(month, curM, "bourse");
-      wireBourseChart();
+      wireBourseChart(); wireBourseSlides(curM);
       var apz=document.getElementById("addpos"); if(apz) apz.onclick=openPositionSearch;
       [].forEach.call(document.querySelectorAll(".pos.prow[data-p]"), function(row){ row.onclick=function(ev){ var t=ev.target; while(t && t!==row){ if(t.tagName==="BUTTON") return; t=t.parentNode; } openAssetDetail(row.getAttribute("data-a"), row.getAttribute("data-p")); }; });
       [].forEach.call(document.querySelectorAll(".posval"), function(b){ b.onclick=function(){ var f=findPosition(b.getAttribute("data-a"), b.getAttribute("data-p")); if(f) quickValue(f.p); }; });
