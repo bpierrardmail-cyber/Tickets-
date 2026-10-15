@@ -1298,11 +1298,56 @@
       sl.addEventListener("pointerup", up); sl.addEventListener("pointercancel", up);
       [].forEach.call(document.querySelectorAll(".bmyear"), function(b){ b.onclick=function(){ var yy=b.getAttribute("data-y"), mk=(yy===curM.slice(0,4))?curM:yy+"-12"; if(!state.months) state.months={}; state.months.bourse=(mk===curM?null:mk); render(); }; });
     }
+    // 1J : courbe de la journée reconstituée avec les cours intrajournaliers de chaque position (comptes manuels et liquidités fixes)
+    var bDay=null, bDayBusy=false;
+    function bDaySeries(p){
+      var api=coursApi();
+      function yahoo(sym){ if(!api) return Promise.reject(new Error("api")); return fetch(api+"/chart?symbol="+encodeURIComponent(sym)+"&range=5d").then(function(r){ return r.json(); }).then(function(j){ if(!j || !j.t || j.t.length<2) throw new Error("vide"); return { t:j.t, c:j.c }; }); }
+      if(p.src==="yf") return yahoo(p.ref);
+      return cgGet("/coins/"+encodeURIComponent(p.ref)+"/market_chart?vs_currency=eur&days=1", "/crypto/chart?id="+encodeURIComponent(p.ref)+"&days=1", function(j){ return j && Array.isArray(j.prices) && j.prices.length>1; })
+        .then(function(j){ var t=[], c=[]; j.prices.forEach(function(x){ if(x && x[1]!=null){ t.push(x[0]); c.push(x[1]); } }); return { t:t, c:c }; })
+        .catch(function(){ return yahoo(String(p.sym||"").toUpperCase()+"-EUR"); });
+    }
+    function loadBourseDay(){
+      if(bDayBusy) return; bDayBusy=true;
+      var items=[], fixed=0;
+      bourse.forEach(function(c){
+        if(c.sol && c.solQty && state.solPrice){ fixed+=bCash(bLast(c)); items.push({ p:{ src:"cg", ref:"solana", sym:"SOL" }, nowV:c.solQty*state.solPrice }); return; }
+        var tot=bTot(bLast(c));
+        if(bOpen(c)) (c.positions||[]).forEach(function(p){ if(p.src==="man") return; var v=posValue(p); if(v===null || !(v>0)) return; items.push({ p:p, nowV:v }); tot-=v; });
+        fixed+=tot;
+      });
+      if(!items.length){ bDayBusy=false; bDay={ t:Date.now(), none:1 }; return; }
+      Promise.all(items.map(function(it){ return bDaySeries(it.p).then(function(s){ it.s=s; }, function(){ it.fail=1; }); })).then(function(){
+        var now=Date.now(), from=now-86400000, cap=bourseCapNow(), pts=[], fail=0;
+        items.forEach(function(it){ if(it.fail || !it.s){ fail++; return; } it.last=it.s.c[it.s.c.length-1]; it.i=0; });
+        for(var t=from; t<=now; t+=10*60000){
+          var v=fixed;
+          items.forEach(function(it){
+            if(it.fail || !it.s || !it.last){ v+=it.nowV; return; }
+            var s=it.s; while(it.i+1<s.t.length && s.t[it.i+1]<=t) it.i++;
+            var px=s.c[0];
+            if(s.t[it.i]<=t){ px=s.c[it.i]; var j=it.i+1; if(j<s.t.length && s.t[j]-s.t[it.i]<=2*3600000) px+=(s.c[j]-s.c[it.i])*(t-s.t[it.i])/(s.t[j]-s.t[it.i]); }
+            v+=it.nowV*px/it.last;
+          });
+          pts.push({ t:t, v:Math.round(v*100)/100, c:cap });
+        }
+        pts.push({ t:now, v:Math.round(bourseTotalLive()*100)/100, c:cap });
+        bDay=(fail===items.length)?{ t:now, none:1 }:{ t:now, pts:pts, fail:fail, n:items.length };
+        bDayBusy=false;
+        if(state.view==="bourse" && state.bRange==="1J") render();
+      });
+    }
     function bourseChartHTML(){
       var mode=state.bMode||store.read("bChartMode","pl"); state.bMode=mode;
-      var all=bourseSeries().map(function(p){ return { t:p.t, v:(mode==="pl"?p.v-(p.c||0):p.v), c:p.c, m:p.m }; });
-      if(!all.length){ bChart=null; return ""; }
       var rk=state.bRange||"Max", R=BRANGES.filter(function(r){ return r[0]===rk; })[0]||BRANGES[BRANGES.length-1];
+      var src=bourseSeries();
+      if(R[1]===1){
+        if(bDay && bDay.pts && Date.now()-bDay.t<5*60000) src=bDay.pts;
+        else if(!(bDay && bDay.none && Date.now()-bDay.t<5*60000)) setTimeout(loadBourseDay, 0);
+      }
+      var all=src.map(function(p){ return { t:p.t, v:(mode==="pl"?p.v-(p.c||0):p.v), c:p.c, m:p.m }; });
+      if(!all.length){ bChart=null; return ""; }
       var now=Date.now(), from=R[1]?now-R[1]*86400000:all[0].t;
       var pts=all.filter(function(p){ return p.t>=from; });
       var before=all.filter(function(p){ return p.t<from; }).pop();
