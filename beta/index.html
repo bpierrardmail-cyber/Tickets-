@@ -1232,7 +1232,7 @@
         else adLoad(p, "1d").then(function(j){ if(document.body.contains(s.ov)){ day=j; head(); } }, function(){});
       }, 30000);
     }
-    var BRANGES=[["1S",7,"sur 7 jours"],["1M",30,"sur 1 mois"],["3M",91,"sur 3 mois"],["6M",182,"sur 6 mois"],["1A",365,"sur 1 an"],["Max",0,"depuis le début"]];
+    var BRANGES=[["1J",1,"sur 24 h"],["1S",7,"sur 7 jours"],["1M",30,"sur 1 mois"],["3M",91,"sur 3 mois"],["6M",182,"sur 6 mois"],["1A",365,"sur 1 an"],["Max",0,"depuis le début"]];
     var bChart=null;
     function bDateLabel(t, long){
       var d=new Date(t);
@@ -1302,7 +1302,7 @@
       var mode=state.bMode||store.read("bChartMode","pl"); state.bMode=mode;
       var all=bourseSeries().map(function(p){ return { t:p.t, v:(mode==="pl"?p.v-(p.c||0):p.v), c:p.c, m:p.m }; });
       if(!all.length){ bChart=null; return ""; }
-      var rk=state.bRange||"Max", R=BRANGES.filter(function(r){ return r[0]===rk; })[0]||BRANGES[5];
+      var rk=state.bRange||"Max", R=BRANGES.filter(function(r){ return r[0]===rk; })[0]||BRANGES[BRANGES.length-1];
       var now=Date.now(), from=R[1]?now-R[1]*86400000:all[0].t;
       var pts=all.filter(function(p){ return p.t>=from; });
       var before=all.filter(function(p){ return p.t<from; }).pop();
@@ -1329,7 +1329,8 @@
          '<span class="bch-yl" style="top:2px">'+(mode==="pl"?signS(vmax-pad):fmtS(vmax-pad))+'</span><span class="bch-yl" style="bottom:2px">'+(mode==="pl"?signS(vmin+pad):fmtS(vmin+pad))+'</span>'+
          '<div class="bch-end" style="left:'+(X(lp.t)/W*100).toFixed(2)+'%;top:'+Y(lp.v).toFixed(1)+'px;background:'+col+'"></div>'+
          '<div class="bch-cross" id="bchCross"></div><div class="bch-dot" id="bchDot" style="background:'+col+'"></div></div>';
-      h+='<div class="bch-x"><span>'+esc(bDateLabel(t0))+'</span><span>'+esc(bDateLabel(t1))+'</span></div>';
+      function xl(t){ if(R[1]!==1) return bDateLabel(t); var d=new Date(t), hm=d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}); return (d.toDateString()===new Date().toDateString()?"":"hier ")+hm; }
+      h+='<div class="bch-x"><span>'+esc(xl(t0))+'</span><span>'+esc(xl(t1))+'</span></div>';
       h+='<div class="bch-ranges">'+BRANGES.map(function(r){ return '<button type="button" class="bchr'+(r[0]===R[0]?' on':'')+'" data-r="'+r[0]+'">'+r[0]+'</button>'; }).join("")+'</div>';
       var since=bourseHist.length?bourseHist[0].t:null;
       return h+'</div>';
