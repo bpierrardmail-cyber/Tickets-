@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="15/10 02:20" />
+  <meta name="build" content="15/10 02:35" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -909,13 +909,18 @@
       return fetch("https://api.coingecko.com/api/v3"+path).then(function(r){ if(!r.ok) throw new Error("cg"); return r.json(); })
         .then(function(j){ if(!okFn(j)) throw new Error("cg"); return j; }).catch(viaRelay);
     }
+    // Places de cotation lisibles (pour choisir la même que sa banque)
+    var EXCH={ NYQ:"New York · $", NYS:"New York · $", NMS:"Nasdaq · $", NGM:"Nasdaq · $", NCM:"Nasdaq · $", ASE:"New York · $", PCX:"New York · $", BTS:"États-Unis · $", OQB:"États-Unis · $", PNK:"Hors cote · $",
+      PAR:"Paris · €", ENX:"Euronext · €", AMS:"Amsterdam · €", BRU:"Bruxelles · €", LIS:"Lisbonne · €", MIL:"Milan · €", MCE:"Madrid · €", FRA:"Francfort · €", GER:"Xetra · €", BER:"Berlin · €", STU:"Stuttgart · €",
+      MUN:"Munich · €", DUS:"Düsseldorf · €", HAM:"Hambourg · €", HAN:"Hanovre · €", VIE:"Vienne · €", HEL:"Helsinki · €", IRL:"Dublin · €", LSE:"Londres · £", EBS:"Suisse · CHF", SWX:"Suisse · CHF", TOR:"Toronto · $ CA", TSX:"Toronto · $ CA" };
+    function exchLabel(x){ return EXCH[x] || x || ""; }
     function searchAssets(q){
       var cgP=cgGet("/search?query="+encodeURIComponent(q), "/crypto/search?q="+encodeURIComponent(q), function(j){ return j && Array.isArray(j.coins); })
         .then(function(j){ return ((j&&j.coins)||[]).slice(0,6).map(function(c){ return { type:"crypto", src:"cg", ref:c.id, sym:String(c.symbol||"").toUpperCase(), nom:c.name, thumb:c.thumb||"", info:"Crypto"+(c.market_cap_rank?" · n°"+c.market_cap_rank:"") }; }); })
         .catch(function(){ return null; });
       var api=coursApi();
       var yfP=api ? fetch(api+"/search?q="+encodeURIComponent(q)).then(function(r){ return r.json(); })
-        .then(function(j){ return ((j&&j.results)||[]).slice(0,8).map(function(x){ return { type:"action", src:"yf", ref:x.symbol, sym:x.symbol, nom:x.name, info:[x.type, x.exch].filter(Boolean).join(" · ") }; }); })
+        .then(function(j){ return ((j&&j.results)||[]).slice(0,10).map(function(x){ return { type:"action", src:"yf", ref:x.symbol, sym:x.symbol, nom:x.name, info:[exchLabel(x.exch), x.type].filter(Boolean).join(" · ") }; }); })
         .catch(function(){ return null; }) : Promise.resolve("off");
       return Promise.all([cgP, yfP]);
     }
