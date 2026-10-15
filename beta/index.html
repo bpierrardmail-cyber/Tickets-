@@ -1347,7 +1347,8 @@
     }
     function bourseChartHTML(){
       var mode=state.bMode||store.read("bChartMode","pl"); state.bMode=mode;
-      var rk=state.bRange||"Max", R=BRANGES.filter(function(r){ return r[0]===rk; })[0]||BRANGES[BRANGES.length-1];
+      if(!state.bRange) state.bRange="1J";   // période affichée par défaut : la journée
+      var rk=state.bRange, R=BRANGES.filter(function(r){ return r[0]===rk; })[0]||BRANGES[BRANGES.length-1];
       var src=bourseSeries();
       if(R[1]===1){
         if(bDay && bDay.pts && Date.now()-bDay.t<5*60000) src=bDay.pts;
