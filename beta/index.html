@@ -386,7 +386,12 @@
     .cpage{ padding:12px 16px 6px; }
     .cacc-b .cstack{ height:6px; margin:2px 0 8px; }
     .clink{ display:flex; align-items:center; justify-content:space-between; font-size:12.5px; color:var(--accent); margin:10px 2px 0; cursor:pointer; }
-    .bacct{ margin-top:14px; padding:6px 14px 10px; border-left:3px solid var(--accent); }
+    .bacct{ margin-top:14px; padding:6px 14px 10px 17px; }
+    .bgauge{ position:absolute; left:0; top:18px; bottom:18px; width:4px; border-radius:0 3px 3px 0; background:rgba(255,255,255,.08); overflow:hidden; pointer-events:none; }
+    .bgauge i{ position:absolute; left:0; right:0; bottom:0; border-radius:3px 3px 0 0; }
+    .btot{ display:flex; flex-direction:column; align-items:flex-end; flex:0 0 auto; margin-right:4px; line-height:1.25; }
+    .btot b{ font-variant-numeric:tabular-nums; font-weight:700; }
+    .btot small{ font-size:11.5px; font-weight:600; font-variant-numeric:tabular-nums; }
     .bacct .bhead{ border-bottom:1px solid var(--line2); padding:12px 2px 11px; }
     .bacct .bhead .pname{ font-size:17px; }
     .bacct .poslist{ margin-top:8px; }
@@ -3370,17 +3375,18 @@
         totCap+=cap; totVal+=val; totCash+=cash;
         var pmSnap=bAt(c,pm); if(pmSnap){ totPrevVal=(totPrevVal||0)+Number(pmSnap.valeur||0); }
         if(first){ totFirstVal=(totFirstVal||0)+Number(first.valeur||0); totFirstCap=(totFirstCap||0)+Number(first.capital||0); }
-        h+='<section class="paper bacct"><div style="margin:0 0 2px">';
+        // Jauge de plus-value : hauteur = % gagné ou perdu sur le capital (pleine à +100 %)
+        var gp=cap>0?pv/cap*100:0, gz=Math.abs(pv)<0.005, gcol=gz?"var(--muted)":(pv>0?"var(--accent)":"var(--coral)"), gf=gz?0:Math.max(8,Math.min(100,Math.abs(gp)));
+        h+='<section class="paper bacct"><span class="bgauge"><i style="height:'+gf+'%;background:'+gcol+'"></i></span><div style="margin:0 0 2px">';
         h+='<div class="prow bhead" data-bid="'+esc(c.id)+'" style="cursor:pointer"><span class="pname" style="font-weight:700">'+esc(c.nom)+(c.closed?' <span style="font-size:9.5px;color:var(--muted);font-weight:600">clôturé en '+esc(monthLabelOf(c.closed).split(" ")[0])+'</span>':'')+((c.sol&&month===curM)?' <span style="font-size:9px;color:var(--accent);font-weight:600">● live</span>':'')+'</span>'+
-           '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px">'+fmt(tot)+'</span>'+
+           '<span class="btot"><b>'+fmtK(tot)+'</b>'+(cap>0?'<small style="color:'+gcol+'">'+(pv>=0?"+":"-")+Math.abs(gp).toFixed(1).replace(".",",")+' % · '+(pv>=0?"+":"")+fmtK(pv)+'</small>':'')+'</span>'+
            '<button class="btn ghost bedit" type="button" data-id="'+esc(c.id)+'">✎</button>'+
            (vi>0?'<button class="btn ghost bmove" type="button" data-id="'+esc(c.id)+'" data-to="'+esc(visB[vi-1].id)+'" style="display:none">▲</button>':'')+
            (vi<visB.length-1?'<button class="btn ghost bmove" type="button" data-id="'+esc(c.id)+'" data-to="'+esc(visB[vi+1].id)+'" style="display:none">▼</button>':'')+
            '<button class="btn ghost bdel" type="button" data-id="'+esc(c.id)+'">✕</button></div>';
-        h+='<div style="font-size:12.5px;color:var(--ink-soft);margin:2px 6px 0">Capital investi : '+fmt(cap)+'</div>';
-        h+='<div style="font-size:12.5px;color:var(--ink-soft);margin:3px 6px 0">Reste à investir : <span style="color:'+(cash?'var(--ink)':'var(--muted)')+';font-weight:600">'+((last.cashCur&&last.cashCur!==BASE&&last.cashOrig!=null)?fmtCur(Number(last.cashOrig),last.cashCur)+'</span> <span style="color:var(--muted)">≈ '+fmt(cash):fmt(cash))+'</span></div>';
+        h+='<div style="font-size:12.5px;color:var(--ink-soft);margin:2px 6px 0">Capital investi : '+fmtK(cap)+'</div>';
+        h+='<div style="font-size:12.5px;color:var(--ink-soft);margin:3px 6px 0">Reste à investir : <span style="color:'+(cash?'var(--ink)':'var(--muted)')+';font-weight:600">'+((last.cashCur&&last.cashCur!==BASE&&last.cashOrig!=null)?fmtCur(Number(last.cashOrig),last.cashCur)+'</span> <span style="color:var(--muted)">≈ '+fmtK(cash):fmtK(cash))+'</span></div>';
         var badges=[];
-        badges.push(bBadge(cap,val,"Plus-value :"));
         if(prev) badges.push(bBadge(Number(prev.valeur||0),val,"Mois préc. :"));
         if(first&&bMonths(c).length>1) badges.push(bBadge(Number(first.valeur||0),val,"Depuis création :"));
         badges.forEach(function(b){ if(b) h+='<div style="font-size:12.5px;margin:3px 6px 0">'+b+'</div>'; });
