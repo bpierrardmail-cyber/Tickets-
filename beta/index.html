@@ -439,6 +439,34 @@
     /* Provisions en cartes */
     .pcard{ background:var(--card); border:1px solid var(--line); border-radius:18px; padding:6px 14px 14px; margin-bottom:12px; }
     .pcard .prow{ border-bottom:0; }
+    .pvch{ margin-top:14px; }
+    .pvread{ display:flex; align-items:flex-start; justify-content:space-between; gap:8px; min-height:34px; }
+    .pvread .l{ font-size:12px; color:var(--ink-soft); line-height:1.4; }
+    .pvread .l b{ color:var(--ink); font-variant-numeric:tabular-nums; }
+    .pvread .lg{ display:flex; gap:10px; font-size:10.5px; color:var(--muted); flex:0 0 auto; padding-top:2px; }
+    .pvread .lg i{ display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px; vertical-align:-1px; }
+    .pvcols{ display:flex; gap:4px; margin-top:22px; }
+    .pvcol{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; cursor:pointer; }
+    .pvcol .pl{ position:relative; width:100%; border-radius:6px; background:rgba(255,255,255,.025); }
+    .pvcol.on .pl{ background:rgba(255,255,255,.08); }
+    .pvcol .pl i{ position:absolute; left:3px; right:3px; }
+    .pvcol .m{ font-size:10px; color:var(--muted); margin-top:5px; }
+    .pvcol.on .m{ color:var(--ink); font-weight:700; }
+    .pvcol .c{ font-size:9px; font-weight:600; margin-top:2px; height:12px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .pvyr{ position:absolute; top:-1px; left:-4px; bottom:0; border-left:1px dashed rgba(255,255,255,.18); }
+    .pvyr span{ position:absolute; top:-14px; left:3px; font-size:9px; color:var(--muted); }
+    .pvlist .row{ display:flex; align-items:center; gap:10px; padding:9px 2px; border-bottom:1px solid var(--line); }
+    .pvlist .row:last-child{ border-bottom:0; }
+    .pvlist .d{ flex:0 0 44px; text-align:center; font-size:11px; font-weight:700; color:var(--ink-soft); background:rgba(255,255,255,.05); border-radius:8px; padding:5px 0; line-height:1.15; }
+    .pvlist .d small{ display:block; font-size:9px; font-weight:500; color:var(--muted); }
+    .pvlist .n{ flex:1; min-width:0; }
+    .pvlist .n b{ display:block; font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .pvlist .n span{ font-size:11px; }
+    .pvlist .a{ flex:0 0 auto; font-size:13px; font-weight:700; color:var(--coral); font-variant-numeric:tabular-nums; }
+    .pvbar{ position:relative; height:6px; border-radius:999px; background:rgba(255,255,255,.07); overflow:hidden; margin:10px 6px 0; }
+    .pvbar i{ position:absolute; top:0; bottom:0; left:0; border-radius:999px; }
+    .pvbar-t{ display:flex; justify-content:space-between; gap:8px; font-size:11px; color:var(--ink-soft); margin:5px 6px 0; }
+    .pvbar-t b{ color:var(--ink); font-variant-numeric:tabular-nums; }
     /* Budgets, échéances, objectifs */
     .cbar .cb-sub{ font-size:10px; margin-top:3px; color:var(--muted); }
     .bud-line{ display:flex; justify-content:space-between; font-size:11px; color:var(--ink-soft); margin:-4px 0 12px; }
@@ -4313,6 +4341,76 @@
       if(i>=0) p.skips.splice(i,1); else p.skips.push(mk);
       persistProvisions(); render();
     }
+    // Projection d'une provision sur une suite de mois : solde de fin de mois, sorties (payées ou prévues), manque éventuel
+    function provProj(p, months, curM){
+      var res=[], prev=0, start=p.startMonth||curM;
+      months.forEach(function(mk){
+        var r={ bal:0, out:0, planned:0, est:false, short:0 };
+        if(mk<start){ res.push(r); prev=0; return; }
+        var rec=0; (p.prelevements||[]).forEach(function(pr){ if(pr.month===mk) rec+=Number(pr.montant)||0; });
+        var bal;
+        if(mk<=curM) bal=provState(p, mk).bal;
+        else { bal=prev+(((p.skips||[]).indexOf(mk)<0)?mensuelAt(p, mk):0)-rec; if(bal<0){ r.short+=-bal; bal=0; } }
+        r.out=rec;
+        if(p.echeance && +mk.split("-")[1]===+p.echeance && !rec && mk>=curM){
+          var amt=Number(p.prevu)||0; if(!amt){ amt=bal; r.est=true; }
+          if(amt>bal){ r.short+=amt-bal; bal=0; } else bal-=amt;
+          r.planned=amt; r.out+=amt;
+        }
+        r.bal=bal; prev=bal; res.push(r);
+      });
+      return res;
+    }
+    var MOIS3=["jan","fév","mar","avr","mai","jun","jul","aoû","sep","oct","nov","déc"];
+    function provYear(month, curM){
+      var months=[], mk=month; for(var i=0;i<12;i++){ months.push(mk); mk=nextMonthKey(mk); }
+      var tot=months.map(function(m){ return { mk:m, bal:0, out:0, short:0, planned:0, items:[] }; });
+      provisions.forEach(function(p){
+        provProj(p, months, curM).forEach(function(r,i){
+          var t=tot[i]; t.bal+=r.bal; t.out+=r.out; t.short+=r.short; t.planned+=r.planned;
+          if(r.out>0) t.items.push({ nom:p.nom, amt:r.out, planned:r.planned>0, est:r.est, short:r.short, mk:months[i] });
+        });
+      });
+      return tot;
+    }
+    function kShort(n){ n=Math.round(n); return n>=1000 ? (Math.round(n/100)/10).toString().replace(".",",")+"k" : String(n); }
+    function provChartHTML(month, curM){
+      var Y=provYear(month, curM), mx=0; Y.forEach(function(t){ mx=Math.max(mx, t.bal+t.out); }); if(!mx) mx=1;
+      var sel=state.provSel && Y.some(function(t){ return t.mk===state.provSel; }) ? state.provSel : month;
+      var H=118, cols='';
+      Y.forEach(function(t,i){
+        var fut=t.mk>curM, on=t.mk===sel, mi=+t.mk.split("-")[1]-1;
+        var hb=t.bal>0?Math.max(2, t.bal/mx*H):0, ho=t.out>0?Math.max(3, t.out/mx*H):0;
+        var bars='<i style="bottom:0;height:'+hb+'px;background:#c78bd6;opacity:'+(fut?.5:1)+';border-radius:'+(ho?'2px':'4px 4px 2px 2px')+'"></i>';
+        if(ho){ var pl=t.planned>0 && t.mk>=curM;
+          bars+='<i style="bottom:'+(hb+2)+'px;height:'+ho+'px;border-radius:4px 4px 2px 2px;box-sizing:border-box;'+
+            (pl?'background:rgba(244,121,107,.16);border:1.5px dashed '+(t.short>0.5?'#e6b450':'#f4796b'):'background:rgba(244,121,107,.6)')+'"></i>'; }
+        var yr=(mi===0 && i>0)?'<span class="pvyr"><span>'+t.mk.split("-")[0]+'</span></span>':'';
+        var chip=t.out>0?'<span class="c" style="color:'+(t.short>0.5?'#e6b450':'var(--coral)')+'">'+(t.items.some(function(x){ return x.est; })?'~':'−')+kShort(t.out)+'</span>':'<span class="c"></span>';
+        cols+='<div class="pvcol'+(on?' on':'')+'" data-m="'+t.mk+'"><div class="pl" style="height:'+H+'px">'+yr+bars+'</div><span class="m">'+MOIS3[mi]+'</span>'+chip+'</div>';
+      });
+      var S=Y.filter(function(t){ return t.mk===sel; })[0], fin=capFirst(monthLabelOf(sel).replace(/ (\d{4})$/," $1"));
+      var det=!S.items.length?'<span class="muted">Aucun prélèvement</span>':
+        S.items.map(function(x){ return esc(x.nom)+' <b style="color:'+(x.short>0.5?'#e6b450':'var(--coral)')+'">'+(x.est?'≈ ':'')+'−'+fmtK(x.amt).replace(/^-/,"")+'</b>'+(x.short>0.5?' <span style="color:#e6b450">· manque '+fmtK(x.short)+'</span>':''); }).join('<br>');
+      var read='<div class="pvread"><div class="l">Fin '+esc(fin.charAt(0).toLowerCase()+fin.slice(1))+' : <b>'+fmtK(S.bal)+'</b>'+(S.mk>curM?' <span class="muted">(prévu)</span>':'')+'<br>'+det+'</div>'+
+        '<div class="lg"><span><i style="background:#c78bd6"></i>De côté</span><span><i style="border:1.5px dashed #f4796b;box-sizing:border-box"></i>Factures</span></div></div>';
+      return '<div class="pvch">'+read+'<div class="pvcols">'+cols+'</div></div>';
+    }
+    function provListHTML(month, curM){
+      var Y=provYear(month, curM), items=[]; Y.forEach(function(t){ items=items.concat(t.items); });
+      if(!items.length) return '';
+      var tot=items.reduce(function(a,x){ return a+x.amt; },0);
+      var h='<div class="bsec-h">Factures sur 12 mois<small>'+fmtK(tot).replace(/^/,"−")+'</small></div><section class="paper pvlist" style="margin-top:10px;padding:6px 14px">';
+      items.forEach(function(x){
+        var mi=+x.mk.split("-")[1]-1, st;
+        if(!x.planned) st='<span class="muted">payée</span>';
+        else if(x.short>0.5) st='<span style="color:#e6b450">⚠ il manquera '+fmtK(x.short)+'</span>';
+        else if(x.est) st='<span class="muted">montant non indiqué · tout le solde</span>';
+        else st='<span style="color:var(--accent)">✓ couverte</span>';
+        h+='<div class="row"><span class="d">'+MOIS3[mi]+'<small>'+x.mk.split("-")[0]+'</small></span><span class="n"><b>'+esc(x.nom)+'</b>'+st+'</span><span class="a">'+(x.est?'≈ ':'')+'−'+fmtK(x.amt).replace(/^-/,"")+'</span></div>';
+      });
+      return h+'</section>';
+    }
     function renderProvisions(){
       var curM=monthKey(todayISO());
       var month=(state.months&&state.months.provisions)||curM;
@@ -4324,7 +4422,7 @@
         for(var ok in pst.over){ if(ok<=month) overTot+=pst.over[ok]; }
         h+='<div class="pcard">';
         h+='<div class="prow"><span class="pname" style="font-weight:700">'+esc(p.nom)+'</span>'+
-           '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px;color:'+(bal<0?"#f4796b":"#4fd6a0")+'">'+fmt(bal)+'</span>'+
+           '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:4px;color:'+(bal<0?"#f4796b":"#4fd6a0")+'">'+fmtK(bal)+'</span>'+
            '<button class="btn ghost predit" type="button" data-id="'+esc(p.id)+'">✎</button>'+
            '<button class="btn ghost prdel" type="button" data-id="'+esc(p.id)+'">✕</button></div>';
         var canSkip=(month>(p.startMonth||month));
@@ -4337,10 +4435,13 @@
         var ec=provEcheance(p, month);
         if(ec){
           var dueL=monthLabelOf(ec.due), quand=(ec.n===0?"ce mois-ci":(ec.n===1?"le mois prochain":"dans "+ec.n+" mois"));
+          var goal=ec.prevu||ec.proj||1, w1=Math.min(100,ec.bal/goal*100), w2=Math.min(100,ec.proj/goal*100);
+          h+='<div class="pvbar"><i style="width:'+w2+'%;background:rgba(199,139,214,.35)"></i><i style="width:'+w1+'%;background:#c78bd6"></i></div>';
+          h+='<div class="pvbar-t"><span>'+(ec.prevu?'<b>'+fmtK(ec.bal)+'</b> sur '+fmtK(ec.prevu):'<b>'+fmtK(ec.bal)+'</b> de côté')+'</span><span>facture en '+esc(MOIS_NOMS[+ec.due.split("-")[1]-1])+' ('+quand+')</span></div>';
           if(!ec.prevu){
-            h+='<div class="ech">📅 Facture en <b>'+esc(dueL)+'</b> ('+quand+') · <b>'+fmt(ec.proj)+'</b> de côté d\'ici là.<br><span style="font-size:10.5px">Indique le montant prévu (✎) pour savoir si ce sera suffisant.</span></div>';
+            h+='<div class="pvbar-t" style="margin-top:2px"><span class="muted">Indique le montant de la facture (✎) pour savoir si ce sera suffisant.</span></div>';
           } else if(ec.manque<0.005){
-            h+='<div class="ech ok">✓ Prêt pour <b>'+esc(dueL)+'</b> ('+quand+') : <b>'+fmt(ec.proj)+'</b> de côté pour une facture d\'environ '+fmt(ec.prevu)+'.</div>';
+            h+='';
           } else if(ec.n===0){
             h+='<div class="ech warn">⚠ Facture <b>ce mois-ci</b> : il manque <b>'+fmt(ec.manque)+'</b> pour couvrir environ '+fmt(ec.prevu)+'.</div>';
           } else {
@@ -4365,17 +4466,18 @@
       (function(){
         var mensTot=0, next=null;
         provisions.forEach(function(p){ if((p.skips||[]).indexOf(month)<0) mensTot+=mensuelAt(p, month); var ec=provEcheance(p, month); if(ec && (!next || ec.due<next.due)) next={due:ec.due, nom:p.nom}; });
-        h=h.replace("%%HERO%%", provisions.length?tabHero({ label:"Total mis de côté", big:total, color:(total<0?"var(--coral)":"var(--ink)"), sub:(overTot>0?"Dépassements déduits : −"+fmtK(overTot):""),
-          stats:[ {l:"Enveloppes", v:String(provisions.length)}, {l:"Ce mois-ci", v:"+"+fmtS(mensTot)}, {l:"Échéance", v:(next?esc(next.nom):"—"), d:(next?esc(monthLabelOf(next.due)):"")} ] }):"");
+        h=h.replace("%%HERO%%", provisions.length?tabHero({ label:"Total mis de côté", big:total, color:(total<0?"var(--coral)":"var(--ink)"), sub:(overTot>0?"Dépassements déduits : −"+fmtK(overTot):""), extra:provChartHTML(month, curM),
+          stats:[ {l:"Enveloppes", v:String(provisions.length)}, {l:"Ce mois-ci", v:"+"+fmtS(mensTot)}, {l:"Échéance", v:(next?esc(next.nom):"—"), d:(next?esc(monthLabelOf(next.due)):"")} ] })+provListHTML(month, curM)+'<div class="bsec-h">Enveloppes</div><div style="height:10px"></div>':"");
       })();
       h+='<hr class="rule" style="display:none"><div class="leader total" style="display:none"><span class="lbl">Total provisionné</span><span class="fill"></span><span class="val" style="color:'+(total<0?"#f4796b":"#4fd6a0")+'">'+fmt(total)+'</span></div>';
       h+='<div class="muted" style="font-size:11px;margin:10px 4px 0;line-height:1.5">Le solde monte tout seul du montant mensuel. Enregistre un prélèvement quand la facture est payée.</div>';
       h+='</div>';
       app.innerHTML=h;
       setNav(null,false);
-      bindBack(function(){ state.view="compte"; render(); });
+      bindBack(function(){ state.provSel=null; state.view="compte"; render(); });
       var ap=document.getElementById("addprov"); if(ap) ap.onclick=addProvision;
       wireMonthNav(month, curM, "provisions");
+      [].forEach.call(document.querySelectorAll(".pvcol"), function(c){ c.onclick=function(){ state.provSel=c.getAttribute("data-m"); render(); }; });
       [].forEach.call(document.querySelectorAll(".predit"), function(b){ b.onclick=function(){ editProvision(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".prdel"), function(b){ b.onclick=function(){ delProvision(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".prapply"), function(b){ b.onclick=function(){
