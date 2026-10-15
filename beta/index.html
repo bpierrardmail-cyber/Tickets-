@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="14/10 22:30" />
+  <meta name="build" content="15/10 02:20" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -1290,7 +1290,7 @@
       plot.addEventListener("pointermove", function(ev){ if(ev.pointerType==="mouse" || ev.buttons || ev.pressure>0) at(ev); });
       plot.addEventListener("pointerup", end); plot.addEventListener("pointerleave", end); plot.addEventListener("pointercancel", end);
     }
-    function persistBourse(){ store.write("bourse", bourse); }
+    function persistBourse(){ store.write("bourse", bourse); if(bourse.length){ try{ store.write("bourseSafe", { t:new Date().toISOString(), bourse:bourse }); }catch(e){} } }
     function bMonths(c){ return Object.keys(c.vals||{}).sort(); }
     function bLast(c){ var ms=bMonths(c); return ms.length?c.vals[ms[ms.length-1]]:null; }
     function bPrev(c){ var ms=bMonths(c); return ms.length>1?c.vals[ms[ms.length-2]]:null; }
@@ -1372,6 +1372,27 @@
       ]);
     }
     // Remet dans l'historique les comptes bourse présents dans une sauvegarde mais supprimés depuis (ils reviennent clôturés)
+    function restoreBourseOnly(){
+      var inp=document.createElement("input"); inp.type="file"; inp.accept="application/json,.json";
+      inp.onchange=function(){
+        var f=inp.files && inp.files[0]; if(!f) return;
+        var rd=new FileReader();
+        rd.onload=function(){
+          var obj=null, data=null; try{ obj=JSON.parse(rd.result); data=(obj && obj.data && typeof obj.data==="object")?obj.data:obj; }catch(e){}
+          if(!data || !Array.isArray(data.bourse) || !data.bourse.length){ uiToast("Pas de Bourse dans ce fichier"); return; }
+          var nPos=0; data.bourse.forEach(function(c){ nPos+=(c.positions||[]).length; });
+          var dt=(obj && obj._date)?new Date(obj._date).toLocaleString("fr-FR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"";
+          uiConfirm("Remplacer l'onglet Bourse par celui de la sauvegarde"+(dt?" du "+esc(dt):"")+" ?<br><b>"+data.bourse.length+" compte"+(data.bourse.length>1?"s":"")+"</b>, "+nPos+" position"+(nPos>1?"s":"")+".<br>Tickets, comptes bancaires et épargne ne bougent pas.", function(){
+            bourse=data.bourse; persistBourse();
+            if(Array.isArray(data.bourseHist)){ bourseHist=data.bourseHist; store.write("bourseHist", bourseHist); }
+            applyPositions(); syncBourseEpargne(); render(); uiToast("Bourse restaurée ✓");
+          }, { ok:"Restaurer la Bourse" });
+        };
+        rd.onerror=function(){ uiToast("Lecture du fichier impossible"); };
+        rd.readAsText(f);
+      };
+      inp.click();
+    }
     function recoverBourse(){
       var inp=document.createElement("input"); inp.type="file"; inp.accept="application/json,.json";
       inp.onchange=function(){
@@ -3260,10 +3281,15 @@
         h+='</section>';
       });
       h=h.replace("%%MESC%%", visB.length?'<div class="bsec-h">Mes comptes<small>'+visB.length+' compte'+(visB.length>1?'s':'')+'</small></div>':'');
+      var bsafe=(!bourse.length) ? store.read("bourseSafe", null) : null;
+      if(bsafe && bsafe.bourse && bsafe.bourse.length){
+        h+='<section class="paper" style="margin-top:14px;border:1px solid var(--accent)"><div style="font-weight:700;margin-bottom:6px">🛟 Ta Bourse est vide</div><div class="muted" style="font-size:12.5px;line-height:1.45">Une copie automatique de '+bsafe.bourse.length+' compte'+(bsafe.bourse.length>1?'s':'')+' existe (du '+esc(new Date(bsafe.t).toLocaleString("fr-FR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}))+').</div><button class="btn primary" id="bsafeGo" type="button" style="width:100%;margin-top:10px">Remettre cette copie</button></section>';
+      }
       h+='<div class="bsec-h">Gérer</div><section class="paper bacts">'+emptyB;
       function bAct(id, ic, t, sub){ return '<button class="dr-item" id="'+id+'" type="button"><span class="ic">'+ic+'</span><span>'+t+'<small>'+sub+'</small></span><span class="chev">›</span></button>'; }
       h+=bAct("addpos","📈","Ajouter une crypto ou une action","Suivie en direct, ou saisie à la main");
       h+=bAct("addbrs","🏦","Ajouter un compte bourse","eToro, PEA, Boursorama…");
+      h+=bAct("restbrs","🛟","Restaurer la Bourse","Depuis un fichier de sauvegarde, sans toucher au reste");
       h+=bAct("recbrs","♻️","Récupérer un compte supprimé","Depuis un fichier de sauvegarde");
       (function(){
         var st=[{l:"Capital investi", v:fmtS(totCap)}];
@@ -3278,6 +3304,8 @@
       var rs=document.getElementById("refreshsol"); if(rs) rs.onclick=function(){ state.solPrice=null; fetchSolPrice(); };
       var pa=document.getElementById("prixact"); if(pa){ pa.oninput=function(){ state.prixActuel=pa.value; render(); }; }
       var ab=document.getElementById("addbrs"); if(ab) ab.onclick=addBourse;
+      var rsb=document.getElementById("restbrs"); if(rsb) rsb.onclick=restoreBourseOnly;
+      var bsg=document.getElementById("bsafeGo"); if(bsg) bsg.onclick=function(){ var sf=store.read("bourseSafe", null); if(!sf||!sf.bourse) return; bourse=sf.bourse; persistBourse(); applyPositions(); syncBourseEpargne(); render(); uiToast("Bourse remise ✓"); };
       var rb=document.getElementById("recbrs"); if(rb) rb.onclick=recoverBourse;
       [].forEach.call(document.querySelectorAll(".bhead"), function(row){ row.onclick=function(ev){ var t=ev.target; while(t && t!==row){ if(t.tagName==="BUTTON") return; t=t.parentNode; } editBourse(row.getAttribute("data-bid")); }; });
       [].forEach.call(document.querySelectorAll(".bedit"), function(b){ b.onclick=function(){ editBourse(b.getAttribute("data-id")); }; });
