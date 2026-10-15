@@ -218,6 +218,8 @@
       border-radius:50%; margin-top:-26px; box-shadow:0 10px 24px rgba(79,214,160,.45); font-family:var(--sans);
       font-size:11px; letter-spacing:.04em; font-weight:700; }
     .navscanrow button:active{ transform:translateY(1px); }
+    .nav.noscan .navscanrow{ display:none; }   /* bouton Scan affiché seulement sur l'Accueil */
+    .nav.noscan .navtabs{ padding-top:8px; }
     .navtabs{ display:flex; padding-top:4px; }
     .navtabs .navi{ flex:1; background:none; border:none; color:var(--muted); font-family:var(--sans);
       font-size:10px; letter-spacing:.01em; font-weight:600; padding:4px 0 6px; position:relative; }
@@ -2004,7 +2006,7 @@
     });
     document.getElementById("navscan").onclick=function(){ openScanChooser(); };
     function setNav(active, show){
-      navEl.className = "nav" + (show ? "" : " hidden");
+      navEl.className = "nav" + (show ? "" : " hidden") + (active==="list" ? "" : " noscan");
       [].forEach.call(navEl.querySelectorAll(".navi"), function(b){
         if(b.getAttribute("data-view")===active) b.classList.add("on"); else b.classList.remove("on");
       });
