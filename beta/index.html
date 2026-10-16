@@ -3033,7 +3033,7 @@
         var mx=0; ppl.forEach(function(p){ mx=Math.max(mx, partOf(p)); }); if(!mx) mx=1;
         function seg(v,col){ return v>0?'<i style="width:'+(v/mx*100).toFixed(2)+'%;background:'+col+'"></i>':''; }
         chart+='<div class="crep">'+ppl.map(function(p){ var pe=persoOf(p);
-          return '<div class="crep-r"><div class="crep-h"><span>'+esc(p)+(p===me?' <small>toi</small>':'')+'</span><b>'+fmtK(partOf(p))+'</b></div><div class="crep-b">'+seg(pe,COLP)+seg(D.commun/2,COLC)+seg(D.prod/2,COLR)+'</div></div>'; }).join("")+'</div>';
+          return '<div class="crep-r"><div class="crep-h"><span>'+esc(p)+(p===me?' <small>toi</small>':'')+'</span>'+(p===me?'':'<b>'+fmtK(partOf(p))+'</b>')+'</div><div class="crep-b">'+seg(pe,COLP)+seg(D.commun/2,COLC)+seg(D.prod/2,COLR)+'</div></div>'; }).join("")+'</div>';
         chart+='<div class="cch-leg"><span><i style="background:'+COLP+'"></i>Frais perso</span><span><i style="background:'+COLC+'"></i>½ frais communs</span><span><i style="background:'+COLR+'"></i>½ produits partagés</span></div>';
       } else if(cm==="postes"){
         var DCOL=["#7c9cf4","#5bc0d4","#c78bd6","#e88fb0","#9bd35e","#4fd6a0"], parts=[];
@@ -3057,8 +3057,8 @@
       }
       chart+='</div>';
       var hst=[];
+      hst.push({l:"Frais communs", v:fmtS(D.commun)}); hst.push({l:"Produits partagés", v:fmtS(D.prod)}); hst.push({l:"Frais perso", v:fmtS(persoOf(me))});
       ppl.forEach(function(who){ if(who!==me) hst.push({l:"Part de "+esc(who), v:fmtS(partOf(who))}); });
-      hst.push({l:"Frais communs", v:fmtS(D.commun)}); hst.push({l:"Produits partagés", v:fmtS(D.prod)});
       var h=header()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>';
       h+=tabHero({ label:"Ta part ce mois ("+esc(me)+")", big:partOf(me), sub:"frais perso + ½ frais communs + ½ produits partagés", extra:chart, stats:hst.slice(0,3) });
 
