@@ -1933,28 +1933,51 @@
     function parseTicket(text){
       var lines = text.split(/\n/).map(function(l){return l.trim();}).filter(Boolean);
       var amtRe = /(\d{1,4})[.,](\d{2})\b/g;
-      var key = /total|a payer|à payer|net a|net à|montant|carte|\bcb\b|visa|mastercard|sans contact|especes|espèces|rendu|tva/i;
-      var all = [], lignes = [];
+      // Lignes de paiement / totaux (tolère les erreurs de lecture : T0TAL, YONTANT…)
+      var key = /t[o0]ta[l1i]|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|net a|net à|carte|\bcb\b|visa|mastercard|sans contact|esp[eè]ces|rendu|rendre|monnaie|tva|\bttc\b|\bht\b/i;
+      var totRe = /t[o0]ta[l1i]|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|net a|net à/i;
+      // En-tête du magasin : téléphone, RCS, SIRET… (jamais des articles ni des montants)
+      var skip = /\b(t[eé]l|tel|fax|siret|siren|rcs|naf|ape|www|http|caisse|ticket|op[eé]rateur|h[oô]tesse|vendeur)\b|@/i;
+      var all = [], lignes = [], afterTotal = false;
+      function cleanLabel(l){
+        var t=l.replace(/(\d{1,4})[.,](\d{2})\b/g," ").replace(/\b(eur|euros?)\b(\s+[a-d]\b)?/gi," ").replace(/€/g," ");
+        var up=(t.match(/[A-ZÀ-Ý]/g)||[]).length, lo=(t.match(/[a-zà-ÿ]/g)||[]).length;
+        // ticket en majuscules : un mot avec des minuscules est du bruit (filigrane lu à l'envers…)
+        if(up>=4 && up>=lo*3) t=t.split(/\s+/).filter(function(w){ return !/[a-zà-ÿ]/.test(w); }).join(" ");
+        t=t.replace(/\b0(?=[A-ZÀ-Ý]{2})/g,"O").replace(/([A-ZÀ-Ý])0(?=[A-ZÀ-Ý])/g,"$1O");
+        return t.replace(/[^0-9A-Za-zÀ-ÿ ]+/g," ").replace(/\s+/g," ").trim().replace(/\s[A-D]$/,"");
+      }
       lines.forEach(function(l){
-        var m, last=null; amtRe.lastIndex=0;
-        while((m=amtRe.exec(l))){ all.push({ value: parseFloat(m[1]+"."+m[2]), line:l }); last=m; }
-        if(key.test(l) || !last) return;
+        var m, last=null, isSkip=skip.test(l) || /\b\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\b/.test(l); amtRe.lastIndex=0;
+        while((m=amtRe.exec(l))){ if(!isSkip) all.push({ value: parseFloat(m[1]+"."+m[2]), line:l }); last=m; }
+        var isKey=key.test(l);
+        if(isKey && last && totRe.test(l)) afterTotal=true;   // après le total : paiement, TVA, pied de ticket
+        if(afterTotal || isSkip || isKey || !last) return;
         var prix = parseFloat(last[1]+"."+last[2]);
-        var label = l.replace(/(\d{1,4})[.,](\d{2})\b/g," ").replace(/[^0-9A-Za-zÀ-ÿ ]+/g," ").replace(/\s+/g," ").trim();
-        if(label.length < 2) return;
+        if(!(prix>0)) return;
+        var label = cleanLabel(l);
+        if(label.replace(/[^A-Za-zÀ-ÿ]/g,"").length < 2) return;
         lignes.push({ label: label.slice(0,28), prix: String(prix).replace(".",","), produit:"" });
       });
-      var flagged = all.filter(function(a){ return /total|a payer|à payer|net a|net à|montant/i.test(a.line); });
+      var flagged = all.filter(function(a){ return totRe.test(a.line); });
       var total = "";
       if(flagged.length) total = Math.max.apply(null, flagged.map(function(a){return a.value;}));
       else if(all.length) total = Math.max.apply(null, all.map(function(a){return a.value;}));
-      var date="";
-      var dm = text.match(/\b(\d{2})[\/.\-](\d{2})[\/.\-](\d{2,4})\b/);
-      if(dm){ var y=dm[3].length===2?"20"+dm[3]:dm[3]; date=y+"-"+dm[2]+"-"+dm[1]; }
+      // Date : la première date valide (jour/mois cohérents, pas dans le futur), de préférence avec l'année sur 4 chiffres
+      var date="", best=null, dre=/\b(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})\b/g, dm, today=todayISO();
+      while((dm=dre.exec(text))){
+        var d=+dm[1], mo=+dm[2], y=dm[3].length===2?2000+(+dm[3]):+dm[3];
+        if(dm[3].length===3 || d<1 || d>31 || mo<1 || mo>12 || y<2000) continue;
+        var iso=y+"-"+(mo<10?"0":"")+mo+"-"+(d<10?"0":"")+d;
+        if(iso>today) continue;
+        if(!best || (dm[3].length===4 && best.n!==4)) best={ v:iso, n:dm[3].length };
+      }
+      if(best) date=best.v;
       var marchand="";
-      for(var i=0;i<lines.length;i++){ if(/[A-Za-zÀ-ÿ]{3,}/.test(lines[i])){ marchand=lines[i].slice(0,32); break; } }
+      for(var i=0;i<lines.length;i++){ if(/[A-Za-zÀ-ÿ]{3,}/.test(lines[i]) && !skip.test(lines[i])){ marchand=lines[i].slice(0,32); break; } }
       return { total: total, date: date, marchand: marchand, categorie: guessCat(text), lignes: lignes };
     }
+
 
     function todayISO(){ var d=new Date(), m=d.getMonth()+1, j=d.getDate(); return d.getFullYear()+"-"+(m<10?"0":"")+m+"-"+(j<10?"0":"")+j; }
     function fmt(n){ return (Number(n)||0).toFixed(2).replace(".",",")+" "+curSym(); }
@@ -4331,7 +4354,9 @@
           state.draft.categorie = p.categorie;
           state.draft.articles = (p.lignes||[]).map(function(a){ return {label:a.label, prix:a.prix, produit:lookupAppris(a.label)}; });
           var hasData = state.draft.montant || (state.draft.articles && state.draft.articles.length);
-          state.note = hasData ? "" : ("Lecture vide ["+diag.join(" · ")+"]. Réessaie avec une photo plus nette, ou recadrée sur le ticket.");
+          var eng = diag.some(function(d){ return /^mlkit:/.test(d); }) ? "sur le téléphone (ML Kit)" : (diag.some(function(d){ return /^cloud \d/.test(d); }) ? "par OCR.space" : "par Tesseract");
+          var ko = diag.filter(function(d){ return /KO/.test(d); }).join(" · ");
+          state.note = hasData ? ("Lu "+eng+(ko?" — "+ko:"")+" · vérifie les montants") : ("Lecture vide ["+diag.join(" · ")+"]. Réessaie avec une photo plus nette, ou recadrée sur le ticket.");
           state.busy=false; state.scanMsg=""; render(); return;
         }
         if(files.length>1){ var sm=document.getElementById("scanmsg"); if(sm) sm.textContent="Lecture "+(idx+1)+"/"+files.length+"…"; state.prog=0; var bar=document.getElementById("bar"); if(bar) bar.style.width="0%"; }
