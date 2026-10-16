@@ -3113,7 +3113,7 @@
       if(lo<0) g+='<line x1="0" x2="'+W+'" y1="'+z.toFixed(1)+'" y2="'+z.toFixed(1)+'" style="stroke:var(--line2);stroke-width:1"/>';
       rows.forEach(function(r,i){
         var cx=slot*i+slot/2, y1=Math.min(y(r.v),z), hgt=Math.max(2,Math.abs(z-y(r.v))), on=(r.m===sel);
-        var col=color || (r.v<0?"var(--coral)":"var(--accent)");
+        var col=(typeof color==="function") ? color(r) : (color || (r.v<0?"var(--coral)":"var(--accent)"));
         g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+y1.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hgt.toFixed(1)+'" rx="4" style="fill:'+col+';opacity:'+(on?1:0.55)+'"/>';
         var ly=y1-5;   // toujours au-dessus du rectangle (pour un négatif : juste au-dessus de la ligne zéro)
         if(th.val(i)) g+='<text x="'+cx.toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="middle" style="fill:'+(on?"var(--ink)":"var(--ink-soft)")+';font-size:10px;font-weight:'+(on?700:500)+';font-family:var(--sans)">'+cptK(r.v)+'</text>';
@@ -3774,6 +3774,7 @@
       var shown=data.slice(); while(shown.length>1 && shown[0].total===0) shown.shift();
       var best=null; shown.forEach(function(d){ if(!best || d.total>best.total) best=d; });
       var maxV=0; shown.forEach(function(d){ if(d.total>maxV) maxV=d.total; }); if(maxV<=0) maxV=1;
+      function anCol(v){ return v>avg?"#e0a458":"#7c9cf4"; }   // ambre au-dessus de la moyenne, bleu en dessous
 
       // ---- Carte du haut : deux graphiques (onglets ou glissé)
       var TABS=[["mois","Mois par mois"],["rep","Répartition"]];
@@ -3785,7 +3786,8 @@
         if(famList.length){ chart+='<optgroup label="Grandes catégories (produits)">'; famList.forEach(function(f){ var v="fam:"+f; chart+='<option value="'+esc(v)+'"'+(sel===v?" selected":"")+'>'+esc(f)+'</option>'; }); chart+='</optgroup>'; }
         if(prodList.length){ chart+='<optgroup label="Produits">'; prodList.forEach(function(pp){ var v="prod:"+pp; chart+='<option value="'+esc(v)+'"'+(sel===v?" selected":"")+'>'+esc(pp)+'</option>'; }); chart+='</optgroup>'; }
         chart+='</select>';
-        chart+=compteBarsSVG(shown.map(function(d){ return { m:d.key, lbl:mShort(d.key), v:d.total }; }), curM, "var(--coral)");
+        chart+=compteBarsSVG(shown.map(function(d){ return { m:d.key, lbl:mShort(d.key), v:d.total }; }), curM, function(r){ return anCol(r.v); });
+        chart+='<div class="cch-leg"><span><i style="background:#7c9cf4"></i>Sous la moyenne</span><span><i style="background:#e0a458"></i>Au-dessus</span></div>';
         chart+='<div class="cch-note">'+(sel?'« '+esc(selLabel)+' » par mois':'Total des tickets par mois')+' · le détail de chaque mois est plus bas</div>';
         hero={ label:"Dépensé sur "+shown.length+" mois"+(sel?" · "+esc(selLabel):""), big:grand, color:"var(--ink)",
                stats:[ {l:"Moyenne / mois", v:fmtS(avg)}, {l:"Mois record", v:(best&&best.total>0?esc(best.short):"—"), d:(best&&best.total>0?fmtS(best.total):"")}, {l:"Mois actifs", v:String(active)} ] };
@@ -3796,7 +3798,8 @@
         var map=gAggregate(gPeriodEntries(), dim);
         var all=Object.keys(map).map(function(k){ return {name:k, value:map[k]}; }).sort(function(a,b){ return b.value-a.value; });
         if(dim==="prod" && all.length>12){ var top=all.slice(0,12), rest=all.slice(12).reduce(function(s2,x){ return s2+x.value; },0); if(rest>0) top.push({name:"Autres", value:rest}); all=top; }
-        all.forEach(function(it,i){ it.color=PALETTE[i%PALETTE.length]; });
+        var ANPAL=["#7c9cf4","#e0a458","#4fd6a0","#c78bd6","#5bc0d4","#e88fb0","#9bd35e","#d4a05b","#8a92e0","#6fcaa8","#d98c5f","#b0b6c2","#f4796b"];   // bleu en premier, rouge en dernier
+        all.forEach(function(it,i){ it.color=ANPAL[i%ANPAL.length]; });
         var hide=state.graphHide||{}, vis=all.filter(function(it){ return !hide[dim+"|"+it.name]; });
         var visTotal=vis.reduce(function(s2,it){ return s2+it.value; },0), nHid=all.length-vis.length;
         var mv=0; vis.forEach(function(it){ if(it.value>mv) mv=it.value; }); if(mv<=0) mv=1;
@@ -3822,7 +3825,7 @@
       h+='<div class="bsec-h">Par mois<small>'+(sel?esc(selLabel):'touche un mois')+'</small></div><section class="paper cacc anlist">';
       shown.slice().reverse().forEach(function(d){
         var pct=Math.max(d.total>0?2:0, Math.round(d.total/maxV*100));
-        h+='<div class="bar-row clk" data-month="'+esc(d.key)+'"><div class="bar-top"><span class="bl">'+esc(d.label)+(d.key===curM?' <small class="muted">en cours</small>':'')+'</span><span class="bv">'+fmtK(d.total)+' <span class="ch">›</span></span></div><div class="bar-track"><i style="width:'+pct+'%;background:var(--coral)"></i></div></div>';
+        h+='<div class="bar-row clk" data-month="'+esc(d.key)+'"><div class="bar-top"><span class="bl">'+esc(d.label)+(d.key===curM?' <small class="muted">en cours</small>':'')+'</span><span class="bv">'+fmtK(d.total)+' <span class="ch">›</span></span></div><div class="bar-track"><i style="width:'+pct+'%;background:'+anCol(d.total)+'"></i></div></div>';
       });
       h+='</section>';
       app.innerHTML=h;
