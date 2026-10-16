@@ -440,6 +440,22 @@
     .cch-tabs .cst{ margin-left:6px; font-size:12px; line-height:1; }
     .cch-tabs .cst.setdef{ opacity:.7; padding:2px 0 2px 4px; }
     .cch-tabs button:not(.on) .cst{ color:var(--accent); }
+    .atop{ margin:8px 0 2px; }
+    .atop-r{ margin:9px 0 0; cursor:pointer; }
+    .atop-h{ display:flex; justify-content:space-between; align-items:baseline; font-size:13px; margin-bottom:5px; gap:8px; }
+    .atop-h .n{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .atop-h small{ color:var(--muted); font-size:11px; }
+    .atop-h b{ font-variant-numeric:tabular-nums; }
+    .atop-b{ height:8px; border-radius:999px; background:rgba(255,255,255,.06); overflow:hidden; }
+    .atop-b i{ display:block; height:100%; border-radius:999px; }
+    .cacc .ecomp .n small{ display:block; font-size:10.5px; color:var(--muted); font-weight:500; }
+    .cacc > .entry.ecomp{ display:flex; align-items:center; gap:10px; background:none; border:0; border-top:1px solid var(--line); border-radius:0; margin:0; padding:10px 2px; box-shadow:none; }
+    .cacc > .entry.ecomp:first-of-type{ border-top:0; }
+    .arow{ display:flex; align-items:baseline; gap:8px; padding:10px 2px; border-top:1px solid var(--line); font-size:13.5px; cursor:pointer; }
+    .arow .n{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .arow .q{ font-size:11px; color:var(--muted); }
+    .arow .a{ font-weight:700; font-variant-numeric:tabular-nums; }
+    .arow .c{ color:var(--muted); font-size:12px; }
     .crange{ justify-content:center; margin:8px 0 0; }
     .anf{ margin:8px 0 2px; padding:9px 12px; font-size:13px; }
     .anctl{ display:grid; grid-template-columns:1fr; gap:0; }
@@ -2171,7 +2187,7 @@
       var when=(days<=0)?"aujourd'hui":("il y a "+days+" j");
       return { col:col, label:"sauvegardé "+when };
     }
-    var VIEW_TITLES={ list:"Accueil", form:"Ticket", articles:"Articles", produits:"Produits & catégories", graph:"Analyse", history:"Analyse", analyse:"Analyse", month:"Analyse", communes:"Commun", compte:"Compte", bourse:"Bourse", gallery:"Galerie", photo:"Photo", patrimoine:"Patrimoine", provisions:"Provisions", bilan:"Bilan" };
+    var VIEW_TITLES={ list:"Accueil", form:"Ticket", articles:"Articles", produits:"Produits & catégories", graph:"Analyse", history:"Analyse", analyse:"Analyse", month:"Analyse", artDetail:"Articles", communes:"Commun", compte:"Compte", bourse:"Bourse", gallery:"Galerie", photo:"Photo", patrimoine:"Patrimoine", provisions:"Provisions", bilan:"Bilan" };
     function capFirst(t){ t=String(t||""); return t.charAt(0).toUpperCase()+t.slice(1); }
     function header(back, title){
       var b = back ? '<button class="hback" id="hback" type="button" aria-label="Retour">‹</button>' : '';
@@ -2762,76 +2778,102 @@
       if(state.draft && state.draft.id){ idbDel(state.draft.id); delete PHOTOS[String(state.draft.id)]; state.entries=state.entries.filter(function(e){ return String(e.id)!==String(state.draft.id); }); persist(); }
       state.view="list"; state.draft=null; render();
     }
+    // ---------- Articles : même présentation que Compte, Commun et Analyse ----------
+    var ARTPAL=["#7c9cf4","#e0a458","#4fd6a0","#c78bd6","#5bc0d4","#e88fb0","#9bd35e","#d4a05b","#8a92e0","#6fcaa8","#d98c5f","#b0b6c2","#f4796b"];
+    function artMonthData(m){
+      var fams={}, grand=0, nArt=0, top=null, most=null, prods={};
+      state.entries.filter(function(e){ return monthKey(e.date)===m; }).forEach(function(e){
+        (e.articles||[]).forEach(function(a){
+          var c=classifyArticle(a);
+          if(!fams[c.fam]) fams[c.fam]={ total:0, n:0, items:{} };
+          var F=fams[c.fam]; F.total+=c.amt; F.n++; grand+=c.amt; nArt++;
+          if(!F.items[c.name]) F.items[c.name]={ n:0, total:0 };
+          F.items[c.name].n++; F.items[c.name].total+=c.amt;
+          var pk=c.fam+"|"+c.name; if(!prods[pk]) prods[pk]={ fam:c.fam, name:c.name, n:0, total:0 }; prods[pk].n++; prods[pk].total+=c.amt;
+          if(c.amt>0 && (!top || c.amt>top.amt)) top={ name:((a.label||"").trim()||c.name), amt:c.amt };
+        });
+      });
+      var plist=Object.keys(prods).map(function(k){ return prods[k]; });
+      plist.forEach(function(p){ if(p.fam!=="Remise" && (!most || p.n>most.n || (p.n===most.n && p.total>most.total))) most=p; });
+      var famKeys=Object.keys(fams).sort(function(a,b){ return fams[b].total-fams[a].total; });
+      return { fams:fams, famKeys:famKeys, grand:grand, nArt:nArt, top:top, most:most, prods:plist };
+    }
+    function artAvgBars(rows, sel){   // barres sur 6 mois : bleu sous la moyenne, ambre au-dessus (comme Analyse)
+      var act=rows.filter(function(r){ return r.v>0; }), avg=act.length?act.reduce(function(t,r){ return t+r.v; },0)/act.length:0;
+      return compteBarsSVG(rows, sel, function(r){ return r.v>avg?"#e0a458":"#7c9cf4"; })+'<div class="cch-leg"><span><i style="background:#7c9cf4"></i>Sous la moyenne</span><span><i style="background:#e0a458"></i>Au-dessus</span></div>';
+    }
+    function artMShort(m){ var pm=m.split("-"); return new Date(+pm[0], +pm[1]-1, 1).toLocaleDateString("fr-FR",{month:"short"}).replace(".",""); }
     function renderArticles(){
       var curM = monthKey(todayISO());
       var month = (state.months&&state.months.articles)||curM;
-      var monthLabel = monthLabelOf(month);
-      var fams={}, grand=0;
-      state.entries.filter(function(e){ return monthKey(e.date)===month; }).forEach(function(e){
-        (e.articles||[]).forEach(function(a){
-          var c=classifyArticle(a);
-          if(!fams[c.fam]) fams[c.fam]={total:0, items:{}};
-          fams[c.fam].total+=c.amt; grand+=c.amt;
-          if(!fams[c.fam].items[c.name]) fams[c.fam].items[c.name]={n:0,total:0};
-          fams[c.fam].items[c.name].n++; fams[c.fam].items[c.name].total+=c.amt;
+      var D=artMonthData(month), col={};
+      D.famKeys.forEach(function(f,i){ col[f]=(f==="Remise")?"#8a92a6":ARTPAL[i%ARTPAL.length]; });
+      var h=header()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabelOf(month))), month, curM)+'</div>';
+      if(!D.famKeys.length){
+        h+='<section class="paper cacc" style="padding:18px 16px"><div class="center muted" style="font-size:12.5px;line-height:1.5">Aucun article rangé ce mois-ci.<br>Scanne un ticket et classe ses lignes par produit.</div></section>';
+      } else {
+        var TABS=[["fam","Familles"],["top","Top produits"],["6m","6 mois"]];
+        var mode=state.artChart||store.read("artChartDef","fam"); if(!TABS.some(function(x){ return x[0]===mode; })) mode="fam";
+        var chart=chartTabsHTML(TABS, mode, "artChartDef", "fam")+'<div class="cch">';
+        if(mode==="fam"){
+          var pos=D.famKeys.filter(function(f){ return D.fams[f].total>0; }), pt=pos.reduce(function(t,f){ return t+D.fams[f].total; },0);
+          chart+='<div class="cdon cdon-big">'+compteDonutSVG(pos.map(function(f){ return { v:D.fams[f].total, col:col[f] }; }), pt).replace("dépensés","d'articles")+'<div class="cdon-l">'+
+            pos.map(function(f){ return '<div class="cdon-r"><i class="cdot" style="background:'+col[f]+';margin:0"></i><span class="n">'+esc(f)+'</span><span class="p">'+Math.round(D.fams[f].total/(pt||1)*100)+' %</span><span class="a">'+cptK(D.fams[f].total)+'</span></div>'; }).join("")+'</div></div>';
+        } else if(mode==="top"){
+          var tp=D.prods.filter(function(p){ return p.total>0 && p.fam!=="Remise"; }).sort(function(a,b){ return b.total-a.total; }).slice(0,8), tm=tp.length?tp[0].total:1;
+          chart+='<div class="atop">'+tp.map(function(p){ return '<div class="atop-r artclk" data-fam="'+esc(p.fam)+'" data-name="'+esc(p.name)+'"><div class="atop-h"><span class="n">'+esc(p.name)+' <small>×'+p.n+'</small></span><b>'+fmtK(p.total)+'</b></div><div class="atop-b"><i style="width:'+Math.max(3,Math.round(p.total/tm*100))+'%;background:'+col[p.fam]+'"></i></div></div>'; }).join("")+'</div>';
+          chart+='<div class="cch-note">Les 8 produits qui t\'ont coûté le plus ce mois-ci · touche pour le détail</div>';
+        } else {
+          var ms=[], mk=month; for(var i=0;i<6;i++){ ms.unshift(mk); mk=prevMonthKey(mk); }
+          chart+=artAvgBars(ms.map(function(m){ return { m:m, lbl:artMShort(m), v:artMonthData(m).grand }; }), month);
+        }
+        chart+='</div>';
+        h+=tabHero({ label:"Articles achetés", big:D.grand, sub:D.nArt+" article"+(D.nArt>1?"s":"")+" · "+D.famKeys.length+" famille"+(D.famKeys.length>1?"s":""), extra:chart,
+          stats:[ {l:"Le plus acheté", v:(D.most?esc(D.most.name):"—"), d:(D.most?"×"+D.most.n:"")}, {l:"Le plus cher", v:(D.top?esc(D.top.name):"—"), d:(D.top?fmtS(D.top.amt):"")}, {l:"Prix moyen", v:fmtS(D.nArt?D.grand/D.nArt:0), d:"par article"} ] });
+        // ---- familles repliables
+        var open=state.artOpen||(state.artOpen={});
+        h+='<div class="bsec-h">Par famille<small>touche pour déplier</small></div><section class="paper cacc">';
+        D.famKeys.forEach(function(f){
+          var F=D.fams[f], names=Object.keys(F.items).sort(function(a,b){ return F.items[b].total-F.items[a].total; }), pc=D.grand?Math.round(F.total/D.grand*100):0;
+          var body=names.map(function(nm){ var it=F.items[nm]; return '<div class="arow artclk" data-fam="'+esc(f)+'" data-name="'+esc(nm)+'"><span class="n">'+esc(nm)+'</span><span class="q">×'+it.n+'</span><span class="a">'+fmtK(it.total)+'</span><span class="c">›</span></div>'; }).join("");
+          h+='<div class="dgrp'+(open[f]?' open':'')+'" data-g="'+esc(f)+'"><div class="dgh"><i class="cdot" style="background:'+col[f]+';margin:0"></i><span class="t">'+esc(f)+'<em class="ds">'+names.length+' produit'+(names.length>1?'s':'')+' · '+F.n+' article'+(F.n>1?'s':'')+(f!=="Remise"?' · '+pc+' %':'')+'</em></span><span class="v">'+fmtK(F.total)+'</span><span class="chev">›</span></div><div class="dgb">'+body+'</div></div>';
         });
-      });
-      var famKeys=Object.keys(fams).sort(function(a,b){ return fams[b].total-fams[a].total; });
-      var nArt=0; famKeys.forEach(function(f){ Object.keys(fams[f].items).forEach(function(k){ nArt+=fams[f].items[k].n; }); });
-      var h=header()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>';
-      if(famKeys.length) h+=tabHero({ label:"Articles achetés ce mois", big:grand, sub:nArt+" article"+(nArt>1?"s":"")+" · "+famKeys.length+" famille"+(famKeys.length>1?"s":""),
-        stats:famKeys.slice(0,3).map(function(f){ return {l:esc(f), v:fmtS(fams[f].total)}; }) });
-      h+='<section class="paper torn">';
-      if(famKeys.length===0) h+='<div class="center muted" style="font-size:12px">Aucun article rangé ce mois-ci.<br>Scanne un ticket et classe ses lignes par produit.</div>';
-      if(famKeys.length) h+='<div class="muted" style="font-size:11px;margin:0 2px 6px">Touche un produit pour voir son détail.</div>';
-      var famMax=famKeys.length?fams[famKeys[0]].total:1;
-      famKeys.forEach(function(f,fi){
-        var col=PALETTE[fi%PALETTE.length], pc=grand?Math.round(fams[f].total/grand*100):0;
-        h+='<div class="fgrp"><div class="fh"><span class="fn">'+esc(f)+'</span><span>'+fmt(fams[f].total)+'</span><span class="fp">'+pc+' %</span></div>';
-        h+='<div class="cb-bar"><i style="width:'+Math.max(2,Math.round(fams[f].total/famMax*100))+'%;background:'+col+'"></i></div>';
-        var names=Object.keys(fams[f].items).sort(function(a,b){ return fams[f].items[b].total-fams[f].items[a].total; });
-        names.forEach(function(nm){
-          var it=fams[f].items[nm];
-          h+='<div class="frow itemclk" data-fam="'+esc(f)+'" data-name="'+esc(nm)+'"><span class="fnm">'+esc(nm)+'</span><span class="fq">×'+it.n+'</span><span class="fv">'+fmt(it.total)+'</span></div>';
-        });
-        h+='</div>';
-      });
-      h+='</section>';
+        h+='</section>';
+      }
+      h+='<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="artprod"><span class="t">Produits &amp; catégories<small>ranger, renommer, regrouper</small></span><span class="ch">›</span></div></div></section>';
       app.innerHTML=h;
-      [].forEach.call(document.querySelectorAll(".itemclk"), function(row){ row.onclick=function(){ state.artSel={fam:row.getAttribute("data-fam"), name:row.getAttribute("data-name")}; state.view="artDetail"; render(); }; });
+      [].forEach.call(document.querySelectorAll(".dgrp .dgh"), function(hd){ hd.onclick=function(){ var g=hd.parentNode, k=g.getAttribute("data-g"); state.artOpen[k]=!state.artOpen[k]; g.classList.toggle("open", !!state.artOpen[k]); }; });
+      [].forEach.call(document.querySelectorAll(".artclk"), function(row){ row.onclick=function(){ state.artSel={ fam:row.getAttribute("data-fam"), name:row.getAttribute("data-name") }; state.view="artDetail"; render(); window.scrollTo(0,0); }; });
+      wireChartDefaults();
+      [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.artChart=bt.getAttribute("data-m"); render(); }; });
+      var ap=document.getElementById("artprod"); if(ap) ap.onclick=function(){ state.prodFrom="articles"; state.view="produits"; render(); window.scrollTo(0,0); };
+      if(D.famKeys.length) wireHeroSwipe(state.artChart||store.read("artChartDef","fam"), ["fam","top","6m"], function(k){ state.artChart=k; });
       wireMonthNav(month, curM, "articles");
       setNav("articles", true);
     }
 
     function renderArtDetail(){
-      var month = monthKey(todayISO());
+      var curM = monthKey(todayISO());
+      var month = (state.months&&state.months.articles)||curM;
       var sel = state.artSel || {};
-      var rows=[], total=0;
-      state.entries.filter(function(e){ return monthKey(e.date)===month; }).forEach(function(e){
-        (e.articles||[]).forEach(function(a){
-          var c=classifyArticle(a);
-          if(c.fam===sel.fam && c.name===sel.name){
-            rows.push({ id:e.id, marchand:e.marchand, date:e.date, label:(a.label||"").trim(), prix:c.amt });
-            total+=c.amt;
-          }
+      function linesOf(m){
+        var rows=[], total=0;
+        state.entries.filter(function(e){ return monthKey(e.date)===m; }).forEach(function(e){
+          (e.articles||[]).forEach(function(a){ var c=classifyArticle(a); if(c.fam===sel.fam && c.name===sel.name){ rows.push({ id:e.id, marchand:e.marchand, date:e.date, label:(a.label||"").trim(), prix:c.amt }); total+=c.amt; } });
         });
-      });
-      rows.sort(function(a,b){ return b.prix-a.prix; });
-      var h=header("articles")+'<section class="paper torn">';
-      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Détail · '+esc(sel.name||"")+'</div>';
-      h+='<div class="center muted" style="font-size:10px;letter-spacing:.06em;margin-top:2px">'+esc(sel.fam||"")+'</div><hr class="rule">';
-      if(rows.length===0) h+='<div class="center muted" style="font-size:12px">Aucune ligne pour ce produit ce mois-ci.</div>';
-      rows.forEach(function(r){
-        var lbl = r.label || sel.name || "—";
-        h+='<div class="entry" data-id="'+esc(r.id)+'">'+
-             '<div class="row1"><span class="name">'+esc(lbl)+'</span><span class="amt">'+fmt(r.prix)+'</span></div>'+
-             '<div class="row2"><span>'+esc(r.marchand||"")+'</span><span>'+esc((r.date||"").split("-").reverse().join("/"))+'</span></div>'+
-           '</div>';
-      });
-      if(rows.length) h+='<hr class="rule"><div class="leader total"><span class="lbl">Total</span><span class="fill"></span><span class="val">'+fmt(total)+'</span></div>';
-      h+='</section><div class="muted" style="font-size:11px;margin:14px 2px 0;text-align:center">Touche une ligne pour modifier le ticket.</div>';
+        return { rows:rows, total:total };
+      }
+      var L=linesOf(month); L.rows.sort(function(a,b){ return String(b.date||"").localeCompare(String(a.date||"")); });
+      var ms=[], mk=month; for(var i=0;i<6;i++){ ms.unshift(mk); mk=prevMonthKey(mk); }
+      var h=header("articles");
+      h+=tabHero({ label:esc(sel.name||"")+' · '+esc(sel.fam||"")+' · '+esc(monthLabelOf(month)), big:L.total, sub:L.rows.length+" achat"+(L.rows.length>1?"s":"")+(L.rows.length?" · "+fmtK(L.total/L.rows.length)+" en moyenne":""),
+        extra:'<div class="cch" style="margin-top:12px">'+artAvgBars(ms.map(function(m){ return { m:m, lbl:artMShort(m), v:linesOf(m).total }; }), month)+'<div class="cch-note">Ce que ce produit t\'a coûté, sur 6 mois</div></div>' });
+      h+='<div class="bsec-h">Achats du mois<small>touche pour ouvrir le ticket</small></div><section class="paper cacc" style="padding:2px 14px 6px">';
+      if(!L.rows.length) h+='<div class="muted" style="font-size:12px;margin:12px 2px">Aucun achat de ce produit ce mois-ci.</div>';
+      L.rows.forEach(function(r){ var dd=(r.date||"").split("-"); h+='<div class="entry ecomp" data-id="'+esc(r.id)+'"><span class="n">'+esc(r.label||sel.name||"—")+'<small>'+esc(r.marchand||"")+'</small></span><span class="d">'+esc(dd.length===3?dd[2]+"/"+dd[1]:"")+'</span><span class="a">'+fmtK(r.prix)+'</span></div>'; });
+      h+='</section>';
       app.innerHTML=h;
-      bindBack(function(){ state.view="articles"; render(); });
+      bindBack(function(){ state.view="articles"; render(); window.scrollTo(0,0); });
       [].forEach.call(document.querySelectorAll(".entry"), function(node){ node.onclick=function(){ editEntry(node.getAttribute("data-id")); }; });
       setNav("articles", true);
     }
@@ -4021,7 +4063,7 @@
       h+='</section>';
       app.innerHTML=h;
 
-      bindBack(function(){ state.view="list"; render(); });
+      bindBack(function(){ state.view=(state.prodFrom==="articles"?"articles":"list"); state.prodFrom=null; render(); window.scrollTo(0,0); });
       setNav(null, true);
       var af=document.getElementById("addfam"); if(af) af.onclick=addFamille;
       var ac=document.getElementById("addcat"); if(ac) ac.onclick=addCat;
