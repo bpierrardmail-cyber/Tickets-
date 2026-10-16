@@ -491,13 +491,13 @@
     .dgb .gapfix .a{ flex:0 0 auto; color:var(--coral); font-weight:700; font-variant-numeric:tabular-nums; }
     .dash-split.h3{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:14px; }
     .dash-split.h3 span{ display:flex; flex-direction:column; gap:2px; font-size:11px; color:var(--muted); min-width:0; }
-    .dash-split.h4{ grid-template-columns:repeat(4,1fr) 10px; gap:6px; }
-    .dash-split.h3{ grid-template-columns:repeat(3,1fr) 10px; cursor:pointer; }
+    .dash-split.h3{ grid-template-columns:repeat(3,minmax(0,1fr)) 10px; cursor:pointer; }
+    .dash-split.h3.h4{ grid-template-columns:repeat(4,minmax(0,auto)) 10px; justify-content:space-between; gap:6px; }
     .dash-split.h3 em{ font-style:normal; color:var(--muted); font-size:15px; align-self:center; }
     .dash-trend{ font-size:12.5px; font-weight:700; margin-top:4px; font-variant-numeric:tabular-nums; }
     .dash-trend span{ color:var(--muted); font-weight:500; }
     .dash-split.h3 span b{ margin:0; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .dash-split.h4 span b{ font-size:12.5px; }
+    .dash-split.h3.h4 span b{ font-size:12.5px; letter-spacing:-.01em; }
     .hgrid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     .hmini{ min-width:0; overflow:hidden; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:12px 13px 10px; cursor:pointer; }
     .hgrid .hmini:last-child:nth-child(odd){ grid-column:1 / -1; }
