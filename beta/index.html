@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="16/10 17:09" />
+  <meta name="build" content="16/10 17:42" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -769,6 +769,18 @@
       if(n!==me) ch.push({ l:"Supprimer", danger:true, fn:function(){ archivePerson(n); } });
       uiChoice(n, n===me?"C'est toi : titulaire du compte principal.":personCounts(n), ch);
     }
+    function askFirstName(){
+      uiForm({ title:"Bienvenue dans Tickets 👋", intro:"Comment tu t'appelles ? Ton prénom sert pour « Payé par » et pour partager les dépenses. Tu pourras le changer dans le menu, rubrique Personnes.",
+        fields:[{ key:"nom", label:"Ton prénom", value:"", placeholder:"Ex. : Camille", required:true }], ok:"C'est parti" }, function(r){
+        var nm=(r.nom||"").trim(); if(!nm) return "Indique ton prénom.";
+        if(nm.toLowerCase()==="commun") return "« Commun » est réservé aux dépenses partagées.";
+        var a=mainAcct(), old=mePerson();
+        state.entries.forEach(function(e){ if((e.payePar||"").trim()===old) e.payePar=nm; }); persist();
+        fraisCommuns.forEach(function(f){ if((f.personne||"").trim()===old) f.personne=nm; }); persistFrais();
+        a.payer=nm; persistComptes(); store.write("askName", false);
+        uiToast("Bonjour "+nm+" !"); render();
+      });
+    }
     function personForm(old){
       uiForm({ title:(old?"Renommer « "+old+" »":"Nouvelle personne"), fields:[{ key:"nom", label:"Prénom", value:(old||""), required:true }], ok:(old?"Renommer":"Ajouter") }, function(r){
         var nm=(r.nom||"").trim(); if(!nm) return "Indique un prénom.";
@@ -884,7 +896,19 @@
     // ---------- Comptes bancaires ----------
     // Chaque compte a une clé : virements, liquide et solde reporté y sont rattachés. Le compte d'origine garde la clé « Benoit » : aucune donnée ne bouge.
     var comptes = store.read("comptes", null);
-    if(!comptes || !comptes.length){ comptes=[{ key:"Benoit", nom:"Compte courant", payer:"Benoit", main:true }]; store.write("comptes", comptes); }
+    if(!comptes || !comptes.length){
+      // Données d'avant les comptes multiples : le titulaire est le prénom déjà utilisé (virements, liquide, tickets)
+      var oldOwner=(function(){ var c={}, best="", bn=0;
+        function add(w, k){ w=(w||"").trim(); if(w && w!=="Commun"){ c[w]=(c[w]||0)+k; if(c[w]>bn){ bn=c[w]; best=w; } } }
+        virements.forEach(function(v){ add(v.person, 3); });
+        Object.keys(liquideMois||{}).forEach(function(k){ add(k, 3); }); Object.keys(store.read("soldeInit", {})||{}).forEach(function(k){ add(k, 3); });
+        (store.read("entries", [])||[]).forEach(function(e){ add(e.payePar, 1); });
+        return best; })();
+      if(oldOwner) comptes=[{ key:oldOwner, nom:"Compte courant", payer:oldOwner, main:true }];
+      // Première ouverture : un compte sans prénom, que l'appli demande tout de suite (voir askFirstName)
+      else { comptes=[{ key:"principal", nom:"Compte courant", payer:"", main:true }]; store.write("askName", true); }
+      store.write("comptes", comptes);
+    }
     function persistComptes(){ store.write("comptes", comptes); }
     function acctByKey(k){ for(var i=0;i<comptes.length;i++){ if(comptes[i].key===k) return comptes[i]; } return null; }
     // Personnes gérées dans le menu : ajoutées à la main, ou « supprimées » (archivées) sans toucher à l'historique
@@ -892,7 +916,7 @@
     function persistPersonnes(){ store.write("personnes", personnes); }
     function personRec(n){ return personnes.filter(function(x){ return x.nom===n; })[0]||null; }
     function isArchived(n){ var r=personRec(n); return !!(r && r.archived); }
-    function mePerson(){ var a=mainAcct(); return (a && a.payer) || "Benoit"; }
+    function mePerson(){ var a=mainAcct(); return (a && a.payer) || "Moi"; }
     function mainAcct(){ return comptes.filter(function(c){ return c.main; })[0] || comptes[0]; }
     function curAcctKey(){ var k=state.compteSel||store.read("compteSel", null), a=k&&acctByKey(k); return (a||mainAcct()).key; }
     // Ticket : compte choisi sur le ticket, sinon selon « payé par »
@@ -2518,7 +2542,7 @@
         // --- Rappel de sauvegarde
         var bkAge=backupAgeDays();
         if(bkAge===null || bkAge>=7){
-          h += '<div class="bk-banner"><span style="font-size:20px">💾</span><div>'+(bkAge===null?'<b>Aucune sauvegarde</b> de tes données pour l\'instant.':'<b>Dernière sauvegarde il y a '+bkAge+' jours.</b>')+'<br><span style="color:var(--ink-soft);font-size:11px">Si le navigateur se vide, tout serait perdu.</span></div><button class="btn primary" id="bkNow" type="button">Sauvegarder</button></div>';
+          h += '<div class="bk-banner"><span style="font-size:20px">💾</span><div>'+(bkAge===null?'<b>Aucune sauvegarde</b> de tes données pour l\'instant.':'<b>Dernière sauvegarde il y a '+bkAge+' jours.</b>')+'<br><span style="color:var(--ink-soft);font-size:11px">'+(capNative()?"Si l\'appli est désinstallée, tout serait perdu.":"Si le navigateur se vide, tout serait perdu.")+'</span></div><button class="btn primary" id="bkNow" type="button">Sauvegarder</button></div>';
         }
 
         // --- Bloc principal
@@ -4910,6 +4934,8 @@
           ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes"].forEach(function(k){
             if(k in data) store.write(k, data[k]);
           });
+          if(!("comptes" in data)) store.write("comptes", null);   // ancienne sauvegarde : le compte est reconstruit au redémarrage
+          store.write("askName", false);
           if(data.taxoV2!==2) store.write("taxoV2", null);
           if(data.virEpV2!==1) store.write("virEpV2", null);
           var photos=(obj && obj.photos && typeof obj.photos==="object") ? obj.photos : null;
@@ -4947,6 +4973,7 @@
         .catch(function(){});
     }
     render();
+    if(store.read("askName", false) && !mainAcct().payer) setTimeout(function(){ if(!document.getElementById("lockscreen")) askFirstName(); }, 500);
     initPhotos();
     tickBourse();
     setInterval(tickBourse, 60000);
