@@ -458,20 +458,6 @@
     .arow .c{ color:var(--muted); font-size:12px; }
     .hcar-h{ display:flex; align-items:baseline; justify-content:space-between; font-size:17px; font-weight:700; margin:22px 4px 10px; }
     .hcar-h small{ font-size:11.5px; font-weight:500; color:var(--muted); }
-    .hcar-track{ display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; margin:0 -16px; padding:0 16px 2px; }
-    .hcar-track::-webkit-scrollbar{ display:none; }
-    .hcard{ flex:0 0 100%; box-sizing:border-box; scroll-snap-align:center; background:linear-gradient(160deg,#1f2a27 0%,var(--card) 62%); border:1px solid var(--line2); border-radius:22px; padding:14px 16px 12px; cursor:pointer; }
-    .hc-top{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
-    .hc-t{ font-size:12.5px; font-weight:700; color:var(--ink-soft); }
-    .hc-t i{ font-style:normal; color:var(--accent); font-size:11px; }
-    .hc-o{ font-size:11.5px; color:var(--accent); font-weight:600; flex:0 0 auto; }
-    .hc-l{ font-size:12px; color:var(--muted); margin-top:8px; }
-    .hc-big{ font-size:28px; font-weight:800; letter-spacing:-.02em; margin-top:2px; }
-    .hc-s{ font-size:11.5px; color:var(--muted); margin-top:1px; }
-    .hc-ch{ pointer-events:none; margin-top:4px; }
-    .hc-ch select, .hc-ch .anctl, .hc-ch .dmode, .hc-ch .crange, .hc-ch .bch-ranges, .hc-ch .bch-mode, .hc-ch .cch-note, .hc-ch .bmyear{ display:none !important; }
-    .hc-ch .lgd:nth-of-type(n+5), .hc-ch .atop-r:nth-of-type(n+6){ display:none; }
-    .hc-ch .bch-plot{ margin-left:-16px; margin-right:-16px; }
     .hcats{ padding:12px 16px 10px; }
     .hcats .bud-line{ margin:0 0 6px; }
     .hshort{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:14px; }
@@ -503,9 +489,33 @@
     .dgb .gapfix .n{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13.5px; font-weight:600; }
     .dgb .gapfix .n small{ display:block; font-size:10.5px; color:var(--muted); font-weight:500; }
     .dgb .gapfix .a{ flex:0 0 auto; color:var(--coral); font-weight:700; font-variant-numeric:tabular-nums; }
-    .hcar-dots{ display:flex; justify-content:center; gap:6px; margin-top:10px; }
-    .hcar-dots i{ width:6px; height:6px; border-radius:50%; background:var(--line2); }
-    .hcar-dots i.on{ background:var(--accent); width:16px; border-radius:999px; }
+    .dash-split.h3{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:14px; }
+    .dash-split.h3 span{ display:flex; flex-direction:column; gap:2px; font-size:11px; color:var(--muted); min-width:0; }
+    .dash-split.h4{ grid-template-columns:repeat(4,1fr); gap:6px; }
+    .dash-split.h3 span b{ margin:0; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .dash-split.h4 span b{ font-size:12.5px; }
+    .hgrid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .hmini{ min-width:0; overflow:hidden; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:12px 13px 10px; cursor:pointer; }
+    .hgrid .hmini:last-child:nth-child(even){ grid-column:1 / -1; }
+    .hmini.wide{ grid-column:1 / -1; background:linear-gradient(160deg,#1f2a27 0%,var(--card) 62%); border-color:var(--line2); }
+    .hm-t{ display:flex; justify-content:space-between; gap:6px; font-size:11px; font-weight:700; color:var(--ink-soft); white-space:nowrap; }
+    .hm-t span:first-child{ overflow:hidden; text-overflow:ellipsis; }
+    .hm-t i{ font-style:normal; color:var(--accent); }
+    .hm-t .o{ color:var(--muted); }
+    .hm-v{ font-size:18px; font-weight:800; margin-top:5px; white-space:nowrap; font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+    .hm-v .cts{ font-size:12px; }
+    .wide .hm-v{ font-size:24px; }
+    .hm-s{ font-size:10px; color:var(--muted); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .hm-ch{ pointer-events:none; margin-top:8px; overflow:hidden; }
+    .wide .hm-ch{ height:auto; }
+    .hm-ch select, .hm-ch .anctl, .hm-ch .dmode, .hm-ch .crange, .hm-ch .bch-ranges, .hm-ch .bch-mode, .hm-ch .cch-note, .hm-ch .bmyear, .hm-ch .cch-leg{ display:none !important; }
+    .hmini:not(.wide) .hm-ch svg{ width:100% !important; height:62px !important; }
+    .hmini:not(.wide) .hm-ch svg text{ display:none; }
+    .hmini:not(.wide) .bch-read, .hmini:not(.wide) .bch-yl, .hmini:not(.wide) .bch-x{ display:none !important; }
+    .hmini:not(.wide) .bch-plot{ height:62px; margin:0; }
+    .hmini:not(.wide) .crep{ margin:0; } .hmini:not(.wide) .crep-r{ margin:0 0 7px; } .hmini:not(.wide) .crep-h{ font-size:10.5px; margin-bottom:3px; } .hmini:not(.wide) .crep-h small{ display:none; } .hmini:not(.wide) .crep-b{ height:9px; }
+    .hmini:not(.wide) .atop-r{ margin:0 0 5px; } .hmini:not(.wide) .atop-r:nth-of-type(n+3){ display:none; } .hmini:not(.wide) .atop-h{ font-size:10.5px; margin-bottom:2px; } .hmini:not(.wide) .atop-h small{ display:none; } .hmini:not(.wide) .atop-b{ height:4px; }
+    .wide .hm-ch{ margin-top:2px; }
     .crange{ justify-content:center; margin:8px 0 0; }
     .anf{ margin:8px 0 2px; padding:9px 12px; font-size:13px; }
     .anctl{ display:grid; grid-template-columns:1fr; gap:0; }
@@ -2377,7 +2387,7 @@
     function backupAgeDays(){ var lb=store.read("lastBackup", null); return lb ? Math.floor((Date.now()-new Date(lb).getTime())/86400000) : null; }
     try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
 
-    // Accueil : reprend le graphique ★ de chaque onglet (rendu hors écran, sans ses commandes)
+    // Accueil : reprend le graphique ★ de chaque onglet (rendu hors écran, sans ses commandes), en grille
     function homeChartCards(){
       var out=[], saveApp=app, saveView=state.view, box=document.createElement("div");
       function grab(view, key, fn){
@@ -2396,15 +2406,15 @@
       var R=grab("articles","artChart",renderArticles); if(R) out.push({ tab:"articles", name:"Articles", c:R });
       return out;
     }
-    function homeCarouselHTML(){
-      var cards=homeChartCards(); if(!cards.length) return "";
-      var h='<div class="hcar-h">Mes graphiques<small>les ★ de chaque onglet · glisse</small></div><div class="hcar"><div class="hcar-track" id="hcarT">';
-      cards.forEach(function(k){
-        h+='<div class="hcard" data-go="'+k.tab+'"><div class="hc-top"><span class="hc-t">'+esc(k.name)+(k.c.mode?' · '+esc(k.c.mode)+(k.tab!=="bourse"?' <i>★</i>':''):'')+'</span><span class="hc-o">Ouvrir ›</span></div>'+
-           '<div class="hc-l">'+esc(k.c.label)+'</div><div class="hc-big">'+k.c.big+'</div>'+(k.c.sub?'<div class="hc-s">'+esc(k.c.sub)+'</div>':'')+'<div class="hc-ch">'+k.c.chart+'</div></div>';
+    function homeCarouselHTML(x){
+      var cards=homeChartCards(); if(!cards.length) return ""; x=x||{}; cards.forEach(function(k){ if(k.tab==='analyse' && x.an) k.c.sub=x.an; });
+      var h='<div class="hcar-h">Mes graphiques<small>touche pour ouvrir</small></div><div class="hgrid">';
+      cards.forEach(function(k,i){
+        var wide=(i===0);
+        h+='<div class="hmini'+(wide?' wide':'')+' t-'+k.tab+'" data-go="'+k.tab+'"><div class="hm-t"><span>'+esc(k.name)+(k.c.mode?' · '+esc(k.c.mode)+(k.tab!=="bourse"?' <i>★</i>':''):'')+'</span><span class="o">›</span></div>'+
+           (wide?'<div class="hm-s">'+esc(k.c.label)+'</div>':'<div class="hm-v">'+k.c.big+'</div><div class="hm-s">'+esc(k.c.sub||k.c.label)+'</div>')+'<div class="hm-ch">'+k.c.chart+'</div></div>';
       });
-      h+='</div><div class="hcar-dots">'+cards.map(function(k,i){ return '<i'+(i===0?' class="on"':'')+'></i>'; }).join("")+'</div></div>';
-      return h;
+      return h+'</div>';
     }
     function renderList(){
       var curM = monthKey(todayISO());
@@ -2460,21 +2470,13 @@
         h += '<div style="margin-top:10px">'+monthNavHTML(esc(monthLabel), month, curM)+'</div>';
         h += '<div class="dash-big" style="color:'+(solde<0?"var(--coral)":"var(--ink)")+'">'+money(solde)+'</div>';
         h += '<div class="dash-cap">Solde de fin de mois prévu</div>';
-        h += '<div class="dash-split"><span>Banque<b>'+fk(cb.solde)+'</b></span>'+(lq?'<span>Liquide<b>'+fk(lqV)+'</b></span>':'')+'</div>';
+        h += '<div class="dash-split h3'+(lq?' h4':'')+'"><span>Banque<b>'+fk(cb.solde)+'</b></span>'+(lq?'<span>Liquide<b>'+fk(lqV)+'</b></span>':'')+'<span>Épargne<b style="color:var(--accent)">'+fk(epTot)+'</b></span><span>Provisions<b>'+fk(prTot)+'</b></span></div>';
         h += '<div class="dash-track"><i style="width:'+pctM+'%"></i></div>';
         h += '<div class="dash-trackcap"><span>'+(isCur?'Jour '+day+' sur '+dim:'Mois terminé')+'</span><span>'+(isCur?(dim-day)+' j restants':'')+'</span></div>';
         h += '</section>';
 
-        // --- Chiffres clés
-        h += '<div class="dash-grid">';
-        h += '<div class="tile" data-go="tickets"><div class="t-l">🧾 Dépensé en tickets</div><div class="t-v">'+fk(totalMois)+'</div><div class="t-d">'+delta(totalMois, prevTot, true)+'</div></div>';
-        h += '<div class="tile" data-go="tickets"><div class="t-l">📅 Par jour</div><div class="t-v">'+fk(parJour)+'</div><div class="t-d">'+(isCur?'≈ '+fmt(projection)+' sur le mois':mois.length+' tickets')+'</div></div>';
-        h += '<div class="tile" data-go="compte"><div class="t-l">🏦 Épargne</div><div class="t-v" style="color:var(--accent)">'+fk(epTot)+'</div><div class="t-d">'+delta(epTot, epPrev, false)+'</div></div>';
-        h += '<div class="tile" data-go="provisions"><div class="t-l">🐷 Provisions</div><div class="t-v">'+fk(prTot)+'</div><div class="t-d">'+provisions.length+' enveloppe'+(provisions.length>1?"s":"")+'</div></div>';
-        h += '</div>';
-
         // --- Graphiques ★ des onglets (en premier : l'essentiel d'un coup d'œil)
-        h += homeCarouselHTML();
+        h += homeCarouselHTML({ an:fk(parJour)+' / jour'+(prevTot?' · '+(totalMois>=prevTot?'▲ +':'▼ ')+Math.round((totalMois-prevTot)/prevTot*100)+' %':'') });
 
         // --- Catégories
         var budCats=Object.keys(budgets).filter(function(c){ return budgets[c]>0; });
@@ -2631,8 +2633,8 @@
       [].forEach.call(document.querySelectorAll(".dgrp .dgh"), function(hd){ hd.onclick=function(){ var g=hd.parentNode, k=g.getAttribute("data-g"), op=!g.classList.contains("open");
         if(k==="t"){ if(!mois.length) return; state.ticketsOpen=op; } else { if(!state.homeOpen) state.homeOpen={}; state.homeOpen[k]=op; }
         g.classList.toggle("open", op); }; });
-      [].forEach.call(document.querySelectorAll(".hcard"), function(c){ c.onclick=function(){ state.view=c.getAttribute("data-go"); render(); window.scrollTo(0,0); }; });
-      var hT=document.getElementById("hcarT"); if(hT){ var dots=document.querySelectorAll(".hcar-dots i"); hT.onscroll=function(){ var c0=hT.querySelector(".hcard"), i=Math.round(hT.scrollLeft/Math.max(1,(c0?c0.offsetWidth+12:hT.clientWidth))); [].forEach.call(dots, function(d,j){ d.classList.toggle("on", j===i); }); }; if(state.hcarX) hT.scrollLeft=state.hcarX; hT.addEventListener("scroll", function(){ state.hcarX=hT.scrollLeft; }); }
+      [].forEach.call(document.querySelectorAll(".hmini"), function(c){ c.onclick=function(){ state.view=c.getAttribute("data-go"); render(); window.scrollTo(0,0); }; });
+      [].forEach.call(document.querySelectorAll(".hmini:not(.wide) .hm-ch svg"), function(v){ v.setAttribute("preserveAspectRatio","none"); });
       [].forEach.call(document.querySelectorAll(".catrow"), function(row){ row.onclick=function(){ var c=row.getAttribute("data-cat"); state.catFilter=(state.catFilter===c?null:c); state.ticketsOpen=true; render(); var se=document.getElementById("search"); if(se && se.scrollIntoView) se.scrollIntoView({behavior:"smooth", block:"start"}); }; });
       var cc=document.getElementById("catclear"); if(cc) cc.onclick=function(){ state.catFilter=null; render(); };
       wireMonthNav(month, curM, "list");
