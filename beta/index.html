@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="16/10 17:05" />
+  <meta name="build" content="16/10 17:09" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4145,6 +4145,10 @@
     }
     function renderProduits(){
       var h=header("list")+'<section class="paper">';
+      h+='<label class="f" style="margin-top:0">Classement automatique</label>';
+      h+='<div class="muted" style="font-size:12px;margin-bottom:4px">Ressemblance minimale : <b id="simval" style="color:var(--accent)">'+SIM_THRESHOLD+'%</b></div>';
+      h+='<input type="range" id="simrange" min="50" max="95" step="5" value="'+SIM_THRESHOLD+'" style="width:100%;accent-color:var(--accent)">';
+      h+='<div class="muted" style="font-size:10px;margin:2px 2px 22px">Au scan, un article qui ressemble à au moins ce % à un article déjà classé reprend son produit. Plus bas = plus de reprises automatiques, mais plus de risques d\'erreur.</div>';
       h+='<label class="f">Catégories de ticket</label>';
       CATS.forEach(function(c){
         var protc=(c==="Autre");
@@ -4172,10 +4176,6 @@
         h+='<div class="prow prodrow" data-s="'+esc(norm(p))+'"><span class="pname pedit" data-p="'+esc(p)+'">'+esc(p)+'</span><select class="f pfam" data-p="'+esc(p)+'">'+opts+'</select><button class="btn ghost pdel" type="button" data-p="'+esc(p)+'">✕</button></div>';
       });
       h+='<button class="btn ghost" id="addprod" type="button" style="margin-top:10px">+ Ajouter un produit</button>';
-      h+='<label class="f" style="margin-top:22px">Classement automatique</label>';
-      h+='<div class="muted" style="font-size:12px;margin-bottom:4px">Ressemblance minimale : <b id="simval" style="color:var(--accent)">'+SIM_THRESHOLD+'%</b></div>';
-      h+='<input type="range" id="simrange" min="50" max="95" step="5" value="'+SIM_THRESHOLD+'" style="width:100%;accent-color:var(--accent)">';
-      h+='<div class="muted" style="font-size:10px;margin:2px 2px 0">Au scan, un article qui ressemble à au moins ce % à un article déjà classé reprend son produit. Plus bas = plus de reprises automatiques, mais plus de risques d\'erreur.</div>';
 
       h+='</section>';
       app.innerHTML=h;
