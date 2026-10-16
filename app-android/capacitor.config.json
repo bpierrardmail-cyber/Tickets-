@@ -1,0 +1,15 @@
+{
+  "appId": "fr.bpierrard.tickets.beta",
+  "appName": "Tickets β",
+  "webDir": "www",
+  "server": {
+    "url": "https://bpierrardmail-cyber.github.io/Tickets-/beta/",
+    "androidScheme": "https",
+    "allowNavigation": ["bpierrardmail-cyber.github.io"],
+    "errorPath": "index.html"
+  },
+  "android": {
+    "appendUserAgent": "TicketsApp",
+    "backgroundColor": "#13151b"
+  }
+}

@@ -1933,7 +1933,7 @@
     function parseTicket(text){
       var lines = text.split(/\n/).map(function(l){return l.trim();}).filter(Boolean);
       var amtRe = /(\d{1,4})[.,](\d{2})\b/g;
-      var key = /total|a payer|à payer|net a|net à|montant|carte|especes|espèces|rendu|tva/i;
+      var key = /total|a payer|à payer|net a|net à|montant|carte|\bcb\b|visa|mastercard|sans contact|especes|espèces|rendu|tva/i;
       var all = [], lignes = [];
       lines.forEach(function(l){
         var m, last=null; amtRe.lastIndex=0;
@@ -4213,6 +4213,65 @@
         }catch(e){ viaImg(); }
       });
     }
+    // ---------- Appli Android (Capacitor) : lecture ML Kit sur le téléphone ----------
+    function capNative(){ try{ var C=window.Capacitor; return !!(C && C.isNativePlatform && C.isNativePlatform()); }catch(e){ return false; } }
+    var capPlugs={};
+    function capPlugin(name){
+      if(!capNative()) return null;
+      if(!(name in capPlugs)){ try{ var C=window.Capacitor; capPlugs[name]=(C.Plugins && C.Plugins[name]) || (C.registerPlugin ? C.registerPlugin(name) : null); }catch(e){ capPlugs[name]=null; } }
+      return capPlugs[name];
+    }
+    // Photo d'origine (en couleurs, ML Kit lit mieux sans retouche), réduite à 2200 px, en JPEG base64
+    function nativeImage(file){
+      return new Promise(function(resolve, reject){
+        function draw(src, w, h){ var lo=Math.max(w,h), k=lo>2200?2200/lo:1, c=document.createElement("canvas"); c.width=Math.max(1,Math.round(w*k)); c.height=Math.max(1,Math.round(h*k));
+          c.getContext("2d").drawImage(src,0,0,c.width,c.height); var u=c.toDataURL("image/jpeg",0.9); resolve(u.slice(u.indexOf(",")+1)); }
+        function viaImg(){ var img=new Image(); img.onload=function(){ try{ draw(img, img.naturalWidth||img.width, img.naturalHeight||img.height); }catch(e){ reject(e); } }; img.onerror=function(){ reject(new Error("image illisible")); }; img.src=URL.createObjectURL(file); }
+        try{ if(self.createImageBitmap) createImageBitmap(file).then(function(b){ try{ draw(b,b.width,b.height); try{ b.close(); }catch(e){} }catch(e){ viaImg(); } }).catch(viaImg); else viaImg(); }
+        catch(e){ viaImg(); }
+      });
+    }
+    // ML Kit rend des morceaux de texte (souvent le libellé et le prix séparément) :
+    // on redresse la photo d'après l'inclinaison moyenne, puis on regroupe les morceaux
+    // qui sont à la même hauteur pour retrouver les lignes du ticket, de gauche à droite.
+    function mlkitRows(res){
+      var L=[];
+      (res && res.lines || []).forEach(function(l){ if(!l || !l.t) return; var q=l.p; if(!q || q.length<8) return; L.push({ t:String(l.t), q:q }); });
+      if(!L.length) return (res && res.text) || "";
+      var ang=L.map(function(l){ return Math.atan2(l.q[3]-l.q[1], l.q[2]-l.q[0]); }).sort(function(a,b){ return a-b; });
+      var a=ang[Math.floor(ang.length/2)]||0; if(Math.abs(a)>0.6) a=0;
+      var ca=Math.cos(-a), sa=Math.sin(-a);
+      L.forEach(function(l){ var xs=[], ys=[]; for(var i=0;i<8;i+=2){ xs.push(l.q[i]*ca-l.q[i+1]*sa); ys.push(l.q[i]*sa+l.q[i+1]*ca); }
+        l.x=Math.min.apply(null,xs); var y0=Math.min.apply(null,ys), y1=Math.max.apply(null,ys); l.h=Math.max(1,y1-y0); l.cy=(y0+y1)/2; });
+      var hs=L.map(function(l){ return l.h; }).sort(function(a,b){ return a-b; }), mh=hs[Math.floor(hs.length/2)]||10;
+      L.sort(function(a,b){ return a.cy-b.cy; });
+      var rows=[];
+      L.forEach(function(l){ var r=rows[rows.length-1];
+        if(r && Math.abs(l.cy-r.cy)<mh*0.6){ r.it.push(l); r.cy=(r.cy*(r.it.length-1)+l.cy)/r.it.length; }
+        else rows.push({ cy:l.cy, it:[l] }); });
+      return rows.map(function(r){ return r.it.sort(function(a,b){ return a.x-b.x; }).map(function(i){ return i.t; }).join("  "); }).join("\n");
+    }
+    // Sauvegarde dans l'appli Android : fichier dans Documents/Tickets, ou envoi vers Drive / mail
+    function backupNative(dump, fname){
+      var FS=capPlugin("Filesystem"), SH=capPlugin("Share"), json=JSON.stringify(dump);
+      function ok(msg){ store.write("lastBackup", new Date().toISOString()); uiToast(msg); if(state.view==="list") setTimeout(render, 50); }
+      function toPhone(){
+        FS.writeFile({ path:"Tickets/"+fname, data:json, directory:"DOCUMENTS", encoding:"utf8", recursive:true })
+          .then(function(){ ok("Sauvegardé dans Documents/Tickets ✓"); })
+          .catch(function(e){ window.alert("Sauvegarde impossible dans Documents : "+((e&&e.message)||e)+"\nEssaie « Envoyer vers… »."); });
+      }
+      function toShare(){
+        FS.writeFile({ path:fname, data:json, directory:"CACHE", encoding:"utf8" })
+          .then(function(r){ return SH.share({ title:"Sauvegarde Tickets", files:[r.uri] }); })
+          .then(function(){ ok("Sauvegarde envoyée ✓"); })
+          .catch(function(e){ var m=(e&&e.message)||String(e); if(!/cancel|annul/i.test(m)) window.alert("Envoi impossible : "+m); });
+      }
+      if(!SH){ toPhone(); return; }
+      uiChoice("Sauvegarder mes données", "Garde le fichier sur le téléphone, ou envoie-le vers Google Drive, un mail…", [
+        { l:"Sur le téléphone (Documents/Tickets)", fn:toPhone },
+        { l:"Envoyer vers… (Drive, mail)", fn:toShare }
+      ]);
+    }
     function ocrCloud(blob){
       var key=store.read("ocrKey","");
       if(!key) return Promise.reject(new Error("pas de cle"));
@@ -4232,7 +4291,7 @@
       var files=ev.target.files ? [].slice.call(ev.target.files) : []; ev.target.value="";
       if(!files.length) return;
       state.busy=true; state.prog=0; state.note="";
-      state.scanMsg = files.length>1 ? ("Lecture 1/"+files.length+"…") : "Lecture du ticket en cours…";
+      state.scanMsg = files.length>1 ? ("Lecture 1/"+files.length+"…") : (capPlugin("TicketOcr") ? "Lecture du ticket sur le téléphone…" : "Lecture du ticket en cours…");
       state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[],payePar:"",photo:""};
       state.view="form"; render();
       if(files[0]) fileToThumb(files[0], function(t){ if(t && state.draft && state.view==="form"){ state.draft.photo=t; render(); } });
@@ -4242,6 +4301,15 @@
       var diag=[];
       function localOne(src){ return (typeof Tesseract==="undefined") ? Promise.resolve("") : tessText(src).then(function(t){ diag.push("local:"+(t||"").length); return t; }); }
       function ocrOne(file){
+        var plug=capPlugin("TicketOcr");
+        if(!plug) return ocrClassic(file);
+        return nativeImage(file).then(function(b64){ return plug.recognize({ image:b64 }); }).then(function(res){
+          var t=mlkitRows(res||{}); diag.push("mlkit:"+((res&&res.lines)||[]).length+" morceaux");
+          if(t && t.replace(/\s/g,"").length>=8) return t;
+          throw new Error("lecture vide");
+        }).catch(function(e){ diag.push("mlkit KO("+((e&&e.message)||e)+")"); return ocrClassic(file); });
+      }
+      function ocrClassic(file){
         return preprocess(file).then(function(src){
           if(!(src && src.toBlob)) diag.push("preproc-KO");
           if(store.read("ocrKey","")){
@@ -4754,6 +4822,7 @@
       keys.forEach(function(k){ var v=store.read(k, null); if(v!==null) dump.data[k]=v; });
       dump.photos = PHOTOS;
       var fname="tickets-sauvegarde-"+todayISO()+".json";
+      if(capPlugin("Filesystem")){ backupNative(dump, fname); return; }
       try{
         var blob=new Blob([JSON.stringify(dump)], {type:"application/json"});
         var fileObj=null; try{ fileObj=new File([blob], fname, {type:"application/json"}); }catch(e){}

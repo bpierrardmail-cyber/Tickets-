@@ -1,0 +1,28 @@
+// Réglages propres à Tickets β, ajoutés au projet Android généré par Capacitor.
+def runNum = (System.getenv("GITHUB_RUN_NUMBER") ?: "1") as Integer
+def ks = file("../../beta-test.keystore")
+
+android {
+    defaultConfig {
+        versionCode runNum
+        versionName "beta-" + runNum
+    }
+    if (ks.exists()) {
+        signingConfigs {
+            betatest {
+                storeFile ks
+                storePassword "tickets-beta-test"
+                keyAlias "tickets-beta"
+                keyPassword "tickets-beta-test"
+            }
+        }
+        buildTypes {
+            release { signingConfig signingConfigs.betatest }
+        }
+    }
+}
+
+dependencies {
+    // Lecture de texte ML Kit, modèle latin intégré à l'appli (fonctionne hors ligne)
+    implementation 'com.google.mlkit:text-recognition:16.0.1'
+}
