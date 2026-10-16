@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="16/10 16:09" />
+  <meta name="build" content="16/10 16:17" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -1930,6 +1930,33 @@
       return "Autre";
     }
 
+    // Enseigne : on cherche dans le haut du ticket un magasin déjà connu (tes tickets d'abord,
+    // puis les grandes enseignes), en tolérant les erreurs de lecture (« IntermaRche » → Intermarché).
+    var CHAINS=["Intermarché","E.Leclerc","Carrefour","Carrefour Market","Carrefour City","Carrefour Contact","Auchan","Lidl","Aldi","Super U","Hyper U","U Express","Casino","Géant Casino","Monoprix","Franprix","Netto","Biocoop","Grand Frais","Picard","Cora","Match","Colruyt","Action","Gifi","La Foir'Fouille","Leroy Merlin","Castorama","Brico Dépôt","Bricomarché","Weldom","Mr.Bricolage","Gamm Vert","Jardiland","Truffaut","Norauto","Feu Vert","Decathlon","Intersport","Boulanger","Darty","Fnac","Ikea","Maisons du Monde","Kiabi","Jules","Zara","H&M","Primark","Sephora","Nocibé","Marionnaud","TotalEnergies","Esso","Avia","Shell","McDonald's","Burger King","KFC","Quick","Subway","Starbucks","Paul","Marie Blachère","La Poste"];
+    function matchMerchant(lines, guess){
+      var cands={};
+      try{ (state.entries||[]).forEach(function(e){ var m=(e.marchand||"").trim(); if(m) cands[m]=(cands[m]||0)+1; }); }catch(e){}
+      CHAINS.forEach(function(c){ if(!(c in cands)) cands[c]=0; });
+      var top=(lines||[]).slice(0,8).map(function(l){ return norm(String(l).replace(/1/g,"i").replace(/0/g,"o").replace(/5/g,"s")); }).filter(function(l){ return l.replace(/ /g,"").length>=3; });
+      // morceaux du haut du ticket : la ligne entière et chaque suite de 1 à 3 mots
+      var parts=[];
+      top.forEach(function(l){ var w=l.split(" "); parts.push(l.replace(/ /g,""));
+        for(var a=0;a<w.length;a++) for(var b=a+1;b<=Math.min(w.length,a+3);b++) parts.push(w.slice(a,b).join("")); });
+      var best=null, bs=0, bl=0;
+      Object.keys(cands).forEach(function(c){
+        var nc=norm(c).replace(/ /g,""); if(nc.length<3) return;
+        parts.forEach(function(pc){
+          if(pc.length<3) return;
+          var sc=1-lev(pc, nc)/Math.max(pc.length, nc.length);
+          if(nc.length<5 && sc<1) return;          // noms courts (Lidl, Cora…) : seulement à l'identique
+          if(cands[c]>0) sc+=0.03;                  // ta propre orthographe d'abord
+          if(sc>bs || (sc===bs && nc.length>bl)){ bs=sc; best=c; bl=nc.length; }
+        });
+      });
+      if(best && bs>=0.86) return best;
+      // sinon : casse remise d'aplomb (« IntermaRche » → « Intermarche »)
+      return (guess||"").replace(/[A-Za-zÀ-ÿ]+/g, function(w){ return (/[a-zà-ÿ]/.test(w) && /[A-ZÀ-Ý]/.test(w.slice(1))) ? w.charAt(0).toUpperCase()+w.slice(1).toLowerCase() : w; });
+    }
     function parseTicket(text){
       var lines = text.split(/\n/).map(function(l){return l.trim();}).filter(Boolean);
       var amtRe = /(\d{1,4})[.,](\d{2})\b/g;
@@ -1964,17 +1991,21 @@
       if(flagged.length) total = Math.max.apply(null, flagged.map(function(a){return a.value;}));
       else if(all.length) total = Math.max.apply(null, all.map(function(a){return a.value;}));
       // Date : la première date valide (jour/mois cohérents, pas dans le futur), de préférence avec l'année sur 4 chiffres
-      var date="", best=null, dre=/\b(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})\b/g, dm, today=todayISO();
+      // (« 16/1072026 » = « 16/10/2026 » dont le second « / » a été lu comme un 7)
+      var date="", best=null, dm, today=todayISO();
+      var dre=/\b(\d{1,2}) ?[\/.\-] ?(\d{1,2}) ?(?:[\/.\-]|[71lI|](?=20\d\d\b)) ?(\d{4}|\d{2})\b/g;
+      var oldest=(function(){ var t=new Date(today+"T12:00:00"); t.setDate(t.getDate()-400); return t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0"); })();
       while((dm=dre.exec(text))){
         var d=+dm[1], mo=+dm[2], y=dm[3].length===2?2000+(+dm[3]):+dm[3];
-        if(dm[3].length===3 || d<1 || d>31 || mo<1 || mo>12 || y<2000) continue;
+        if(d<1 || d>31 || mo<1 || mo>12) continue;
         var iso=y+"-"+(mo<10?"0":"")+mo+"-"+(d<10?"0":"")+d;
-        if(iso>today) continue;
+        if(iso>today || iso<oldest) continue;
         if(!best || (dm[3].length===4 && best.n!==4)) best={ v:iso, n:dm[3].length };
       }
       if(best) date=best.v;
       var marchand="";
       for(var i=0;i<lines.length;i++){ if(/[A-Za-zÀ-ÿ]{3,}/.test(lines[i]) && !skip.test(lines[i])){ marchand=lines[i].slice(0,32); break; } }
+      marchand=matchMerchant(lines, marchand);
       return { total: total, date: date, marchand: marchand, categorie: guessCat(text), lignes: lignes };
     }
 
