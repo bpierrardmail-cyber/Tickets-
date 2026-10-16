@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="15/10 02:35" />
+  <meta name="build" content="16/10 16:09" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4942,6 +4942,23 @@
       }
     });
 
+    // Mise à jour automatique : au retour dans l'appli, recharge si une nouvelle version β est en ligne
+    (function(){
+      var cur=(document.querySelector('meta[name=build]')||{}).content||"", last=Date.now();
+      function check(){
+        if(document.visibilityState!=="visible" || Date.now()-last<60000) return;
+        last=Date.now();
+        fetch("./index.html?v="+Date.now(), { cache:"no-store" }).then(function(r){ return r.ok ? r.text() : ""; }).then(function(t){
+          var m=t && t.match(/<meta name="build" content="([^"]*)"/);
+          if(!m || !cur || m[1]===cur) return;
+          var ae=document.activeElement, typing=ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName);
+          if(state.view==="form" || state.busy || typing) return;   // ne jamais couper une saisie en cours
+          location.reload();
+        }).catch(function(){});
+      }
+      document.addEventListener("visibilitychange", check);
+      window.addEventListener("focus", check);
+    })();
     if("serviceWorker" in navigator){
       window.addEventListener("load", function(){
         navigator.serviceWorker.register("../sw.js").then(function(reg){
