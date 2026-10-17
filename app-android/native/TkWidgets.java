@@ -100,6 +100,8 @@ public final class TkWidgets {
             if (v != null) m.updateAppWidget(id, v);
         } catch (Exception e) {
             android.util.Log.w("TicketsWidgets", "widget " + k.getSimpleName() + " : " + e);
+            // jamais de chiffres d'exemple : un message à la place
+            try { m.updateAppWidget(id, message(c, id, "Tickets", "Touche pour ouvrir Tickets.", "list")); } catch (Exception ignored) { }
         }
     }
 
@@ -116,7 +118,10 @@ public final class TkWidgets {
     static RemoteViews build(Context c, AppWidgetManager m, int id, Class<?> k) throws Exception {
         String pkg = c.getPackageName();
         JSONObject d = data(c);
-        if (d != null && "store".equals(d.optString("edition")) && !d.optBoolean("plus", false))
+        // Version Store : réservé à Tickets Plus (avant le premier résumé, on sait l'édition par la compilation)
+        boolean perso = c.getResources().getBoolean(R.bool.tk_bourse);
+        boolean locked = d == null ? !perso : ("store".equals(d.optString("edition")) && !d.optBoolean("plus", false));
+        if (locked)
             return message(c, id, "Tickets Plus", "Les widgets font partie de Tickets Plus. Touche pour en savoir plus.", "plus");
         if (k == TkWidgetScan.class) {
             RemoteViews v = new RemoteViews(pkg, R.layout.tk_widget_scan);
@@ -155,7 +160,7 @@ public final class TkWidgets {
         if (multi) { v.setViewVisibility(R.id.tk_chip, View.VISIBLE); v.setTextViewText(R.id.tk_chip, foyer ? "Foyer" : "Moi"); }
         else v.setViewVisibility(R.id.tk_chip, View.GONE);
         if (mask) {
-            masquer(v);
+            masquer(v, sym);
         } else {
             v.setTextViewText(R.id.tk_big, big(val, sym));
             v.setTextColor(R.id.tk_big, val < 0 ? CORAL : INK);
@@ -181,7 +186,7 @@ public final class TkWidgets {
         } else {
             double pct = x.optDouble("pct", 0);
             v.setTextViewText(R.id.tk_title, "Commun · ta part (" + pctTxt(pct) + ")");
-            if (mask) masquer(v);
+            if (mask) masquer(v, sym);
             else {
                 v.setTextViewText(R.id.tk_big, big(x.optDouble("part", 0), sym));
                 v.setTextColor(R.id.tk_big, INK);
@@ -314,8 +319,8 @@ public final class TkWidgets {
         return v;
     }
 
-    static void masquer(RemoteViews v) {
-        v.setTextViewText(R.id.tk_big, "•••• €");
+    static void masquer(RemoteViews v, String sym) {
+        v.setTextViewText(R.id.tk_big, "•••• " + sym);
         v.setTextColor(R.id.tk_big, SOFT);
         v.setTextViewText(R.id.tk_sub, "touche pour voir");
         v.setTextColor(R.id.tk_sub, SOFT);
