@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="17/10 10:34" />
+  <meta name="build" content="17/10 10:38" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -5058,6 +5058,7 @@
       }
       document.addEventListener("visibilitychange", check);
       window.addEventListener("focus", check);
+      setTimeout(function(){ last=0; check(); }, 8000);   // aussi juste après l'ouverture (au cas où une ancienne version a été servie)
     })();
     if("serviceWorker" in navigator){
       window.addEventListener("load", function(){
