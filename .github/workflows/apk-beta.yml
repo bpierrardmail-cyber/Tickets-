@@ -1,7 +1,10 @@
 name: APK Android β
 
-# Construit l'appli Android de test (Capacitor) qui charge la version β
-# et lit les tickets avec ML Kit, puis la publie dans la release « apk-beta ».
+# Construit les deux applis Android de test à partir du même code (Capacitor) :
+#   - Perso : tout, Bourse comprise (installée à la main) ;
+#   - Store : la future version Play Store, sans Bourse.
+# Les deux chargent la version β et lisent les tickets avec ML Kit.
+# Elles sont publiées dans la release « apk-beta ».
 on:
   workflow_dispatch:
   push:
@@ -18,11 +21,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  apk:
+  release:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Release « apk-beta »
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES="Applis Android de test de Tickets (version ${GITHUB_RUN_NUMBER}, commit ${GITHUB_SHA::7}).
+          - Tickets-perso.apk : ta version, avec la Bourse.
+          - Tickets-store.apk : la future version Play Store, sans Bourse."
+          if gh release view apk-beta >/dev/null 2>&1; then
+            gh release edit apk-beta --notes "$NOTES"
+          else
+            gh release create apk-beta --prerelease --title "Tickets β (Android)" --notes "$NOTES"
+          fi
+          gh release delete-asset apk-beta Tickets-beta.apk -y 2>/dev/null || true
+
+  apk:
+    needs: release
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - edition: perso
+            app_id: fr.bpierrard.tickets.beta     # identifiant de l'appli déjà installée : mise à jour sans perte
+            app_name: Tickets Perso
+          - edition: store
+            app_id: fr.bpierrard.tickets.store    # provisoire, en attendant le nom définitif
+            app_name: Tickets Store
     defaults:
       run:
         working-directory: app-android
+    env:
+      EDITION: ${{ matrix.edition }}
+      APP_ID: ${{ matrix.app_id }}
+      APP_NAME: ${{ matrix.app_name }}
     steps:
       - uses: actions/checkout@v4
 
@@ -35,15 +71,26 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      - name: Réglages de l'édition
+        run: |
+          node -e '
+            const fs=require("fs"), c=JSON.parse(fs.readFileSync("capacitor.config.json","utf8"));
+            c.appId=process.env.APP_ID; c.appName=process.env.APP_NAME;
+            c.android=c.android||{}; c.android.appendUserAgent="TicketsApp/"+process.env.EDITION;
+            fs.writeFileSync("capacitor.config.json", JSON.stringify(c,null,2));
+            console.log(JSON.stringify(c,null,2));'
+
       - name: Dépendances Capacitor
         run: npm install --no-audit --no-fund
 
       - name: Projet Android
         run: |
           npx cap add android
-          PKG_DIR=android/app/src/main/java/fr/bpierrard/tickets/beta
+          PKG_DIR="android/app/src/main/java/$(echo "$APP_ID" | tr . /)"
           mkdir -p "$PKG_DIR"
-          cp native/MainActivity.java native/TicketOcrPlugin.java "$PKG_DIR/"
+          for f in MainActivity.java TicketOcrPlugin.java; do
+            sed "s/^package .*;/package $APP_ID;/" "native/$f" > "$PKG_DIR/$f"
+          done
           cp native/tickets.gradle android/app/
           printf "\napply from: 'tickets.gradle'\n" >> android/app/build.gradle
           chmod +x android/gradlew
@@ -61,12 +108,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk Tickets-beta.apk
-          ls -la Tickets-beta.apk
-          NOTES="Appli Android de test de Tickets. Elle charge la version β et lit les tickets avec ML Kit, sur le téléphone. Version ${GITHUB_RUN_NUMBER}, commit ${GITHUB_SHA::7}."
-          if gh release view apk-beta >/dev/null 2>&1; then
-            gh release edit apk-beta --notes "$NOTES"
-          else
-            gh release create apk-beta --prerelease --title "Tickets β (Android)" --notes "$NOTES"
-          fi
-          gh release upload apk-beta Tickets-beta.apk --clobber
+          cp android/app/build/outputs/apk/release/app-release.apk "Tickets-$EDITION.apk"
+          ls -la "Tickets-$EDITION.apk"
+          gh release upload apk-beta "Tickets-$EDITION.apk" --clobber

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="16/10 17:42" />
+  <meta name="build" content="17/10 08:22" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -732,7 +732,7 @@
       h+='<div class="dr-sec">Personnes</div>'+it("persons","👥","Personnes",esc(plist.join(", ")+" · ajouter, renommer, supprimer"));
       h+='<div class="dr-sec">Devise</div>'+it("devise","💱","Devise principale",esc(curSym()+" · "+CURS[BASE].l));
       h+='<div class="dr-sec">Export</div>'+it("pdf","📄","Exporter en PDF",esc("Bilan sur la période de ton choix"));
-      h+='<div class="dr-foot"><span class="beta-tag">Version β · '+esc((document.querySelector('meta[name=build]')||{}).content||'')+(capNative()?' · appli Android':' · navigateur')+'</span></div>';
+      h+='<div class="dr-foot"><span class="beta-tag">Version β · '+esc((document.querySelector('meta[name=build]')||{}).content||'')+(capNative()?(EDITION==="store"?' · appli Store':' · appli Perso'):' · navigateur'+(EDITION==="store"?' (Store)':''))+'</span></div>';
       h+='</div>';
       var ov=document.createElement("div"); ov.className="drawer-ov"; ov.innerHTML=h; document.body.appendChild(ov);
       setTimeout(function(){ ov.classList.add("open"); }, 10);
@@ -917,6 +917,21 @@
     function personRec(n){ return personnes.filter(function(x){ return x.nom===n; })[0]||null; }
     function isArchived(n){ var r=personRec(n); return !!(r && r.archived); }
     function mePerson(){ var a=mainAcct(); return (a && a.payer) || "Moi"; }
+    // ---------- Éditions de l'appli ----------
+    // « perso » : tout, Bourse comprise (navigateur et appli perso). « store » : version Play Store, sans Bourse.
+    // L'appli Android annonce son édition dans son identifiant de navigateur (« TicketsApp/store ») ;
+    // dans le navigateur, ajouter ?edition=store à l'adresse pour voir la version Store.
+    var EDITION=(function(){
+      var m=(navigator.userAgent||"").match(/TicketsApp\/(perso|store)/); if(m) return m[1];
+      try{ var q=new URLSearchParams(location.search).get("edition"); if(q==="store"||q==="perso") return q; }catch(e){}
+      return "perso";
+    })();
+    var FEAT={ bourse: EDITION!=="store" };
+    // Version Plus (achat dans l'appli Store) : la liste des fonctions réservées sera remplie quand le partage
+    // gratuit / Plus sera décidé. Tant qu'elle est vide, tout est ouvert.
+    var PLUS_FEATURES=[];   // par ex. "scan", "provisions", "epargne"
+    function plusUnlocked(){ return EDITION!=="store" || !!store.read("plusUnlocked", false); }
+    function canUse(f){ return PLUS_FEATURES.indexOf(f)<0 || plusUnlocked(); }
     function mainAcct(){ return comptes.filter(function(c){ return c.main; })[0] || comptes[0]; }
     function curAcctKey(){ var k=state.compteSel||store.read("compteSel", null), a=k&&acctByKey(k); return (a||mainAcct()).key; }
     // Ticket : compte choisi sur le ticket, sinon selon « payé par »
@@ -1157,6 +1172,7 @@
     }
     var posBusy=false, posLast=0;
     function refreshPositions(force){
+      if(!FEAT.bourse) return;
       var ps=allPositions(); if(!ps.length || posBusy) return;
       if(!force && Date.now()-posLast<60000) return;
       posBusy=true; posLast=Date.now();
@@ -1571,6 +1587,7 @@
         .catch(function(){ return yahoo(String(p.sym||"").toUpperCase()+"-EUR"); });
     }
     function loadBourseDay(){
+      if(!FEAT.bourse) return;
       if(bDayBusy) return; bDayBusy=true;
       var items=[], fixed=0;
       bourse.forEach(function(c){
@@ -1682,7 +1699,7 @@
     function bPrev(c){ var ms=bMonths(c); return ms.length>1?c.vals[ms[ms.length-2]]:null; }
     function bFirst(c){ var ms=bMonths(c); return ms.length?c.vals[ms[0]]:null; }
     function bourseTotalLive(){ var t=0; bourse.forEach(function(c){ if(c.sol && c.solQty && state.solPrice){ t+=c.solQty*state.solPrice+bCash(bLast(c)); } else { t+=bTot(bLast(c)); } }); return t; }
-    function syncBourseEpargne(){ try{ recordBourseHist(); }catch(err){} var m=monthKey(todayISO()), ch=false, tot=bourseTotalLive(); epargne.forEach(function(c){ if(c.bourseLink){ if(!c.vals) c.vals={}; if(Number(c.vals[m])!==tot){ c.vals[m]=tot; ch=true; } } }); if(ch) persistEpargne(); }
+    function syncBourseEpargne(){ if(!FEAT.bourse) return; try{ recordBourseHist(); }catch(err){} var m=monthKey(todayISO()), ch=false, tot=bourseTotalLive(); epargne.forEach(function(c){ if(c.bourseLink){ if(!c.vals) c.vals={}; if(Number(c.vals[m])!==tot){ c.vals[m]=tot; ch=true; } } }); if(ch) persistEpargne(); }
     function bPct(from,to){ if(!from||from===0) return null; var p=(to-from)/Math.abs(from)*100; return (p>=0?"+":"")+p.toFixed(1).replace(".",",")+" %"; }
     function bPctCol(from,to){ return (to-from)>=0?"#4fd6a0":"#f4796b"; }
     function bBadge(from,to,label){
@@ -1804,7 +1821,7 @@
     function addEpargne(){
       uiForm({ title:"Nouveau compte épargne", fields:[
         {key:"nom", label:"Nom du compte", placeholder:"Livret A, assurance vie…", required:true},
-        {key:"type", label:"Valeur", type:"seg", value:"manuel", options:[{v:"manuel",l:"Saisie manuelle"},{v:"bourse",l:"Suit la Bourse"}],
+        {key:"type", label:"Valeur", type:"seg", value:"manuel", hidden:!FEAT.bourse, options:[{v:"manuel",l:"Saisie manuelle"},{v:"bourse",l:"Suit la Bourse"}],
           onChange:function(v,api){ api.show("montant", v==="manuel"); }},
         {key:"montant", label:"Montant actuel", type:"money", value:""},
         {key:"obj", label:"Objectif (optionnel)", type:"money", value:"", help:"Un montant à atteindre, avec une date si tu veux."},
@@ -2306,7 +2323,7 @@
         '<button class="navi" type="button" data-view="articles">Articles</button>'+
         '<button class="navi" type="button" data-view="communes">Commun</button>'+
         '<button class="navi" type="button" data-view="compte">Compte</button>'+
-        '<button class="navi" type="button" data-view="bourse">Bourse</button>'+
+        (FEAT.bourse?'<button class="navi" type="button" data-view="bourse">Bourse</button>':'')+
         '<button class="navi" type="button" data-view="analyse">Analyse</button>'+
       '</div>';
     document.body.appendChild(navEl);
@@ -2352,7 +2369,7 @@
       if(state.view==="artDetail") return renderArtDetail();
       if(state.view==="communes") return renderCommunes();
       if(state.view==="compte" || state.view==="comptedet") return renderCompte();
-      if(state.view==="bourse") return renderBourse();
+      if(state.view==="bourse"){ if(!FEAT.bourse){ state.view="list"; return renderList(); } return renderBourse(); }
       if(state.view==="gallery") return renderGallery();
       if(state.view==="photo") return renderPhoto();
       if(state.view==="patrimoine") return renderPatrimoine();
@@ -2480,7 +2497,7 @@
         state[key]=keep; app=saveApp; state.view=saveView; box.innerHTML="";
         return r;
       }
-      if(bourse.length){ var bc=""; try{ bc=(state.bView==="bars")?bourseBarsHTML(monthKey(todayISO()), monthKey(todayISO())):bourseChartHTML(); }catch(e){}
+      if(FEAT.bourse && bourse.length){ var bc=""; try{ bc=(state.bView==="bars")?bourseBarsHTML(monthKey(todayISO()), monthKey(todayISO())):bourseChartHTML(); }catch(e){}
         if(bc) out.push({ tab:"bourse", name:"Bourse", c:{ label:"Total portefeuille", big:moneyBig(bourseTotalLive()), chart:bc, mode:(state.bView==="bars"?"Mois par mois":"Courbe "+(state.bRange||"1J")) } }); }
       var A=grab("analyse","anChart",renderAnalyse); if(A) out.push({ tab:"analyse", name:"Analyse", c:A });
       var M=grab("communes","comChart",renderCommunes); if(M) out.push({ tab:"communes", name:"Commun", c:M });
@@ -3620,7 +3637,7 @@
         var cur=epAt(c, month), prev=epPrevAt(c, month), pm=pctStr(prev,cur);
         bEp+='<div class="prow"><span class="pname" style="display:flex;flex-direction:column;min-width:0;gap:1px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.nom)+(c.bourseLink?' <span style="font-size:9px;color:var(--accent);font-weight:600">● Bourse</span>':'')+'</span>'+(pm?'<span style="font-size:10px;font-weight:500;color:'+pctColor(prev,cur)+'">'+pm+' vs mois préc.</span>':'')+'</span>'+
            '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:2px">'+fmtK(cur)+'</span>'+
-           '<button class="btn ghost eplink" type="button" data-id="'+esc(c.id)+'" title="Lier/délier la Bourse">🔗</button>'+
+           (FEAT.bourse?'<button class="btn ghost eplink" type="button" data-id="'+esc(c.id)+'" title="Lier/délier la Bourse">🔗</button>':'')+
            '<button class="btn ghost epedit" type="button" data-id="'+esc(c.id)+'">✎</button>'+
            '<button class="btn ghost epdel" type="button" data-id="'+esc(c.id)+'">✕</button></div>';
         if(c.objectif && c.objectif.montant>0){
@@ -3783,6 +3800,7 @@
       if(ch) persistBourse();
     }
     function fetchAllStockPrices(){
+      if(!FEAT.bourse) return;
       var symbols={};
       bourse.forEach(function(c){ if(c.stock && c.stock.symbol) symbols[c.stock.symbol]=true; });
       Object.keys(symbols).forEach(function(s){ fetchStockPrice(s); });
@@ -4533,17 +4551,17 @@
       var solde=computeCompteMonth(mainAcct().key, month).solde;
       var epManuel=0, epLies=0;
       epargne.forEach(function(c){ if(c.bourseLink) epLies+=epCurrent(c); else epManuel+=epCurrent(c); });
-      var bourseTot=bourseTotalLive();
+      var bourseTot=FEAT.bourse?bourseTotalLive():0;
       var net=solde+epManuel+bourseTot;
       var h=header("list")+'<section class="paper">';
       h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Patrimoine</div><hr class="rule">';
       h+='<div class="leader fam"><span class="lbl">Compte courant</span><span class="fill"></span><span class="val">'+fmt(solde)+'</span></div>';
-      h+='<div class="leader fam"><span class="lbl">Épargne (hors Bourse)</span><span class="fill"></span><span class="val">'+fmt(epManuel)+'</span></div>';
-      h+='<div class="leader fam"><span class="lbl">Bourse (portefeuille)</span><span class="fill"></span><span class="val">'+fmt(bourseTot)+'</span></div>';
+      h+='<div class="leader fam"><span class="lbl">'+(FEAT.bourse?'Épargne (hors Bourse)':'Épargne')+'</span><span class="fill"></span><span class="val">'+fmt(epManuel)+'</span></div>';
+      if(FEAT.bourse) h+='<div class="leader fam"><span class="lbl">Bourse (portefeuille)</span><span class="fill"></span><span class="val">'+fmt(bourseTot)+'</span></div>';
       h+='<hr class="rule"><div class="leader total"><span class="lbl">Patrimoine net</span><span class="fill"></span><span class="val" style="font-size:22px;color:'+(net<0?"#f4796b":"#4fd6a0")+'">'+fmt(net)+'</span></div>';
       if(epLies>0) h+='<div class="muted" style="font-size:10px;margin:6px 2px 0">Ton compte épargne lié à la Bourse ('+fmt(epLies)+') n\'est pas recompté ici : il est déjà inclus dans la ligne « Bourse ».</div>';
       h+='<hr class="rule"><div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:0 2px 6px">Répartition</div>';
-      h+=gBlock([{name:"Compte",value:solde},{name:"Épargne",value:epManuel},{name:"Bourse",value:bourseTot}]);
+      h+=gBlock([{name:"Compte",value:solde},{name:"Épargne",value:epManuel}].concat(FEAT.bourse?[{name:"Bourse",value:bourseTot}]:[]));
       h+='</section>';
       app.innerHTML=h;
       setNav(null,false);
@@ -4959,6 +4977,7 @@
     }
 
     function tickBourse(){
+      if(!FEAT.bourse) return;
       if(!bourse.some(function(c){ return c.sol; }) && !epargne.some(function(c){ return c.bourseLink; }) && state.view!=="bourse" && state.view!=="compte") return;
       fetch("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=eur")
         .then(function(r){ return r.json(); })
@@ -4986,6 +5005,7 @@
       if(document.hidden) return;
       if(Date.now()-lastRefresh < 20000) return; // évite les doublons si plusieurs events se déclenchent d'un coup
       lastRefresh=Date.now();
+      if(!FEAT.bourse) return;
       tickBourse();
       fetchAllStockPrices();
     }
