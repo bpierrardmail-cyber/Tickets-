@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="17/10 08:22" />
+  <meta name="build" content="17/10 10:16" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2074,7 +2074,9 @@
     function randBytes(n){ var a=new Uint8Array(n); crypto.getRandomValues(a); return a; }
     function hashPin(pin, salt){ return crypto.subtle.digest("SHA-256", new TextEncoder().encode(salt+":"+pin)).then(b64); }
     var lockHiddenAt=0;
+    function nativeBio(){ return (typeof capPlugin==="function") ? capPlugin("TicketsNative") : null; }
     function bioUnlock(){
+      if(lockCfg && lockCfg.bioId==="native"){ var N=nativeBio(); return N ? N.biometric({ title:"Tickets", subtitle:"Déverrouille avec ton empreinte", cancel:"Utiliser le code" }) : Promise.reject(); }
       if(!lockCfg || !lockCfg.bioId || !window.PublicKeyCredential) return Promise.reject();
       return navigator.credentials.get({ publicKey:{ challenge:randBytes(32), allowCredentials:[{ type:"public-key", id:unb64(lockCfg.bioId) }], userVerification:"required", timeout:60000 } });
     }
@@ -2126,7 +2128,10 @@
         hashPin(r.a, salt).then(function(hv){
           lockCfg={ hash:hv, salt:salt, len:r.a.length, bioId:keepBio||null };
           store.write("lockCfg", lockCfg); render(); uiToast("Verrouillage activé ✓");
-          if(!keepBio && window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable){
+          var NB=nativeBio();
+          if(!keepBio && NB){
+            NB.biometricAvailable().then(function(r){ if(r && r.available) uiConfirm("Déverrouiller aussi avec ton empreinte ?", lockEnableBio, {ok:"Oui", no:"Non merci"}); }).catch(function(){});
+          } else if(!keepBio && window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable){
             PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(function(ok){
               if(ok) uiConfirm("Déverrouiller aussi avec ton empreinte ?", lockEnableBio, {ok:"Oui", no:"Non merci"});
             }).catch(function(){});
@@ -2135,6 +2140,16 @@
       });
     }
     function lockEnableBio(){
+      var NB=nativeBio();
+      if(lockCfg && NB){
+        NB.biometricAvailable().then(function(r){
+          if(!(r && r.available)){ uiToast("Aucune empreinte configurée sur ce téléphone"); return; }
+          return NB.biometric({ title:"Ajouter l'empreinte", subtitle:"Pose ton doigt pour confirmer", cancel:"Annuler" }).then(function(){
+            lockCfg.bioId="native"; store.write("lockCfg", lockCfg); render(); uiToast("Empreinte ajoutée ✓");
+          });
+        }).catch(function(){ uiToast("Empreinte non enregistrée"); });
+        return;
+      }
       if(!lockCfg || !window.PublicKeyCredential){ uiToast("Empreinte indisponible sur ce téléphone"); return; }
       navigator.credentials.create({ publicKey:{
         challenge:randBytes(32), rp:{ name:"Tickets" },
@@ -4665,7 +4680,11 @@
       app.innerHTML=h;
       setNav(null,false);
       bindBack(function(){ state.view="list"; render(); });
-      var pb=document.getElementById("blPrint"); if(pb) pb.onclick=function(){ var t=document.title; document.title="Bilan "+label; window.print(); setTimeout(function(){ document.title=t; }, 1000); };
+      var pb=document.getElementById("blPrint"); if(pb) pb.onclick=function(){ var t=document.title; document.title="Bilan "+label;
+        var NP=capPlugin("TicketsNative");   // appli Android : impression Android (« Enregistrer au format PDF » ou imprimante)
+        if(NP){ NP.print({ name:"Bilan "+label }).catch(function(e){ uiToast((e&&e.message)||"Impression impossible"); }); }
+        else window.print();
+        setTimeout(function(){ document.title=t; }, 1000); };
       if(!state.months) state.months={};
       function setM(m){ state.bilanMonth=m; state.bilanFrom=m; state.bilanTo=m; render(); }
       var p=document.getElementById("mn-prev"); if(p) p.onclick=function(){ setM(prevMonthKey(month)); };

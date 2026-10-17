@@ -27,4 +27,6 @@ android {
 dependencies {
     // Lecture de texte ML Kit, modèle latin intégré à l'appli (fonctionne hors ligne)
     implementation 'com.google.mlkit:text-recognition:16.0.1'
+    // Empreinte digitale (BiometricPrompt)
+    implementation 'androidx.biometric:biometric:1.1.0'
 }

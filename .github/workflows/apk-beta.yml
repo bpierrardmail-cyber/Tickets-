@@ -88,7 +88,7 @@ jobs:
           npx cap add android
           PKG_DIR="android/app/src/main/java/$(echo "$APP_ID" | tr . /)"
           mkdir -p "$PKG_DIR"
-          for f in MainActivity.java TicketOcrPlugin.java; do
+          for f in MainActivity.java TicketOcrPlugin.java TicketsNativePlugin.java; do
             sed "s/^package .*;/package $APP_ID;/" "native/$f" > "$PKG_DIR/$f"
           done
           cp native/tickets.gradle android/app/
