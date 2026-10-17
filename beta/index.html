@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="17/10 10:16" />
+  <meta name="build" content="17/10 10:34" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -501,6 +501,9 @@
     .hgrid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     .hmini{ min-width:0; overflow:hidden; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:12px 13px 10px; cursor:pointer; }
     .hgrid .hmini:last-child:nth-child(odd){ grid-column:1 / -1; }
+    .hmini:not(.wide) .hm-ch svg.dn{ width:86px !important; height:86px !important; display:block; margin:0 auto; flex:0 0 86px; }
+    .hmini:not(.wide) .lgd, .hmini:not(.wide) .cdon-l{ display:none !important; }
+    .hmini:not(.wide) .cdon{ justify-content:center; margin:0; }
     .hmini.wide{ grid-column:1 / -1; background:linear-gradient(160deg,#1f2a27 0%,var(--card) 62%); border-color:var(--line2); }
     .hm-t{ display:flex; justify-content:space-between; gap:6px; font-size:11px; font-weight:700; color:var(--ink-soft); white-space:nowrap; }
     .hm-t span:first-child{ overflow:hidden; text-overflow:ellipsis; }
@@ -2752,7 +2755,7 @@
         g.classList.toggle("open", op); }; });
       var hcpt=document.getElementById("heroCpt"); if(hcpt) hcpt.onclick=function(){ state.view="compte"; render(); window.scrollTo(0,0); };
       [].forEach.call(document.querySelectorAll(".hmini"), function(c){ c.onclick=function(){ state.view=c.getAttribute("data-go"); render(); window.scrollTo(0,0); }; });
-      [].forEach.call(document.querySelectorAll(".hmini:not(.wide) .hm-ch svg"), function(v){ v.setAttribute("preserveAspectRatio","none"); });
+      [].forEach.call(document.querySelectorAll(".hmini:not(.wide) .hm-ch svg"), function(v){ if(v.closest(".cdon") || v.querySelectorAll("circle").length>=2) v.classList.add("dn"); else v.setAttribute("preserveAspectRatio","none"); });
       [].forEach.call(document.querySelectorAll(".catrow"), function(row){ row.onclick=function(){ var c=row.getAttribute("data-cat"); state.catFilter=(state.catFilter===c?null:c); state.ticketsOpen=true; render(); var se=document.getElementById("search"); if(se && se.scrollIntoView) se.scrollIntoView({behavior:"smooth", block:"start"}); }; });
       var cc=document.getElementById("catclear"); if(cc) cc.onclick=function(){ state.catFilter=null; render(); };
       wireMonthNav(month, curM, "list");
@@ -4934,7 +4937,7 @@
       [].forEach.call(document.querySelectorAll(".prldel"), function(b){ b.onclick=function(){ delPrelevement(b.getAttribute("data-id"), b.getAttribute("data-pr")); }; });
     }
     function backupData(){
-      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes"];
+      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel"];
       var dump={ _app:"tickets", _version:1, _date:new Date().toISOString(), data:{} };
       keys.forEach(function(k){ var v=store.read(k, null); if(v!==null) dump.data[k]=v; });
       dump.photos = PHOTOS;
@@ -4968,7 +4971,7 @@
           if(!data || typeof data!=="object") throw new Error("format non reconnu");
           var n=(data.entries && data.entries.length) ? data.entries.length : 0;
           if(!window.confirm("Restaurer cette sauvegarde ?\n"+n+" ticket(s) vont REMPLACER les données actuelles.")) return;
-          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes"].forEach(function(k){
+          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel"].forEach(function(k){
             if(k in data) store.write(k, data[k]);
           });
           if(!("comptes" in data)) store.write("comptes", null);   // ancienne sauvegarde : le compte est reconstruit au redémarrage
