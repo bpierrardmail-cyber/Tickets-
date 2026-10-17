@@ -3,7 +3,8 @@ name: APK Android β
 # Construit les deux applis Android de test à partir du même code (Capacitor) :
 #   - Perso : tout, Bourse comprise (installée à la main) ;
 #   - Store : la future version Play Store, sans Bourse.
-# Les deux chargent la version β et lisent les tickets avec ML Kit.
+# Les deux chargent la version β, lisent les tickets avec ML Kit et ont les widgets
+# (dans la version Store, les widgets sont réservés à Tickets Plus ; pas de widget Bourse).
 # Elles sont publiées dans la release « apk-beta ».
 on:
   workflow_dispatch:
@@ -88,9 +89,15 @@ jobs:
           npx cap add android
           PKG_DIR="android/app/src/main/java/$(echo "$APP_ID" | tr . /)"
           mkdir -p "$PKG_DIR"
-          for f in MainActivity.java TicketOcrPlugin.java TicketsNativePlugin.java; do
-            sed "s/^package .*;/package $APP_ID;/" "native/$f" > "$PKG_DIR/$f"
+          for f in native/*.java; do
+            sed "s/^package .*;/package $APP_ID;/" "$f" > "$PKG_DIR/$(basename "$f")"
           done
+          # Widgets de l'écran d'accueil : écrans, icônes, tailles, et le widget Bourse seulement dans l'appli perso
+          cp -r native/res/. android/app/src/main/res/
+          find android/app/src/main/res -name 'tk_*.xml' -exec sed -i "s/__PKG__/$APP_ID/g" {} +
+          BOURSE=false; [ "$EDITION" = perso ] && BOURSE=true
+          printf '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <bool name="tk_bourse">%s</bool>\n</resources>\n' "$BOURSE" > android/app/src/main/res/values/tk_edition.xml
+          node native/patch-manifest.js android/app/src/main/AndroidManifest.xml
           cp native/tickets.gradle android/app/
           printf "\napply from: 'tickets.gradle'\n" >> android/app/build.gradle
           chmod +x android/gradlew

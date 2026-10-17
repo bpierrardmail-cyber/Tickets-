@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="17/10 12:27" />
+  <meta name="build" content="17/10 22:21" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -1051,7 +1051,7 @@
     var FEAT={ bourse: EDITION!=="store" };
     // Version Plus (achat dans l'appli Store) : la liste des fonctions réservées sera remplie quand le partage
     // gratuit / Plus sera décidé. Tant qu'elle est vide, tout est ouvert.
-    var PLUS_FEATURES=[];   // par ex. "scan", "provisions", "epargne"
+    var PLUS_FEATURES=["widgets"];   // à compléter (par ex. "scan", "provisions", "epargne")
     function plusUnlocked(){ return EDITION!=="store" || !!store.read("plusUnlocked", false); }
     function canUse(f){ return PLUS_FEATURES.indexOf(f)<0 || plusUnlocked(); }
     function mainAcct(){ return comptes.filter(function(c){ return c.main; })[0] || comptes[0]; }
@@ -2496,7 +2496,7 @@
     }
     function bindBack(fn){ var hb=document.getElementById("hback"); if(hb) hb.onclick=fn; }
 
-    function render(){ renderView(); try{ compactRowActions(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } }
+    function render(){ renderView(); try{ compactRowActions(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); }
     function renderView(){
       armBack();
       syncBourseEpargne();
@@ -3411,10 +3411,8 @@
         communParts=np; persistParts(); s.close(); render(); uiToast("Parts du commun enregistrées"); };
       paint();
     }
-    function renderCommunes(){
-      var curM = monthKey(todayISO());
-      var month = (state.months&&state.months.communes)||curM;
-      var monthLabel = monthLabelOf(month);
+    // Commun d'un mois : frais, produits partagés, personnes et parts (utilisé par l'onglet Commun et les widgets)
+    function communModel(month){
       function monthData(m){
         var frais=fraisCommuns.filter(function(f){ return fraisActif(f, m); }), byP={}, fraisTot=0;
         frais.forEach(function(f){ var who=(f.personne||"").trim()||"Commun"; if(!byP[who]) byP[who]={ total:0, items:[] }; var v=fraisMontant(f, m); byP[who].total+=v; byP[who].items.push(f); fraisTot+=v; });
@@ -3444,6 +3442,13 @@
       function pctOf(who){ if(CP) return Math.max(0, Number(CP[who])||0)/cpSum*100; return ppl.indexOf(who)>=0 ? 100/ppl.length : 0; }
       function shareOf(who){ return (D.commun+D.prod)*pctOf(who)/100; }
       function partOf(who){ return persoOf(who)+shareOf(who); }
+      return { monthData:monthData, D:D, me:me, ppl:ppl, CP:CP, persoOf:persoOf, pctOf:pctOf, shareOf:shareOf, partOf:partOf };
+    }
+    function renderCommunes(){
+      var curM = monthKey(todayISO());
+      var month = (state.months&&state.months.communes)||curM;
+      var monthLabel = monthLabelOf(month);
+      var CM=communModel(month), monthData=CM.monthData, D=CM.D, me=CM.me, ppl=CM.ppl, CP=CM.CP, persoOf=CM.persoOf, pctOf=CM.pctOf, shareOf=CM.shareOf, partOf=CM.partOf;
       var COLP="#8a92a6", COLC="#7c9cf4", COLR="#e0a458";
       function mShort(m){ var pm=m.split("-"); return new Date(+pm[0], +pm[1]-1, 1).toLocaleDateString("fr-FR",{month:"short"}).replace(".",""); }
 
@@ -5395,6 +5400,87 @@
         t=t.parentNode;
       }
     });
+
+    // ---------- Widgets Android (écran d'accueil) ----------
+    // L'appli prépare un résumé de tes chiffres et le donne à Android, qui l'affiche dans les widgets.
+    // Envoyé après chaque changement (regroupé sur 1,5 s) et quand on quitte l'appli. Version Store : réservé à Plus.
+    function widgetSnapshot(){
+      var m=monthKey(todayISO()), pm=prevMonthKey(m), me=mePerson(), mainK=mainAcct().key;
+      function r2(n){ return Math.round((Number(n)||0)*100)/100; }
+      function fig(keys, mm){ var t=0; keys.forEach(function(k){ t+=computeCompteMonth(k, mm).solde; var q=liquideAt(k, mm); if(q) t+=q.val; }); return t; }
+      var allK=comptes.map(function(a){ return a.key; }), sMe=fig([mainK], m), sAll=fig(allK, m);
+      var _p=m.split("-"), dim=new Date(+_p[0], +_p[1], 0).getDate();
+      var snap={ v:1, t:Date.now(), edition:EDITION, plus:canUse("widgets"), lock:!!lockCfg, sym:curSym(), multi:comptes.length>1,
+        month:m, monthName:monthLabelOf(m).split(" ")[0], prevName:monthLabelOf(pm).split(" ")[0], dim:dim,
+        solde:{ moi:{ v:r2(sMe), d:r2(sMe-fig([mainK], pm)), acct:mainAcct().nom }, foyer:{ v:r2(sAll), d:r2(sAll-fig(allK, pm)), n:comptes.length } } };
+      // Commun : ta part du mois et les frais communs pas encore payés
+      try{ var CM=communModel(m), ci=(CM.D.byP.Commun?CM.D.byP.Commun.items:[]), todo=0, pc=CM.pctOf(CM.me);
+        ci.forEach(function(f){ if(!fraisDone(f, m)) todo++; });
+        snap.commun={ part:r2(CM.partOf(CM.me)), pct:Math.round(pc*10)/10, todo:todo, n:ci.length, perso:r2(CM.persoOf(CM.me)), com:r2(CM.D.commun*pc/100), prod:r2(CM.D.prod*pc/100) }; }catch(e){}
+      // Mois en cours : tickets du mois, budget, 3 plus grosses catégories
+      var mois=state.entries.filter(function(e){ return monthKey(e.date)===m; }), spent=0, byCat={}, bud=0, day=new Date().getDate();
+      mois.forEach(function(e){ var v=Number(e.montant)||0, c=e.categorie||"Autre"; spent+=v; byCat[c]=(byCat[c]||0)+v; });
+      Object.keys(budgets).forEach(function(c){ if(budgets[c]>0) bud+=budgets[c]; });
+      snap.mois={ spent:r2(spent), budget:r2(bud), perDay:r2(day?spent/day:0), n:mois.length,
+        cats:Object.keys(byCat).sort(function(a,b){ return byCat[b]-byCat[a]; }).slice(0,3).map(function(c){ return { n:c, v:r2(byCat[c]), c:catIcon(c).col }; }) };
+      // Foyer : ce qu'il y a sur les comptes de chacun aujourd'hui (banque estimée)
+      var own={}, order=[], tot=0, epT=0;
+      comptes.forEach(function(a){ var o=acctOwner(a)||"Comptes partagés", v=0; try{ v=acctFigures(a.key, m).banque; }catch(e){} if(!(o in own)){ own[o]=0; order.push(o); } own[o]+=v; tot+=v; });
+      order.sort(function(x,y){ if(x===me) return -1; if(y===me) return 1; return own[y]-own[x]; });
+      epargne.forEach(function(c){ epT+=epAt(c, m); });
+      snap.foyer={ total:r2(tot), accts:comptes.length, n:order.filter(function(o){ return o!=="Comptes partagés"; }).length, ep:r2(epT),
+        ppl:order.map(function(o,i){ return { n:o, v:r2(own[o]), c:ACOLS[i%ACOLS.length] }; }) };
+      // Bourse (appli perso) : le total et de quoi le recalculer sans ouvrir l'appli (positions, taux de change, relais des cours)
+      if(FEAT.bourse && bourse.length){
+        var fixed=0, items=[], t0=new Date(), ref=null, hist=[];
+        bourse.forEach(function(c){ if(!bOpen(c)) return; var l=bLast(c);
+          if(c.sol && c.solQty){ items.push({ s:"cg", r:"solana", q:Number(c.solQty)||0 }); fixed+=bCash(l); return; }
+          if(c.positions && c.positions.length){ fixed+=bCash(l);
+            c.positions.forEach(function(p){ if(p.src==="man") fixed+=Number(p.valeur)||0; else if(p.src==="cg"||p.src==="yf") items.push({ s:p.src, r:p.ref, q:Number(p.qte)||0 }); }); return; }
+          fixed+=bTot(l); });
+        t0.setHours(0,0,0,0);
+        bourseHist.forEach(function(h){ if(h.t<t0.getTime()) ref=h.v; else hist.push([h.t, r2(h.v)]); });
+        snap.bourse={ total:r2(bourseTotalLive()), ref:(ref!=null?r2(ref):null), hist:hist.slice(-120), fixed:r2(fixed), items:items, base:BASE, fx:(fxCache&&fxCache.rates)||{}, api:coursApi() };
+      }
+      return snap;
+    }
+    var wLast="", wTimer=0;
+    // Appel sûr d'une fonction Android (ancienne appli installée : la fonction peut manquer)
+    function npCall(name, arg){
+      var NP=capPlugin("TicketsNative"); if(!NP || typeof NP[name]!=="function") return Promise.reject(new Error("indisponible"));
+      try{ return Promise.resolve(NP[name](arg)); }catch(e){ return Promise.reject(e); }
+    }
+    function pushWidgets(now){
+      if(!capNative()) return;
+      clearTimeout(wTimer);
+      wTimer=setTimeout(function(){
+        try{ var j=JSON.stringify(widgetSnapshot()), cmp=j.replace(/"t":\d+,/,""); if(cmp===wLast) return; wLast=cmp;
+          npCall("widgetData", { json:j }).catch(function(){ wLast=""; }); }catch(e){ try{ console.warn(e); }catch(_){} }
+      }, now?0:1500);
+    }
+    // Un widget a été touché : l'appli s'ouvre sur l'onglet voulu (Scan : directement l'appareil photo)
+    function widgetLaunch(){
+      npCall("launchTarget").then(function(r){ var t=r && r.target; if(t) openFromWidget(t); }).catch(function(){});
+    }
+    function openFromWidget(t){
+      if(document.getElementById("lockscreen")){ var n=0, iv=setInterval(function(){ if(!document.getElementById("lockscreen") || ++n>240){ clearInterval(iv); if(n<=240) openFromWidget(t); } }, 500); return; }
+      if(t==="plus"){ uiChoice("Tickets Plus", "Les widgets font partie de Tickets Plus. L'achat de Plus arrivera bientôt dans l'appli.", [{ l:"D'accord", fn:function(){} }]); return; }
+      if(t==="scan"){ state.view="list"; render(); widgetScan(); return; }
+      if(t==="compte_foyer" || t==="foyer") state.compteSel=(comptes.length>1)?"__all":mainAcct().key;
+      else if(t==="compte") state.compteSel=mainAcct().key;
+      var map={ compte:"compte", compte_foyer:"compte", foyer:"compte", communes:"communes", mois:"list", bourse:(FEAT.bourse?"bourse":"list") };
+      state.view=map[t]||"list"; render(); window.scrollTo(0,0);
+    }
+    function widgetScan(){
+      var Cam=capPlugin("Camera"); if(!Cam || typeof Cam.getPhoto!=="function"){ openScanChooser(); return; }
+      Cam.getPhoto({ quality:88, width:2400, resultType:"dataUrl", source:"CAMERA", correctOrientation:true, saveToGallery:false, allowEditing:false }).then(function(ph){
+        var u=ph && ph.dataUrl; if(!u) return;
+        var bin=atob(u.slice(u.indexOf(",")+1)), arr=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+        filein.onchange({ target:{ files:[new File([arr], "ticket.jpg", { type:"image/jpeg" })], value:"" } });
+      }).catch(function(e){ if(!/cancel/i.test(String((e&&e.message)||e||""))) openScanChooser(); });
+    }
+    document.addEventListener("visibilitychange", function(){ if(document.hidden) pushWidgets(true); else setTimeout(widgetLaunch, 300); });
+    setTimeout(function(){ widgetLaunch(); pushWidgets(true); }, 600);
 
     // Mise à jour automatique : au retour dans l'appli, recharge si une nouvelle version β est en ligne
     (function(){

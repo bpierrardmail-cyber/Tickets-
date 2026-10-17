@@ -1,6 +1,7 @@
 package fr.bpierrard.tickets.beta;
 
 import android.content.Context;
+import android.content.Intent;
 import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
 import android.print.PrintManager;
@@ -23,6 +24,8 @@ import com.getcapacitor.annotation.CapacitorPlugin;
  *  - print({ name })              : imprime / enregistre en PDF la page affichée (Bilan)
  *  - biometricAvailable()         : { available } si une empreinte (ou le visage) est configurée
  *  - biometric({ title, ... })    : demande l'empreinte, sans adresse de site
+ *  - widgetData({ json })         : résumé des chiffres pour les widgets de l'écran d'accueil
+ *  - launchTarget()               : { target } si l'appli a été ouverte depuis un widget (une seule fois)
  */
 @CapacitorPlugin(name = "TicketsNative")
 public class TicketsNativePlugin extends Plugin {
@@ -86,5 +89,38 @@ public class TicketsNativePlugin extends Plugin {
                 call.reject("Empreinte indisponible : " + e.getMessage(), e);
             }
         });
+    }
+
+    // ---------- Widgets ----------
+    private static String pendingTarget = null;
+
+    /** Appelé par MainActivity : l'appli a été ouverte (ou ramenée devant) par un widget. */
+    static void takeIntent(Intent i) {
+        if (i == null) return;
+        String t = i.getStringExtra("tk_target");
+        if (t != null) { pendingTarget = t; i.removeExtra("tk_target"); }
+    }
+
+    @PluginMethod
+    public void launchTarget(PluginCall call) {
+        JSObject r = new JSObject();
+        r.put("target", pendingTarget);
+        pendingTarget = null;
+        call.resolve(r);
+    }
+
+    @PluginMethod
+    public void widgetData(PluginCall call) {
+        String json = call.getString("json");
+        if (json == null) { call.reject("json manquant"); return; }
+        try {
+            Context c = getContext();
+            TkWidgets.save(c, json);
+            TkWidgets.updateAll(c);
+            if (TkWidgets.hasWidgets(c, TkWidgetBourse.class)) TkBourseWorker.schedule(c);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("Widgets : " + e.getMessage(), e);
+        }
     }
 }

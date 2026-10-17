@@ -2,12 +2,13 @@
   "name": "tickets-android-beta",
   "private": true,
   "version": "0.1.0",
-  "description": "Appli Android de test de Tickets (Capacitor) : charge la version β et lit les tickets avec ML Kit sur le téléphone.",
+  "description": "Appli Android de test de Tickets (Capacitor) : charge la version β, lit les tickets avec ML Kit et fournit les widgets de l'écran d'accueil.",
   "dependencies": {
     "@capacitor/android": "^7.0.0",
     "@capacitor/core": "^7.0.0",
     "@capacitor/filesystem": "^7.0.0",
-    "@capacitor/share": "^7.0.0"
+    "@capacitor/share": "^7.0.0",
+    "@capacitor/camera": "^7.0.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^7.0.0"

@@ -29,4 +29,6 @@ dependencies {
     implementation 'com.google.mlkit:text-recognition:16.0.1'
     // Empreinte digitale (BiometricPrompt)
     implementation 'androidx.biometric:biometric:1.1.0'
+    // Widgets : mise à jour de la Bourse en arrière-plan (toutes les 15 minutes)
+    implementation 'androidx.work:work-runtime:2.9.1'
 }

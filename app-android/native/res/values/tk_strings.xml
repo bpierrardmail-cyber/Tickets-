@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tk_w_scan">Tickets · Scan</string>
+    <string name="tk_w_solde">Tickets · Solde</string>
+    <string name="tk_w_commun">Tickets · Commun</string>
+    <string name="tk_w_mois">Tickets · Mois en cours</string>
+    <string name="tk_w_foyer">Tickets · Foyer</string>
+    <string name="tk_w_bourse">Tickets · Bourse du jour</string>
+    <string name="tk_d_scan">Ouvre directement l\'appareil photo pour scanner un ticket</string>
+    <string name="tk_d_solde">Solde de fin de mois prévu, pour toi ou tout le foyer</string>
+    <string name="tk_d_commun">Ta part du Commun ce mois-ci et les frais à payer</string>
+    <string name="tk_d_mois">Dépenses du mois, budget et plus grosses catégories</string>
+    <string name="tk_d_foyer">Les comptes du foyer, personne par personne</string>
+    <string name="tk_d_bourse">Ton portefeuille et sa courbe du jour, mis à jour toutes les 15 minutes</string>
+</resources>

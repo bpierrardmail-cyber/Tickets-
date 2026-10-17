@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fond des widgets : sombre, légèrement transparent, coins arrondis (comme les cartes de l'appli) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#D9111319" />
+    <stroke android:width="1dp" android:color="#1AFFFFFF" />
+    <corners android:radius="22dp" />
+</shape>

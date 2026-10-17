@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget 2×1 : un titre, un grand montant, une ligne, une petite barre -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tk_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/tk_widget_bg"
+    android:orientation="vertical"
+    android:gravity="center_vertical"
+    android:paddingStart="13dp"
+    android:paddingEnd="13dp"
+    android:paddingTop="9dp"
+    android:paddingBottom="10dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tk_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Fin de mois"
+            android:textColor="#A4AAB6"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/tk_chip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/tk_chip"
+            android:paddingStart="7dp"
+            android:paddingEnd="7dp"
+            android:paddingTop="1dp"
+            android:paddingBottom="1dp"
+            android:text="Moi"
+            android:textColor="#ECEEF3"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:visibility="visible" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tk_big"
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:autoSizeMaxTextSize="22sp"
+        android:autoSizeMinTextSize="13sp"
+        android:autoSizeStepGranularity="1sp"
+        android:autoSizeTextType="uniform"
+        android:gravity="center_vertical"
+        android:maxLines="1"
+        android:text="1 236,40 €"
+        android:textColor="#ECEEF3"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tk_sub"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="▲ +324 € vs sept."
+        android:textColor="#4FD6A0"
+        android:textSize="11sp"
+        android:textStyle="bold" />
+
+    <ImageView
+        android:id="@+id/tk_bar"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_marginTop="6dp"
+        android:importantForAccessibility="no"
+        android:scaleType="fitXY" />
+</LinearLayout>
