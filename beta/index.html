@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="17/10 12:10" />
+  <meta name="build" content="17/10 12:27" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -411,7 +411,8 @@
     .dgb{ display:none; padding:0 0 8px; }
     .dgrp.open .dgb{ display:block; }
     .dgb .entry.ecomp{ background:none; border:0; border-top:1px solid var(--line); border-radius:0; margin:0; padding:10px 2px; box-shadow:none; }
-    .dgb .dsub{ display:flex; justify-content:space-between; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:12px 2px 4px; }
+    .own-h{ display:flex; justify-content:space-between; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:16px 4px 6px; }
+    .dgb .dsub, .cacc-b .dsub{ display:flex; justify-content:space-between; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:12px 2px 4px; }
     .dgb .dfrow{ display:flex; align-items:baseline; gap:8px; padding:10px 2px; border-top:1px solid var(--line); font-size:13.5px; }
     .dgb .dfrow .n{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .dgb .dfrow .k{ font-size:11px; color:var(--muted); }
@@ -494,6 +495,10 @@
     .dash-split.h3{ grid-template-columns:repeat(3,minmax(0,1fr)) 10px; cursor:pointer; }
     .dash-split.h3.h4{ grid-template-columns:repeat(4,minmax(0,auto)) 10px; justify-content:space-between; gap:6px; }
     .dash-split.h3 em{ font-style:normal; color:var(--muted); font-size:15px; align-self:center; }
+    .dash-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .hscope{ flex:0 0 auto; margin:-6px -4px -6px 0; display:flex; gap:2px; padding:3px; border-radius:999px; background:rgba(255,255,255,.05); border:1px solid var(--line); }
+    .hscope button{ border:0; background:none; color:var(--ink-soft); font:600 12.5px var(--sans); padding:7px 13px; border-radius:999px; cursor:pointer; }
+    .hscope button.on{ background:var(--ink); color:var(--bg0); }
     .dash-trend{ font-size:12.5px; font-weight:700; margin-top:4px; font-variant-numeric:tabular-nums; }
     .dash-trend span{ color:var(--muted); font-weight:500; }
     .dash-split.h3 span b{ margin:0; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -589,7 +594,7 @@
     .ap-h span{ font-size:17px; font-weight:700; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .ap-h small{ font-size:12px; color:var(--accent); font-weight:600; margin-left:4px; }
     .ap-h b{ font-size:14.5px; font-variant-numeric:tabular-nums; flex:0 0 auto; }
-    .ap-sub{ font-size:11.5px; color:var(--muted); padding:0 2px; margin-top:-6px; }
+    .ap-sub{ font-size:11.5px; color:var(--muted); padding:0 2px; margin-top:-6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .ap-row{ display:flex; align-items:center; gap:10px; width:100%; min-height:46px; padding:0 12px; border-radius:12px; border:1px solid var(--line); background:var(--card2); color:var(--ink); font-family:var(--sans); font-size:14px; font-weight:600; text-align:left; cursor:pointer; }
     .ap-row.on{ border-color:var(--accent); background:var(--accent-dim); }
     .ap-row i{ flex:0 0 9px; width:9px; height:9px; border-radius:50%; }
@@ -1014,6 +1019,26 @@
     var communParts = store.read("communParts", null);
     function persistParts(){ store.write("communParts", communParts); }
     function mePerson(){ var a=mainAcct(); return (a && a.payer) || "Moi"; }
+    // À qui est une épargne ou une provision : un prénom, « Commun » (tout le foyer), ou rien = toi (anciennes données)
+    function ownerOf(x){ var o=((x && x.owner)||"").trim(); return o || mePerson(); }
+    function ownerField(cur){
+      var me=mePerson(), others=uniquePersons().filter(function(p){ return p!==me; });
+      if(!others.length && !(cur && cur!==me)) return [];   // personne seule : pas de question
+      var o=[{ v:"", l:me+" (toi)" }].concat(others.map(function(p){ return { v:p, l:p }; }));
+      if(cur && cur!==me && cur!=="Commun" && others.indexOf(cur)<0) o.push({ v:cur, l:cur });
+      o.push({ v:"Commun", l:"Commun (tout le foyer)" });
+      return [{ key:"owner", label:"À qui ?", type:"select", value:(cur && cur!==me ? cur : ""), options:o }];
+    }
+    function setOwner(x, r){ if(!r || !("owner" in r) || r.owner===null) return; var v=String(r.owner||"").trim(); if(!v || v===mePerson()) delete x.owner; else x.owner=v; }
+    // Regroupe une liste par personne : toi d'abord, puis par ordre alphabétique, « Commun » à la fin
+    function byOwner(list){
+      var me=mePerson(), g={}, order=[];
+      list.forEach(function(x){ var o=ownerOf(x); if(!g[o]){ g[o]=[]; order.push(o); } g[o].push(x); });
+      order.sort(function(a,b){ if(a===me) return -1; if(b===me) return 1; if(a==="Commun") return 1; if(b==="Commun") return -1; return a.localeCompare(b,"fr"); });
+      return order.map(function(o){ return { owner:o, label:(o===me?o+" · toi":o), items:g[o] }; });
+    }
+    // « Moi » sur l'Accueil : ce qui est à toi et ce qui est en commun
+    function isMine(x){ var o=ownerOf(x); return o===mePerson() || o==="Commun"; }
     // ---------- Éditions de l'appli ----------
     // « perso » : tout, Bourse comprise (navigateur et appli perso). « store » : version Play Store, sans Bourse.
     // L'appli Android annonce son édition dans son identifiant de navigateur (« TicketsApp/store ») ;
@@ -1917,14 +1942,16 @@
     function pctColor(from,to){ if(from===null) return "var(--ink-soft)"; return (to-from)>=0?"#4fd6a0":"#f4796b"; }
     function addEpargne(){
       uiForm({ title:"Nouveau compte épargne", fields:[
-        {key:"nom", label:"Nom du compte", placeholder:"Livret A, assurance vie…", required:true},
+        {key:"nom", label:"Nom du compte", placeholder:"Livret A, assurance vie…", required:true}
+      ].concat(ownerField(null)).concat([
         {key:"type", label:"Valeur", type:"seg", value:"manuel", hidden:!FEAT.bourse, options:[{v:"manuel",l:"Saisie manuelle"},{v:"bourse",l:"Suit la Bourse"}],
           onChange:function(v,api){ api.show("montant", v==="manuel"); }},
         {key:"montant", label:"Montant actuel", type:"money", value:""},
         {key:"obj", label:"Objectif (optionnel)", type:"money", value:"", help:"Un montant à atteindre, avec une date si tu veux."},
         {key:"objMois", label:"Pour quand (optionnel)", type:"month", value:""}
-      ]}, function(r){
+      ])}, function(r){
         var m=monthKey(todayISO()), v={}, c={ id:Date.now(), nom:r.nom, vals:v };
+        setOwner(c, r);
         if(r.type==="bourse"){ v[m]=bourseTotalLive(); c.bourseLink=true; }
         else v[m]=r.montant||0;
         if(r.obj && r.obj>0) c.objectif={ montant:r.obj, mois:r.objMois||"" };
@@ -1938,14 +1965,15 @@
       function valAt(m){ return (m in c.vals)?c.vals[m]:epCurrent(c); }
       var ob=c.objectif||{};
       uiForm({ title:"Modifier « "+c.nom+" »", fields:[
-        {key:"nom", label:"Nom du compte", value:c.nom, required:true},
+        {key:"nom", label:"Nom du compte", value:c.nom, required:true}
+      ].concat(ownerField(c.owner||"")).concat([
         {key:"mois", label:"Mois à corriger", type:"month", value:m0, hidden:!!c.bourseLink,
           onChange:function(v,api){ if(/^[0-9]{4}-[0-9]{2}$/.test(v||"")) api.set("montant", valAt(v)); }},
         {key:"montant", label:"Montant ce mois-là", type:"money", value:valAt(m0), hidden:!!c.bourseLink, help:"Vide = effacer la valeur saisie pour ce mois."},
         {key:"obj", label:"Objectif (optionnel)", type:"money", value:(ob.montant||""), help:"Vide = pas d'objectif."},
         {key:"objMois", label:"Pour quand (optionnel)", type:"month", value:(ob.mois||"")}
-      ]}, function(r){
-        c.nom=r.nom||c.nom;
+      ])}, function(r){
+        c.nom=r.nom||c.nom; setOwner(c, r);
         if(!c.bourseLink){
           var m=(r.mois && /^[0-9]{4}-[0-9]{2}$/.test(r.mois))?r.mois:m0;
           if(r.montant===null){ if(m in c.vals) delete c.vals[m]; } else c.vals[m]=r.montant;
@@ -2671,15 +2699,15 @@
           (oth.length?'<div class="more"><span>+ '+oth.length+' autre'+(oth.length>1?'s':'')+'</span><b>'+cptK(oth.reduce(function(t,r){ return t+r.v; },0))+' '+curSym()+'</b></div>':'')+'</div>';
       }
       if(epargne.length && canUse("epargne")){
-        var eRows=epargne.map(function(c){ return { n:c.nom, v:epAt(c, m0) }; }).sort(function(a,b){ return b.v-a.v; });
+        var eMulti=byOwner(epargne).length>1, eRows=epargne.map(function(c){ return { n:c.nom+(eMulti?" · "+ownerOf(c):""), v:epAt(c, m0) }; }).sort(function(a,b){ return b.v-a.v; });
         eRows.forEach(function(r){ r.t=cptK(r.v)+" "+curSym(); });
         var eTot=0, ePrev=0; epargne.forEach(function(c){ eTot+=epAt(c, m0); var pv=epPrevAt(c, m0); ePrev+=(pv===null?epAt(c, m0):pv); });
         var eD=eTot-ePrev;
         out.push({ tab:"epargne", name:"Épargne", c:{ label:"Épargne", big:moneyBig(eTot), sub:epargne.length+" compte"+(epargne.length>1?"s":"")+(Math.abs(eD)>=0.5?" · "+(eD>=0?"▲ +":"▼ −")+cptK(Math.abs(eD))+" "+curSym()+" ce mois":" épargne"), chart:mlist(eRows, "#7c9cf4"), stats:[], mode:"" } });
       }
       if(provisions.length && canUse("provisions")){
-        var pRows=provisions.map(function(p){ var b=0; try{ b=provBalance(p, m0); }catch(e){} var pv=Number(p.prevu)||0;
-          return { n:p.nom||"Provision", v:b, w:(pv>0?b/pv*100:null), t:(pv>0?cptK(b)+" / "+cptK(pv)+" "+curSym():cptK(b)+" "+curSym()) }; }).sort(function(a,b){ return b.v-a.v; });
+        var pMulti=byOwner(provisions).length>1, pRows=provisions.map(function(p){ var b=0; try{ b=provBalance(p, m0); }catch(e){} var pv=Number(p.prevu)||0;
+          return { n:(p.nom||"Provision")+(pMulti?" · "+ownerOf(p):""), v:b, w:(pv>0?b/pv*100:null), t:(pv>0?cptK(b)+" / "+cptK(pv)+" "+curSym():cptK(b)+" "+curSym()) }; }).sort(function(a,b){ return b.v-a.v; });
         var pTot=0; try{ pTot=provTotalAt(m0); }catch(e){}
         out.push({ tab:"provisions", name:"Provisions", c:{ label:"Provisions", big:moneyBig(pTot), sub:provisions.length+" enveloppe"+(provisions.length>1?"s":""), chart:mlist(pRows, "#c78bd6"), stats:[], mode:"" } });
       }
@@ -2752,18 +2780,25 @@
         var dim=new Date(Y, M, 0).getDate();
         var day=isCur?_now.getDate():dim;
         var pctM=Math.round(day/dim*100);
-        var cb=computeCompteMonth(mainAcct().key, month);
-        var lq=liquideAt(mainAcct().key, month), lqV=lq?lq.val:0;
-        var solde=cb.solde+lqV;
+        // « Moi » : ton compte principal ; « Foyer » : tous les comptes (choix gardé, proposé dès 2 comptes)
+        var multiA=comptes.length>1, scope=multiA ? (state.homeScope||store.read("homeScope","moi")) : "moi"; if(scope!=="foyer") scope="moi";
+        function heroFig(m){
+          var keys=(scope==="foyer") ? comptes.map(function(a){ return a.key; }) : [mainAcct().key], b=0, l=0, has=false;
+          keys.forEach(function(k){ b+=computeCompteMonth(k, m).solde; var q=liquideAt(k, m); if(q){ has=true; l+=q.val; } });
+          return { banque:b, liq:l, hasLiq:has, solde:b+l };
+        }
+        var HF=heroFig(month), cb={ solde:HF.banque };
+        var lq=HF.hasLiq, lqV=HF.liq;
+        var solde=HF.solde;
         // Mois précédent pour comparaison
         var pm=prevMonthKey(month);
         var prevTot=state.entries.filter(function(e){ return monthKey(e.date)===pm; }).reduce(function(t,e){ return t+(Number(e.montant)||0); },0);
         var parJour=day?totalMois/day:0;
         var projection=parJour*dim;
         // Épargne
-        var epTot=0, epPrev=0; epargne.forEach(function(c){ epTot+=epAt(c, month); var pv=epPrevAt(c, month); epPrev+=(pv===null?epAt(c, month):pv); });
+        var epTot=0, epPrev=0; epargne.forEach(function(c){ if(scope==="moi" && !isMine(c)) return; epTot+=epAt(c, month); var pv=epPrevAt(c, month); epPrev+=(pv===null?epAt(c, month):pv); });
         // Provisions
-        var prTot=provTotalAt(month);
+        var prTot=provTotalAt(month, scope==="moi" ? isMine : null);
 
         function money(n){ var neg=n<0; n=Math.abs(n); var e=Math.floor(n), c=Math.round((n-e)*100); if(c===100){ e++; c=0; }
           return (neg?"−":"")+String(e).replace(/\B(?=(\d{3})+(?!\d))/g," ")+'<span class="cts">,'+(c<10?"0":"")+c+' '+curSym()+'</span>'; }
@@ -2783,11 +2818,13 @@
 
         // --- Bloc principal
         h += '<section class="dash-hero">';
-        h += '<div class="dash-date">'+(isCur?'<b>'+esc(_now.toLocaleDateString("fr-FR",{weekday:"long", day:"numeric", month:"long"}))+'</b>':'<b>Bilan</b>')+'</div>';
+        h += '<div class="dash-top"><div class="dash-date">'+(isCur?'<b>'+esc(_now.toLocaleDateString("fr-FR",{weekday:"long", day:"numeric", month:"long"}))+'</b>':'<b>Bilan</b>')+'</div>';
+        if(multiA) h += '<div class="hscope" role="group" aria-label="Solde affiché"><button type="button" data-s="moi"'+(scope==="moi"?' class="on" aria-pressed="true"':' aria-pressed="false"')+'>Moi</button><button type="button" data-s="foyer"'+(scope==="foyer"?' class="on" aria-pressed="true"':' aria-pressed="false"')+'>Foyer</button></div>';
+        h += '</div>';
         h += '<div style="margin-top:10px">'+monthNavHTML(esc(monthLabel), month, curM)+'</div>';
         h += '<div class="dash-big" style="color:'+(solde<0?"var(--coral)":"var(--ink)")+'">'+money(solde)+'</div>';
-        h += '<div class="dash-cap">Solde de fin de mois prévu</div>';
-        (function(){ var pcb=computeCompteMonth(mainAcct().key, pm), plq=liquideAt(mainAcct().key, pm), pS=pcb.solde+(plq?plq.val:0), dS=solde-pS;
+        h += '<div class="dash-cap">Solde de fin de mois prévu'+(scope==="foyer"?' · foyer, '+comptes.length+' comptes':(multiA?' · '+esc(mainAcct().nom):''))+'</div>';
+        (function(){ var pS=heroFig(pm).solde, dS=solde-pS;
           var pl=monthLabelOf(pm).split(" ")[0];
           if(Math.abs(dS)>=0.005) h += '<div class="dash-trend" style="color:'+(dS>=0?"var(--accent)":"var(--coral)")+'">'+(dS>=0?'▲ +':'▼ −')+fk(Math.abs(dS))+' <span>vs fin '+esc(pl)+'</span></div>';
         })();
@@ -2959,7 +2996,11 @@
       [].forEach.call(document.querySelectorAll(".dgrp .dgh"), function(hd){ hd.onclick=function(){ var g=hd.parentNode, k=g.getAttribute("data-g"), op=!g.classList.contains("open");
         if(k==="t"){ if(!mois.length) return; state.ticketsOpen=op; } else { if(!state.homeOpen) state.homeOpen={}; state.homeOpen[k]=op; }
         g.classList.toggle("open", op); }; });
-      var hcpt=document.getElementById("heroCpt"); if(hcpt) hcpt.onclick=function(){ state.view="compte"; render(); window.scrollTo(0,0); };
+      var hcpt=document.getElementById("heroCpt"); if(hcpt) hcpt.onclick=function(){
+        var sc=state.homeScope||store.read("homeScope","moi");
+        if(comptes.length>1){ state.compteSel=(sc==="foyer")?"__all":mainAcct().key; store.write("compteSel", state.compteSel); }
+        state.view="compte"; render(); window.scrollTo(0,0); };
+      [].forEach.call(document.querySelectorAll(".hscope button"), function(b){ b.onclick=function(ev){ ev.stopPropagation(); state.homeScope=b.getAttribute("data-s"); store.write("homeScope", state.homeScope); render(); }; });
       [].forEach.call(document.querySelectorAll(".hmini"), function(c){ c.onclick=function(){ var g=c.getAttribute("data-go");
         if(g==="epargne"){ state.compteSel=mainAcct().key; state.cptPage="ep"; state.view="comptedet"; } else state.view=g;
         render(); window.scrollTo(0,0); }; });
@@ -3681,11 +3722,14 @@
       order.sort(function(x,y){ if(x===me) return -1; if(y===me) return 1; if(x==="__shared") return 1; if(y==="__shared") return -1;
         return (groups[y].length-groups[x].length) || x.localeCompare(y,"fr"); });
       function row(key, nom, amt, col, main){ return '<button type="button" class="ap-row'+(key===sel?' on':'')+'" data-acct="'+esc(key)+'"><i style="background:'+col+'"></i><span>'+esc(nom)+(main?' <em>★</em>':'')+'</span><b'+(amt<0?' class="neg"':'')+'>'+fmtS(amt)+'</b></button>'; }
-      var pages=[], start=0, nPers=order.filter(function(o){ return o!=="__shared"; }).length;
+      var pages=[], start=0, nPers=order.filter(function(o){ return o!=="__shared"; }).length, epBy={}, prBy={}, epAll=0, prAll=0;
+      epargne.forEach(function(c){ var o=ownerOf(c), v=epAt(c, month); epBy[o]=(epBy[o]||0)+v; epAll+=v; });
+      provisions.forEach(function(p){ var o=ownerOf(p), v=0; try{ v=provBalance(p, month); }catch(e){} prBy[o]=(prBy[o]||0)+v; prAll+=v; });
+      function extra(ep, pr){ return (ep?' · épargne '+cptK(ep)+' '+curSym():'')+(pr?' · provisions '+cptK(pr)+' '+curSym():''); }
       order.forEach(function(o, idx){ var L=groups[o], tot=0; L.forEach(function(a){ tot+=figs[a.key]; if(a.key===sel) start=idx; });
-        pages.push('<div class="ap-h"><span>'+(o==="__shared"?"Comptes partagés":esc(o)+(o===me?'<small>toi</small>':''))+'</span><b>'+fmtS(tot)+'</b></div><div class="ap-sub">'+L.length+' compte'+(L.length>1?'s':'')+'</div>'+
+        pages.push('<div class="ap-h"><span>'+(o==="__shared"?"Comptes partagés":esc(o)+(o===me?'<small>toi</small>':''))+'</span><b>'+fmtS(tot)+'</b></div><div class="ap-sub">'+L.length+' compte'+(L.length>1?'s':'')+extra(epBy[o==="__shared"?"Commun":o], prBy[o==="__shared"?"Commun":o])+'</div>'+
           L.map(function(a){ return row(a.key, a.nom, figs[a.key], acctCol(a), a.main); }).join("")); });
-      pages.push('<div class="ap-h"><span>Foyer<small>tout le monde</small></span><b>'+fmtS(grand)+'</b></div><div class="ap-sub">'+(nPers>1?nPers+' personnes · ':'')+comptes.length+' comptes</div>'+row("__all", "Tous les comptes", grand, "var(--ink-soft)", false));
+      pages.push('<div class="ap-h"><span>Foyer<small>tout le monde</small></span><b>'+fmtS(grand)+'</b></div><div class="ap-sub">'+(nPers>1?nPers+' personnes · ':'')+comptes.length+' comptes'+extra(epAll, prAll)+'</div>'+row("__all", "Tous les comptes", grand, "var(--ink-soft)", false));
       if(sel==="__all") start=pages.length-1;
       var tools='<button type="button" class="ap-tool" data-acct="__add" aria-label="Ajouter un compte">＋</button><button type="button" class="ap-tool" data-acct="__manage" aria-label="Gérer les comptes">⚙︎</button>';
       return '<section class="paper ap-card">'+pagerHTML("acct", pages, { start:start, force:true, tools:tools, nav:true })+'</section>';
@@ -3954,8 +3998,10 @@
       var epMs=Object.keys(epAllM).sort();
       function epTotalAt(month){ var t=0; epargne.forEach(function(c){ var ms=Object.keys(c.vals||{}).filter(function(mm){ return mm<=month; }).sort(); if(ms.length) t+=Number(c.vals[ms[ms.length-1]])||0; }); return t; }
       var totCur=epTotalAt(month), totPrev=epMs.length?epTotalAt(prevMonthKey(month)):null;
-      var bEp='';
-      epargne.forEach(function(c){
+      var bEp='', epG=byOwner(epargne);
+      epG.forEach(function(g){
+        if(epG.length>1){ var gs=0; g.items.forEach(function(c){ gs+=epAt(c, month); }); bEp+='<div class="dsub"><span>'+esc(g.label)+'</span><span>'+fmtK(gs)+'</span></div>'; }
+        g.items.forEach(function(c){
         var cur=epAt(c, month), prev=epPrevAt(c, month), pm=pctStr(prev,cur);
         bEp+='<div class="prow"><span class="pname" style="display:flex;flex-direction:column;min-width:0;gap:1px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.nom)+(c.bourseLink?' <span style="font-size:9px;color:var(--accent);font-weight:600">● Bourse</span>':'')+'</span>'+(pm?'<span style="font-size:10px;font-weight:500;color:'+pctColor(prev,cur)+'">'+pm+' vs mois préc.</span>':'')+'</span>'+
            '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:2px">'+fmtK(cur)+'</span>'+
@@ -3966,7 +4012,7 @@
           var oT=c.objectif.montant, oP=Math.min(100, Math.round(cur/oT*100));
           bEp+='<div class="obj"><div class="ob-bar"><i style="width:'+oP+'%"></i></div><div class="ob-t">'+(cur>=oT?'✓ Objectif de '+fmt(oT)+' atteint':'🎯 '+oP+' % de '+fmt(oT)+' · reste '+fmt(oT-cur)+(c.objectif.mois?(monthsBetween(month, c.objectif.mois)>0?' · ≈ '+fmt((oT-cur)/monthsBetween(month, c.objectif.mois))+' / mois':' · échéance dépassée'):''))+'</div></div>';
         }
-      });
+      }); });
       if(!epargne.length) bEp+='<div class="muted" style="font-size:11px;margin:4px 0">Aucun compte épargne.</div>';
       var tpm=pctStr(totPrev,totCur); if(tpm && epargne.length>1) bEp+='<div class="muted" style="font-size:10.5px;margin:2px 0"><span style="color:'+pctColor(totPrev,totCur)+'">Total '+tpm+' vs mois préc.</span></div>';
       bEp+='<div class="clink" id="addep"><span>+ Ajouter un compte épargne</span><span></span></div>';
@@ -5009,17 +5055,19 @@
       return { due:d, n:n, bal:bal, proj:proj, prevu:prevu, manque:(prevu>0?Math.max(0, prevu-proj):0),
                conseil:(prevu>0 && n>0 ? Math.ceil((prevu-bal)/n*100)/100 : null), mens:mensuelAt(p, month) };
     }
-    function provTotalAt(month){ var t=0; provisions.forEach(function(p){ var st=provState(p, month); t+=st.bal; for(var k in st.over){ if(k<=month) t-=st.over[k]; } }); return t; }
+    function provTotalAt(month, keep){ var t=0; provisions.forEach(function(p){ if(keep && !keep(p)) return; var st=provState(p, month); t+=st.bal; for(var k in st.over){ if(k<=month) t-=st.over[k]; } }); return t; }
     function echOptions(){ return [{v:"",l:"Aucune"}].concat(MOIS_NOMS.map(function(n,i){ return {v:String(i+1), l:n.charAt(0).toUpperCase()+n.slice(1)}; })); }
     function addProvision(){
       uiForm({ title:"Nouvelle provision", fields:[
-        {key:"nom", label:"Nom", placeholder:"Impôt foncier, assurance, eau…", required:true},
+        {key:"nom", label:"Nom", placeholder:"Impôt foncier, assurance, eau…", required:true}
+      ].concat(ownerField(null)).concat([
         {key:"mens", label:"Mis de côté chaque mois", type:"money", required:true},
         {key:"init", label:"Déjà de côté aujourd'hui", type:"money", value:0},
         {key:"ech", label:"Mois de la facture (optionnel)", type:"select", value:"", options:echOptions()},
         {key:"prevu", label:"Montant prévu de la facture (optionnel)", type:"money", value:"", help:"Pour vérifier que tu seras prêt à temps."}
-      ]}, function(r){
+      ])}, function(r){
         var p={ id:Date.now(), nom:r.nom, mensuel:r.mens, soldeInitial:r.init||0, startMonth:monthKey(todayISO()), prelevements:[] };
+        setOwner(p, r);
         if(r.ech) p.echeance=+r.ech; if(r.prevu) p.prevu=r.prevu;
         provisions.push(p); persistProvisions(); render();
       });
@@ -5029,13 +5077,14 @@
       var em=(state.months&&state.months.provisions)||monthKey(todayISO());
       var curMens=mensuelAt(p, em);
       uiForm({ title:"Modifier « "+p.nom+" »", fields:[
-        {key:"nom", label:"Nom", value:p.nom, required:true},
+        {key:"nom", label:"Nom", value:p.nom, required:true}
+      ].concat(ownerField(p.owner||"")).concat([
         {key:"mens", label:"Mis de côté chaque mois", type:"money", value:curMens, required:true, help:"À partir de "+esc(monthLabelOf(em))+". Les mois précédents ne changent pas."},
         {key:"init", label:"Montant de départ ("+monthLabelOf(p.startMonth||em)+")", type:"money", value:(p.soldeInitial||0)},
         {key:"ech", label:"Mois de la facture", type:"select", value:(p.echeance?String(p.echeance):""), options:echOptions()},
         {key:"prevu", label:"Montant prévu de la facture", type:"money", value:(p.prevu||"")}
-      ]}, function(r){
-        p.nom=r.nom||p.nom;
+      ])}, function(r){
+        p.nom=r.nom||p.nom; setOwner(p, r);
         if(Math.abs(r.mens-curMens)>0.001){ if(!p.mensuelChanges) p.mensuelChanges={}; p.mensuelChanges[em]=r.mens; }
         p.soldeInitial=r.init||0;
         if(r.ech) p.echeance=+r.ech; else delete p.echeance;
@@ -5164,7 +5213,10 @@
       var h=header("list")+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabelOf(month))), month, curM)+'</div>%%HERO%%<div>';
       if(!provisions.length){ h+='<div class="empty">Aucune provision.<br>Crée une enveloppe pour tes frais annuels (taxe foncière, assurance, eau…) : tu mets un montant de côté chaque mois, le solde monte tout seul.</div>'; }
       var total=0, overTot=0;
-      provisions.forEach(function(p){
+      var prG=byOwner(provisions);
+      prG.forEach(function(g){
+        if(prG.length>1){ var gs=0; g.items.forEach(function(p){ gs+=provBalance(p, month); }); h+='<div class="own-h"><span>'+esc(g.label)+'</span><span>'+fmtK(gs)+'</span></div>'; }
+        g.items.forEach(function(p){
         var pst=provState(p, month), bal=pst.bal; total+=bal;
         for(var ok in pst.over){ if(ok<=month) overTot+=pst.over[ok]; }
         h+='<div class="pcard">';
@@ -5207,7 +5259,7 @@
         if(pst.over[month]) h+='<div style="font-size:11px;color:#e6b450;padding:6px 4px 0 12px">⚠ Dépassement : '+fmt(pst.over[month])+' pris sur le total des provisions</div>';
         h+='<button class="btn ghost addprl" type="button" data-id="'+esc(p.id)+'" style="margin-top:8px;font-size:12px">+ Prélèvement (facture payée)</button>';
         h+='</div>';
-      });
+      }); });
       h+='<button class="btn ghost" id="addprov" type="button" style="margin-top:8px">+ Ajouter une provision</button>';
       total-=overTot;
       (function(){
@@ -5238,7 +5290,7 @@
       [].forEach.call(document.querySelectorAll(".prldel"), function(b){ b.onclick=function(){ delPrelevement(b.getAttribute("data-id"), b.getAttribute("data-pr")); }; });
     }
     function backupData(){
-      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts"];
+      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope"];
       var dump={ _app:"tickets", _version:1, _date:new Date().toISOString(), data:{} };
       keys.forEach(function(k){ var v=store.read(k, null); if(v!==null) dump.data[k]=v; });
       dump.photos = PHOTOS;
@@ -5272,7 +5324,7 @@
           if(!data || typeof data!=="object") throw new Error("format non reconnu");
           var n=(data.entries && data.entries.length) ? data.entries.length : 0;
           if(!window.confirm("Restaurer cette sauvegarde ?\n"+n+" ticket(s) vont REMPLACER les données actuelles.")) return;
-          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts"].forEach(function(k){
+          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope"].forEach(function(k){
             if(k in data) store.write(k, data[k]);
           });
           if(!("comptes" in data)) store.write("comptes", null);
