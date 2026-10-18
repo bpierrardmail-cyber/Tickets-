@@ -8,6 +8,11 @@
 //   GET /crypto/search?q=sol       -> recherche CoinGecko (secours quand l'app est limitée par CoinGecko)
 //   GET /crypto/price?ids=solana   -> cours CoinGecko en € (+ variation 24 h)
 // Aucune clé ni donnée personnelle : seuls des noms de titres transitent.
+//
+// /foyer/* : foyer partagé (voir foyer.js) — copies chiffrées sur les téléphones, illisibles ici.
+
+import { Foyer, handleFoyer } from "./foyer.js";
+export { Foyer };
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -78,6 +83,7 @@ async function chart(symbol, range) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === "/foyer" || url.pathname.startsWith("/foyer/")) return handleFoyer(request, env);
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
     try {
       if (url.pathname === "/search") {

@@ -1,8 +1,13 @@
 {
-  // Cloudflare : ce dépôt déploie le relais des cours de bourse de l'app Tickets
+  // Cloudflare : ce dépôt déploie le relais de l'app Tickets (cours de bourse et foyer partagé)
   // (l'app elle-même reste publiée par GitHub Pages).
   "name": "tickets",
   "main": "relais/cours-worker.js",
   "compatibility_date": "2025-01-01",
-  "workers_dev": true
+  "workers_dev": true,
+  // Foyer partagé : un Durable Object par foyer, stockage SQLite (offre gratuite)
+  "durable_objects": {
+    "bindings": [{ "name": "FOYER", "class_name": "Foyer" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Foyer"] }]
 }

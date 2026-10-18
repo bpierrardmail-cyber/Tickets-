@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="18/10 05:31" />
+  <meta name="build" content="18/10 07:49" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -787,6 +787,59 @@
     .btn.danger{ background:var(--coral); color:#1d0c09; border-color:var(--coral); font-weight:700; }
     .ui-toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:calc(104px + env(safe-area-inset-bottom)); z-index:130;
       background:#2b303b; color:var(--ink); border:1px solid var(--line2); padding:10px 16px; border-radius:12px; font-size:13px; box-shadow:0 10px 26px rgba(0,0,0,.4); max-width:86vw; text-align:center; }
+    /* Foyer partagé */
+    textarea.f{ width:100%; font-family:var(--mono); font-size:13px; padding:10px 12px; background:var(--bg0); border:1px solid var(--line2); border-radius:12px; color:var(--ink); resize:vertical; box-sizing:border-box; }
+    textarea.f:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-dim); }
+    body.fy-ro .navscanrow{ display:none; }
+    .fy-page{ padding:4px 2px 120px; display:flex; flex-direction:column; gap:12px; }
+    .fy-card{ background:var(--card); border:1px solid var(--line); border-radius:20px; padding:14px 16px; }
+    .fy-hero{ background:linear-gradient(160deg,#1f2a27 0%,var(--card) 62%); border-color:var(--line2); display:flex; flex-direction:column; gap:10px; }
+    .fy-big{ font-size:18px; font-weight:800; }
+    .fy-txt{ font-size:13.5px; line-height:1.5; color:var(--ink); }
+    .fy-txt.muted{ color:var(--ink-soft); font-size:12.5px; }
+    .fy-own{ display:flex; align-items:center; gap:12px; background:linear-gradient(160deg,#1f2a27 0%,var(--card) 62%); border-color:var(--line2); }
+    .fy-av{ width:34px; height:34px; flex:0 0 34px; border-radius:50%; color:#0a130f; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; }
+    .fy-av.big{ width:40px; height:40px; flex-basis:40px; font-size:17px; }
+    .fy-grow{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; text-align:left; }
+    .fy-grow b{ font-size:15px; }
+    .fy-grow small{ font-size:12px; color:var(--ink-soft); font-weight:400; line-height:1.35; }
+    .fy-you{ font-size:12px; color:var(--accent); font-weight:600; }
+    .fy-sec{ font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:4px 4px -4px; }
+    .fy-list{ padding:2px 14px; }
+    .fy-list > *{ border-bottom:1px solid var(--line); }
+    .fy-list > *:last-child{ border-bottom:0; }
+    .fy-mrow{ display:flex; align-items:center; gap:12px; width:100%; padding:12px 0; background:none; border-left:0; border-right:0; border-top:0; color:var(--ink); font-family:var(--sans); cursor:pointer; }
+    .fy-list > .fy-mrow:last-child{ border-bottom:0; }
+    .fy-mrow .chev{ color:var(--muted); font-size:20px; }
+    .fy-ic{ width:34px; flex:0 0 34px; text-align:center; font-size:18px; }
+    .fy-info{ display:flex; gap:12px; padding:12px 0; }
+    .fy-info > span:first-child{ width:22px; flex:0 0 22px; text-align:center; }
+    .fy-info > span:last-child{ display:flex; flex-direction:column; gap:2px; font-size:14px; }
+    .fy-info small{ font-size:12px; color:var(--ink-soft); line-height:1.4; }
+    .fy-add{ border:1px dashed rgba(79,214,160,.55); background:transparent; color:var(--accent); font-weight:700; padding:13px; }
+    .fy-stop{ color:var(--coral); }
+    .fy-warn{ border-radius:14px; background:rgba(244,121,107,.10); border:1px solid rgba(244,121,107,.4); color:#f6b1a8; padding:10px 12px; font-size:13px; }
+    .fy-code{ margin:14px 0 4px; padding:16px 12px; border-radius:14px; background:var(--bg0); border:1px solid var(--line2); font-family:var(--mono); font-size:19px; letter-spacing:.06em; text-align:center; word-break:break-all; user-select:all; }
+    .fy-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+    .fy-chips .chip{ padding:7px 12px; font-size:13px; }
+    .fy-tabs{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+    .fy-tab{ display:flex; align-items:center; gap:9px; height:42px; padding:0 11px; border-radius:11px; border:1px solid var(--line); background:var(--card2); color:var(--ink); font-family:var(--sans); font-size:14px; font-weight:600; text-align:left; cursor:pointer; }
+    .fy-tab i{ width:18px; height:18px; flex:0 0 18px; box-sizing:border-box; border-radius:5px; border:2px solid #5d626d; font-style:normal; font-size:12px; line-height:14px; text-align:center; color:#0a130f; }
+    .fy-tab.on{ border-color:var(--accent); background:rgba(79,214,160,.12); }
+    .fy-tab.on i{ border-color:var(--accent); background:var(--accent); }
+    .fy-tab.off{ opacity:.38; cursor:default; }
+    .fy-sum{ margin-top:14px; border-radius:12px; background:rgba(79,214,160,.10); border:1px solid rgba(79,214,160,.28); padding:10px 12px; font-size:12.5px; line-height:1.45; color:#d5f5e8; }
+    .fy-qr{ align-self:center; margin:8px auto 4px; width:256px; padding:10px; border-radius:20px; background:#fff; box-sizing:border-box; }
+    .fy-qr svg{ display:block; width:236px; height:236px; }
+    .fy-qrt{ text-align:center; display:flex; flex-direction:column; gap:6px; margin:10px 0 12px; font-size:15px; line-height:1.35; }
+    .fy-qrt small{ font-size:12.5px; color:var(--ink-soft); }
+    .fy-recap > div{ display:flex; justify-content:space-between; gap:12px; padding:10px 0; font-size:13.5px; }
+    .fy-recap span{ color:var(--ink-soft); }
+    .fy-recap b{ text-align:right; }
+    .fy-steps{ display:flex; justify-content:center; gap:8px; margin-top:16px; }
+    .fy-steps span{ font-size:12px; padding:5px 10px; border-radius:999px; border:1px solid var(--line2); color:var(--ink-soft); }
+    .fy-steps span.on{ border-color:var(--accent); color:var(--accent); font-weight:700; }
+    .fy-steps span.ok{ background:var(--accent); border-color:var(--accent); color:#0a130f; font-weight:700; }
     @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
   </style>
 </head>
@@ -805,6 +858,7 @@
       read: function(k, def){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):def; }catch(e){ return (k in mem)?mem[k]:def; } },
       write: function(k, val){ try{ localStorage.setItem(k, JSON.stringify(val)); storageFull=false; }catch(e){ mem[k]=val; storageFull=true; } }
     };
+    var fyCfg = store.read("fyCfg", null);   // foyer partagé (voir « Foyer partagé ») : null, propriétaire ou membre
 
     // ---------- Devise principale (tous les montants de l'appli sont dans cette devise) ----------
     var CURS={ EUR:{s:"€",l:"Euro",c:"€ Euro"}, USD:{s:"$",l:"Dollar US",c:"$ Dollar"}, GBP:{s:"£",l:"Livre sterling",c:"£ Livre"}, CHF:{s:"CHF",l:"Franc suisse",c:"CHF Franc"}, CAD:{s:"$ CA",l:"Dollar canadien",c:"$ CA"} };
@@ -819,17 +873,22 @@
       else { var d=new Date(lb), days=Math.floor((Date.now()-d.getTime())/86400000); bt="Dernière : "+d.toLocaleDateString("fr-FR")+(days<=0?" (aujourd'hui)":" (il y a "+days+" j)"); if(days>=7) bc="var(--coral)"; }
       function it(k, ic, t, sub, danger){ return '<button type="button" class="dr-item'+(danger?' danger':'')+'" data-k="'+k+'"><span class="ic">'+ic+'</span><span>'+esc(t)+(sub?'<small>'+sub+'</small>':'')+'</span></button>'; }
       var h='<div class="drawer" role="dialog" aria-label="Menu"><div class="dr-head"><b>Menu</b><button type="button" class="dr-x" aria-label="Fermer">✕</button></div>';
-      h+='<div class="dr-sec">Sauvegarde</div>'+it("backup","💾","Sauvegarder",'<span style="color:'+bc+'">'+esc(bt)+'</span>')+it("restore","📂","Restaurer une sauvegarde",esc("Remplace les données par celles du fichier"));
+      var fyM=fyMember(), fyFull=!fyM || (fyCfg.role==="edit" && fyCfg.accts==null);
+      h+='<div class="dr-sec">Foyer partagé</div>';
+      if(!fyCfg) h+=it("foyer","👨‍👩‍👧","Foyer partagé",esc(canUse("foyer")?"Suivre les comptes à plusieurs, chacun sur son téléphone":"Tickets Plus · suivre les comptes à plusieurs"));
+      else if(!fyM) h+=it("foyer","👨‍👩‍👧","Foyer partagé",esc(Object.keys(fyCfg.members||{}).length+" membre(s) · "+fySyncLabel()));
+      else h+=it("foyer","👨‍👩‍👧","Foyer de "+(fyCfg.owner||"…"),esc(fyRoleLabel(fyCfg.role)+" · "+fySyncLabel()));
+      if(!fyM) h+='<div class="dr-sec">Sauvegarde</div>'+it("backup","💾","Sauvegarder",'<span style="color:'+bc+'">'+esc(bt)+'</span>')+it("restore","📂","Restaurer une sauvegarde",esc("Remplace les données par celles du fichier"));
       h+='<div class="dr-sec">Sécurité</div>';
       if(!lockCfg) h+=it("lockSetup","🔒","Verrouiller l'app par un code",esc("Tu pourras ajouter l'empreinte ensuite"));
       else {
-        h+=it("lockSetup","🔑","Changer le code",esc("Verrouillage actif"+(lockCfg.bioId?" · code + empreinte":" · code")));
+        h+=it("lockSetup","🔑","Changer le code",esc("Verrouillage actif"+(lockCfg.bioId?" · code + empreinte":" · code")+(fyCfg?" · obligatoire avec le foyer partagé":"")));
         if(!lockCfg.bioId) h+=it("lockBio","👆","Ajouter l'empreinte","");
-        h+=it("lockOff","🔓","Désactiver le verrouillage","",true);
+        if(!fyCfg) h+=it("lockOff","🔓","Désactiver le verrouillage","",true);
       }
       var plist=uniquePersons(); if(plist.indexOf(mePerson())<0) plist.unshift(mePerson());
-      h+='<div class="dr-sec">Personnes</div>'+it("persons","👥","Personnes",esc(plist.join(", ")+" · ajouter, renommer, supprimer"));
-      h+='<div class="dr-sec">Devise</div>'+it("devise","💱","Devise principale",esc(curSym()+" · "+CURS[BASE].l));
+      if(fyFull) h+='<div class="dr-sec">Personnes</div>'+it("persons","👥","Personnes",esc(plist.join(", ")+" · ajouter, renommer, supprimer"));
+      if(fyFull) h+='<div class="dr-sec">Devise</div>'+it("devise","💱","Devise principale",esc(curSym()+" · "+CURS[BASE].l));
       h+='<div class="dr-sec">Export</div>'+it("pdf","📄","Exporter en PDF",esc("Bilan sur la période de ton choix"));
       h+='<div class="dr-foot"><span class="beta-tag">Version β · '+esc((document.querySelector('meta[name=build]')||{}).content||'')+(capNative()?(EDITION==="store"?' · appli Store':' · appli Perso'):' · navigateur'+(EDITION==="store"?' (Store)':''))+'</span></div>';
       h+='</div>';
@@ -839,7 +898,7 @@
       function closeAnim(){ ov.classList.remove("open"); setTimeout(closeMenu, 200); }
       ov.onclick=function(e){ if(e.target===ov) closeAnim(); };
       ov.querySelector(".dr-x").onclick=closeAnim;
-      var acts={ backup:backupData, restore:function(){ restorein.click(); }, lockSetup:lockSetup, lockBio:lockEnableBio, lockOff:lockDisable, devise:chooseCurrency, pdf:choosePdfPeriod, persons:managePersons };
+      var acts={ foyer:function(){ state.view="foyer"; render(); window.scrollTo(0,0); }, backup:backupData, restore:function(){ restorein.click(); }, lockSetup:lockSetup, lockBio:lockEnableBio, lockOff:lockDisable, devise:chooseCurrency, pdf:choosePdfPeriod, persons:managePersons };
       [].forEach.call(ov.querySelectorAll(".dr-item"), function(b){ b.onclick=function(){ var fn=acts[b.getAttribute("data-k")]; closeMenu(); if(fn) fn(); }; });
     }
     function personCounts(n){
@@ -1018,7 +1077,7 @@
     // Parts du commun en % : { prénom: 50, … } (seules les parts > 0). null = parts égales entre les personnes du commun.
     var communParts = store.read("communParts", null);
     function persistParts(){ store.write("communParts", communParts); }
-    function mePerson(){ var a=mainAcct(); return (a && a.payer) || "Moi"; }
+    function mePerson(){ if(fyCfg && fyCfg.role!=="owner" && fyCfg.me) return fyCfg.me; var a=mainAcct(); return (a && a.payer) || "Moi"; }
     // À qui est une épargne ou une provision : un prénom, « Commun » (tout le foyer), ou rien = toi (anciennes données)
     function ownerOf(x){ var o=((x && x.owner)||"").trim(); return o || mePerson(); }
     function ownerField(cur){
@@ -1051,7 +1110,7 @@
     var FEAT={ bourse: EDITION!=="store" };
     // Version Plus (achat dans l'appli Store) : la liste des fonctions réservées sera remplie quand le partage
     // gratuit / Plus sera décidé. Tant qu'elle est vide, tout est ouvert.
-    var PLUS_FEATURES=["widgets"];   // à compléter (par ex. "scan", "provisions", "epargne")
+    var PLUS_FEATURES=["widgets","foyer"];   // à compléter (par ex. "scan", "provisions", "epargne")
     function plusUnlocked(){ return EDITION!=="store" || !!store.read("plusUnlocked", false); }
     function canUse(f){ return PLUS_FEATURES.indexOf(f)<0 || plusUnlocked(); }
     function mainAcct(){ return comptes.filter(function(c){ return c.main; })[0] || comptes[0]; }
@@ -1821,7 +1880,7 @@
     function bPrev(c){ var ms=bMonths(c); return ms.length>1?c.vals[ms[ms.length-2]]:null; }
     function bFirst(c){ var ms=bMonths(c); return ms.length?c.vals[ms[0]]:null; }
     function bourseTotalLive(){ var t=0; bourse.forEach(function(c){ if(c.sol && c.solQty && state.solPrice){ t+=c.solQty*state.solPrice+bCash(bLast(c)); } else { t+=bTot(bLast(c)); } }); return t; }
-    function syncBourseEpargne(){ if(!FEAT.bourse) return; try{ recordBourseHist(); }catch(err){} var m=monthKey(todayISO()), ch=false, tot=bourseTotalLive(); epargne.forEach(function(c){ if(c.bourseLink){ if(!c.vals) c.vals={}; if(Number(c.vals[m])!==tot){ c.vals[m]=tot; ch=true; } } }); if(ch) persistEpargne(); }
+    function syncBourseEpargne(){ if(!FEAT.bourse || fyMember()) return; try{ recordBourseHist(); }catch(err){} var m=monthKey(todayISO()), ch=false, tot=bourseTotalLive(); epargne.forEach(function(c){ if(c.bourseLink){ if(!c.vals) c.vals={}; if(Number(c.vals[m])!==tot){ c.vals[m]=tot; ch=true; } } }); if(ch) persistEpargne(); }
     function bPct(from,to){ if(!from||from===0) return null; var p=(to-from)/Math.abs(from)*100; return (p>=0?"+":"")+p.toFixed(1).replace(".",",")+" %"; }
     function bPctCol(from,to){ return (to-from)>=0?"#4fd6a0":"#f4796b"; }
     function bBadge(from,to,label){
@@ -2287,6 +2346,7 @@
       }).catch(function(){ uiToast("Empreinte non enregistrée"); });
     }
     function lockDisable(){
+      if(fyCfg){ uiToast("Obligatoire avec le foyer partagé : tu peux seulement changer le code"); return; }
       uiForm({ title:"Désactiver le verrouillage", fields:[{key:"a", label:"Code actuel", type:"pin", required:true}], ok:"Désactiver", danger:true }, function(r){
         hashPin(r.a||"", lockCfg.salt).then(function(hv){
           if(hv!==lockCfg.hash){ uiToast("Code incorrect"); return; }
@@ -2405,7 +2465,8 @@
       if(ovs.length){ var top=ovs[ovs.length-1]; top.dispatchEvent(new MouseEvent("click", {bubbles:true})); if(top.parentNode) top.parentNode.removeChild(top); armBack(); return; }
       var lb=document.getElementById("lbclose"); if(lb){ lb.click(); armBack(); return; }
       var hb=document.getElementById("hback"); if(hb){ hb.click(); armBack(); return; }
-      if(state.view!=="list"){ state.view="list"; render(); window.scrollTo(0,0); return; }
+      var home=fyMember()?fyFirstTab():"list";
+      if(state.view!==home){ state.view=home; render(); window.scrollTo(0,0); return; }
       if(Date.now()-backExitAt<2500){ try{ history.back(); }catch(e){} return; }
       backExitAt=Date.now(); uiToast("Refais le geste retour pour quitter");
       setTimeout(function(){ if(!backArmed && Date.now()-backExitAt>=2500) armBack(); }, 2600);
@@ -2476,6 +2537,7 @@
       [].forEach.call(navEl.querySelectorAll(".navi"), function(b){
         if(b.getAttribute("data-view")===active) b.classList.add("on"); else b.classList.remove("on");
       });
+      fyNavFilter();
     }
 
     function backupStatus(){
@@ -2486,20 +2548,23 @@
       var when=(days<=0)?"aujourd'hui":("il y a "+days+" j");
       return { col:col, label:"sauvegardé "+when };
     }
-    var VIEW_TITLES={ list:"Accueil", form:"Ticket", articles:"Articles", produits:"Produits & catégories", graph:"Analyse", history:"Analyse", analyse:"Analyse", month:"Analyse", artDetail:"Articles", communes:"Commun", compte:"Compte", bourse:"Bourse", gallery:"Galerie", photo:"Photo", patrimoine:"Patrimoine", provisions:"Provisions", bilan:"Bilan" };
+    var VIEW_TITLES={ list:"Accueil", form:"Ticket", articles:"Articles", produits:"Produits & catégories", graph:"Analyse", history:"Analyse", analyse:"Analyse", month:"Analyse", artDetail:"Articles", communes:"Commun", compte:"Compte", bourse:"Bourse", gallery:"Galerie", photo:"Photo", patrimoine:"Patrimoine", provisions:"Provisions", bilan:"Bilan", foyer:"Foyer partagé" };
     function capFirst(t){ t=String(t||""); return t.charAt(0).toUpperCase()+t.slice(1); }
     function header(back, title){
       var b = back ? '<button class="hback" id="hback" type="button" aria-label="Retour">‹</button>' : '';
-      var lb=store.read("lastBackup", null), bkOld=!lb || (Date.now()-new Date(lb).getTime())>=7*86400000;
+      var lb=store.read("lastBackup", null), bkOld=!fyMember() && (!lb || (Date.now()-new Date(lb).getTime())>=7*86400000);
       b='<div class="hleft"><button class="hmenu" id="hmenu" type="button" aria-label="Menu"><span></span>'+(bkOld?'<i class="hdot"></i>':'')+'</button>'+b+'</div>';
       return '<header class="head'+(back?' hasback':'')+'">'+b+'<div class="htitle">'+esc(title||VIEW_TITLES[state.view]||"Tickets")+'</div></header>';
     }
     function bindBack(fn){ var hb=document.getElementById("hback"); if(hb) hb.onclick=fn; }
 
-    function render(){ renderView(); try{ compactRowActions(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); }
+    var fyRendering=false;
+    function render(){ fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); }
     function renderView(){
       armBack();
+      fyViewGuard();
       syncBourseEpargne();
+      if(state.view==="foyer") return renderFoyer();
       if(state.view==="form") return renderForm();
       if(state.view==="articles") return renderArticles();
       if(state.view==="produits") return renderProduits();
@@ -2711,6 +2776,7 @@
         var pTot=0; try{ pTot=provTotalAt(m0); }catch(e){}
         out.push({ tab:"provisions", name:"Provisions", c:{ label:"Provisions", big:moneyBig(pTot), sub:provisions.length+" enveloppe"+(provisions.length>1?"s":""), chart:mlist(pRows, "#c78bd6"), stats:[], mode:"" } });
       }
+      if(fyMember()) out=out.filter(function(c){ return fyTabOn(fyCfg, FY_SUB[c.tab]||c.tab); });   // foyer partagé : seulement les onglets permis
       return out;
     }
     // Petites cartes de l'Accueil : rend lisibles les graphiques réduits
@@ -2783,7 +2849,7 @@
         // « Moi » : ton compte principal ; « Foyer » : tous les comptes (choix gardé, proposé dès 2 comptes)
         var multiA=comptes.length>1, scope=multiA ? (state.homeScope||store.read("homeScope","moi")) : "moi"; if(scope!=="foyer") scope="moi";
         function heroFig(m){
-          var keys=(scope==="foyer") ? comptes.map(function(a){ return a.key; }) : [mainAcct().key], b=0, l=0, has=false;
+          var keys=(scope==="foyer") ? comptes.map(function(a){ return a.key; }) : [myAcct().key], b=0, l=0, has=false;
           keys.forEach(function(k){ b+=computeCompteMonth(k, m).solde; var q=liquideAt(k, m); if(q){ has=true; l+=q.val; } });
           return { banque:b, liq:l, hasLiq:has, solde:b+l };
         }
@@ -2812,7 +2878,7 @@
 
         // --- Rappel de sauvegarde
         var bkAge=backupAgeDays();
-        if(bkAge===null || bkAge>=7){
+        if(!fyMember() && (bkAge===null || bkAge>=7)){
           h += '<div class="bk-banner"><span style="font-size:20px">💾</span><div>'+(bkAge===null?'<b>Aucune sauvegarde</b> de tes données pour l\'instant.':'<b>Dernière sauvegarde il y a '+bkAge+' jours.</b>')+'<br><span style="color:var(--ink-soft);font-size:11px">'+(capNative()?"Si l\'appli est désinstallée, tout serait perdu.":"Si le navigateur se vide, tout serait perdu.")+'</span></div><button class="btn primary" id="bkNow" type="button">Sauvegarder</button></div>';
         }
 
@@ -2823,7 +2889,7 @@
         h += '</div>';
         h += '<div style="margin-top:10px">'+monthNavHTML(esc(monthLabel), month, curM)+'</div>';
         h += '<div class="dash-big" style="color:'+(solde<0?"var(--coral)":"var(--ink)")+'">'+money(solde)+'</div>';
-        h += '<div class="dash-cap">Solde de fin de mois prévu'+(scope==="foyer"?' · foyer, '+comptes.length+' comptes':(multiA?' · '+esc(mainAcct().nom):''))+'</div>';
+        h += '<div class="dash-cap">Solde de fin de mois prévu'+(scope==="foyer"?' · foyer, '+comptes.length+' comptes':(multiA?' · '+esc(myAcct().nom):''))+'</div>';
         (function(){ var pS=heroFig(pm).solde, dS=solde-pS;
           var pl=monthLabelOf(pm).split(" ")[0];
           if(Math.abs(dS)>=0.005) h += '<div class="dash-trend" style="color:'+(dS>=0?"var(--accent)":"var(--coral)")+'">'+(dS>=0?'▲ +':'▼ −')+fk(Math.abs(dS))+' <span>vs fin '+esc(pl)+'</span></div>';
@@ -2885,7 +2951,7 @@
         }
 
         // --- Dépenses qui reviennent
-        var recs=detectRecurrents(month), ff=fraisFixesMois(mainAcct().key, month);
+        var recs=detectRecurrents(month), ff=fraisFixesMois(myAcct().key, month);
         if(recs.length || ff.n){
           var recYear=ff.total*12; recs.forEach(function(r){ recYear+=r.avg*12; });
           var rB='';
@@ -2998,11 +3064,11 @@
         g.classList.toggle("open", op); }; });
       var hcpt=document.getElementById("heroCpt"); if(hcpt) hcpt.onclick=function(){
         var sc=state.homeScope||store.read("homeScope","moi");
-        if(comptes.length>1){ state.compteSel=(sc==="foyer")?"__all":mainAcct().key; store.write("compteSel", state.compteSel); }
+        if(comptes.length>1){ state.compteSel=(sc==="foyer")?"__all":myAcct().key; store.write("compteSel", state.compteSel); }
         state.view="compte"; render(); window.scrollTo(0,0); };
       [].forEach.call(document.querySelectorAll(".hscope button"), function(b){ b.onclick=function(ev){ ev.stopPropagation(); state.homeScope=b.getAttribute("data-s"); store.write("homeScope", state.homeScope); render(); }; });
       [].forEach.call(document.querySelectorAll(".hmini"), function(c){ c.onclick=function(){ var g=c.getAttribute("data-go");
-        if(g==="epargne"){ state.compteSel=mainAcct().key; state.cptPage="ep"; state.view="comptedet"; } else state.view=g;
+        if(g==="epargne"){ state.compteSel=myAcct().key; state.cptPage="ep"; state.view="comptedet"; } else state.view=g;
         render(); window.scrollTo(0,0); }; });
       enrichMiniCharts();
       [].forEach.call(document.querySelectorAll(".catrow"), function(row){ row.onclick=function(){ var c=row.getAttribute("data-cat"); state.catFilter=(state.catFilter===c?null:c); state.ticketsOpen=true; render(); var se=document.getElementById("search"); if(se && se.scrollIntoView) se.scrollIntoView({behavior:"smooth", block:"start"}); }; });
@@ -3761,7 +3827,7 @@
       });
       acc+='<div class="cacc-sec"><div class="cacc-h" style="cursor:default"><span class="t">Total des comptes</span><span class="v" style="color:'+(totB<0?"var(--coral)":"var(--accent)")+'">'+fmtS(totB)+'</span><span class="ch"></span></div></div></section>';
       acc+='<section class="paper cacc">';
-      acc+='<div class="cacc-sec"><div class="cacc-h allGo" data-acct="'+esc(mainAcct().key)+'" data-page="ep"><i class="cdot" style="background:#7c9cf4;margin:0"></i><span class="t">Épargne<small>'+epargne.length+' compte'+(epargne.length>1?'s':'')+' épargne</small></span><span class="v">'+fmtS(ep)+'</span><span class="ch">›</span></div></div>';
+      acc+='<div class="cacc-sec"><div class="cacc-h allGo" data-acct="'+esc(myAcct().key)+'" data-page="ep"><i class="cdot" style="background:#7c9cf4;margin:0"></i><span class="t">Épargne<small>'+epargne.length+' compte'+(epargne.length>1?'s':'')+' épargne</small></span><span class="v">'+fmtS(ep)+'</span><span class="ch">›</span></div></div>';
       acc+='<div class="cacc-sec"><div class="cacc-h" id="goprov"><i class="cdot" style="background:#c78bd6;margin:0"></i><span class="t">Provisions<small>'+provisions.length+' enveloppe'+(provisions.length>1?'s':'')+'</small></span><span class="v">'+fmtS(prov)+'</span><span class="ch">›</span></div></div>';
       acc+='<div class="cacc-sec"><div class="cacc-h" style="cursor:default"><span class="t">Comptes + épargne</span><span class="v" style="color:var(--accent)">'+fmtS(totB+ep)+'</span><span class="ch"></span></div></div></section>';
       h+=acc;
@@ -3817,7 +3883,7 @@
           fraisCommuns.forEach(function(f){ if(f.compte===a.key) delete f.compte; }); persistFrais();
           delete liquideMois[a.key]; persistLiquide(); delete soldeInit[a.key]; persistSoldeInit();
           comptes=comptes.filter(function(c){ return c!==a; }); persistComptes();
-          state.compteSel=mainAcct().key; store.write("compteSel", state.compteSel); render();
+          state.compteSel=myAcct().key; store.write("compteSel", state.compteSel); render();
         }, { ok:"Supprimer", danger:true });
       } });
       uiChoice(a.nom, a.main?"Compte principal : il reçoit les frais communs et s'affiche sur l'Accueil.":"", ch);
@@ -4918,7 +4984,7 @@
     }
     function renderPatrimoine(){
       var month=monthKey(todayISO());
-      var solde=computeCompteMonth(mainAcct().key, month).solde;
+      var solde=computeCompteMonth(myAcct().key, month).solde;
       var epManuel=0, epLies=0;
       epargne.forEach(function(c){ if(c.bourseLink) epLies+=epCurrent(c); else epManuel+=epCurrent(c); });
       var bourseTot=FEAT.bourse?bourseTotalLive():0;
@@ -4970,7 +5036,7 @@
       if(!from || !to){ from=to=(state.bilanMonth||curM); }
       var ms=[], mk=from; while(mk<=to && ms.length<120){ ms.push(mk); mk=nextMonthKey(mk); }
       var single=(ms.length===1), month=to, inP={}; ms.forEach(function(m){ inP[m]=1; });
-      var label=single?monthLabelOf(month):((from.slice(0,4)===to.slice(0,4)?monthLabelOf(from).split(" ")[0]:monthLabelOf(from))+" – "+monthLabelOf(to)), person=mainAcct().key;
+      var label=single?monthLabelOf(month):((from.slice(0,4)===to.slice(0,4)?monthLabelOf(from).split(" ")[0]:monthLabelOf(from))+" – "+monthLabelOf(to)), person=myAcct().key;
       var mois=state.entries.filter(function(x){ return inP[monthKey(x.date)]; });
       var tickets=mois.reduce(function(t,x){ return t+(Number(x.montant)||0); },0);
       var parCat={}; mois.forEach(function(x){ parCat[x.categorie]=(parCat[x.categorie]||0)+(Number(x.montant)||0); });
@@ -5321,6 +5387,7 @@
       }catch(e){ window.alert("Sauvegarde impossible : "+((e&&e.message)||e)); }
     }
     function restoreData(file){
+      if(fyMember()){ uiToast("Tes données viennent du foyer : quitte le foyer avant de restaurer une sauvegarde"); return; }
       var r=new FileReader();
       r.onload=function(){
         try{
@@ -5372,8 +5439,857 @@
         })
         .catch(function(){});
     }
+    // ---------- QR code (invitation au foyer) : encodeur compact, mode octets, correction M ----------
+    function qrMatrix(text){
+      var ECC=[-1,10,16,26,18,24,16,18,22,22,26,30,22,22,24,24,28,28,26,26,26], NB=[-1,1,1,1,2,2,4,4,4,5,5,5,8,9,9,10,10,11,13,14,16];
+      var data=[], u=unescape(encodeURIComponent(text)), i, j;
+      for(i=0;i<u.length;i++) data.push(u.charCodeAt(i));
+      function rawMods(v){ var r=(16*v+128)*v+64; if(v>=2){ var n=Math.floor(v/7)+2; r-=(25*n-10)*n-55; if(v>=7) r-=36; } return r; }
+      function cap(v){ return Math.floor(rawMods(v)/8)-ECC[v]*NB[v]; }
+      var ver=1; while(ver<=20 && (4+(ver<10?8:16)+data.length*8) > cap(ver)*8) ver++;
+      if(ver>20) throw new Error("texte trop long");
+      var bits=[]; function put(val,len){ for(var k=len-1;k>=0;k--) bits.push((val>>>k)&1); }
+      put(4,4); put(data.length, ver<10?8:16); data.forEach(function(b){ put(b,8); });
+      var cbits=cap(ver)*8; put(0, Math.min(4, cbits-bits.length)); put(0, (8-bits.length%8)%8);
+      for(var pad=0xEC; bits.length<cbits; pad^=0xEC^0x11) put(pad,8);
+      var cw=[]; for(i=0;i<bits.length;i+=8){ var b=0; for(j=0;j<8;j++) b=(b<<1)|bits[i+j]; cw.push(b); }
+      function mul(x,y){ var z=0; for(var k=7;k>=0;k--){ z=(z<<1)^((z>>>7)*0x11D); z^=((y>>>k)&1)*x; } return z; }
+      var deg=ECC[ver], div=[]; for(i=0;i<deg-1;i++) div.push(0); div.push(1);
+      var root=1; for(i=0;i<deg;i++){ for(j=0;j<deg;j++){ div[j]=mul(div[j],root); if(j+1<deg) div[j]^=div[j+1]; } root=mul(root,2); }
+      function rem(d){ var r=div.map(function(){ return 0; }); d.forEach(function(b){ var f=b^r.shift(); r.push(0); for(var k=0;k<r.length;k++) r[k]^=mul(div[k],f); }); return r; }
+      var nb=NB[ver], raw=Math.floor(rawMods(ver)/8), nShort=nb-raw%nb, shortLen=Math.floor(raw/nb), blocks=[], k=0;
+      for(i=0;i<nb;i++){ var dl=shortLen-deg+(i<nShort?0:1), d=cw.slice(k,k+dl); k+=dl; var e=rem(d); if(i<nShort) d.push(0); blocks.push(d.concat(e)); }
+      var all=[]; for(i=0;i<blocks[0].length;i++) for(j=0;j<nb;j++) if(i!==shortLen-deg || j>=nShort) all.push(blocks[j][i]);
+      var n=ver*4+17, M=[], F=[]; for(i=0;i<n;i++){ M.push([]); F.push([]); for(j=0;j<n;j++){ M[i].push(false); F[i].push(false); } }
+      function fn(x,y,dark){ M[y][x]=dark; F[y][x]=true; }
+      for(i=0;i<n;i++){ fn(6,i,i%2===0); fn(i,6,i%2===0); }
+      function finder(x,y){ for(var dy=-4;dy<=4;dy++) for(var dx=-4;dx<=4;dx++){ var dd=Math.max(Math.abs(dx),Math.abs(dy)), xx=x+dx, yy=y+dy; if(xx>=0&&xx<n&&yy>=0&&yy<n) fn(xx,yy,dd!==2&&dd!==4); } }
+      finder(3,3); finder(n-4,3); finder(3,n-4);
+      var al=[]; if(ver>1){ var na=Math.floor(ver/7)+2, step=Math.ceil((ver*4+4)/(na*2-2))*2; al=[6]; for(var pos=n-7; al.length<na; pos-=step) al.splice(1,0,pos); }
+      for(i=0;i<al.length;i++) for(j=0;j<al.length;j++){ if((i===0&&j===0)||(i===0&&j===al.length-1)||(i===al.length-1&&j===0)) continue; for(var ay=-2;ay<=2;ay++) for(var ax=-2;ax<=2;ax++) fn(al[i]+ax, al[j]+ay, Math.max(Math.abs(ax),Math.abs(ay))!==1); }
+      function format(mask){
+        var dt=(0<<3)|mask, r=dt; for(var q=0;q<10;q++) r=(r<<1)^((r>>>9)*0x537);
+        var fb=((dt<<10)|r)^0x5412; function g(q){ return ((fb>>>q)&1)!==0; }
+        for(var q2=0;q2<=5;q2++) fn(8,q2,g(q2)); fn(8,7,g(6)); fn(8,8,g(7)); fn(7,8,g(8)); for(q2=9;q2<15;q2++) fn(14-q2,8,g(q2));
+        for(q2=0;q2<8;q2++) fn(n-1-q2,8,g(q2)); for(q2=8;q2<15;q2++) fn(8,n-15+q2,g(q2)); fn(8,n-8,true);
+      }
+      format(0);
+      if(ver>=7){ var vr=ver; for(i=0;i<12;i++) vr=(vr<<1)^((vr>>>11)*0x1F25); var vb=(ver<<12)|vr; for(i=0;i<18;i++){ var bt=((vb>>>i)&1)!==0, a=n-11+i%3, c=Math.floor(i/3); fn(a,c,bt); fn(c,a,bt); } }
+      var bi=0; for(var right=n-1; right>=1; right-=2){ if(right===6) right=5; for(var vert=0; vert<n; vert++) for(j=0;j<2;j++){ var x=right-j, up=((right+1)&2)===0, y=up?n-1-vert:vert; if(!F[y][x] && bi<all.length*8){ M[y][x]=((all[bi>>>3]>>>(7-(bi&7)))&1)!==0; bi++; } } }
+      function inv(m,x,y){ switch(m){ case 0: return (x+y)%2===0; case 1: return y%2===0; case 2: return x%3===0; case 3: return (x+y)%3===0; case 4: return (Math.floor(x/3)+Math.floor(y/2))%2===0; case 5: return x*y%2+x*y%3===0; case 6: return (x*y%2+x*y%3)%2===0; default: return ((x+y)%2+x*y%3)%2===0; } }
+      function apply(m){ for(var y=0;y<n;y++) for(var x=0;x<n;x++) if(!F[y][x] && inv(m,x,y)) M[y][x]=!M[y][x]; }
+      function penalty(){
+        var p=0, dark=0, y, x;
+        for(y=0;y<n;y++){ var run=1, runY=1; for(x=1;x<n;x++){ if(M[y][x]===M[y][x-1]){ run++; if(run===5) p+=3; else if(run>5) p++; } else run=1; if(M[x][y]===M[x-1][y]){ runY++; if(runY===5) p+=3; else if(runY>5) p++; } else runY=1; } }
+        for(y=0;y<n-1;y++) for(x=0;x<n-1;x++){ var cc=M[y][x]; if(cc===M[y][x+1]&&cc===M[y+1][x]&&cc===M[y+1][x+1]) p+=3; }
+        // motifs qui ressemblent aux repères des coins (1:1:3:1:1) : ils gênent la lecture
+        var A=[1,0,1,1,1,0,1,0,0,0,0], B=[0,0,0,0,1,0,1,1,1,0,1];
+        function at(r,c,h){ if(r<0||c<0||r>=n||c>=n) return 0; return (h?M[r][c]:M[c][r])?1:0; }
+        for(y=0;y<n;y++) for(x=-4;x<n;x++) for(var hv=0;hv<2;hv++){ var okA=true, okB=true; for(var t=0;t<11;t++){ var v=at(y,x+t,hv===0); if(v!==A[t]) okA=false; if(v!==B[t]) okB=false; if(!okA&&!okB) break; } if(okA) p+=40; if(okB) p+=40; }
+        for(y=0;y<n;y++) for(x=0;x<n;x++) if(M[y][x]) dark++;
+        return p+Math.floor(Math.abs(dark*20-n*n*10)/(n*n))*10;
+      }
+      var best=0, bp=1e9;
+      for(var m=0;m<8;m++){ apply(m); format(m); var pp=penalty(); if(pp<bp){ bp=pp; best=m; } apply(m); }
+      apply(best); format(best);
+      return M;
+    }
+    function qrSvg(text, px){
+      var M=qrMatrix(text), n=M.length, q=4, d="";
+      for(var y=0;y<n;y++) for(var x=0;x<n;x++) if(M[y][x]) d+="M"+(x+q)+" "+(y+q)+"h1v1h-1z";
+      return '<svg viewBox="0 0 '+(n+2*q)+' '+(n+2*q)+'" width="'+(px||240)+'" height="'+(px||240)+'" shape-rendering="crispEdges" role="img" aria-label="QR code d\'invitation"><rect width="100%" height="100%" fill="#fff"/><path d="'+d+'" fill="#0e0f14"/></svg>';
+    }
+    // ---------- Foyer partagé (Tickets Plus dans la version Store) ----------
+    // Le téléphone qui crée le foyer (« propriétaire ») garde toutes les données. Pour chaque membre, il dépose sur le relais
+    // une copie chiffrée avec la clé de ce membre (AES-GCM), limitée aux onglets et comptes choisis : le relais ne lit rien.
+    //  - consultation : le membre lit sa copie, ne peut rien modifier (un enfant qui suit son compte) ;
+    //  - modification : ses changements partent, chiffrés, dans la boîte du foyer ; le propriétaire les fusionne fiche par
+    //    fiche (la modification la plus récente gagne) puis met à jour les copies de tout le monde.
+    // Retirer un membre efface son accès et sa copie : sa clé ne sert plus à rien. Code + empreinte obligatoires partout.
+    // Le propriétaire garde aussi une copie de secours, que seul son code de secours permet d'ouvrir (nouveau téléphone).
+    function fyApiBase(){ return (store.read("foyerApi","")||COURS_API||"").replace(/\/+$/,""); }
+    var FY_KEYS={ entries:"id", virements:"id", fraisCommuns:"id", epargne:"id", provisions:"id", bourse:"id", comptes:"key", personnes:"nom",
+      argentMois:2, liquideMois:2, soldeInit:2, budgets:1, appris:1, familleDe:1, communParts:0, cats:0, familles:0, produits:0, devise:0 };
+    var FY_OWNER_ONLY={ bourse:1 };   // la Bourse se gère depuis le téléphone du propriétaire (cours mis à jour en continu)
+    var FY_TABS=[{v:"list",l:"Accueil"},{v:"articles",l:"Articles"},{v:"communes",l:"Commun"},{v:"compte",l:"Compte"}].concat(FEAT.bourse?[{v:"bourse",l:"Bourse"}]:[]).concat([{v:"analyse",l:"Analyse"}]);
+    var FY_SUB={ epargne:"compte", form:"list", gallery:"list", photo:"list", produits:"articles", artDetail:"articles", comptedet:"compte", patrimoine:"compte", provisions:"compte", month:"analyse", graph:"analyse", history:"analyse" };
+    var FY_SEP="\u001f", FY_SKIP={};
+    function fyRole(){ return fyCfg ? fyCfg.role : null; }
+    function fyMember(){ return !!fyCfg && fyCfg.role!=="owner"; }
+    function fyRO(){ return !!fyCfg && fyCfg.role==="view"; }
+    function fyTabOn(m, t){ return !m || !m.tabs || m.tabs.indexOf(t)>=0; }
+    function fyFirstTab(){ var t=(fyCfg && fyCfg.tabs && fyCfg.tabs[0]) || "list"; return t; }
+    function fyRoleLabel(r){ return r==="edit"?"Modification":(r==="view"?"Consultation":"Propriétaire"); }
+    function fyTabsLabel(m){ if(!m.tabs) return "tous les onglets"; var l=FY_TABS.filter(function(t){ return m.tabs.indexOf(t.v)>=0; }).map(function(t){ return t.l; }); return l.length===FY_TABS.length?"tous les onglets":(l.join(", ")||"aucun onglet"); }
+    function fyAcctsLabel(m){ if(m.accts==null) return "tous les comptes"; var l=comptes.filter(function(a){ return m.accts.indexOf(a.key)>=0; }).map(function(a){ return a.nom; }); return l.join(", ")||"aucun compte"; }
+    function myAcct(){
+      if(fyMember() && fyCfg.me){ var a=comptes.filter(function(c){ return (c.payer||"")===fyCfg.me; })[0]; if(a) return a; if(fyCfg.accts) return comptes[0]||mainAcct(); }
+      return mainAcct();
+    }
+    // ----- chiffrement -----
+    function fyB64u(bytes){ var s="", a=new Uint8Array(bytes), i, ch=0x8000; for(i=0;i<a.length;i+=ch) s+=String.fromCharCode.apply(null, a.subarray(i, i+ch)); return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }
+    function fyUnb64u(s){ s=String(s||"").replace(/-/g,"+").replace(/_/g,"/"); while(s.length%4) s+="="; var b=atob(s), a=new Uint8Array(b.length); for(var i=0;i<b.length;i++) a[i]=b.charCodeAt(i); return a; }
+    function fyRand(n){ return fyB64u(randBytes(n)); }
+    function fySha(s){ return crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)).then(fyB64u); }
+    function fyHkdf(secret, info, len){
+      return crypto.subtle.importKey("raw", secret, "HKDF", false, ["deriveBits"]).then(function(k){
+        return crypto.subtle.deriveBits({ name:"HKDF", hash:"SHA-256", salt:new TextEncoder().encode("tickets-foyer"), info:new TextEncoder().encode(info) }, k, (len||32)*8);
+      }).then(function(b){ return new Uint8Array(b); });
+    }
+    function fyAes(raw){ return crypto.subtle.importKey("raw", fyUnb64u(raw), "AES-GCM", false, ["encrypt","decrypt"]); }
+    function fyPipe(bytes, stream){ return new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer().then(function(b){ return new Uint8Array(b); }); }
+    function fySeal(raw, obj){
+      var data=new TextEncoder().encode(JSON.stringify(obj)), gz=(typeof CompressionStream==="function");
+      return (gz ? fyPipe(data, new CompressionStream("gzip")) : Promise.resolve(data)).then(function(d){
+        var iv=randBytes(12);
+        return fyAes(raw).then(function(k){ return crypto.subtle.encrypt({ name:"AES-GCM", iv:iv }, k, d); }).then(function(ct){
+          var out=new Uint8Array(12+ct.byteLength); out.set(iv,0); out.set(new Uint8Array(ct),12);
+          return (gz?"g1.":"p1.")+fyB64u(out);
+        });
+      });
+    }
+    function fyOpen(raw, str){
+      var p=String(str||"").split(".");
+      if(p.length!==2 || (p[0]!=="g1" && p[0]!=="p1")) return Promise.reject(new Error("format"));
+      var all=fyUnb64u(p[1]);
+      return fyAes(raw).then(function(k){ return crypto.subtle.decrypt({ name:"AES-GCM", iv:all.slice(0,12) }, k, all.slice(12)); }).then(function(d){
+        d=new Uint8Array(d);
+        if(p[0]==="g1"){ if(typeof DecompressionStream!=="function") throw new Error("gzip"); return fyPipe(d, new DecompressionStream("gzip")); }
+        return d;
+      }).then(function(d){ return JSON.parse(new TextDecoder().decode(d)); });
+    }
+    var FY_B32="ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    function fyB32(bytes){ var bits=0, val=0, out=""; for(var i=0;i<bytes.length;i++){ val=(val<<8)|bytes[i]; bits+=8; while(bits>=5){ out+=FY_B32[(val>>>(bits-5))&31]; bits-=5; } } if(bits>0) out+=FY_B32[(val<<(5-bits))&31]; return out; }
+    function fyUnb32(s){ s=String(s||"").toUpperCase().replace(/[^A-Z2-7]/g,""); var bits=0, val=0, out=[]; for(var i=0;i<s.length;i++){ val=(val<<5)|FY_B32.indexOf(s[i]); bits+=5; if(bits>=8){ out.push((val>>>(bits-8))&255); bits-=8; } } return new Uint8Array(out); }
+    function fyCodeTxt(sec){ return fyB32(fyUnb64u(sec)).replace(/(.{4})(?=.)/g,"$1-"); }
+    // ----- relais -----
+    var fyOff=0;   // écart entre l'horloge du téléphone et celle du relais (la modification la plus récente gagne)
+    function fyNow(){ return Date.now()+fyOff; }
+    function fyAuth(){ return fyCfg ? fyCfg.fid+"."+(fyCfg.role==="owner"?"o":fyCfg.mid)+"."+fyCfg.tok : ""; }
+    function fyCall(method, path, body, noAuth, auth){
+      var h={ "Content-Type":"application/json" }; if(!noAuth) h.Authorization="Bearer "+(auth||fyAuth());
+      var t0=Date.now();
+      return fetch(fyApiBase()+"/foyer"+path, { method:method, headers:h, body:body?JSON.stringify(body):undefined, cache:"no-store" }).then(function(r){
+        if(r.status===204) return { status:204, j:{} };
+        return r.json().catch(function(){ return null; }).then(function(j){
+          j=j||{}; var rtt=Date.now()-t0; if(j.now && rtt<8000) fyOff=Math.round(j.now-(t0+rtt/2));
+          return { status:r.status, j:j };
+        });
+      });
+    }
+    // ----- fiches : chaque donnée découpée en petits morceaux comparables -----
+    function fyHash(s){
+      var h1=0xdeadbeef, h2=0x41c6ce57;
+      for(var i=0;i<s.length;i++){ var c=s.charCodeAt(i); h1=Math.imul(h1^c, 2654435761); h2=Math.imul(h2^c, 1597334677); }
+      h1=Math.imul(h1^(h1>>>16), 2246822507)^Math.imul(h2^(h2>>>13), 3266489909); h2=Math.imul(h2^(h2>>>16), 2246822507)^Math.imul(h1^(h1>>>13), 3266489909);
+      return (h2>>>0).toString(36)+"."+(h1>>>0).toString(36);
+    }
+    function fyDefault(k){ var t=FY_KEYS[k]; return typeof t==="string" ? [] : ((t===1||t===2) ? {} : null); }
+    function fyIdOf(k, x){ var f=FY_KEYS[k], id=(x && typeof x==="object") ? x[f] : null; return (id===undefined || id===null || id==="") ? "h"+fyHash(JSON.stringify(x)) : String(id); }
+    function fyFlat(k, val){
+      var out={}, t=FY_KEYS[k];
+      if(typeof t==="string"){ (Array.isArray(val)?val:[]).forEach(function(x){ out[k+FY_SEP+fyIdOf(k,x)]=x; }); }
+      else if(t===1 || t===2){
+        var o=(val && typeof val==="object" && !Array.isArray(val)) ? val : {};
+        Object.keys(o).forEach(function(p){ var v=o[p];
+          if(t===2 && v && typeof v==="object" && !Array.isArray(v)) Object.keys(v).forEach(function(s){ out[k+FY_SEP+p+FY_SEP+s]=v[s]; });
+          else out[k+FY_SEP+p]=v; });
+      }
+      else if(val!==null && val!==undefined) out[k]=val;
+      return out;
+    }
+    function fyPatch(k, val, ch){   // ch : { chemin: { x, d } }
+      var t=FY_KEYS[k];
+      if(typeof t==="string"){
+        var arr=Array.isArray(val)?val.slice():[], idx={}, del={};
+        arr.forEach(function(x,i){ idx[k+FY_SEP+fyIdOf(k,x)]=i; });
+        Object.keys(ch).forEach(function(p){ var c=ch[p];
+          if(c.d){ if(p in idx) del[idx[p]]=1; }
+          else if(p in idx) arr[idx[p]]=c.x;
+          else { idx[p]=arr.length; arr.push(c.x); } });
+        return arr.filter(function(x,i){ return !del[i]; });
+      }
+      if(t===1 || t===2){
+        var o=(val && typeof val==="object" && !Array.isArray(val)) ? JSON.parse(JSON.stringify(val)) : {};
+        Object.keys(ch).forEach(function(p){ var c=ch[p], q=p.split(FY_SEP);
+          if(q.length===3){
+            if(c.d){ if(o[q[1]] && typeof o[q[1]]==="object"){ delete o[q[1]][q[2]]; if(!Object.keys(o[q[1]]).length) delete o[q[1]]; } }
+            else { if(!o[q[1]] || typeof o[q[1]]!=="object" || Array.isArray(o[q[1]])) o[q[1]]={}; o[q[1]][q[2]]=c.x; }
+          } else { if(c.d) delete o[q[1]]; else o[q[1]]=c.x; } });
+        return o;
+      }
+      var c0=ch[k]; return c0 ? (c0.d ? null : c0.x) : val;
+    }
+    var fyBase=store.read("fyBase", {}) || {};   // { clé: { chemin: empreinte } } au dernier passage
+    var fyMt=store.read("fyMt", {}) || {};       // propriétaire : { chemin: date de la dernière modification }
+    var fyPend=store.read("fyPend", {}) || {};   // membre « modification » : { chemin: { x, d, t, s = n° d'envoi } }
+    var fyVer=1, fyPubVer={}, fyFullVer=0, fyFullAt=0, fyDirty={}, fyDetT=null;
+    function fyMark(p, x, d, t){
+      if(fyRole()==="owner"){ fyMt[p]=t; return; }
+      if(fyRole()!=="edit") return;
+      var k=p.split(FY_SEP)[0];
+      if(FY_OWNER_ONLY[k]) return;
+      if(k==="epargne" && x && x.bourseLink) return;   // épargne liée à la Bourse : recalculée par le propriétaire
+      fyPend[p]={ x:d?null:x, d:d?1:0, t:t };
+    }
+    function fyDetect(keys){
+      var n=0, now=fyNow();
+      (keys||Object.keys(FY_KEYS)).forEach(function(k){
+        var cur=fyFlat(k, store.read(k, fyDefault(k))), b=fyBase[k]||{}, nb={};
+        Object.keys(cur).forEach(function(p){ var h=fyHash(JSON.stringify(cur[p])); nb[p]=h; if(b[p]!==h){ n++; fyMark(p, cur[p], false, now); } });
+        Object.keys(b).forEach(function(p){ if(!(p in nb)){ n++; fyMark(p, null, true, now); } });
+        fyBase[k]=nb;
+      });
+      if(n){ fyVer++; fyRawWrite("fyBase", fyBase); if(fyRole()==="owner") fyRawWrite("fyMt", fyMt); else fyRawWrite("fyPend", fyPend); }
+      return n;
+    }
+    function fyResetBase(){
+      fyBase={};
+      Object.keys(FY_KEYS).forEach(function(k){ var cur=fyFlat(k, store.read(k, fyDefault(k))), nb={}; Object.keys(cur).forEach(function(p){ nb[p]=fyHash(JSON.stringify(cur[p])); }); fyBase[k]=nb; });
+      fyRawWrite("fyBase", fyBase); fyVer++;
+    }
+    // Toutes les écritures passent par ici : en consultation, rien n'est enregistré ; sinon les changements partent au relais.
+    var fyRawWrite=store.write, fyTapAt=0, fyRoToastAt=0;
+    document.addEventListener("click", function(){ fyTapAt=Date.now(); }, true);
+    store.write=function(k, v){
+      if(fyCfg && FY_KEYS.hasOwnProperty(k)){
+        if(fyCfg.role==="view" || (fyCfg.role==="edit" && FY_OWNER_ONLY[k])){
+          // geste de la personne (pas un calcul automatique) : on le dit, et on remet les vraies données
+          if(!fyRendering && Date.now()-fyTapAt<2500 && Date.now()-fyRoToastAt>3000){
+            fyRoToastAt=Date.now(); uiToast(fyCfg.role==="view"?"Consultation : tu ne peux rien modifier":"La Bourse se modifie sur le téléphone de "+(fyCfg.owner||"la personne qui t'a invité"));
+            setTimeout(function(){ fyReloadVars(); render(); }, 0);
+          }
+          return;
+        }
+        fyRawWrite(k, v); fyDirty[k]=1; clearTimeout(fyDetT); fyDetT=setTimeout(fyFlush, 700); return;
+      }
+      fyRawWrite(k, v);
+    };
+    function fyFlush(){ var ks=Object.keys(fyDirty); fyDirty={}; if(ks.length && fyDetect(ks)) fySyncSoon(1500); }
+    // Relit les données en mémoire après une mise à jour reçue du foyer
+    function fyReloadVars(){
+      state.entries=store.read("entries", []);
+      virements=store.read("virements", []); fraisCommuns=store.read("fraisCommuns", []); epargne=store.read("epargne", []);
+      provisions=store.read("provisions", []); bourse=store.read("bourse", []); personnes=store.read("personnes", []);
+      var cp=store.read("comptes", null); if(cp && cp.length) comptes=cp;
+      argentMois=store.read("argentMois", {}); liquideMois=store.read("liquideMois", {}); soldeInit=store.read("soldeInit", {});
+      budgets=store.read("budgets", {}); communParts=store.read("communParts", null); APPRIS=store.read("appris", {});
+      var fd=store.read("familleDe", null); FAMILLE_DE=fd||{};
+      var c=store.read("cats", null); if(c && c.length){ CATS=c; if(CATS.indexOf("Autre")<0) CATS.push("Autre"); }
+      var f=store.read("familles", null); if(f && f.length){ FAMILLES=f; if(FAMILLES.indexOf("Divers")<0) FAMILLES.push("Divers"); }
+      for(var k in DEFAULT_FAMILLE_DE){ if(!(k in FAMILLE_DE)) FAMILLE_DE[k]=DEFAULT_FAMILLE_DE[k]; }
+      FAMILLES.forEach(function(x){ FAMILLE_DE[x]=x; });
+      var pr=store.read("produits", null); if(pr && pr.length){ PRODUITS=pr; var miss=FAMILLES.filter(function(x){ return PRODUITS.indexOf(x)<0; }); if(miss.length) PRODUITS=miss.concat(PRODUITS); if(PRODUITS.indexOf("Remise")<0) PRODUITS.push("Remise"); }
+      var dv=store.read("devise", "EUR"); if(CURS[dv]) BASE=dv;
+    }
+    function fyBusyUI(){
+      if(document.querySelector(".sheet-overlay, .drawer-ov")) return true;
+      if(state.view==="form") return true;
+      var ae=document.activeElement; return !!(ae && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName||""));
+    }
+    // ----- propriétaire -----
+    function fyOwnerOf(x, def){ return ((x && x.owner) || "").trim() || def; }
+    function fyRules(m){
+      var acc=null, payers={};
+      if(m.accts!=null){ acc={}; m.accts.forEach(function(k){ acc[k]=1; }); comptes.forEach(function(a){ if(acc[a.key]) payers[acctOwner(a)||a.payer||""]=1; }); if(m.name) payers[m.name]=1; delete payers[""]; }
+      return { acc:acc, payers:payers, inA:function(e){ return m.accts.some(function(k){ return ticketInAcct(e,k); }); }, inF:function(f){ return m.accts.some(function(k){ return !!fraisKind(f,k); }); } };
+    }
+    // Copie du foyer telle que la verra ce membre (seulement les comptes choisis)
+    function fyFilter(m){
+      var me=mePerson(), K={}, R=fyRules(m);
+      Object.keys(FY_KEYS).forEach(function(k){ K[k]=store.read(k, fyDefault(k)); });
+      // sur le téléphone du membre, « toi » c'est lui : on écrit en toutes lettres ce qui est au propriétaire
+      K.comptes=(K.comptes||[]).map(function(a){ if(a.payer || !a.main) return a; a=JSON.parse(JSON.stringify(a)); a.payer=me; return a; });
+      ["epargne","provisions"].forEach(function(k){ K[k]=(K[k]||[]).map(function(x){ if(x.owner) return x; x=JSON.parse(JSON.stringify(x)); x.owner=me; return x; }); });
+      if(!(K.personnes||[]).some(function(p){ return p.nom===me; })) K.personnes=(K.personnes||[]).concat([{ nom:me }]);
+      if(!fyTabOn(m,"bourse")) K.bourse=[];
+      if(R.acc){
+        K.comptes=K.comptes.filter(function(a){ return R.acc[a.key]; });
+        K.entries=(K.entries||[]).filter(R.inA);
+        K.virements=(K.virements||[]).filter(function(v){ return R.acc[v.person]; });
+        K.fraisCommuns=(K.fraisCommuns||[]).filter(R.inF);
+        ["soldeInit","liquideMois","argentMois"].forEach(function(k){ var o={}, src=K[k]||{}; Object.keys(src).forEach(function(p){ if(R.acc[p] || R.payers[p]) o[p]=src[p]; }); K[k]=o; });
+        K.epargne=K.epargne.filter(function(x){ return R.payers[x.owner]; });
+        K.provisions=K.provisions.filter(function(x){ return R.payers[x.owner]; });
+        K.bourse=[]; K.budgets={};
+      }
+      return K;
+    }
+    // Un changement envoyé par un membre : a-t-il le droit de le faire ?
+    function fyAllowed(m, k, p, old, nw){
+      if(m.role!=="edit" || FY_OWNER_ONLY[k]) return false;
+      if(m.accts==null) return true;
+      var R=fyRules(m), me=mePerson();
+      function ok(x, isOld){
+        if(x==null) return true;
+        if(k==="entries") return R.inA(x);
+        if(k==="virements") return !!R.acc[x.person];
+        if(k==="fraisCommuns") return R.inF(x);
+        if(k==="comptes") return !!R.acc[x.key];
+        if(k==="epargne" || k==="provisions") return !!R.payers[fyOwnerOf(x, isOld?me:m.name)];
+        return false;
+      }
+      if(k==="soldeInit" || k==="liquideMois" || k==="argentMois"){ var pp=p.split(FY_SEP)[1]; return !!(R.acc[pp] || R.payers[pp]); }
+      if(k==="cats" || k==="familles" || k==="produits" || k==="appris" || k==="familleDe") return true;
+      if(typeof FY_KEYS[k]==="string") return ok(old, true) && ok(nw, false);
+      return false;
+    }
+    // Remet un changement de membre « à la façon du propriétaire » (son compte principal, ses épargnes sans nom…)
+    function fyFromMember(k, x, old, m, me){
+      if(x==null || typeof x!=="object") return x;
+      x=JSON.parse(JSON.stringify(x));
+      if(k==="comptes"){ if(old && old.main) x.main=true; else delete x.main; if(old && !old.payer && x.payer===me) x.payer=old.payer; }
+      if(k==="epargne" || k==="provisions"){ if(!x.owner) x.owner=m.name; if(x.owner===me) delete x.owner; }
+      if(k==="personnes" && x.nom===me) return FY_SKIP;
+      return x;
+    }
+    function fyApplyFromMember(m, recs){
+      var byKey={}, n=0, me=mePerson(), now=fyNow();
+      (recs||[]).forEach(function(r){
+        if(!r || typeof r.p!=="string") return;
+        var k=r.p.split(FY_SEP)[0]; if(!FY_KEYS.hasOwnProperty(k)) return;
+        var t=Number(r.t)||0; if(t>now+5*60000) t=now;   // horloge du membre très en avance : ramenée à maintenant
+        if(t<=(fyMt[r.p]||0)) return;                      // modifié plus récemment ici : on garde
+        (byKey[k]=byKey[k]||{})[r.p]={ x:r.d?null:r.x, d:!!r.d, t:t };
+      });
+      Object.keys(byKey).forEach(function(k){
+        var cur=store.read(k, fyDefault(k)), flat=fyFlat(k, cur), ch=byKey[k], ok={};
+        Object.keys(ch).forEach(function(p){
+          var c=ch[p], old=flat[p];
+          if(c.d && !(p in flat)) return;
+          if(!fyAllowed(m, k, p, old===undefined?null:old, c.d?null:c.x)) return;
+          if(!c.d){ c.x=fyFromMember(k, c.x, old, m, me); if(c.x===FY_SKIP) return; }
+          ok[p]=c;
+        });
+        var ps=Object.keys(ok); if(!ps.length) return;
+        fyRawWrite(k, fyPatch(k, cur, ok));
+        var nb=fyBase[k]||{};
+        ps.forEach(function(p){ fyMt[p]=ok[p].t; if(ok[p].d) delete nb[p]; else nb[p]=fyHash(JSON.stringify(ok[p].x)); n++; });
+        fyBase[k]=nb;
+      });
+      if(n){ fyVer++; fyRawWrite("fyBase", fyBase); fyRawWrite("fyMt", fyMt); }
+      return n;
+    }
+    function fyOwnerSync(){
+      var C=fyCfg, applied=0;
+      return fyCall("GET","/inbox").then(function(r){
+        if(r.status===410) throw fyGone("foyer");
+        if(r.status!==200) throw new Error("relais "+r.status);
+        var items=r.j.items||[]; if(!items.length || fyBusyUI()) return;
+        var maxSeq=0, chain=Promise.resolve();
+        items.forEach(function(it){ chain=chain.then(function(){
+          maxSeq=Math.max(maxSeq, it.seq);
+          var m=C.members && C.members[it.mid]; if(!m || !m.km) return;
+          return fyOpen(m.km, it.v).then(function(b){ applied+=fyApplyFromMember(m, b.recs); }).catch(function(e){ console.warn("foyer : envoi illisible", e); })
+            .then(function(){ m.ack=Math.max(m.ack||0, it.seq); fyVer++; });
+        }); });
+        return chain.then(function(){ fySave(); return fyCall("POST","/inbox/ack",{ upto:maxSeq }); });
+      }).then(function(){
+        if(applied){ fyReloadVars(); render(); }
+        return fyCall("GET","/members");
+      }).then(function(r){
+        if(r && r.status===200){ var srv={}; (r.j.members||[]).forEach(function(x){ srv[x.id]=x; }); C.srv=srv;
+          // un membre a quitté le foyer de lui-même : on l'oublie ici aussi
+          Object.keys(C.members||{}).forEach(function(id){ if(!srv[id] && C.members[id].joinedOnce){ delete C.members[id]; } else if(srv[id] && !srv[id].pending) C.members[id].joinedOnce=1; });
+        }
+        return fyPublishAll();
+      }).then(function(){ return fyBackupFull(); });
+    }
+    function fySnapPayload(m){ return { v:1, owner:mePerson(), me:m.name, role:m.role, tabs:m.tabs||null, accts:m.accts==null?null:m.accts, ack:m.ack||0, keys:fyFilter(m) }; }
+    function fyPublishAll(force){
+      var C=fyCfg, chain=Promise.resolve();
+      Object.keys(C.members||{}).forEach(function(id){ chain=chain.then(function(){
+        var m=C.members[id]; if(!m || !m.km || (!force && fyPubVer[id]===fyVer)) return;
+        var payload=fySnapPayload(m), h=fyHash(JSON.stringify(payload)), ver=fyVer;
+        if(h===m.sh && !force){ fyPubVer[id]=ver; return; }
+        payload.t=fyNow();
+        return fySeal(m.km, payload).then(function(v){ return fyCall("PUT","/snap/"+id,{ v:v }); }).then(function(r){
+          if(r.status===200){ m.sh=h; m.snapT=r.j.t; fyPubVer[id]=ver; fySave(); }
+          else console.warn("foyer : copie de "+m.name+" non envoyée ("+r.status+")");
+        });
+      }); });
+      return chain;
+    }
+    function fyBackupFull(force){
+      var C=fyCfg; if(!C || C.role!=="owner" || !C.key) return Promise.resolve();
+      if(!force && (fyFullVer===fyVer || Date.now()-fyFullAt<120000)) return Promise.resolve();
+      var keys={}, ver=fyVer; Object.keys(FY_KEYS).forEach(function(k){ keys[k]=store.read(k, fyDefault(k)); });
+      var mem={}; Object.keys(C.members||{}).forEach(function(id){ var m=C.members[id]; mem[id]={ name:m.name, role:m.role, tabs:m.tabs, accts:m.accts, km:m.km, created:m.created, ack:m.ack||0 }; });
+      return fySeal(C.key, { v:1, me:mePerson(), members:mem, keys:keys, mt:fyMt, t:fyNow() }).then(function(v){ return fyCall("PUT","/blob/full",{ v:v }); }).then(function(r){
+        if(r.status===200){ fyFullVer=ver; fyFullAt=Date.now(); C.fullT=r.j.t; fySave(); }
+      });
+    }
+    // ----- membre -----
+    var fyHeldSnap=null;
+    function fyMemberSync(){
+      var C=fyCfg;
+      if(fyHeldSnap && !fyBusyUI()){ var s0=fyHeldSnap; fyHeldSnap=null; fyApplySnap(s0); }
+      return fyPushPending().then(function(){ return fyCall("GET","/snap"+(C.snapT?"?since="+C.snapT:"")); }).then(function(r){
+        if(r.status===410) throw fyGone("removed");
+        if(r.status===401) throw fyGone("auth");
+        if(r.status===204 || r.j.none) return;
+        if(r.status!==200) throw new Error("relais "+r.status);
+        return fyOpen(C.km, r.j.v).then(function(s){ s.t=r.j.t; fyApplySnap(s); });
+      });
+    }
+    function fyPushPending(){
+      var C=fyCfg; if(C.role!=="edit") return Promise.resolve();
+      var recs=[]; Object.keys(fyPend).forEach(function(p){ var e=fyPend[p]; if(!e.s) recs.push({ p:p, x:e.d?null:e.x, d:e.d?1:0, t:e.t }); });
+      if(!recs.length) return Promise.resolve();
+      var batches=[], cur=[], size=0;
+      recs.forEach(function(r){ var l=JSON.stringify(r).length; if(cur.length && size+l>500000){ batches.push(cur); cur=[]; size=0; } cur.push(r); size+=l; });
+      if(cur.length) batches.push(cur);
+      var chain=Promise.resolve();
+      batches.forEach(function(b){ chain=chain.then(function(){
+        return fySeal(C.km, { recs:b }).then(function(v){ return fyCall("POST","/inbox",{ v:v }); }).then(function(r){
+          if(r.status===410) throw fyGone("removed");
+          if(r.status===401) throw fyGone("auth");
+          if(r.status===403) return;   // passé en consultation : la prochaine copie le dira
+          if(r.status!==200) throw new Error("envoi "+r.status);
+          b.forEach(function(x){ var e=fyPend[x.p]; if(e && e.t===x.t && !e.s) e.s=r.j.seq; });
+          fyRawWrite("fyPend", fyPend);
+        });
+      }); });
+      return chain;
+    }
+    function fyApplySnap(snap){
+      if(fyBusyUI()){ fyHeldSnap=snap; return; }   // une fenêtre est ouverte : on attend qu'elle soit fermée
+      var C=fyCfg; if(!C) return;
+      Object.keys(fyPend).forEach(function(p){ var e=fyPend[p]; if(e.s && e.s<=(snap.ack||0)) delete fyPend[p]; });   // traité par le propriétaire
+      if(snap.role!=="edit") fyPend={};
+      var byKey={}; Object.keys(fyPend).forEach(function(p){ var k=p.split(FY_SEP)[0]; (byKey[k]=byKey[k]||{})[p]=fyPend[p]; });
+      Object.keys(FY_KEYS).forEach(function(k){
+        var v=(snap.keys && snap.keys.hasOwnProperty(k)) ? snap.keys[k] : fyDefault(k);
+        if(byKey[k]) v=fyPatch(k, v, byKey[k]);   // mes changements pas encore pris en compte restent visibles
+        fyRawWrite(k, v);
+      });
+      fyResetBase(); fyRawWrite("fyPend", fyPend); fyRawWrite("askName", false);
+      C.role=snap.role; C.me=snap.me; C.owner=snap.owner; C.tabs=snap.tabs||null; C.accts=snap.accts==null?null:snap.accts; C.snapT=snap.t; C.lastOk=Date.now();
+      fySave(); fyReloadVars(); fyApplyMode(); render();
+    }
+    function fyGone(kind){ var e=new Error("foyer"); e.fyGone=kind; return e; }
+    function fyHandleGone(kind){
+      if(!fyCfg) return;
+      if(fyCfg.role==="owner"){ fyCfg.err="Ton foyer n'existe plus sur le relais."; fySave(); return; }
+      var who=fyCfg.owner||"ce foyer";
+      fyLeaveLocal(false);
+      uiConfirm((kind==="auth"?"Ton accès au foyer de "+esc(who)+" a changé.":"Tu ne fais plus partie du foyer de "+esc(who)+".")+"<br>Ses données ont été effacées de ce téléphone.", function(){ location.reload(); }, { ok:"OK", no:"Fermer", onNo:function(){ location.reload(); } });
+    }
+    // Efface du téléphone tout ce qui vient du foyer et remet les données d'avant (s'il y en avait)
+    function fyLeaveLocal(reload){
+      var prev=store.read("fyAvant", null);
+      Object.keys(FY_KEYS).forEach(function(k){ fyRawWrite(k, (prev && prev.hasOwnProperty(k) && prev[k]!==null) ? prev[k] : fyDefault(k)); });
+      if(!prev || !prev.comptes || !prev.comptes.length){ try{ localStorage.removeItem("comptes"); }catch(e){} fyRawWrite("askName", true); }
+      ["fyCfg","fyBase","fyMt","fyPend","fyAvant","compteSel"].forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+      fyCfg=null; fyBase={}; fyMt={}; fyPend={};
+      if(reload!==false) location.reload();
+    }
+    // ----- synchronisation -----
+    var fySyncT=null, fySyncing=false, fyAgain=false, fyLastErr=null;
+    function fySave(){ if(fyCfg) fyRawWrite("fyCfg", fyCfg); }
+    function fySyncSoon(ms){ clearTimeout(fySyncT); fySyncT=setTimeout(fySync, ms||0); }
+    function fySync(){
+      if(!fyCfg || !fyCfg.tok) return Promise.resolve();
+      if(fySyncing){ fyAgain=true; return Promise.resolve(); }
+      fySyncing=true;
+      if(Object.keys(fyDirty).length){ clearTimeout(fyDetT); fyFlush(); }
+      var p=(fyCfg.role==="owner") ? fyOwnerSync() : fyMemberSync();
+      return p.then(function(){ if(fyCfg){ fyCfg.lastOk=Date.now(); fyCfg.err=null; } fyLastErr=null; }).catch(function(e){
+        if(e && e.fyGone) return fyHandleGone(e.fyGone);
+        fyLastErr=(e && e.message) || String(e); console.warn("foyer :", e);
+      }).then(function(){
+        fySyncing=false; fySave();
+        if(state.view==="foyer" && !fyBusyUI()) render();
+        if(fyAgain){ fyAgain=false; fySyncSoon(1000); }
+      });
+    }
+    function fyAgo(t){ if(!t) return "jamais"; var s=Math.round((Date.now()-t)/1000); if(s<60) return "à l'instant"; if(s<3600) return "il y a "+Math.round(s/60)+" min"; if(s<86400) return "il y a "+Math.round(s/3600)+" h"; return "le "+new Date(t).toLocaleDateString("fr-FR"); }
+    function fySyncLabel(){ if(!fyCfg) return ""; if(fyLastErr && (!fyCfg.lastOk || Date.now()-fyCfg.lastOk>120000)) return "hors ligne · à jour "+fyAgo(fyCfg.lastOk); return "à jour "+fyAgo(fyCfg.lastOk); }
+    // ----- consultation / onglets -----
+    function fyApplyMode(){
+      document.body.classList.toggle("fy-ro", fyRO());
+      document.body.classList.toggle("fy-mem", fyMember());
+    }
+    function fyNavFilter(){
+      [].forEach.call(navEl.querySelectorAll(".navi"), function(b){ b.style.display=(fyMember() && !fyTabOn(fyCfg, b.getAttribute("data-view")))?"none":""; });
+    }
+    function fyViewGuard(){
+      if(!fyMember() || !FY_SUB) return;
+      var v=state.view; if(v==="foyer" || v==="bilan") return;
+      if(fyRO() && v==="form"){ state.view=fyFirstTab(); state.draft=null; return; }
+      var tb=FY_SUB[v]||v; if(!fyTabOn(fyCfg, tb)) state.view=fyFirstTab();
+    }
+    function fyRoStrip(){
+      if(!fyRO()) return;
+      [].forEach.call(app.querySelectorAll("button, a.btn"), function(b){
+        var t=(b.textContent||"").trim(), id=b.id||"", cl=" "+(b.className||"")+" ";
+        if(/^(✎|✕|🔗|▲|▼|⋯|＋|\+ )/.test(t) || /^(add|del|edit)/i.test(id) || /(edit|del|more|addprl|linkbtn) /.test(cl)) b.style.display="none";
+      });
+    }
+    // ----- code + empreinte obligatoires sur les téléphones du foyer -----
+    var fyBioOk=null;
+    function fyCheckBio(){
+      var NB=nativeBio();
+      if(NB && NB.biometricAvailable) return NB.biometricAvailable().then(function(r){ fyBioOk=!!(r && r.available); }).catch(function(){ fyBioOk=false; });
+      if(window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) return PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(function(ok){ fyBioOk=!!ok; }).catch(function(){ fyBioOk=false; });
+      fyBioOk=false; return Promise.resolve();
+    }
+    function fyEnsureLock(after){
+      if(!fyCfg){ if(after) after(); return; }
+      if(document.getElementById("lockscreen")){ setTimeout(function(){ fyEnsureLock(after); }, 600); return; }
+      fyCheckBio().then(function(){
+        if(lockCfg && (lockCfg.bioId || !fyBioOk)){ if(after) after(); return; }
+        fyLockScreen(after);
+      });
+    }
+    function fyLockScreen(after){
+      var ov=document.createElement("div"); ov.id="lockscreen"; ov.setAttribute("data-setup","1");
+      document.body.appendChild(ov);
+      var step=lockCfg?2:1, first="", typed="";
+      function paint(){
+        var h='<div class="lk-in"><div class="lk-ic">🛡️</div><div class="lk-t">Protège ce téléphone</div>';
+        h+='<div class="lk-s">Obligatoire : ce sont les comptes du foyer'+(fyCfg.owner?' de '+esc(fyCfg.owner):'')+'. Tickets demandera '+(fyBioOk?'ton empreinte':'ton code')+' à chaque ouverture.</div>';
+        h+='<div class="fy-steps"><span class="'+(step>1?'ok':'on')+'">'+(step>1?'✓':'1')+' Ton code</span>'+(fyBioOk?'<span class="'+(step===2?'on':'')+'">2 Ton empreinte</span>':'')+'</div>';
+        if(step===1){
+          h+='<div class="lk-s" style="margin-top:14px">'+(first?'Tape-le une deuxième fois':'Choisis un code de 6 chiffres')+'</div><div class="lk-dots">';
+          for(var i=0;i<6;i++) h+='<i class="'+(i<typed.length?'f':'')+'"></i>';
+          h+='</div><div class="lk-err"></div><div class="lk-pad">';
+          ["1","2","3","4","5","6","7","8","9","","0","del"].forEach(function(k){ h+=k===""?'<span></span>':(k==="del"?'<button type="button" class="lk-x" data-k="del">⌫</button>':'<button type="button" data-k="'+k+'">'+k+'</button>'); });
+          h+='</div>';
+        } else {
+          h+='<button type="button" class="btn primary" id="fyBio" style="margin-top:26px;width:100%">👆 Ajouter mon empreinte</button><div class="lk-err" style="margin-top:10px"></div>';
+        }
+        h+='<div class="lk-s" style="margin-top:16px">Ces étapes ne peuvent pas être passées. Le code et l\'empreinte ne quittent jamais ce téléphone.</div></div>';
+        ov.innerHTML=h;
+        [].forEach.call(ov.querySelectorAll("button[data-k]"), function(b){ b.onclick=function(){ key(b.getAttribute("data-k")); }; });
+        var bb=ov.querySelector("#fyBio"); if(bb) bb.onclick=bio;
+      }
+      function err(t){ var e=ov.querySelector(".lk-err"); if(e) e.textContent=t; }
+      function key(k){
+        if(k==="del"){ typed=typed.slice(0,-1); paint(); return; }
+        if(typed.length>=6) return;
+        typed+=k; paint();
+        if(typed.length<6) return;
+        if(!first){ first=typed; typed=""; paint(); return; }
+        if(first!==typed){ first=""; typed=""; paint(); err("Les deux codes ne correspondent pas, recommence."); return; }
+        var salt=b64(randBytes(16)), pin=typed;
+        hashPin(pin, salt).then(function(hv){
+          lockCfg={ hash:hv, salt:salt, len:6, bioId:(lockCfg&&lockCfg.bioId)||null }; store.write("lockCfg", lockCfg);
+          if(fyBioOk){ step=2; paint(); } else done();
+        });
+      }
+      function bio(){
+        var NB=nativeBio();
+        var p=(NB && NB.biometric) ? NB.biometric({ title:"Ajouter l'empreinte", subtitle:"Pose ton doigt pour confirmer", cancel:"Annuler" }).then(function(){ return "native"; })
+          : navigator.credentials.create({ publicKey:{ challenge:randBytes(32), rp:{ name:"Tickets" }, user:{ id:randBytes(16), name:"tickets", displayName:"Tickets" },
+              pubKeyCredParams:[{ type:"public-key", alg:-7 },{ type:"public-key", alg:-257 }], authenticatorSelection:{ authenticatorAttachment:"platform", userVerification:"required", residentKey:"discouraged" }, timeout:60000, attestation:"none" } }).then(function(c){ return b64(c.rawId); });
+        p.then(function(id){ lockCfg.bioId=id; store.write("lockCfg", lockCfg); done(); }).catch(function(){ err("Empreinte non enregistrée : réessaie."); });
+      }
+      function done(){ try{ document.body.removeChild(ov); }catch(e){} uiToast("Téléphone protégé ✓"); render(); if(after) after(); }
+      paint();
+    }
+    // ----- écrans -----
+    function fyPlusOk(){
+      if(canUse("foyer")) return true;
+      uiChoice("Tickets Plus", "Le foyer partagé fait partie de Tickets Plus. L'achat de Plus arrivera bientôt dans l'appli. Rejoindre le foyer de quelqu'un reste gratuit.", [{ l:"D'accord", fn:function(){} }]);
+      return false;
+    }
+    function fyStatus(id){
+      var s=fyCfg.srv && fyCfg.srv[id], m=fyCfg.members[id];
+      if(s && !s.pending) return { c:"var(--accent)", t:"à jour "+fyAgo(s.seen||s.joined) };
+      var exp=(s && s.exp) || m.exp || 0;
+      if(exp>Date.now()){ var r=Math.max(0, Math.round((exp-Date.now())/1000)); return { c:"#e6b450", t:"en attente du scan · "+Math.floor(r/60)+":"+("0"+(r%60)).slice(-2) }; }
+      return { c:"var(--coral)", t:"invitation expirée · nouveau QR code" };
+    }
+    var FY_COLS=["#c78bd6","#e0a458","#5bc0d4","#e88fb0","#9bd35e","#7c9cf4","#d6c35c"];
+    function fyAvatar(name, i, big){ return '<span class="fy-av'+(big?' big':'')+'" style="background:'+(i<0?'var(--accent)':FY_COLS[i%FY_COLS.length])+'">'+esc((name||"?").charAt(0).toUpperCase())+'</span>'; }
+    function renderFoyer(){
+      var h=header(true, fyMember()?"Foyer partagé":"Foyer partagé")+'<section class="fy-page">';
+      if(!fyCfg){
+        h+='<div class="fy-card fy-hero"><div class="fy-big">👨‍👩‍👧 Suivre les comptes à plusieurs</div><div class="fy-txt">Ta famille voit les comptes sur son propre téléphone. Tu choisis pour chacun : <b>consultation</b> (il voit, ne modifie rien : idéal pour un enfant) ou <b>modification</b> (il ajoute ses tickets, la dernière modification gagne), et les onglets et comptes qu\'il voit.</div>'+
+          '<div class="fy-txt muted">Tout est chiffré sur les téléphones avant de partir : le relais ne peut rien lire. Code et empreinte obligatoires sur chaque téléphone.</div></div>';
+        h+='<div class="ui-stack"><button type="button" class="btn primary" id="fyNew">Créer mon foyer'+(canUse("foyer")?'':' · Plus')+'</button><button type="button" class="btn" id="fyJoin">Rejoindre un foyer (QR code)</button><button type="button" class="btn ghost" id="fyRec">Récupérer mon foyer (code de secours)</button></div>';
+      } else if(fyCfg.role==="owner"){
+        var ids=Object.keys(fyCfg.members||{});
+        h+='<div class="fy-card fy-own">'+fyAvatar(mePerson(), -1, true)+'<div class="fy-grow"><b>'+esc(mePerson())+'</b> <span class="fy-you">· toi</span><small>Propriétaire du foyer · tu choisis ce que chacun voit</small></div></div>';
+        if(fyCfg.err) h+='<div class="fy-warn">'+esc(fyCfg.err)+'</div>';
+        h+='<div class="fy-sec">'+ids.length+' membre'+(ids.length>1?'s':'')+'</div>';
+        if(ids.length){
+          h+='<div class="fy-card fy-list">';
+          ids.forEach(function(id, i){ var m=fyCfg.members[id], st=fyStatus(id);
+            h+='<button type="button" class="fy-mrow" data-m="'+esc(id)+'">'+fyAvatar(m.name, i)+'<span class="fy-grow"><b>'+esc(m.name)+'</b><small>'+esc(fyRoleLabel(m.role)+' · '+fyTabsLabel(m)+(m.accts!=null?' ('+fyAcctsLabel(m)+')':''))+'</small><small style="color:'+st.c+'">● '+esc(st.t)+'</small></span><span class="chev">›</span></button>'; });
+          h+='</div>';
+        }
+        h+='<button type="button" class="btn fy-add" id="fyAdd">＋ Ajouter un membre</button>';
+        h+='<div class="fy-sec">Sécurité</div><div class="fy-card fy-list">'+
+          '<div class="fy-info"><span>🔒</span><span><b>Code et empreinte obligatoires</b><small>Sur tous les téléphones du foyer, dès la première ouverture.</small></span></div>'+
+          '<div class="fy-info"><span>☁️</span><span><b>Copie chiffrée '+esc(fySyncLabel())+'</b><small>Illisible sans vos clés. Avec ton code de secours, elle te rend tout ton foyer sur un nouveau téléphone.</small></span></div>'+
+          '<button type="button" class="fy-mrow" id="fyCode"><span class="fy-ic">🔑</span><span class="fy-grow"><b>Mon code de secours</b><small>À noter et garder précieusement</small></span><span class="chev">›</span></button></div>';
+        h+='<button type="button" class="btn ghost fy-stop" id="fyStop">Arrêter le partage</button>';
+      } else {
+        h+='<div class="fy-card fy-own">'+fyAvatar(fyCfg.owner||"?", -1, true)+'<div class="fy-grow"><b>Foyer de '+esc(fyCfg.owner||"…")+'</b><small>Tu es '+esc(fyCfg.me||"")+' · '+esc(fyRoleLabel(fyCfg.role).toLowerCase())+'</small></div></div>';
+        h+='<div class="fy-card fy-list"><div class="fy-info"><span>'+(fyRO()?'👁️':'✏️')+'</span><span><b>'+esc(fyRoleLabel(fyCfg.role))+'</b><small>'+(fyRO()?'Tu vois les chiffres, tu ne peux rien modifier.':'Tes tickets et changements partent au foyer ; la dernière modification gagne.')+'</small></span></div>'+
+          '<div class="fy-info"><span>🗂️</span><span><b>Ce que tu vois</b><small>'+esc(fyTabsLabel(fyCfg)+(fyCfg.accts!=null?' · '+fyAcctsLabel(fyCfg):''))+'</small></span></div>'+
+          '<div class="fy-info"><span>☁️</span><span><b>'+esc(fySyncLabel().replace(/^./, function(c){ return c.toUpperCase(); }))+'</b><small>'+(fyRole()==="edit" && Object.keys(fyPend).length?Object.keys(fyPend).length+' changement(s) en attente du téléphone de '+esc(fyCfg.owner||"")+'.':'Copie chiffrée reçue du téléphone de '+esc(fyCfg.owner||"")+'.')+'</small></span></div></div>';
+        h+='<button type="button" class="btn" id="fyNow">Mettre à jour maintenant</button><button type="button" class="btn ghost fy-stop" id="fyLeave">Quitter le foyer</button>';
+      }
+      h+='</section>';
+      app.innerHTML=h;
+      setNav(null,false);
+      bindBack(function(){ state.view=fyMember()?fyFirstTab():"list"; render(); window.scrollTo(0,0); });
+      function on(id, fn){ var b=document.getElementById(id); if(b) b.onclick=fn; }
+      on("fyNew", fyCreate); on("fyJoin", function(){ fyJoin(); }); on("fyRec", fyRecoverForm);
+      on("fyAdd", function(){ fyMemberForm(null); }); on("fyCode", function(){ fyShowRecovery(false); }); on("fyStop", fyStop);
+      on("fyNow", function(){ uiToast("Mise à jour…"); fySync().then(function(){ render(); }); }); on("fyLeave", fyLeave);
+      [].forEach.call(app.querySelectorAll("[data-m]"), function(b){ b.onclick=function(){ fyMemberMenu(b.getAttribute("data-m")); }; });
+    }
+    function fyCreate(){
+      if(!fyPlusOk()) return;
+      if(!window.crypto || !crypto.subtle){ uiToast("Foyer partagé indisponible sur ce navigateur"); return; }
+      uiConfirm("Créer ton foyer partagé ?<br><small style=\"color:var(--ink-soft)\">Tu en es le propriétaire : tes données restent sur ton téléphone, chaque membre reçoit une copie chiffrée de ce que tu choisis. Un code et ton empreinte seront demandés à l'ouverture de Tickets.</small>", function(){
+        var sec=randBytes(16);
+        fyFromSecret(sec).then(function(o){
+          return fySha(o.tok).then(function(hh){ return fyCall("POST","/create",{ fid:o.fid, otok:hh }, true); }).then(function(r){
+            if(r.status!==200) throw new Error(r.j.error||("relais "+r.status));
+            fyCfg={ role:"owner", fid:o.fid, tok:o.tok, key:o.key, sec:fyB64u(sec), members:{}, created:Date.now(), lastOk:Date.now() };
+            fySave(); fyMt={}; fyRawWrite("fyMt", fyMt); fyResetBase();
+            state.view="foyer"; render();
+            fyEnsureLock(function(){ fyShowRecovery(true); });
+            fyBackupFull(true);
+          });
+        }).catch(function(e){ uiToast("Création impossible : "+((e && e.message)||"réseau")+". Réessaie connecté à Internet."); });
+      }, { ok:"Créer" });
+    }
+    function fyFromSecret(sec){
+      return Promise.all([fyHkdf(sec,"id",16), fyHkdf(sec,"auth",24), fyHkdf(sec,"data",32)]).then(function(a){ return { fid:fyB64u(a[0]), tok:fyB64u(a[1]), key:fyB64u(a[2]) }; });
+    }
+    function fyShowRecovery(first){
+      if(!fyCfg || !fyCfg.sec) return;
+      var code=fyCodeTxt(fyCfg.sec);
+      var s=uiSheet('<div class="sheet-title">Code de secours</div><div class="ui-intro">'+(first?'Ton foyer est prêt. ':'')+'Avec ce code, tu retrouves tout ton foyer (données et membres) sur un nouveau téléphone. <b>Note-le</b> sur papier ou dans un gestionnaire de mots de passe, et ne le donne à personne.</div>'+
+        '<div class="fy-code">'+esc(code)+'</div><div class="ui-stack"><button type="button" class="btn" id="fyCopy">Copier le code</button><button type="button" class="btn primary ui-no">'+(first?'Je l\'ai noté':'Fermer')+'</button></div>');
+      s.q(".ui-no").onclick=s.close;
+      s.q("#fyCopy").onclick=function(){ try{ navigator.clipboard.writeText(code.replace(/-/g,"")).then(function(){ uiToast("Code copié"); }, function(){ uiToast("Copie impossible : recopie-le à la main"); }); }catch(e){ uiToast("Copie impossible : recopie-le à la main"); } };
+    }
+    // Ajouter un membre / modifier ses droits
+    function fyMemberForm(id){
+      var M=id ? fyCfg.members[id] : null, me=mePerson();
+      var names=uniquePersons().filter(function(p){ return p!==me && !Object.keys(fyCfg.members).some(function(k){ return k!==id && fyCfg.members[k].name===p; }); });
+      var st={ name:M?M.name:"", role:M?M.role:"view", tabs:M?(M.tabs||FY_TABS.map(function(t){ return t.v; })).slice():["list","compte"], accts:M?(M.accts==null?null:M.accts.slice()):null, touched:!!M };
+      // par défaut : en consultation, ses propres comptes ; en modification, tous les comptes
+      function defAccts(){ if(st.touched) return; var a=comptes.filter(function(c){ return st.name && acctOwner(c)===st.name; }).map(function(c){ return c.key; }); st.accts=(a.length && st.role==="view")?a:null; }
+      if(!M) defAccts();
+      var s=uiSheet('<div class="sheet-title">'+(M?'Droits de '+esc(M.name):'Ajouter un membre')+'</div><div class="ui-intro">Son téléphone reçoit seulement ce que tu choisis ici, chiffré.</div><div id="fyF"></div>');
+      function draw(){
+        var h='';
+        if(!M){
+          h+='<label class="ui-l" for="fyName">Prénom</label><input class="f" id="fyName" type="text" value="'+esc(st.name)+'" placeholder="Ex. : Léa" autocomplete="off">';
+          if(names.length) h+='<div class="fy-chips">'+names.map(function(n){ return '<button type="button" class="chip'+(n===st.name?' on':'')+'" data-n="'+esc(n)+'">'+esc(n)+'</button>'; }).join("")+'</div>';
+        }
+        h+='<label class="ui-l">Accès</label><div class="ui-seg" id="fyRole"><button type="button" data-v="view"'+(st.role==="view"?' class="on"':'')+'>Consultation</button><button type="button" data-v="edit"'+(st.role==="edit"?' class="on"':'')+'>Modification</button></div>';
+        h+='<div class="ui-help">'+(st.role==="edit"?'Voit et modifie : tickets, scans, frais payés… La dernière modification gagne.':'Voit les chiffres, ne peut rien modifier. Idéal pour un enfant.')+'</div>';
+        var noTab=function(v){ return st.accts!=null && (v==="communes" || v==="bourse"); };   // avec des comptes choisis : ni Commun ni Bourse
+        h+='<label class="ui-l">Onglets visibles</label><div class="fy-tabs">'+FY_TABS.map(function(t){ var off=noTab(t.v), on=!off && st.tabs.indexOf(t.v)>=0; return '<button type="button" class="fy-tab'+(on?' on':'')+(off?' off':'')+'" data-t="'+t.v+'"'+(off?' disabled':'')+'><i>'+(on?'✓':'')+'</i>'+esc(t.l)+'</button>'; }).join("")+'</div>';
+        if(comptes.length>1){
+          h+='<label class="ui-l">Comptes visibles</label><div class="fy-chips"><button type="button" class="chip'+(st.accts==null?' on':'')+'" data-a="__all">Tous</button>'+comptes.map(function(a){ var on=st.accts!=null && st.accts.indexOf(a.key)>=0; return '<button type="button" class="chip'+(on?' on':'')+'" data-a="'+esc(a.key)+'">'+esc(a.nom)+(acctOwner(a)?' · '+esc(acctOwner(a)):'')+'</button>'; }).join("")+'</div>';
+          if(st.accts!=null) h+='<div class="ui-help">Avec des comptes choisis, il ne reçoit que leurs tickets, virements et frais ; pas le Commun ni la Bourse.</div>';
+        }
+        var vis=FY_TABS.filter(function(t){ return st.tabs.indexOf(t.v)>=0 && !noTab(t.v); }).map(function(t){ return t.l; });
+        h+='<div class="fy-sum">'+esc((st.name||"Ce membre")+(st.role==="edit"?" pourra modifier : ":" pourra consulter : ")+(vis.join(", ")||"rien")+(comptes.length>1?" · "+(st.accts==null?"tous les comptes":(fyAcctsLabel({accts:st.accts}))):"")+". Rien d'autre ne part sur son téléphone.")+'</div>';
+        h+='<div class="ui-err" style="display:none"></div><div class="ui-actions"><button type="button" class="btn ghost ui-no">Annuler</button><button type="button" class="btn primary" id="fyOk">'+(M?'Enregistrer':'Créer le QR code')+'</button></div>';
+        s.q("#fyF").innerHTML=h;
+        var ni=s.q("#fyName"); if(ni){ ni.oninput=function(){ st.name=ni.value.trim(); defAccts(); }; ni.onchange=function(){ draw(); }; }
+        [].forEach.call(s.qa("[data-n]"), function(b){ b.onclick=function(){ st.name=b.getAttribute("data-n"); defAccts(); draw(); }; });
+        [].forEach.call(s.qa("#fyRole button"), function(b){ b.onclick=function(){ st.role=b.getAttribute("data-v"); if(!M && st.role==="edit" && st.tabs.length<=2) st.tabs=FY_TABS.map(function(t){ return t.v; }); if(!M) defAccts(); draw(); }; });
+        [].forEach.call(s.qa("[data-t]"), function(b){ b.onclick=function(){ var t=b.getAttribute("data-t"), i=st.tabs.indexOf(t); if(i>=0) st.tabs.splice(i,1); else st.tabs.push(t); draw(); }; });
+        [].forEach.call(s.qa("[data-a]"), function(b){ b.onclick=function(){ st.touched=true; var a=b.getAttribute("data-a");
+          if(a==="__all") st.accts=null; else { if(st.accts==null) st.accts=[]; var i=st.accts.indexOf(a); if(i>=0) st.accts.splice(i,1); else st.accts.push(a); if(!st.accts.length) st.accts=null; }
+          draw(); }; });
+        s.q(".ui-no").onclick=s.close;
+        s.q("#fyOk").onclick=function(){
+          var er=s.q(".ui-err"); function bad(t){ er.textContent=t; er.style.display=""; }
+          if(!M){ st.name=(s.q("#fyName").value||"").trim(); if(!st.name) return bad("Indique son prénom."); if(st.name===me) return bad("C'est ton prénom : choisis celui du membre."); }
+          if(!st.tabs.length) return bad("Choisis au moins un onglet.");
+          var tabs=FY_TABS.map(function(t){ return t.v; }).filter(function(v){ return st.tabs.indexOf(v)>=0; });
+          if(st.accts!=null){ tabs=tabs.filter(function(v){ return v!=="communes" && v!=="bourse"; }); if(!tabs.length) return bad("Avec des comptes choisis, le Commun et la Bourse ne sont pas visibles : choisis un autre onglet."); }
+          var b=s.q("#fyOk"); b.disabled=true;
+          if(M){
+            var roleCh=M.role!==st.role;
+            (roleCh ? fyCall("PATCH","/member/"+id,{ role:st.role }) : Promise.resolve({ status:200 })).then(function(r){
+              if(r.status!==200) throw new Error("relais "+r.status);
+              M.role=st.role; M.tabs=tabs; M.accts=st.accts; fyVer++; fySave(); s.close(); render(); uiToast("Droits de "+M.name+" enregistrés"); fySyncSoon(0);
+            }).catch(function(e){ b.disabled=false; bad("Pas de connexion au relais : réessaie."); });
+            return;
+          }
+          var mid=fyRand(9), km=fyRand(32);
+          fyCfg.members[mid]={ name:st.name, role:st.role, tabs:tabs, accts:st.accts, km:km, created:Date.now(), ack:0 };
+          fyInvite(mid).then(function(){ s.close(); render(); }).catch(function(e){ delete fyCfg.members[mid]; fySave(); b.disabled=false; bad("Pas de connexion au relais : réessaie."); });
+        };
+      }
+      draw();
+    }
+    // Nouvelle invitation (QR code valable 10 minutes, une seule fois)
+    function fyInvite(mid){
+      var m=fyCfg.members[mid], inv=fyRand(16), exp=Date.now()+10*60000;
+      return fySha(inv).then(function(hh){ return fyCall("PUT","/member/"+mid,{ role:m.role, inv:hh, exp:exp }); }).then(function(r){
+        if(r.status!==200) throw new Error(r.j.error||("relais "+r.status));
+        m.exp=r.j.exp||exp; delete m.joinedOnce; m.sh=null; fyVer++; fySave();
+        fyPublishAll();   // sa copie est prête quand il scanne
+        fyShowQr(mid, "TK1."+fyCfg.fid+"."+mid+"."+inv+"."+m.km);
+      });
+    }
+    function fyShowQr(mid, text){
+      var m=fyCfg.members[mid];
+      var s=uiSheet('<div class="sheet-title">Inviter '+esc(m.name)+'</div><div class="fy-qr">'+qrSvg(text, 236)+'</div>'+
+        '<div class="fy-qrt"><b>Scanne ce code avec Tickets sur le téléphone de '+esc(m.name)+'</b><small id="fyExp"></small></div>'+
+        '<div class="fy-card fy-list fy-recap"><div><span>Accès</span><b>'+esc(fyRoleLabel(m.role))+'</b></div><div><span>Onglets</span><b>'+esc(fyTabsLabel(m))+'</b></div>'+(comptes.length>1?'<div><span>Comptes</span><b>'+esc(fyAcctsLabel(m))+'</b></div>':'')+'<div><span>Sur son téléphone</span><b style="color:var(--accent)">code + empreinte obligatoires</b></div></div>'+
+        '<div class="ui-stack"><button type="button" class="btn ghost" id="fyShare">Le QR ne passe pas ? Envoyer l\'invitation</button><button type="button" class="btn primary ui-no">Terminé</button></div>');
+      var tick=setInterval(function(){
+        var e=s.q("#fyExp"); if(!e || !document.body.contains(s.ov)){ clearInterval(tick); return; }
+        var r=Math.round(((m.exp||0)-Date.now())/1000);
+        e.innerHTML=r>0?'Valable encore <b>'+Math.floor(r/60)+':'+("0"+(r%60)).slice(-2)+'</b> · ne sert qu\'une seule fois':'<span style="color:var(--coral)">Expiré : ferme et crée un nouveau QR code</span>';
+        if(r%3===0) fyCall("GET","/members").then(function(x){ var me2=x.status===200 && (x.j.members||[]).filter(function(y){ return y.id===mid; })[0];
+          if(me2 && !me2.pending && document.body.contains(s.ov)){ clearInterval(tick); s.close(); fyCfg.srv=fyCfg.srv||{}; fyCfg.srv[mid]=me2; m.joinedOnce=1; fySave(); render(); uiToast(m.name+" a rejoint le foyer ✓"); } }).catch(function(){});
+      }, 1000);
+      s.q(".ui-no").onclick=function(){ clearInterval(tick); s.close(); render(); };
+      s.q("#fyShare").onclick=function(){
+        var msg="Invitation au foyer Tickets de "+mePerson()+" (valable 10 minutes, une seule fois). Dans Tickets : Menu › Foyer partagé › Rejoindre un foyer, puis colle ce texte :\n"+text;
+        var SH=capPlugin("Share");
+        if(SH) SH.share({ title:"Invitation Tickets", text:msg }).catch(function(){});
+        else if(navigator.share) navigator.share({ title:"Invitation Tickets", text:msg }).catch(function(){});
+        else { try{ navigator.clipboard.writeText(text); uiToast("Invitation copiée"); }catch(e){} }
+      };
+    }
+    function fyMemberMenu(id){
+      var m=fyCfg.members[id]; if(!m) return;
+      var s=fyCfg.srv && fyCfg.srv[id], joined=s && !s.pending;
+      uiChoice(m.name, esc(fyRoleLabel(m.role)+" · "+fyTabsLabel(m)+(m.accts!=null?" · "+fyAcctsLabel(m):"")), [
+        { l:"Modifier ses droits", fn:function(){ fyMemberForm(id); } },
+        { l:joined?"Nouveau téléphone : nouveau QR code":"Nouveau QR code", fn:function(){
+          var go=function(){ fyInvite(id).catch(function(){ uiToast("Pas de connexion au relais : réessaie."); }); };
+          if(joined) uiConfirm("Créer un nouveau QR code pour "+esc(m.name)+" ?<br>Son téléphone actuel perdra l'accès au foyer.", go, { ok:"Continuer" }); else go(); } },
+        { l:"Retirer du foyer", danger:true, fn:function(){
+          uiConfirm("Retirer "+esc(m.name)+" du foyer ?<br>Son accès et sa copie sont effacés tout de suite ; les données du foyer disparaissent de son téléphone à sa prochaine ouverture de Tickets.", function(){
+            fyCall("DELETE","/member/"+id).then(function(r){
+              if(r.status!==200) throw new Error();
+              delete fyCfg.members[id]; if(fyCfg.srv) delete fyCfg.srv[id]; fySave(); render(); uiToast(m.name+" ne fait plus partie du foyer");
+            }).catch(function(){ uiToast("Pas de connexion au relais : réessaie."); });
+          }, { ok:"Retirer", danger:true }); } }
+      ]);
+    }
+    function fyStop(){
+      uiConfirm("Arrêter le partage ?<br>Le foyer est effacé du relais ; les membres perdent l'accès et les données du foyer disparaissent de leurs téléphones. Tes données restent sur ton téléphone.", function(){
+        fyCall("DELETE","").then(function(r){
+          if(r.status!==200 && r.status!==410) throw new Error();
+          ["fyCfg","fyBase","fyMt","fyPend"].forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+          fyCfg=null; fyBase={}; fyMt={}; fyPend={}; fyApplyMode(); render(); uiToast("Partage arrêté");
+        }).catch(function(){ uiToast("Pas de connexion au relais : réessaie."); });
+      }, { ok:"Arrêter le partage", danger:true });
+    }
+    function fyLeave(){
+      uiConfirm("Quitter le foyer de "+esc(fyCfg.owner||"")+" ?<br>Ses données sont effacées de ce téléphone"+(store.read("fyAvant", null)?" et tes anciennes données reviennent":"")+".", function(){
+        fyCall("POST","/leave").catch(function(){}).then(function(){ fyLeaveLocal(true); });
+      }, { ok:"Quitter", danger:true });
+    }
+    // ----- rejoindre (téléphone du membre) -----
+    function fyScan(){
+      var NP=capPlugin("TicketsNative");
+      if(NP && typeof NP.scanQr==="function") return NP.scanQr().then(function(r){ return r && r.text; });
+      if(!("BarcodeDetector" in window)) return Promise.reject(new Error("nolecteur"));
+      return new Promise(function(res, rej){
+        var inp=document.createElement("input"); inp.type="file"; inp.accept="image/*"; inp.setAttribute("capture","environment");
+        inp.onchange=function(){ var f=inp.files && inp.files[0]; if(!f) return rej(new Error("annulé"));
+          createImageBitmap(f).then(function(bmp){ return new BarcodeDetector({ formats:["qr_code"] }).detect(bmp); }).then(function(c){ if(c && c[0]) res(c[0].rawValue); else rej(new Error("aucun")); }).catch(rej); };
+        inp.click();
+      });
+    }
+    function fyJoin(text){
+      if(fyCfg){ uiToast(fyCfg.role==="owner"?"Tu as déjà ton propre foyer":"Ce téléphone fait déjà partie d'un foyer"); return; }
+      var s=uiSheet('<div class="sheet-title">Rejoindre un foyer</div><div class="ui-intro">Sur le téléphone de la personne qui t\'invite : <b>Menu › Foyer partagé › Ajouter un membre</b>. Puis scanne son QR code.</div>'+
+        '<div class="ui-stack"><button type="button" class="btn primary" id="fyScan">📷 Scanner le QR code</button></div>'+
+        '<label class="ui-l" for="fyPaste">Ou colle l\'invitation reçue</label><textarea class="f" id="fyPaste" rows="3" placeholder="TK1.…">'+esc(text||"")+'</textarea>'+
+        '<div class="ui-err" style="display:none"></div><div class="ui-actions"><button type="button" class="btn ghost ui-no">Annuler</button><button type="button" class="btn" id="fyGo">Rejoindre</button></div>');
+      function bad(t){ var e=s.q(".ui-err"); e.textContent=t; e.style.display=t?"":"none"; }
+      s.q(".ui-no").onclick=s.close;
+      s.q("#fyScan").onclick=function(){ bad(""); fyScan().then(function(t){ if(t){ s.q("#fyPaste").value=t; go(); } }).catch(function(e){
+        var m=String((e && e.message)||""); if(/annul|cancel/i.test(m)) return;
+        bad(m==="nolecteur"?"Pas de lecteur de QR code ici : colle l'invitation ci-dessous.":(m==="aucun"?"Aucun QR code trouvé sur la photo : réessaie de plus près.":"Lecture impossible : "+m)); }); };
+      s.q("#fyGo").onclick=go;
+      function go(){
+        var t=(s.q("#fyPaste").value||"").trim(), m=t.match(/TK1\.([A-Za-z0-9_-]{22})\.([A-Za-z0-9_-]{8,16})\.([A-Za-z0-9_-]{22})\.([A-Za-z0-9_-]{43})/);
+        if(!m) return bad("Ce n'est pas une invitation Tickets.");
+        var has=state.entries.length || virements.length || epargne.length || fraisCommuns.length;
+        var run=function(){ bad(""); var b=s.q("#fyGo"); b.disabled=true; fyJoinWith(m[1], m[2], m[3], m[4]).then(function(){ s.close(); }).catch(function(e){ b.disabled=false; bad((e && e.message)||"Pas de connexion au relais : réessaie."); }); };
+        if(has) uiConfirm("Les données déjà sur ce téléphone seront remplacées par celles du foyer.<br><small style=\"color:var(--ink-soft)\">Une copie est gardée ici : elle revient si tu quittes le foyer.</small>", run, { ok:"Continuer" });
+        else run();
+      }
+    }
+    function fyJoinWith(fid, mid, inv, km){
+      var tok=fyRand(24);
+      return fySha(tok).then(function(hh){ return fyCall("POST","/join",{ fid:fid, mid:mid, inv:inv, tok:hh }, true); }).then(function(r){
+        if(r.status===403) throw new Error("Invitation expirée ou déjà utilisée : demande un nouveau QR code.");
+        if(r.status===410) throw new Error("Ce foyer n'existe plus.");
+        if(r.status!==200) throw new Error("Pas de connexion au relais : réessaie.");
+        try{ var prev={}; Object.keys(FY_KEYS).forEach(function(k){ prev[k]=store.read(k, null); }); prev.comptes=comptes; fyRawWrite("fyAvant", prev); }catch(e){}
+        fyCfg={ role:r.j.role, fid:fid, mid:mid, tok:tok, km:km, joined:Date.now() }; fyPend={}; fyRawWrite("fyPend", fyPend); fySave();
+        return fyCall("GET","/snap");
+      }).then(function(r){
+        var done=function(){ fyApplyMode(); state.view=fyFirstTab(); render(); fyEnsureLock(function(){ uiToast("Bienvenue dans le foyer de "+(fyCfg.owner||"…")+" !"); }); };
+        if(r.status===200 && r.j.v) return fyOpen(km, r.j.v).then(function(snap){ snap.t=r.j.t; setTimeout(function(){ fyApplySnap(snap); done(); }, 50); });
+        // copie pas encore prête : elle arrivera à la prochaine mise à jour
+        Object.keys(FY_KEYS).forEach(function(k){ fyRawWrite(k, fyDefault(k)); }); fyRawWrite("comptes", [{ key:"principal", nom:"Compte courant", payer:"", main:true }]);
+        fyRawWrite("askName", false); fyResetBase(); fyReloadVars(); setTimeout(done, 50); fySyncSoon(4000);
+      });
+    }
+    // ----- récupérer son foyer sur un nouveau téléphone (propriétaire) -----
+    function fyRecoverForm(){
+      if(fyCfg){ uiToast("Ce téléphone fait déjà partie d'un foyer"); return; }
+      uiForm({ title:"Récupérer mon foyer", intro:"Tape ton code de secours (26 caractères). Tes données et tes membres reviennent sur ce téléphone, qui devient le propriétaire du foyer.",
+        fields:[{ key:"c", label:"Code de secours", placeholder:"XXXX-XXXX-XXXX-…", required:true }], ok:"Récupérer" }, function(r, api){
+        var sec=fyUnb32(r.c); if(sec.length!==16) return "Code incomplet : il fait 26 caractères (lettres et chiffres 2 à 7).";
+        var o; fyFromSecret(sec).then(function(x){ o=x; return fyCall("GET","/blob/full", null, false, o.fid+".o."+o.tok); }).then(function(res){
+          if(res.status===401 || res.status===410) throw new Error("Code inconnu : vérifie-le.");
+          if(res.status!==200) throw new Error("Pas de connexion au relais : réessaie.");
+          if(res.j.none) throw new Error("Aucune copie de secours pour ce foyer.");
+          return fyOpen(o.key, res.j.v).then(function(p){
+            Object.keys(FY_KEYS).forEach(function(k){ fyRawWrite(k, p.keys && p.keys.hasOwnProperty(k) ? p.keys[k] : fyDefault(k)); });
+            fyMt=p.mt||{}; fyRawWrite("fyMt", fyMt); fyRawWrite("askName", false);
+            fyCfg={ role:"owner", fid:o.fid, tok:o.tok, key:o.key, sec:fyB64u(sec), members:p.members||{}, created:Date.now(), lastOk:Date.now() };
+            Object.keys(fyCfg.members).forEach(function(id){ fyCfg.members[id].sh=null; fyCfg.members[id].joinedOnce=1; });
+            fySave(); fyResetBase(); fyRawWrite("fyRecovered", 1);
+            location.reload();
+          });
+        }).catch(function(e){ api.error((e && e.message)||"Récupération impossible"); });
+        return false;
+      });
+    }
+    // Première ouverture : commencer, rejoindre un foyer ou récupérer le sien
+    function fyWelcome(){
+      uiChoice("Bienvenue dans Tickets 👋", "C'est ta première fois, ou quelqu'un t'invite dans son foyer ?", [
+        { l:"Je commence", fn:askFirstName },
+        { l:"Rejoindre un foyer (QR code)", fn:function(){ fyJoin(); } },
+        { l:"Récupérer mon foyer (code de secours)", fn:fyRecoverForm }
+      ]);
+    }
+    // ----- démarrage -----
+    function fyInit(){
+      fyApplyMode();
+      if(!fyCfg) return;
+      if(fyCfg.role!=="view") fyDetect();   // changements faits pendant que l'appli était fermée
+      fyEnsureLock();
+      if(store.read("fyRecovered", null)){ try{ localStorage.removeItem("fyRecovered"); }catch(e){} setTimeout(function(){ uiToast("Foyer récupéré ✓"); }, 900); }
+      render();
+      fySyncSoon(1200);
+    }
+    setInterval(function(){ if(fyCfg && !document.hidden) fySync(); }, 30000);
+    document.addEventListener("visibilitychange", function(){
+      if(!fyCfg) return;
+      if(document.hidden){ if(Object.keys(fyDirty).length){ clearTimeout(fyDetT); fyFlush(); } fySync(); }
+      else fySyncSoon(600);
+    });
+    fyInit();
     render();
-    if(store.read("askName", false) && !mainAcct().payer) setTimeout(function(){ if(!document.getElementById("lockscreen")) askFirstName(); }, 500);
+    if(store.read("askName", false) && !mainAcct().payer && !fyCfg) setTimeout(function(){ if(!document.getElementById("lockscreen")) fyWelcome(); }, 500);
     initPhotos();
     tickBourse();
     setInterval(tickBourse, 60000);
@@ -5405,14 +6321,14 @@
     // L'appli prépare un résumé de tes chiffres et le donne à Android, qui l'affiche dans les widgets.
     // Envoyé après chaque changement (regroupé sur 1,5 s) et quand on quitte l'appli. Version Store : réservé à Plus.
     function widgetSnapshot(){
-      var m=monthKey(todayISO()), pm=prevMonthKey(m), me=mePerson(), mainK=mainAcct().key;
+      var m=monthKey(todayISO()), pm=prevMonthKey(m), me=mePerson(), mainK=myAcct().key;
       function r2(n){ return Math.round((Number(n)||0)*100)/100; }
       function fig(keys, mm){ var t=0; keys.forEach(function(k){ t+=computeCompteMonth(k, mm).solde; var q=liquideAt(k, mm); if(q) t+=q.val; }); return t; }
       var allK=comptes.map(function(a){ return a.key; }), sMe=fig([mainK], m), sAll=fig(allK, m);
       var _p=m.split("-"), dim=new Date(+_p[0], +_p[1], 0).getDate();
       var snap={ v:1, t:Date.now(), edition:EDITION, plus:canUse("widgets"), lock:!!lockCfg, sym:curSym(), multi:comptes.length>1,
         month:m, monthName:monthLabelOf(m).split(" ")[0], prevName:monthLabelOf(pm).split(" ")[0], dim:dim,
-        solde:{ moi:{ v:r2(sMe), d:r2(sMe-fig([mainK], pm)), acct:mainAcct().nom }, foyer:{ v:r2(sAll), d:r2(sAll-fig(allK, pm)), n:comptes.length } } };
+        solde:{ moi:{ v:r2(sMe), d:r2(sMe-fig([mainK], pm)), acct:myAcct().nom }, foyer:{ v:r2(sAll), d:r2(sAll-fig(allK, pm)), n:comptes.length } } };
       // Commun : ta part du mois et les frais communs pas encore payés
       try{ var CM=communModel(m), ci=(CM.D.byP.Commun?CM.D.byP.Commun.items:[]), todo=0, pc=CM.pctOf(CM.me);
         ci.forEach(function(f){ if(!fraisDone(f, m)) todo++; });
@@ -5475,8 +6391,8 @@
       if(document.getElementById("lockscreen")){ var n=0, iv=setInterval(function(){ if(!document.getElementById("lockscreen") || ++n>240){ clearInterval(iv); if(n<=240) openFromWidget(t); } }, 500); return; }
       if(t==="plus"){ uiChoice("Tickets Plus", "Les widgets font partie de Tickets Plus. L'achat de Plus arrivera bientôt dans l'appli.", [{ l:"D'accord", fn:function(){} }]); return; }
       if(t==="scan"){ state.view="list"; render(); widgetScan(); return; }
-      if(t==="compte_foyer" || t==="foyer") state.compteSel=(comptes.length>1)?"__all":mainAcct().key;
-      else if(t==="compte") state.compteSel=mainAcct().key;
+      if(t==="compte_foyer" || t==="foyer") state.compteSel=(comptes.length>1)?"__all":myAcct().key;
+      else if(t==="compte") state.compteSel=myAcct().key;
       var map={ compte:"compte", compte_foyer:"compte", foyer:"compte", communes:"communes", mois:"list", bourse:(FEAT.bourse?"bourse":"list") };
       state.view=map[t]||"list"; render(); window.scrollTo(0,0);
     }
