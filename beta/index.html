@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="18/10 12:06" />
+  <meta name="build" content="18/10 12:33" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -800,6 +800,7 @@
     .dgb .pvrow{ width:100%; background:none; border-left:0; border-right:0; border-bottom:0; color:inherit; font-family:inherit; text-align:left; cursor:pointer; }
     .dgb .pvrow.on{ background:rgba(255,255,255,.045); border-radius:8px; }
     .cb-oth{ color:var(--ink-soft); }
+    .ro-note{ border-radius:12px; background:rgba(124,156,244,.12); border:1px solid rgba(124,156,244,.32); padding:9px 12px; font-size:12.5px; margin-bottom:12px; }
     /* Foyer partagé */
     textarea.f{ width:100%; font-family:var(--mono); font-size:13px; padding:10px 12px; background:var(--bg0); border:1px solid var(--line2); border-radius:12px; color:var(--ink); resize:vertical; box-sizing:border-box; }
     textarea.f:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-dim); }
@@ -2975,7 +2976,7 @@
         h += '<div style="margin-top:10px">'+monthNavHTML(esc(monthLabel), month, curM)+'</div>';
         if(fyTicketsOnly()){   // foyer partagé, « ses tickets seulement » : pas de compte, donc ses dépenses du mois
           h += '<div class="dash-big">'+money(totalMois)+'</div>';
-          h += '<div class="dash-cap">Mes dépenses · '+mois.length+' ticket'+(mois.length>1?'s':'')+'</div>';
+          var pvT=pvCur(); h += '<div class="dash-cap">'+(pvT==="moi"?"Mes dépenses":(pvT==="all"?"Dépenses du foyer":"Dépenses de "+esc(pvT)))+' · '+mois.length+' ticket'+(mois.length>1?'s':'')+'</div>';
           if(prevTot){ var dT=totalMois-prevTot; if(Math.abs(dT)>=0.005) h += '<div class="dash-trend" style="color:'+(dT<=0?"var(--accent)":"var(--coral)")+'">'+(dT>=0?'▲ +':'▼ −')+fk(Math.abs(dT))+' <span>vs '+esc(monthLabelOf(pm).split(" ")[0])+'</span></div>'; }
           h += '<div class="dash-split h3"><span>Par jour<b>'+fk(parJour)+'</b></span><span>'+(isCur?'Projection':'Total')+'<b>'+fk(isCur?projection:totalMois)+'</b></span><span>Mois préc.<b>'+fk(prevTot)+'</b></span></div>';
         } else {
@@ -3307,6 +3308,12 @@
           if(state.draft.articles[i]) state.draft.articles[i].produit=v;
         };
       });
+      if(state.draftRO){   // ticket de quelqu'un d'autre (foyer partagé) : on le voit, on ne le modifie pas
+        ["save","del","addart","addremise","photoadd","photochg","photodel"].forEach(function(id){ var b=document.getElementById(id); if(b) b.style.display="none"; });
+        [].forEach.call(app.querySelectorAll("section input, section select, section textarea, section .chip, #arts button"), function(x){ x.disabled=true; });
+        var cb=document.getElementById("cancel"); if(cb) cb.textContent="Fermer";
+        var sec=app.querySelector("section.paper"); if(sec) sec.insertAdjacentHTML("afterbegin", '<div class="ro-note">Ticket de '+esc(payerOf({ payePar:d.payePar }))+' · tu peux le voir, pas le modifier</div>');
+      }
     }
 
     function readForm(){
@@ -3323,15 +3330,17 @@
       state.draft.articles=arts;
     }
 
-    function newDraft(){ state.note=""; state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[],payePar:fyDefPayer(),photo:""}; state.view="form"; render(); }
+    function newDraft(){ state.note=""; state.draftRO=false; state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[],payePar:fyDefPayer(),photo:""}; state.view="form"; render(); }
     function editEntry(id){
       var e=state.entries.filter(function(x){ return String(x.id)===String(id); })[0];
       if(!e) return;
       state.draft={id:e.id,montant:e.montant,date:e.date,marchand:e.marchand,categorie:e.categorie,payePar:e.payePar||"",compte:e.compte||"",photo:photoOf(e),
         articles:(e.articles||[]).map(function(a){ return {label:a.label,prix:a.prix,produit:a.produit,commun:!!a.commun}; })};
+      state.draftRO=!fyCanEdit(e);
       state.view="form"; render();
     }
     function saveDraft(){
+      if(state.draftRO) return;
       readForm();
       var montant=num(state.draft.montant);
       if(!montant){ var f=document.getElementById("f-montant"); if(f) f.focus(); return; }
@@ -3371,6 +3380,7 @@
       persist(); state.view="list"; state.draft=null; render();
     }
     function delDraft(){
+      if(state.draftRO) return;
       if(state.draft && state.draft.id){ idbDel(state.draft.id); delete PHOTOS[String(state.draft.id)]; state.entries=state.entries.filter(function(e){ return String(e.id)!==String(state.draft.id); }); persist(); }
       state.view="list"; state.draft=null; render();
     }
@@ -4930,7 +4940,7 @@
       if(!files.length) return;
       state.busy=true; state.prog=0; state.note="";
       state.scanMsg = files.length>1 ? ("Lecture 1/"+files.length+"…") : (capPlugin("TicketOcr") ? "Lecture du ticket sur le téléphone…" : "Lecture du ticket en cours…");
-      state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[],payePar:fyDefPayer(),photo:""};
+      state.draftRO=false; state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[],payePar:fyDefPayer(),photo:""};
       state.view="form"; render();
       if(files[0]) fileToThumb(files[0], function(t){ if(t && state.draft && state.view==="form"){ state.draft.photo=t; render(); } });
       function tessText(src){ return Tesseract.recognize(src, "fra+eng", { logger:function(m){
@@ -5627,7 +5637,17 @@
     function fyFirstTab(){ var t=(fyCfg && fyCfg.tabs && fyCfg.tabs[0]) || "list"; return t; }
     function fyRoleLabel(r){ return r==="edit"?"Modification":(r==="view"?"Consultation":"Propriétaire"); }
     function fyTabsLabel(m){ if(!m.tabs) return "tous les onglets"; var l=FY_TABS.filter(function(t){ return m.tabs.indexOf(t.v)>=0; }).map(function(t){ return t.l; }); return l.length===FY_TABS.length?"tous les onglets":(l.join(", ")||"aucun onglet"); }
-    function fyAcctsLabel(m){ if(m.accts==null) return "tous les comptes"; if(!m.accts.length) return "ses tickets seulement"; var l=comptes.filter(function(a){ return m.accts.indexOf(a.key)>=0; }).map(function(a){ return a.nom; }); return l.join(", ")||"aucun compte"; }
+    function fyAcctsLabel(m){ if(m.accts==null) return "tous les comptes"; if(!m.accts.length) return m.tk==="all" ? "tickets de tout le foyer, sans les comptes" : "ses tickets seulement"; var l=comptes.filter(function(a){ return m.accts.indexOf(a.key)>=0; }).map(function(a){ return a.nom; }); return (l.join(", ")||"aucun compte")+(m.tk==="all"?" · tickets de tout le foyer":""); }
+    // Sur le téléphone d'un membre limité : il ne modifie que ses tickets (et ceux de ses comptes) ; les autres en lecture seule
+    function fyCanEdit(e){
+      if(!fyMember()) return true;
+      if(fyRO()) return false;
+      if(fyCfg.accts==null) return true;
+      var p=(e.payePar||"").trim();
+      if(p && p===mePerson()) return true;
+      if(e.compte && e.compte!=="__tickets" && acctByKey(e.compte)) return true;
+      return !!p && comptes.some(function(a){ return a.key!=="__tickets" && (a.payer||"")===p; });
+    }
     function fyTicketsOnly(){ return fyMember() && !!fyCfg.accts && !fyCfg.accts.length; }
     function fyDefPayer(){ return fyMember() ? mePerson() : ""; }
     function fyPayers(){ var l=[]; comptes.forEach(function(a){ var p=(a.payer||"").trim(); if(p && p!=="Commun" && l.indexOf(p)<0) l.push(p); }); if(fyCfg && fyCfg.me && l.indexOf(fyCfg.me)<0) l.unshift(fyCfg.me); return l; }
@@ -5816,13 +5836,13 @@
       if(!fyTabOn(m,"bourse")) K.bourse=[];
       if(R.acc){
         K.comptes=K.comptes.filter(function(a){ return R.acc[a.key]; });
-        K.entries=(K.entries||[]).filter(R.inA);
+        if(m.tk!=="all") K.entries=(K.entries||[]).filter(R.inA);   // « Tickets visibles : tout le foyer » : tous les tickets, sans les comptes
         K.virements=(K.virements||[]).filter(function(v){ return R.acc[v.person]; });
         K.fraisCommuns=(K.fraisCommuns||[]).filter(R.inF);
         ["soldeInit","liquideMois","argentMois"].forEach(function(k){ var o={}, src=K[k]||{}; Object.keys(src).forEach(function(p){ if(R.acc[p] || R.payers[p]) o[p]=src[p]; }); K[k]=o; });
         K.epargne=K.epargne.filter(function(x){ return R.payers[x.owner]; });
         K.provisions=K.provisions.filter(function(x){ return R.payers[x.owner]; });
-        K.bourse=[]; K.budgets={};
+        K.bourse=[]; if(m.tk!=="all") K.budgets={};
         var bp={}; Object.keys(K.budgetsP||{}).forEach(function(p){ if(R.payers[p]) bp[p]=K.budgetsP[p]; }); K.budgetsP=bp;   // seulement ses budgets à lui
         if(!K.comptes.length) K.comptes=[{ key:"__tickets", nom:"Mes tickets", payer:"", main:true }];
       }
@@ -5909,7 +5929,7 @@
         return fyPublishAll();
       }).then(function(){ return fyBackupFull(); });
     }
-    function fySnapPayload(m){ return { v:1, owner:mePerson(), me:m.name, role:m.role, tabs:m.tabs||null, accts:m.accts==null?null:m.accts, ack:m.ack||0, keys:fyFilter(m) }; }
+    function fySnapPayload(m){ return { v:1, owner:mePerson(), me:m.name, role:m.role, tabs:m.tabs||null, accts:m.accts==null?null:m.accts, tk:m.tk||"own", ack:m.ack||0, keys:fyFilter(m) }; }
     function fyPublishAll(force){
       var C=fyCfg, chain=Promise.resolve();
       Object.keys(C.members||{}).forEach(function(id){ chain=chain.then(function(){
@@ -5928,7 +5948,7 @@
       var C=fyCfg; if(!C || C.role!=="owner" || !C.key) return Promise.resolve();
       if(!force && (fyFullVer===fyVer || Date.now()-fyFullAt<120000)) return Promise.resolve();
       var keys={}, ver=fyVer; Object.keys(FY_KEYS).forEach(function(k){ keys[k]=store.read(k, fyDefault(k)); });
-      var mem={}; Object.keys(C.members||{}).forEach(function(id){ var m=C.members[id]; mem[id]={ name:m.name, role:m.role, tabs:m.tabs, accts:m.accts, km:m.km, created:m.created, ack:m.ack||0 }; });
+      var mem={}; Object.keys(C.members||{}).forEach(function(id){ var m=C.members[id]; mem[id]={ name:m.name, role:m.role, tabs:m.tabs, accts:m.accts, tk:m.tk||"own", km:m.km, created:m.created, ack:m.ack||0 }; });
       return fySeal(C.key, { v:1, me:mePerson(), members:mem, keys:keys, mt:fyMt, t:fyNow() }).then(function(v){ return fyCall("PUT","/blob/full",{ v:v }); }).then(function(r){
         if(r.status===200){ fyFullVer=ver; fyFullAt=Date.now(); C.fullT=r.j.t; fySave(); }
       });
@@ -5978,7 +5998,7 @@
         fyRawWrite(k, v);
       });
       fyResetBase(); fyRawWrite("fyPend", fyPend); fyRawWrite("askName", false);
-      C.role=snap.role; C.me=snap.me; C.owner=snap.owner; C.tabs=snap.tabs||null; C.accts=snap.accts==null?null:snap.accts; C.snapT=snap.t; C.lastOk=Date.now();
+      C.role=snap.role; C.me=snap.me; C.owner=snap.owner; C.tabs=snap.tabs||null; C.accts=snap.accts==null?null:snap.accts; C.tk=snap.tk||"own"; C.snapT=snap.t; C.lastOk=Date.now();
       fySave(); fyReloadVars(); fyApplyMode(); render();
       if(C.imp){ delete C.imp; fySave(); if(C.role==="edit") setTimeout(fyImport, 0); }
     }
@@ -6093,8 +6113,7 @@
     function fyViewGuard(){
       if(!fyMember() || !FY_SUB) return;
       var v=state.view; if(v==="foyer" || v==="bilan") return;
-      if(fyRO() && v==="form"){ state.view=fyFirstTab(); state.draft=null; return; }
-      if(fyCfg.role==="edit" && (v==="form" || v==="photo")) return;   // saisir un ticket : toujours possible en modification
+      if(v==="form" || v==="photo"){ if(fyCfg.role==="edit" || state.draftRO || v==="photo") return; state.view=fyFirstTab(); state.draft=null; return; }   // modification : saisir ; consultation : voir un ticket
       var tb=FY_SUB[v]||v; if(!fyTabOn(fyCfg, tb)) state.view=fyFirstTab();
     }
     function fyRoStrip(){
@@ -6253,7 +6272,7 @@
     function fyMemberForm(id){
       var M=id ? fyCfg.members[id] : null, me=mePerson();
       var names=uniquePersons().filter(function(p){ return p!==me && !Object.keys(fyCfg.members).some(function(k){ return k!==id && fyCfg.members[k].name===p; }); });
-      var st={ name:M?M.name:"", role:M?M.role:"view", tabs:M?(M.tabs||FY_TABS.map(function(t){ return t.v; })).slice():["list","compte"], accts:M?(M.accts==null?null:M.accts.slice()):null, touched:!!M };
+      var st={ tk:M?(M.tk||"own"):"own", name:M?M.name:"", role:M?M.role:"view", tabs:M?(M.tabs||FY_TABS.map(function(t){ return t.v; })).slice():["list","compte"], accts:M?(M.accts==null?null:M.accts.slice()):null, touched:!!M };
       // par défaut : en consultation, ses propres comptes ; en modification, tous les comptes
       function defAccts(){ if(st.touched) return; var a=comptes.filter(function(c){ return st.name && acctOwner(c)===st.name; }).map(function(c){ return c.key; }); st.accts=(a.length && st.role==="view")?a:null; }
       if(!M) defAccts();
@@ -6270,16 +6289,21 @@
         h+='<label class="ui-l">Onglets visibles</label><div class="fy-tabs">'+FY_TABS.map(function(t){ var off=noTab(t.v), on=!off && st.tabs.indexOf(t.v)>=0; return '<button type="button" class="fy-tab'+(on?' on':'')+(off?' off':'')+'" data-t="'+t.v+'"'+(off?' disabled':'')+'><i>'+(on?'✓':'')+'</i>'+esc(t.l)+'</button>'; }).join("")+'</div>';
         if(comptes.length){   // même avec un seul compte : « Aucun · ses tickets » doit rester possible
           h+='<label class="ui-l">Comptes visibles</label><div class="fy-chips"><button type="button" class="chip'+(st.accts==null?' on':'')+'" data-a="__all">Tous</button><button type="button" class="chip'+(st.accts && !st.accts.length?' on':'')+'" data-a="__none">Aucun · ses tickets</button>'+comptes.map(function(a){ var on=st.accts!=null && st.accts.indexOf(a.key)>=0; return '<button type="button" class="chip'+(on?' on':'')+'" data-a="'+esc(a.key)+'">'+esc(a.nom)+(acctOwner(a)?' · '+esc(acctOwner(a)):'')+'</button>'; }).join("")+'</div>';
-          if(st.accts && !st.accts.length) h+='<div class="ui-help">Ses tickets arrivent chez toi (Articles, Analyse, dépenses) sans toucher à aucun compte. Il ne reçoit que ses propres tickets.</div>';
-          else if(st.accts!=null) h+='<div class="ui-help">Avec des comptes choisis, il ne reçoit que leurs tickets, virements et frais ; pas le Commun ni la Bourse.</div>';
+          if(st.accts && !st.accts.length) h+='<div class="ui-help">Ses tickets arrivent chez toi (Articles, Analyse, dépenses) sans toucher à aucun compte.</div>';
+          else if(st.accts!=null) h+='<div class="ui-help">Avec des comptes choisis, il ne reçoit que leurs virements et frais ; pas le Commun ni la Bourse.</div>';
+          if(st.accts!=null){
+            h+='<label class="ui-l">Tickets visibles</label><div class="ui-seg" id="fyTk"><button type="button" data-v="own"'+(st.tk!=="all"?' class="on"':'')+'>Les siens</button><button type="button" data-v="all"'+(st.tk==="all"?' class="on"':'')+'>Tout le foyer</button></div>';
+            h+='<div class="ui-help">'+(st.tk==="all"?'Il voit les tickets de chacun (Accueil, Articles, Analyse, par personne), sans les comptes ni les soldes. Il ne peut modifier que les siens.':'Il ne voit que ses propres tickets'+(st.accts.length?' et ceux de ses comptes':'')+'.')+'</div>';
+          }
         }
         var vis=FY_TABS.filter(function(t){ return st.tabs.indexOf(t.v)>=0 && !noTab(t.v); }).map(function(t){ return t.l; });
-        h+='<div class="fy-sum">'+esc((st.name||"Ce membre")+(st.role==="edit"?" pourra modifier : ":" pourra consulter : ")+(vis.join(", ")||"rien")+(comptes.length?" · "+(st.accts==null?"tous les comptes":(fyAcctsLabel({accts:st.accts}))):"")+". Rien d'autre ne part sur son téléphone.")+'</div>';
+        h+='<div class="fy-sum">'+esc((st.name||"Ce membre")+(st.role==="edit"?" pourra modifier : ":" pourra consulter : ")+(vis.join(", ")||"rien")+(comptes.length?" · "+(st.accts==null?"tous les comptes":(fyAcctsLabel({accts:st.accts, tk:st.tk}))):"")+". Rien d'autre ne part sur son téléphone.")+'</div>';
         h+='<div class="ui-err" style="display:none"></div><div class="ui-actions"><button type="button" class="btn ghost ui-no">Annuler</button><button type="button" class="btn primary" id="fyOk">'+(M?'Enregistrer':'Créer le QR code')+'</button></div>';
         s.q("#fyF").innerHTML=h;
         var ni=s.q("#fyName"); if(ni){ ni.oninput=function(){ st.name=ni.value.trim(); defAccts(); }; ni.onchange=function(){ draw(); }; }
         [].forEach.call(s.qa("[data-n]"), function(b){ b.onclick=function(){ st.name=b.getAttribute("data-n"); defAccts(); draw(); }; });
         [].forEach.call(s.qa("#fyRole button"), function(b){ b.onclick=function(){ st.role=b.getAttribute("data-v"); if(!M && st.role==="edit" && st.tabs.length<=2) st.tabs=FY_TABS.map(function(t){ return t.v; }); if(!M) defAccts(); draw(); }; });
+        [].forEach.call(s.qa("#fyTk button"), function(b){ b.onclick=function(){ st.tk=b.getAttribute("data-v"); draw(); }; });
         [].forEach.call(s.qa("[data-t]"), function(b){ b.onclick=function(){ var t=b.getAttribute("data-t"), i=st.tabs.indexOf(t); if(i>=0) st.tabs.splice(i,1); else st.tabs.push(t); draw(); }; });
         [].forEach.call(s.qa("[data-a]"), function(b){ b.onclick=function(){ st.touched=true; var a=b.getAttribute("data-a");
           if(a==="__all") st.accts=null; else if(a==="__none") st.accts=[]; else { if(st.accts==null) st.accts=[]; var i=st.accts.indexOf(a); if(i>=0) st.accts.splice(i,1); else st.accts.push(a); if(!st.accts.length) st.accts=null; }
@@ -6296,12 +6320,12 @@
             var roleCh=M.role!==st.role;
             (roleCh ? fyCall("PATCH","/member/"+id,{ role:st.role }) : Promise.resolve({ status:200 })).then(function(r){
               if(r.status!==200) throw new Error("relais "+r.status);
-              M.role=st.role; M.tabs=tabs; M.accts=st.accts; fyVer++; fySave(); s.close(); render(); uiToast("Droits de "+M.name+" enregistrés"); fySyncSoon(0);
+              M.role=st.role; M.tabs=tabs; M.accts=st.accts; M.tk=(st.accts!=null && st.tk==="all")?"all":"own"; fyVer++; fySave(); s.close(); render(); uiToast("Droits de "+M.name+" enregistrés"); fySyncSoon(0);
             }).catch(function(e){ b.disabled=false; bad("Pas de connexion au relais : réessaie."); });
             return;
           }
           var mid=fyRand(9), km=fyRand(32);
-          fyCfg.members[mid]={ name:st.name, role:st.role, tabs:tabs, accts:st.accts, km:km, created:Date.now(), ack:0 };
+          fyCfg.members[mid]={ name:st.name, role:st.role, tabs:tabs, accts:st.accts, tk:(st.accts!=null && st.tk==="all")?"all":"own", km:km, created:Date.now(), ack:0 };
           fyInvite(mid).then(function(){ s.close(); render(); }).catch(function(e){ delete fyCfg.members[mid]; fySave(); b.disabled=false; bad("Pas de connexion au relais : réessaie."); });
         };
       }
