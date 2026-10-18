@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="18/10 10:11" />
+  <meta name="build" content="18/10 10:25" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2893,13 +2893,20 @@
         if(multiA) h += '<div class="hscope" role="group" aria-label="Solde affiché"><button type="button" data-s="moi"'+(scope==="moi"?' class="on" aria-pressed="true"':' aria-pressed="false"')+'>Moi</button><button type="button" data-s="foyer"'+(scope==="foyer"?' class="on" aria-pressed="true"':' aria-pressed="false"')+'>Foyer</button></div>';
         h += '</div>';
         h += '<div style="margin-top:10px">'+monthNavHTML(esc(monthLabel), month, curM)+'</div>';
-        h += '<div class="dash-big" style="color:'+(solde<0?"var(--coral)":"var(--ink)")+'">'+money(solde)+'</div>';
-        h += '<div class="dash-cap">Solde de fin de mois prévu'+(scope==="foyer"?' · foyer, '+comptes.length+' comptes':(multiA?' · '+esc(myAcct().nom):''))+'</div>';
-        (function(){ var pS=heroFig(pm).solde, dS=solde-pS;
-          var pl=monthLabelOf(pm).split(" ")[0];
-          if(Math.abs(dS)>=0.005) h += '<div class="dash-trend" style="color:'+(dS>=0?"var(--accent)":"var(--coral)")+'">'+(dS>=0?'▲ +':'▼ −')+fk(Math.abs(dS))+' <span>vs fin '+esc(pl)+'</span></div>';
-        })();
-        h += '<div class="dash-split h3'+(lq?' h4':'')+'" id="heroCpt"><span>Banque<b>'+fk(cb.solde)+'</b></span>'+(lq?'<span>Liquide<b>'+fk(lqV)+'</b></span>':'')+'<span>Épargne<b style="color:var(--accent)">'+fk(epTot)+'</b></span><span>Provisions<b>'+fk(prTot)+'</b></span><em>›</em></div>';
+        if(fyTicketsOnly()){   // foyer partagé, « ses tickets seulement » : pas de compte, donc ses dépenses du mois
+          h += '<div class="dash-big">'+money(totalMois)+'</div>';
+          h += '<div class="dash-cap">Mes dépenses · '+mois.length+' ticket'+(mois.length>1?'s':'')+'</div>';
+          if(prevTot){ var dT=totalMois-prevTot; if(Math.abs(dT)>=0.005) h += '<div class="dash-trend" style="color:'+(dT<=0?"var(--accent)":"var(--coral)")+'">'+(dT>=0?'▲ +':'▼ −')+fk(Math.abs(dT))+' <span>vs '+esc(monthLabelOf(pm).split(" ")[0])+'</span></div>'; }
+          h += '<div class="dash-split h3"><span>Par jour<b>'+fk(parJour)+'</b></span><span>'+(isCur?'Projection':'Total')+'<b>'+fk(isCur?projection:totalMois)+'</b></span><span>Mois préc.<b>'+fk(prevTot)+'</b></span></div>';
+        } else {
+          h += '<div class="dash-big" style="color:'+(solde<0?"var(--coral)":"var(--ink)")+'">'+money(solde)+'</div>';
+          h += '<div class="dash-cap">Solde de fin de mois prévu'+(scope==="foyer"?' · foyer, '+comptes.length+' comptes':(multiA?' · '+esc(myAcct().nom):''))+'</div>';
+          (function(){ var pS=heroFig(pm).solde, dS=solde-pS;
+            var pl=monthLabelOf(pm).split(" ")[0];
+            if(Math.abs(dS)>=0.005) h += '<div class="dash-trend" style="color:'+(dS>=0?"var(--accent)":"var(--coral)")+'">'+(dS>=0?'▲ +':'▼ −')+fk(Math.abs(dS))+' <span>vs fin '+esc(pl)+'</span></div>';
+          })();
+          h += '<div class="dash-split h3'+(lq?' h4':'')+'" id="heroCpt"><span>Banque<b>'+fk(cb.solde)+'</b></span>'+(lq?'<span>Liquide<b>'+fk(lqV)+'</b></span>':'')+'<span>Épargne<b style="color:var(--accent)">'+fk(epTot)+'</b></span><span>Provisions<b>'+fk(prTot)+'</b></span><em>›</em></div>';
+        }
         h += '<div class="dash-track"><i style="width:'+pctM+'%"></i></div>';
         h += '<div class="dash-trackcap"><span>'+(isCur?'Jour '+day+' sur '+dim:'Mois terminé')+'</span><span>'+(isCur?(dim-day)+' j restants':'')+'</span></div>';
         h += '</section>';
@@ -5527,7 +5534,8 @@
     function fyFirstTab(){ var t=(fyCfg && fyCfg.tabs && fyCfg.tabs[0]) || "list"; return t; }
     function fyRoleLabel(r){ return r==="edit"?"Modification":(r==="view"?"Consultation":"Propriétaire"); }
     function fyTabsLabel(m){ if(!m.tabs) return "tous les onglets"; var l=FY_TABS.filter(function(t){ return m.tabs.indexOf(t.v)>=0; }).map(function(t){ return t.l; }); return l.length===FY_TABS.length?"tous les onglets":(l.join(", ")||"aucun onglet"); }
-    function fyAcctsLabel(m){ if(m.accts==null) return "tous les comptes"; var l=comptes.filter(function(a){ return m.accts.indexOf(a.key)>=0; }).map(function(a){ return a.nom; }); return l.join(", ")||"aucun compte"; }
+    function fyAcctsLabel(m){ if(m.accts==null) return "tous les comptes"; if(!m.accts.length) return "ses tickets seulement"; var l=comptes.filter(function(a){ return m.accts.indexOf(a.key)>=0; }).map(function(a){ return a.nom; }); return l.join(", ")||"aucun compte"; }
+    function fyTicketsOnly(){ return fyMember() && !!fyCfg.accts && !fyCfg.accts.length; }
     function fyDefPayer(){ return fyMember() ? mePerson() : ""; }
     function fyPayers(){ var l=[]; comptes.forEach(function(a){ var p=(a.payer||"").trim(); if(p && p!=="Commun" && l.indexOf(p)<0) l.push(p); }); if(fyCfg && fyCfg.me && l.indexOf(fyCfg.me)<0) l.unshift(fyCfg.me); return l; }
     function myAcct(){
@@ -5700,7 +5708,9 @@
     function fyRules(m){
       var acc=null, payers={};
       if(m.accts!=null){ acc={}; m.accts.forEach(function(k){ acc[k]=1; }); comptes.forEach(function(a){ if(acc[a.key]) payers[acctOwner(a)||a.payer||""]=1; }); if(m.name) payers[m.name]=1; delete payers[""]; }
-      return { acc:acc, payers:payers, inA:function(e){ return m.accts.some(function(k){ return ticketInAcct(e,k); }); }, inF:function(f){ return m.accts.some(function(k){ return !!fraisKind(f,k); }); } };
+      return { acc:acc, payers:payers,
+        inA:function(e){ if(m.accts.some(function(k){ return ticketInAcct(e,k); })) return true; return !!m.name && (e.payePar||"").trim()===m.name && !(e.compte && acctByKey(e.compte)); },
+        inF:function(f){ return m.accts.some(function(k){ return !!fraisKind(f,k); }); } };
     }
     // Copie du foyer telle que la verra ce membre (seulement les comptes choisis)
     function fyFilter(m){
@@ -5720,6 +5730,7 @@
         K.epargne=K.epargne.filter(function(x){ return R.payers[x.owner]; });
         K.provisions=K.provisions.filter(function(x){ return R.payers[x.owner]; });
         K.bourse=[]; K.budgets={};
+        if(!K.comptes.length) K.comptes=[{ key:"__tickets", nom:"Mes tickets", payer:"", main:true }];
       }
       return K;
     }
@@ -6160,11 +6171,12 @@
         }
         h+='<label class="ui-l">Accès</label><div class="ui-seg" id="fyRole"><button type="button" data-v="view"'+(st.role==="view"?' class="on"':'')+'>Consultation</button><button type="button" data-v="edit"'+(st.role==="edit"?' class="on"':'')+'>Modification</button></div>';
         h+='<div class="ui-help">'+(st.role==="edit"?'Voit et modifie : tickets, scans, frais payés… La dernière modification gagne.':'Voit les chiffres, ne peut rien modifier. Idéal pour un enfant.')+'</div>';
-        var noTab=function(v){ return st.accts!=null && (v==="communes" || v==="bourse"); };   // avec des comptes choisis : ni Commun ni Bourse
+        var noTab=function(v){ return st.accts!=null && (v==="communes" || v==="bourse" || (!st.accts.length && v==="compte")); };   // comptes choisis : ni Commun ni Bourse ; aucun compte : pas d'onglet Compte
         h+='<label class="ui-l">Onglets visibles</label><div class="fy-tabs">'+FY_TABS.map(function(t){ var off=noTab(t.v), on=!off && st.tabs.indexOf(t.v)>=0; return '<button type="button" class="fy-tab'+(on?' on':'')+(off?' off':'')+'" data-t="'+t.v+'"'+(off?' disabled':'')+'><i>'+(on?'✓':'')+'</i>'+esc(t.l)+'</button>'; }).join("")+'</div>';
         if(comptes.length>1){
-          h+='<label class="ui-l">Comptes visibles</label><div class="fy-chips"><button type="button" class="chip'+(st.accts==null?' on':'')+'" data-a="__all">Tous</button>'+comptes.map(function(a){ var on=st.accts!=null && st.accts.indexOf(a.key)>=0; return '<button type="button" class="chip'+(on?' on':'')+'" data-a="'+esc(a.key)+'">'+esc(a.nom)+(acctOwner(a)?' · '+esc(acctOwner(a)):'')+'</button>'; }).join("")+'</div>';
-          if(st.accts!=null) h+='<div class="ui-help">Avec des comptes choisis, il ne reçoit que leurs tickets, virements et frais ; pas le Commun ni la Bourse.</div>';
+          h+='<label class="ui-l">Comptes visibles</label><div class="fy-chips"><button type="button" class="chip'+(st.accts==null?' on':'')+'" data-a="__all">Tous</button><button type="button" class="chip'+(st.accts && !st.accts.length?' on':'')+'" data-a="__none">Aucun · ses tickets</button>'+comptes.map(function(a){ var on=st.accts!=null && st.accts.indexOf(a.key)>=0; return '<button type="button" class="chip'+(on?' on':'')+'" data-a="'+esc(a.key)+'">'+esc(a.nom)+(acctOwner(a)?' · '+esc(acctOwner(a)):'')+'</button>'; }).join("")+'</div>';
+          if(st.accts && !st.accts.length) h+='<div class="ui-help">Ses tickets arrivent chez toi (Articles, Analyse, dépenses) sans toucher à aucun compte. Il ne reçoit que ses propres tickets.</div>';
+          else if(st.accts!=null) h+='<div class="ui-help">Avec des comptes choisis, il ne reçoit que leurs tickets, virements et frais ; pas le Commun ni la Bourse.</div>';
         }
         var vis=FY_TABS.filter(function(t){ return st.tabs.indexOf(t.v)>=0 && !noTab(t.v); }).map(function(t){ return t.l; });
         h+='<div class="fy-sum">'+esc((st.name||"Ce membre")+(st.role==="edit"?" pourra modifier : ":" pourra consulter : ")+(vis.join(", ")||"rien")+(comptes.length>1?" · "+(st.accts==null?"tous les comptes":(fyAcctsLabel({accts:st.accts}))):"")+". Rien d'autre ne part sur son téléphone.")+'</div>';
@@ -6175,7 +6187,7 @@
         [].forEach.call(s.qa("#fyRole button"), function(b){ b.onclick=function(){ st.role=b.getAttribute("data-v"); if(!M && st.role==="edit" && st.tabs.length<=2) st.tabs=FY_TABS.map(function(t){ return t.v; }); if(!M) defAccts(); draw(); }; });
         [].forEach.call(s.qa("[data-t]"), function(b){ b.onclick=function(){ var t=b.getAttribute("data-t"), i=st.tabs.indexOf(t); if(i>=0) st.tabs.splice(i,1); else st.tabs.push(t); draw(); }; });
         [].forEach.call(s.qa("[data-a]"), function(b){ b.onclick=function(){ st.touched=true; var a=b.getAttribute("data-a");
-          if(a==="__all") st.accts=null; else { if(st.accts==null) st.accts=[]; var i=st.accts.indexOf(a); if(i>=0) st.accts.splice(i,1); else st.accts.push(a); if(!st.accts.length) st.accts=null; }
+          if(a==="__all") st.accts=null; else if(a==="__none") st.accts=[]; else { if(st.accts==null) st.accts=[]; var i=st.accts.indexOf(a); if(i>=0) st.accts.splice(i,1); else st.accts.push(a); if(!st.accts.length) st.accts=null; }
           draw(); }; });
         s.q(".ui-no").onclick=s.close;
         s.q("#fyOk").onclick=function(){
@@ -6183,7 +6195,7 @@
           if(!M){ st.name=(s.q("#fyName").value||"").trim(); if(!st.name) return bad("Indique son prénom."); if(st.name===me) return bad("C'est ton prénom : choisis celui du membre."); }
           if(!st.tabs.length) return bad("Choisis au moins un onglet.");
           var tabs=FY_TABS.map(function(t){ return t.v; }).filter(function(v){ return st.tabs.indexOf(v)>=0; });
-          if(st.accts!=null){ tabs=tabs.filter(function(v){ return v!=="communes" && v!=="bourse"; }); if(!tabs.length) return bad("Avec des comptes choisis, le Commun et la Bourse ne sont pas visibles : choisis un autre onglet."); }
+          if(st.accts!=null){ tabs=tabs.filter(function(v){ return v!=="communes" && v!=="bourse" && (st.accts.length || v!=="compte"); }); if(!tabs.length) return bad(st.accts.length?"Avec des comptes choisis, le Commun et la Bourse ne sont pas visibles : choisis un autre onglet.":"Sans compte, choisis au moins l'Accueil, les Articles ou l'Analyse."); }
           var b=s.q("#fyOk"); b.disabled=true;
           if(M){
             var roleCh=M.role!==st.role;
