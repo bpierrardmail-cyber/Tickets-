@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="18/10 13:01" />
+  <meta name="build" content="18/10 17:01" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -800,6 +800,9 @@
     .dgb .pvrow{ width:100%; background:none; border-left:0; border-right:0; border-bottom:0; color:inherit; font-family:inherit; text-align:left; cursor:pointer; }
     .dgb .pvrow.on{ background:rgba(255,255,255,.045); border-radius:8px; }
     .cb-oth{ color:var(--ink-soft); }
+    .anfx{ display:inline-flex; align-items:center; gap:6px; margin:8px 0 2px; min-height:38px; padding:0 14px; border-radius:999px; border:1px solid var(--line2); background:var(--card2); color:var(--ink-soft); font-family:var(--sans); font-size:13px; font-weight:700; cursor:pointer; }
+    .anfx.on{ background:rgba(199,139,214,.16); border-color:#c78bd6; color:var(--ink); }
+    .anfx:disabled{ opacity:.45; cursor:default; }
     .ro-note{ border-radius:12px; background:rgba(124,156,244,.12); border:1px solid rgba(124,156,244,.32); padding:9px 12px; font-size:12.5px; margin-bottom:12px; }
     /* Foyer partagé */
     textarea.f{ width:100%; font-family:var(--mono); font-size:13px; padding:10px 12px; background:var(--bg0); border:1px solid var(--line2); border-radius:12px; color:var(--ink); resize:vertical; box-sizing:border-box; }
@@ -1134,8 +1137,9 @@
     function ticketInAcct(e, key){ if(e.compte && acctByKey(e.compte)) return e.compte===key; var a=acctByKey(key); return !!(a && a.payer && (e.payePar||"").trim()===a.payer); }
     // Frais fixe : compte choisi sur le frais, sinon frais perso du titulaire et frais « Commun » sur le compte principal
     function fraisKind(f, key){
-      var a=acctByKey(key); if(!a) return null;
+      var a=acctByKey(key); if(!a || a.key==="__tickets") return null;
       var who=(f.personne||"").trim()||"Commun", kind=(who==="Commun")?"commun":"perso";
+      if(who==="Commun" && f.split){ var pa=payAcctOf(acctOwner(a)); return (pa && pa.key===a.key) ? "commun" : null; }   // chacun sa part : sur le compte de chacun
       if(f.compte && acctByKey(f.compte)) return f.compte===key ? kind : null;
       if(who==="Commun") return a.main ? "commun" : null;
       return (who===a.payer || who===a.key) ? "perso" : null;
@@ -1176,6 +1180,38 @@
       delete c.positions; c.sol=false; delete c.solQty; delete c.stock;
     }
     function bSnap(c, m, capital, valeur){ var src=(c.vals&&c.vals[m])||bAt(c,m), cash=bCash(src); if(!c.vals) c.vals={}; var o={ capital:capital, valeur:valeur }; if(cash) o.cash=cash; if(src && src.cashCur){ o.cashCur=src.cashCur; o.cashOrig=src.cashOrig; } c.vals[m]=o; }
+    // Le compte « de paiement » d'une personne : son compte principal s'il en a un, sinon son premier compte
+    function payAcctOf(p){ if(!p) return null; var l=comptes.filter(function(c){ return c.key!=="__tickets" && acctOwner(c)===p; }); return l.filter(function(c){ return c.main; })[0] || l[0] || null; }
+    // Part des frais communs de chacun (onglet Commun › Parts), mémorisée le temps d'un affichage
+    var fsMemo={};
+    function communPct(p, month){ if(!fsMemo[month]) fsMemo[month]=communModel(month); return fsMemo[month].pctOf(p); }
+    // Ce qu'un frais retire d'un compte : en entier, ou la part du titulaire quand c'est « chacun sa part »
+    function fraisAcctAmt(f, key, month){
+      var v=fraisMontant(f, month);
+      if(!(f.split && ((f.personne||"").trim()||"Commun")==="Commun")) return v;
+      var a=acctByKey(key), p=a && acctOwner(a); return p ? v*communPct(p, month)/100 : 0;
+    }
+    // Qui paie un frais commun « en entier » : le titulaire du compte qui le paie (envoyé tel quel aux membres du foyer)
+    function fraisPayer(f){ if(fyMember() && f.payeur) return f.payeur; var a=(f.compte && acctByKey(f.compte)) || mainAcct(); return (a && acctOwner(a)) || mePerson(); }
+    // Frais fixes d'un mois pour une personne (who) ou tout le foyer (who = null) : ce qui sort vraiment de son compte
+    function fraisLines(month, who){
+      var out=[];
+      fraisCommuns.forEach(function(f){
+        if(!fraisActif(f, month)) return;
+        var v=fraisMontant(f, month), p=(f.personne||"").trim()||"Commun"; if(!v) return;
+        if(p!=="Commun"){ if(!who || who===p) out.push({ f:f, label:f.label, v:v, who:p, kind:"perso" }); return; }
+        if(!who){ out.push({ f:f, label:f.label, v:v, who:"Commun", kind:"commun" }); return; }
+        if(f.split){ var pc=communPct(who, month), sv=v*pc/100; if(sv>0.004) out.push({ f:f, label:f.label, v:sv, who:who, kind:"part", full:v, pct:pc }); return; }
+        if(fraisPayer(f)===who){ var mine=v*communPct(who, month)/100; out.push({ f:f, label:f.label, v:v, who:who, kind:"paid", full:v, others:Math.max(0, v-mine) }); }
+      });
+      return out;
+    }
+    function fraisTotalFor(month, who){ return fraisLines(month, who).reduce(function(t,x){ return t+x.v; },0); }
+    // Analyse : les frais fixes seulement à partir du premier mois avec des tickets (pas avant le début de l'appli), jamais dans le futur
+    function anFraisLines(month, who){ var f0=null; state.entries.forEach(function(e){ var k=monthKey(e.date); if(k && (!f0 || k<f0)) f0=k; });
+      if(month<(f0||monthKey(todayISO())) || month>monthKey(todayISO())) return []; return fraisLines(month, who); }
+    function anFraisTotal(month, who){ return anFraisLines(month, who).reduce(function(t,x){ return t+x.v; },0); }
+    function anFraisOn(){ var v=state.anFrais; if(v==null) v=store.read("anFrais", false); return !!v && fraisCommuns.length>0; }
     function fraisMontant(f, month){
       if(f && f.amounts){ var best=null; for(var k in f.amounts){ if(k<=month && (best===null||k>best)) best=k; } if(best!==null) return Number(f.amounts[best])||0; }
       return Number(f&&f.montant)||0;
@@ -1186,7 +1222,7 @@
     }
     function fraisDone(f, month){ return !!(f.doneMonths && f.doneMonths[month]); }
     function toggleFraisDone(id, month){
-      var f=fraisCommuns.filter(function(x){ return String(x.id)===String(id); })[0]; if(!f) return;
+      var f=fraisCommuns.filter(function(x){ return String(x.id)===String(id); })[0]; if(!f) return; if(!fyFraisCanEdit(f)){ uiToast("Frais d'un autre compte : en consultation seulement"); return; }
       if(!f.doneMonths) f.doneMonths={};
       f.doneMonths[month]=!f.doneMonths[month];
       persistFrais(); render();
@@ -1253,7 +1289,7 @@
       var me=state.entries.filter(function(e){ return monthKey(e.date)===month; });
       var paid=0; me.forEach(function(e){ if(ticketInAcct(e, person)) paid+=Number(e.montant)||0; });
       var fr=fraisCommuns.filter(function(f){ return fraisActif(f, month); });
-      var fx=0; fr.forEach(function(f){ if(fraisKind(f, person)) fx+=fraisMontant(f, month); });
+      var fx=0; fr.forEach(function(f){ if(fraisKind(f, person)) fx+=fraisAcctAmt(f, person, month); });
       return paid+fx;
     }
     function compteMonths(person, upto){
@@ -1281,7 +1317,7 @@
       var me=state.entries.filter(function(e){ return monthKey(e.date)===month; });
       var paid=0; me.forEach(function(e){ if(ticketInAcct(e, person)) paid+=Number(e.montant)||0; });
       var fr=fraisCommuns.filter(function(f){ return fraisActif(f, month) && fraisDone(f, month); });
-      var fx=0; fr.forEach(function(f){ if(fraisKind(f, person)) fx+=fraisMontant(f, month); });
+      var fx=0; fr.forEach(function(f){ if(fraisKind(f, person)) fx+=fraisAcctAmt(f, person, month); });
       return paid+fx;
     }
     function soldeFlowDone(person, upto){
@@ -2495,9 +2531,18 @@
     function whoFields(current){
       return [
         {key:"who", label:"Pour qui", type:"select", value:current||"Commun", options:personOptions(current), help:"« Commun » = dépense partagée.",
-          onChange:function(v,api){ api.show("whoNew", v==="__autre"); }},
+          onChange:function(v,api){ api.show("whoNew", v==="__autre"); api.show("pay", v==="Commun"); api.show("acct", !(v==="Commun" && api.get("pay")==="split")); }},
         {key:"whoNew", label:"Nom", hidden:true, placeholder:"Prénom"}
       ];
+    }
+    // Frais commun : payé en entier par un compte, ou chacun sa part (selon les parts du commun) depuis son compte
+    function payFields(f){
+      if(!uniquePersons().filter(function(x){ return x!==mePerson(); }).length && !(f && f.split)) return [];   // seul : rien à partager
+      var who=f ? ((f.personne||"").trim()||"Commun") : "Commun";
+      return [{ key:"pay", label:"Payé", type:"seg", value:(f && f.split)?"split":"one", hidden:who!=="Commun",
+        options:[{v:"one",l:"Un compte, en entier"},{v:"split",l:"Chacun sa part"}],
+        help:"En entier : retiré de « "+esc(((f && f.compte && acctByKey(f.compte)) || mainAcct() || {nom:"ton compte"}).nom)+" ». Chacun sa part : chacun paie sa part du commun (onglet Commun › Parts) depuis son propre compte.",
+        onChange:function(v, api){ api.show("acct", v!=="split"); } }];
     }
     function acctFields(cur){
       if(comptes.length<2) return [];
@@ -2579,7 +2624,7 @@
     function bindBack(fn){ var hb=document.getElementById("hback"); if(hb) hb.onclick=fn; }
 
     var fyRendering=false;
-    function render(){ pvMemo=null; fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); wirePV(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); }
+    function render(){ pvMemo=null; fsMemo={}; fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); wirePV(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); }
     function renderView(){
       armBack();
       fyViewGuard();
@@ -2813,7 +2858,7 @@
     }
     function fraisFixesMois(person, month){
       var t=0, n=0;
-      fraisCommuns.forEach(function(f){ if(!f.recurrent || !fraisActif(f, month)) return; if(fraisKind(f, person)){ t+=fraisMontant(f, month); n++; } });
+      fraisCommuns.forEach(function(f){ if(!f.recurrent || !fraisActif(f, month)) return; if(fraisKind(f, person)){ t+=fraisAcctAmt(f, person, month); n++; } });
       return { total:t, n:n };
     }
     // ---------- Sauvegarde : rappel + partage ----------
@@ -3507,34 +3552,36 @@
       uiForm({ title:"Nouveau frais fixe", fields:[
         {key:"label", label:"Nom", placeholder:"Loyer, Internet…", required:true},
         {key:"montant", label:"Montant", type:"money", required:true}
-      ].concat(whoFields(null)).concat(acctFields("")).concat([
+      ].concat(whoFields(null)).concat(payFields(null)).concat(acctFields("")).concat([
         {key:"rec", label:"Fréquence", type:"seg", value:"1", options:[{v:"1",l:"Chaque mois"},{v:"0",l:"Ce mois-ci"}]}
       ])}, function(r){
         var rec=(r.rec==="1");
         var nf={ id:Date.now(), label:r.label, montant:r.montant, personne:whoOf(r), recurrent:rec, month: rec?null:monthKey(todayISO()) };
-        if(r.acct) nf.compte=r.acct;
+        if(nf.personne==="Commun" && r.pay==="split") nf.split=true;
+        else if(r.acct) nf.compte=r.acct;
         fraisCommuns.push(nf);
         persistFrais(); render();
       });
     }
     function editFraisCommun(id){
-      var f=fraisCommuns.filter(function(x){ return String(x.id)===String(id); })[0]; if(!f) return;
+      var f=fraisCommuns.filter(function(x){ return String(x.id)===String(id); })[0]; if(!f) return; if(!fyFraisCanEdit(f)){ uiToast("Frais d'un autre compte : en consultation seulement"); return; }
       var emonth=(state.months&&state.months.communes)||monthKey(todayISO());
       var cur=f.recurrent?fraisMontant(f, emonth):Number(f.montant)||0;
       uiForm({ title:"Modifier le frais", fields:[
         {key:"label", label:"Nom", value:f.label, required:true},
         {key:"montant", label:"Montant", type:"money", value:cur, required:true, help:(f.recurrent?"À partir de "+esc(monthLabelOf(emonth))+". Les mois précédents ne changent pas.":"")}
-      ].concat(whoFields(f.personne||"Commun")).concat(acctFields(f.compte||""))}, function(r){
+      ].concat(whoFields(f.personne||"Commun")).concat(payFields(f)).concat(acctFields(f.compte||"").map(function(x){ if(x.key==="acct" && f.split) x.hidden=true; return x; }))}, function(r){
         f.label=r.label||f.label;
         if(f.recurrent){ if(Math.abs(r.montant-cur)>0.001){ if(!f.amounts) f.amounts={}; f.amounts[emonth]=r.montant; } }
         else f.montant=r.montant;
         f.personne=whoOf(r);
-        if(r.acct) f.compte=r.acct; else delete f.compte;
+        if(f.personne==="Commun" && r.pay==="split"){ f.split=true; delete f.compte; }
+        else { delete f.split; if(r.acct) f.compte=r.acct; else delete f.compte; }
         persistFrais(); render();
       });
     }
     function delFraisCommun(id){
-      var f=fraisCommuns.filter(function(x){ return String(x.id)===String(id); })[0]; if(!f) return;
+      var f=fraisCommuns.filter(function(x){ return String(x.id)===String(id); })[0]; if(!f) return; if(!fyFraisCanEdit(f)){ uiToast("Frais d'un autre compte : en consultation seulement"); return; }
       if(f.recurrent){
         var dm=(state.months&&state.months.communes)||monthKey(todayISO());
         uiChoice("Arrêter « "+f.label+" »", "Les montants des mois passés peuvent être gardés.", [
@@ -3694,7 +3741,7 @@
       }
       function fraisRows(items){
         return items.slice().sort(function(a,b){ return fraisMontant(b,month)-fraisMontant(a,month); }).map(function(f){ var dn=fraisDone(f, month);
-          return '<div class="fxrow"><button class="fxdone'+(dn?' on':'')+'" type="button" data-id="'+esc(f.id)+'" aria-label="Payé">'+(dn?'✓':'')+'</button><span class="n">'+esc(f.label)+'<small>'+(f.recurrent?"chaque mois":"ce mois")+'</small></span><span class="a">'+fmtK(fraisMontant(f, month))+'</span><button class="fxmore" type="button" data-id="'+esc(f.id)+'">⋯</button></div>'; }).join("");
+          return '<div class="fxrow"><button class="fxdone'+(dn?' on':'')+'" type="button" data-id="'+esc(f.id)+'" aria-label="Payé">'+(dn?'✓':'')+'</button><span class="n">'+esc(f.label)+'<small>'+(f.recurrent?"chaque mois":"ce mois")+(f.split?" · chacun sa part":"")+'</small></span><span class="a">'+fmtK(fraisMontant(f, month))+'</span><button class="fxmore" type="button" data-id="'+esc(f.id)+'">⋯</button></div>'; }).join("");
       }
       var ci=D.byP.Commun?D.byP.Commun.items:[];
       var g1=grp("commun", COLC, "Frais communs", ci.length?nb(ci.length,"frais","frais")+" · "+paidCount(ci)+" payé"+(paidCount(ci)>1?"s":"")+" sur "+ci.length:"aucun", D.commun,
@@ -3856,6 +3903,7 @@
         var cx=slot*i+slot/2, y1=Math.min(y(r.v),z), hgt=Math.max(2,Math.abs(z-y(r.v))), on=(r.m===sel);
         var col=(typeof color==="function") ? color(r) : (color || (r.v<0?"var(--coral)":"var(--accent)"));
         g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+y1.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hgt.toFixed(1)+'" rx="4" style="fill:'+col+';opacity:'+(on?1:0.55)+'"/>';
+        if(r.fx>0 && r.v>0){ var fy=y(Math.min(r.fx, r.v)); g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+fy.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(1,z-fy).toFixed(1)+'" rx="4" style="fill:#c78bd6;opacity:'+(on?1:0.6)+'"/>'; }   // frais fixes
         var ly=y1-5;   // toujours au-dessus du rectangle (pour un négatif : juste au-dessus de la ligne zéro)
         if(th.val(i)) g+='<text x="'+cx.toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="middle" style="fill:'+(on?"var(--ink)":"var(--ink-soft)")+';font-size:10px;font-weight:'+(on?700:500)+';font-family:var(--sans)">'+cptK(r.v)+'</text>';
         g+='<text x="'+cx.toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" style="fill:'+(on?"var(--ink)":"var(--muted)")+';font-size:10px;font-weight:'+(on?700:400)+';font-family:var(--sans)">'+esc(th.lbl(i))+'</text>';
@@ -4022,7 +4070,7 @@
 
       var fraisThis=fraisCommuns.filter(function(f){ return fraisActif(f, month) && fraisKind(f, person); });
       var fraisPerso=0, fraisCommun=0;
-      fraisThis.forEach(function(f){ var m=fraisMontant(f, month); if(fraisKind(f, person)==="perso") fraisPerso+=m; else fraisCommun+=m; });
+      fraisThis.forEach(function(f){ var m=fraisAcctAmt(f, person, month); if(fraisKind(f, person)==="perso") fraisPerso+=m; else fraisCommun+=m; });
       var fraisTotal=fraisPerso + fraisCommun;
 
       var prodOwed=0;
@@ -4034,7 +4082,7 @@
       var soldeFin=fl.closing + liqV;
       var virDone=virs.reduce(function(t,v){ return t+(v.done?(Number(v.montant)||0):0); },0);
       var fraisDoneFull=0;
-      fraisThis.forEach(function(f){ if(fraisDone(f, month)) fraisDoneFull+=fraisMontant(f, month); });
+      fraisThis.forEach(function(f){ if(fraisDone(f, month)) fraisDoneFull+=fraisAcctAmt(f, person, month); });
       var reporteReel=soldeFlowDone(person, month).opening;
       var soldeBanque=reporteReel + virDone - paidTotal - fraisDoneFull;
 
@@ -4160,10 +4208,10 @@
       bOut+=dGrp("t", "Tickets payés", paid.length, paidTotal, '', tB);
       var fB='';
       ["commun","perso"].forEach(function(kd){
-        var L=fraisThis.filter(function(f){ return fraisKind(f, person)===kd; }).sort(function(x,y){ return fraisMontant(y,month)-fraisMontant(x,month); });
+        var L=fraisThis.filter(function(f){ return fraisKind(f, person)===kd; }).sort(function(x,y){ return fraisAcctAmt(y,person,month)-fraisAcctAmt(x,person,month); });
         if(!L.length) return;
         fB+='<div class="dsub"><span>'+(kd==="commun"?"Communs":"Perso")+'</span><span>'+fmtK(kd==="commun"?fraisCommun:fraisPerso)+'</span></div>';
-        L.forEach(function(f){ fB+='<div class="dfrow"><span class="n">'+esc(f.label)+'</span><span class="a">'+fmtK(fraisMontant(f, month))+'</span></div>'; });
+        L.forEach(function(f){ var ow=acctOwner(acctByKey(person)||{}); fB+='<div class="dfrow"><span class="n">'+esc(f.label)+(f.split?'<small>part de '+esc(ow===mePerson()?"toi":ow)+' · '+pctTxt(communPct(ow, month))+' de '+fmtK(fraisMontant(f, month))+'</small>':'')+'</span><span class="a">'+fmtK(fraisAcctAmt(f, person, month))+'</span></div>'; });
       });
       if(!fraisThis.length) fB='<div class="muted" style="font-size:11px;margin:4px 2px">Aucun frais fixe ce mois-ci.</div>';
       bOut+=dGrp("f", "Frais fixes", fraisThis.length, fraisTotal, (fraisPerso&&fraisCommun?'Communs '+fmtK(fraisCommun)+' · Perso '+fmtK(fraisPerso):''), fB);
@@ -4536,7 +4584,11 @@
         return 0;
       }
       var perM={}; vEntries().forEach(function(e){ var k=monthKey(e.date); if(monthsSet[k]) perM[k]=(perM[k]||0)+amountFor(e); });
-      var data=months.map(function(mo){ return { key:mo.key, label:capFirst(mo.date.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})), short:mo.date.toLocaleDateString("fr-FR",{month:"short",year:"2-digit"}), total:perM[mo.key]||0 }; });
+      // « + Frais fixes » (avec « Toutes les dépenses ») : ce que les frais fixes retirent du compte de la personne choisie
+      var fxOn=anFraisOn(), fxWho=(pvCur()==="all") ? null : pvName(pvCur()), fxIn=fxOn && !sel, fxSum=0, fxOthers=0;
+      var data=months.map(function(mo){ var fx=0;
+        if(fxIn){ anFraisLines(mo.key, fxWho).forEach(function(x){ fx+=x.v; if(x.others) fxOthers+=x.others; }); fxSum+=fx; }
+        return { key:mo.key, label:capFirst(mo.date.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})), short:mo.date.toLocaleDateString("fr-FR",{month:"short",year:"2-digit"}), total:(perM[mo.key]||0)+fx, fx:fx }; });
       var grand=0, active=0; data.forEach(function(d){ grand+=d.total; if(d.total>0) active++; });
       var avg=active?grand/active:0;
       var selLabel=sel?sel.slice(sel.indexOf(":")+1):"";
@@ -4555,16 +4607,29 @@
         if(famList.length){ chart+='<optgroup label="Grandes catégories (produits)">'; famList.forEach(function(f){ var v="fam:"+f; chart+='<option value="'+esc(v)+'"'+(sel===v?" selected":"")+'>'+esc(f)+'</option>'; }); chart+='</optgroup>'; }
         if(prodList.length){ chart+='<optgroup label="Produits">'; prodList.forEach(function(pp){ var v="prod:"+pp; chart+='<option value="'+esc(v)+'"'+(sel===v?" selected":"")+'>'+esc(pp)+'</option>'; }); chart+='</optgroup>'; }
         chart+='</select>';
-        chart+=compteBarsSVG(shown.map(function(d){ return { m:d.key, lbl:mShort(d.key), v:d.total }; }), curM, function(r){ return anCol(r.v); });
-        chart+='<div class="cch-leg"><span><i style="background:#7c9cf4"></i>Sous la moyenne</span><span><i style="background:#e0a458"></i>Au-dessus</span></div>';
-        chart+='<div class="cch-note">'+(sel?'« '+esc(selLabel)+' » par mois':'Total des tickets par mois')+' · le détail de chaque mois est plus bas</div>';
+        if(fraisCommuns.length) chart+='<button type="button" class="anfx'+(fxOn?' on':'')+'" id="anFx" aria-pressed="'+fxOn+'"'+(sel?' disabled':'')+'>'+(fxOn?'✓':'＋')+' Frais fixes</button>';
+        chart+=compteBarsSVG(shown.map(function(d){ return { m:d.key, lbl:mShort(d.key), v:d.total, fx:fxIn?d.fx:0 }; }), curM, function(r){ return anCol(r.v); });
+        chart+='<div class="cch-leg"><span><i style="background:#7c9cf4"></i>Sous la moyenne</span><span><i style="background:#e0a458"></i>Au-dessus</span>'+(fxIn?'<span><i style="background:#c78bd6"></i>Frais fixes</span>':'')+'</div>';
+        chart+='<div class="cch-note">'+(sel?'« '+esc(selLabel)+' » par mois'+(fxOn?' · frais fixes seulement avec « Toutes les dépenses »':''):(fxIn?'Tickets + frais fixes par mois':'Total des tickets par mois'))+' · le détail de chaque mois est plus bas</div>';
         hero={ label:"Dépensé sur "+shown.length+" mois"+(sel?" · "+esc(selLabel):""), big:grand, color:"var(--ink)",
+               sub:(fxIn && fxSum>0 ? "dont frais fixes "+fmtK(fxSum)+(fxOthers>0.5?" · dont "+fmtK(fxOthers)+" de part commune des autres":"") : ""),
                stats:[ {l:"Moyenne / mois", v:fmtS(avg)}, {l:"Mois record", v:(best&&best.total>0?esc(best.short):"—"), d:(best&&best.total>0?fmtS(best.total):"")}, {l:"Mois actifs", v:String(active)} ] };
       } else {
         // ---- Répartition (ex-Graphes · Dépenses)
         var p=state.graphPeriod||"cur", dim=state.graphDim||"fam", typ=state.graphType||"donut";
         var perLabel = p==="all" ? "12 derniers mois" : (p.indexOf("m:")===0 ? new Date(p.slice(2)+"-01T00:00:00").toLocaleDateString("fr-FR",{month:"long",year:"numeric"}) : new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"}));
         var map=gAggregate(gPeriodEntries(), dim);
+        var fxOn2=anFraisOn(), fxRep=0;
+        if(fxOn2){
+          var pms=p==="all" ? lastMonths(12).map(function(m){ return m.key; }) : [p.indexOf("m:")===0 ? p.slice(2) : curM], fw=(pvCur()==="all") ? null : pvName(pvCur());
+          pms.forEach(function(mk){
+            if(dim==="pers"){
+              if(fw) { var t0=anFraisTotal(mk, fw); if(t0>0) map[fw]=(map[fw]||0)+t0; }
+              else { var who2={}; viewPersons().concat(uniquePersons()).forEach(function(x){ who2[x]=1; }); who2[mePerson()]=1;
+                Object.keys(who2).forEach(function(x){ var t1=anFraisTotal(mk, x); if(t1>0) map[x]=(map[x]||0)+t1; }); }
+            } else { var t2=anFraisTotal(mk, fw); if(t2>0){ map["Frais fixes"]=(map["Frais fixes"]||0)+t2; fxRep+=t2; } }
+          });
+        }
         var all=Object.keys(map).map(function(k){ return {name:k, value:map[k]}; }).sort(function(a,b){ return b.value-a.value; });
         if(dim==="prod" && all.length>12){ var top=all.slice(0,12), rest=all.slice(12).reduce(function(s2,x){ return s2+x.value; },0); if(rest>0) top.push({name:"Autres", value:rest}); all=top; }
         var ANPAL=["#7c9cf4","#e0a458","#4fd6a0","#c78bd6","#5bc0d4","#e88fb0","#9bd35e","#d4a05b","#8a92e0","#6fcaa8","#d98c5f","#b0b6c2","#f4796b"];   // bleu en premier, rouge en dernier
@@ -4575,6 +4640,7 @@
         chart+='<div class="anctl"><select class="f anf" id="gper"><option value="cur"'+(p==="cur"?" selected":"")+'>Ce mois-ci</option><option value="all"'+(p==="all"?" selected":"")+'>12 derniers mois</option><optgroup label="Un mois précis">';
         lastMonths(12).slice().reverse().forEach(function(m){ var v="m:"+m.key; chart+='<option value="'+v+'"'+(p===v?" selected":"")+'>'+esc(capFirst(m.date.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})))+'</option>'; });
         chart+='</optgroup></select><select class="f anf" id="gdim"><option value="fam"'+(dim==="fam"?" selected":"")+'>Par grande catégorie</option><option value="prod"'+(dim==="prod"?" selected":"")+'>Par produit</option><option value="cat"'+(dim==="cat"?" selected":"")+'>Par catégorie ticket</option>'+(pvActive()?'<option value="pers"'+(dim==="pers"?" selected":"")+'>Par personne (qui a payé)</option>':'')+'</select></div>';
+        if(fraisCommuns.length) chart+='<button type="button" class="anfx'+(fxOn2?' on':'')+'" id="anFx" aria-pressed="'+fxOn2+'">'+(fxOn2?'✓':'＋')+' Frais fixes</button>';
         chart+='<div class="dmode" id="gtype" style="justify-content:center;margin:10px 0 4px"><button type="button" data-t="donut"'+(typ==="donut"?' class="on"':'')+'>Anneau</button><button type="button" data-t="bars"'+(typ==="bars"?' class="on"':'')+'>Barres</button></div>';
         if(!all.length) chart+='<div class="cch-note" style="margin:24px 0">Aucune dépense sur cette période.</div>';
         else {
@@ -4601,6 +4667,7 @@
       wireChartDefaults();
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.anChart=bt.getAttribute("data-m"); store.write("anChart", state.anChart); render(); }; });
       var hc=document.getElementById("histcat"); if(hc) hc.onchange=function(){ state.histCat=hc.value; render(); };
+      var afx=document.getElementById("anFx"); if(afx) afx.onclick=function(){ state.anFrais=!anFraisOn(); store.write("anFrais", state.anFrais); render(); };
       var gp=document.getElementById("gper"); if(gp) gp.onchange=function(){ state.graphPeriod=gp.value; render(); };
       var gd=document.getElementById("gdim"); if(gd) gd.onchange=function(){ state.graphDim=gd.value; render(); };
       [].forEach.call(document.querySelectorAll("#gtype button"), function(b){ b.onclick=function(){ state.graphType=b.getAttribute("data-t"); render(); }; });
@@ -4637,9 +4704,17 @@
       var label=new Date(mk+"-01T00:00:00").toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
       var h=header("analyse")+'<section class="paper torn">';
       h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">'+esc(label)+'</div><hr class="rule">';
-      if(cats.length===0) h+='<div class="center muted" style="font-size:12px">Aucune dépense ce mois-ci.</div>';
+      var fxL=anFraisOn() ? anFraisLines(mk, pvCur()==="all" ? null : pvName(pvCur())) : [], fxT=fxL.reduce(function(t,x){ return t+x.v; },0);
+      if(cats.length===0 && !fxL.length) h+='<div class="center muted" style="font-size:12px">Aucune dépense ce mois-ci.</div>';
       cats.forEach(function(c){ h+='<div class="leader"><span class="lbl">'+esc(c)+'</span><span class="fill"></span><span class="val">'+fmt(parCat[c])+'</span></div>'; });
-      if(cats.length) h+='<hr class="rule"><div class="leader total"><span class="lbl">Total</span><span class="fill"></span><span class="val">'+fmt(total)+'</span></div>';
+      if(fxL.length){
+        h+='<hr class="rule"><div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:0 2px 6px">Frais fixes</div>';
+        fxL.sort(function(a,b){ return b.v-a.v; }).forEach(function(x){
+          var nt=x.kind==="part" ? "part "+pctTxt(x.pct)+" de "+fmt(x.full) : (x.kind==="paid" && x.others>0.5 ? "dont "+fmt(x.others)+" pour les autres" : (x.kind==="perso" ? (pvCur()==="all"?x.who:"perso") : "commun"));
+          h+='<div class="leader"><span class="lbl">'+esc(x.label)+' <small class="muted">'+esc(nt)+'</small></span><span class="fill"></span><span class="val">'+fmt(x.v)+'</span></div>';
+        });
+      }
+      if(cats.length || fxL.length) h+='<hr class="rule"><div class="leader total"><span class="lbl">Total'+(fxL.length?' (tickets + frais fixes)':'')+'</span><span class="fill"></span><span class="val">'+fmt(total+fxT)+'</span></div>';
       h+='</section>';
       if(entries.length){
         h+='<div class="muted" style="font-size:11px;margin:14px 2px 4px">Tickets ('+entries.length+') — touche pour modifier</div>';
@@ -5648,6 +5723,9 @@
       if(e.compte && e.compte!=="__tickets" && acctByKey(e.compte)) return true;
       return !!p && comptes.some(function(a){ return a.key!=="__tickets" && (a.payer||"")===p; });
     }
+    // Sur le téléphone d'un membre « tout le foyer » : les frais fixes des comptes qu'il n'a pas sont en consultation
+    function fyFraisCanEdit(f){ if(!fyMember()) return true; if(fyRO()) return false; if(fyCfg.accts==null) return true;
+      return comptes.some(function(a){ return a.key!=="__tickets" && !!fraisKind(f, a.key); }); }
     function fyTicketsOnly(){ return fyMember() && !!fyCfg.accts && !fyCfg.accts.length; }
     function fyDefPayer(){ return fyMember() ? mePerson() : ""; }
     function fyPayers(){ var l=[]; comptes.forEach(function(a){ var p=(a.payer||"").trim(); if(p && p!=="Commun" && l.indexOf(p)<0) l.push(p); }); if(fyCfg && fyCfg.me && l.indexOf(fyCfg.me)<0) l.unshift(fyCfg.me); return l; }
@@ -5833,12 +5911,14 @@
       K.comptes=(K.comptes||[]).map(function(a){ if(a.payer || !a.main) return a; a=JSON.parse(JSON.stringify(a)); a.payer=me; return a; });
       ["epargne","provisions"].forEach(function(k){ K[k]=(K[k]||[]).map(function(x){ if(x.owner) return x; x=JSON.parse(JSON.stringify(x)); x.owner=me; return x; }); });
       if(!(K.personnes||[]).some(function(p){ return p.nom===me; })) K.personnes=(K.personnes||[]).concat([{ nom:me }]);
+      // frais communs payés en entier : le membre doit savoir par qui (pour l'Analyse « + Frais fixes »)
+      K.fraisCommuns=(K.fraisCommuns||[]).map(function(f){ if(((f.personne||"").trim()||"Commun")!=="Commun" || f.split) return f; var x=JSON.parse(JSON.stringify(f)); x.payeur=fraisPayer(f); return x; });
       if(!fyTabOn(m,"bourse")) K.bourse=[];
       if(R.acc){
         K.comptes=K.comptes.filter(function(a){ return R.acc[a.key]; });
         if(m.tk!=="all") K.entries=(K.entries||[]).filter(R.inA);   // « Tickets visibles : tout le foyer » : tous les tickets, sans les comptes
         K.virements=(K.virements||[]).filter(function(v){ return R.acc[v.person]; });
-        K.fraisCommuns=(K.fraisCommuns||[]).filter(R.inF);
+        if(m.tk!=="all") K.fraisCommuns=(K.fraisCommuns||[]).filter(R.inF);   // « tout le foyer » : tous les frais fixes aussi
         ["soldeInit","liquideMois","argentMois"].forEach(function(k){ var o={}, src=K[k]||{}; Object.keys(src).forEach(function(p){ if(R.acc[p] || R.payers[p]) o[p]=src[p]; }); K[k]=o; });
         K.epargne=K.epargne.filter(function(x){ return R.payers[x.owner]; });
         K.provisions=K.provisions.filter(function(x){ return R.payers[x.owner]; });
@@ -5874,6 +5954,7 @@
       x=JSON.parse(JSON.stringify(x));
       if(k==="comptes"){ if(old && old.main) x.main=true; else delete x.main; if(old && !old.payer && x.payer===me) x.payer=old.payer; }
       if(k==="epargne" || k==="provisions"){ if(!x.owner) x.owner=m.name; if(x.owner===me) delete x.owner; }
+      if(k==="fraisCommuns") delete x.payeur;
       if(k==="personnes" && x.nom===me) return FY_SKIP;
       return x;
     }
