@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Widget 4×2 : les comptes du foyer, personne par personne -->
+<!-- Widget 4×2 : le foyer (en banque aujourd'hui), la répartition comptes / épargne / provisions / bourse, puis le détail -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/tk_root"
     android:layout_width="match_parent"
@@ -11,15 +11,32 @@
     android:paddingTop="12dp"
     android:paddingBottom="12dp">
 
-    <TextView
-        android:id="@+id/tk_title"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:text="Foyer · 6 personnes · 10 comptes"
-        android:textColor="#A4AAB6"
-        android:textSize="12sp" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tk_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Foyer · 1 compte"
+            android:textColor="#ECEEF3"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:text="en banque aujourd'hui"
+            android:textColor="#A4AAB6"
+            android:textSize="11sp" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/tk_big"
@@ -31,214 +48,313 @@
         android:autoSizeTextType="uniform"
         android:gravity="center_vertical"
         android:maxLines="1"
-        android:text="14 904,78 €"
+        android:text="1 117,67 €"
         android:textColor="#ECEEF3"
         android:textStyle="bold" />
 
-    <FrameLayout
+    <ImageView
+        android:id="@+id/tk_bar"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:minHeight="4dp" />
+        android:layout_height="6dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="2dp"
+        android:importantForAccessibility="no"
+        android:scaleType="fitXY" />
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:orientation="vertical">
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:id="@+id/tk_r1"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal">
             <LinearLayout
-                android:id="@+id/tk_p1"
-                android:layout_width="match_parent"
+                android:id="@+id/tk_g1"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="0dp"
+                android:layout_weight="1"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <TextView
-                    android:id="@+id/tk_p1n"
+                    android:id="@+id/tk_g1n"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    android:text="● Benoît"
+                    android:text="● Compte courant"
                     android:textColor="#ECEEF3"
                     android:textSize="12.5sp" />
 
                 <TextView
-                    android:id="@+id/tk_p1v"
+                    android:id="@+id/tk_g1v"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:maxLines="1"
-                    android:text="8 017 €"
+                    android:text="1 118 €"
                     android:textColor="#ECEEF3"
                     android:textSize="12.5sp"
                     android:textStyle="bold" />
             </LinearLayout>
+
+            <FrameLayout
+                android:id="@+id/tk_s1"
+                android:layout_width="18dp"
+                android:layout_height="1dp" />
             <LinearLayout
-                android:id="@+id/tk_p3"
-                android:layout_width="match_parent"
+                android:id="@+id/tk_g2"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="7dp"
+                android:layout_weight="1"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <TextView
-                    android:id="@+id/tk_p3n"
+                    android:id="@+id/tk_g2n"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    android:text="● Léa"
+                    android:text="● Épargne"
                     android:textColor="#ECEEF3"
                     android:textSize="12.5sp" />
 
                 <TextView
-                    android:id="@+id/tk_p3v"
+                    android:id="@+id/tk_g2v"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:maxLines="1"
-                    android:text="186 €"
-                    android:textColor="#ECEEF3"
-                    android:textSize="12.5sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-            <LinearLayout
-                android:id="@+id/tk_p5"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="7dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/tk_p5n"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:ellipsize="end"
-                    android:maxLines="1"
-                    android:text="● + 2 autres"
-                    android:textColor="#ECEEF3"
-                    android:textSize="12.5sp" />
-
-                <TextView
-                    android:id="@+id/tk_p5v"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:maxLines="1"
-                    android:text="204 €"
+                    android:text="30 200 €"
                     android:textColor="#ECEEF3"
                     android:textSize="12.5sp"
                     android:textStyle="bold" />
             </LinearLayout>
         </LinearLayout>
 
-        <FrameLayout
-            android:layout_width="20dp"
-            android:layout_height="1dp" />
+        <LinearLayout
+            android:id="@+id/tk_r2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal">
+            <LinearLayout
+                android:id="@+id/tk_g3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tk_g3n"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="● Provisions"
+                    android:textColor="#ECEEF3"
+                    android:textSize="12.5sp" />
+
+                <TextView
+                    android:id="@+id/tk_g3v"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:maxLines="1"
+                    android:text="1 380 €"
+                    android:textColor="#ECEEF3"
+                    android:textSize="12.5sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:id="@+id/tk_s2"
+                android:layout_width="18dp"
+                android:layout_height="1dp" />
+            <LinearLayout
+                android:id="@+id/tk_g4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tk_g4n"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="● Bourse"
+                    android:textColor="#ECEEF3"
+                    android:textSize="12.5sp" />
+
+                <TextView
+                    android:id="@+id/tk_g4v"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:maxLines="1"
+                    android:text="6 779 €"
+                    android:textColor="#ECEEF3"
+                    android:textSize="12.5sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:id="@+id/tk_r3"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal">
             <LinearLayout
-                android:id="@+id/tk_p2"
-                android:layout_width="match_parent"
+                android:id="@+id/tk_g5"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="0dp"
+                android:layout_weight="1"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <TextView
-                    android:id="@+id/tk_p2n"
+                    android:id="@+id/tk_g5n"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    android:text="● Marie"
+                    android:text=""
                     android:textColor="#ECEEF3"
                     android:textSize="12.5sp" />
 
                 <TextView
-                    android:id="@+id/tk_p2v"
+                    android:id="@+id/tk_g5v"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:maxLines="1"
-                    android:text="3 290 €"
+                    android:text=""
                     android:textColor="#ECEEF3"
                     android:textSize="12.5sp"
                     android:textStyle="bold" />
             </LinearLayout>
+
+            <FrameLayout
+                android:id="@+id/tk_s3"
+                android:layout_width="18dp"
+                android:layout_height="1dp" />
             <LinearLayout
-                android:id="@+id/tk_p4"
-                android:layout_width="match_parent"
+                android:id="@+id/tk_g6"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="7dp"
+                android:layout_weight="1"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <TextView
-                    android:id="@+id/tk_p4n"
+                    android:id="@+id/tk_g6n"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    android:text="● Tom"
+                    android:text=""
                     android:textColor="#ECEEF3"
                     android:textSize="12.5sp" />
 
                 <TextView
-                    android:id="@+id/tk_p4v"
+                    android:id="@+id/tk_g6v"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:maxLines="1"
-                    android:text="92 €"
+                    android:text=""
                     android:textColor="#ECEEF3"
                     android:textSize="12.5sp"
                     android:textStyle="bold" />
             </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tk_r4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal">
             <LinearLayout
-                android:id="@+id/tk_p6"
-                android:layout_width="match_parent"
+                android:id="@+id/tk_g7"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="7dp"
+                android:layout_weight="1"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <TextView
-                    android:id="@+id/tk_p6n"
+                    android:id="@+id/tk_g7n"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    android:text="Épargne"
+                    android:text=""
                     android:textColor="#ECEEF3"
                     android:textSize="12.5sp" />
 
                 <TextView
-                    android:id="@+id/tk_p6v"
+                    android:id="@+id/tk_g7v"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:maxLines="1"
-                    android:text="9 952 €"
-                    android:textColor="#4FD6A0"
+                    android:text=""
+                    android:textColor="#ECEEF3"
+                    android:textSize="12.5sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:id="@+id/tk_s4"
+                android:layout_width="18dp"
+                android:layout_height="1dp" />
+            <LinearLayout
+                android:id="@+id/tk_g8"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tk_g8n"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text=""
+                    android:textColor="#ECEEF3"
+                    android:textSize="12.5sp" />
+
+                <TextView
+                    android:id="@+id/tk_g8v"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:maxLines="1"
+                    android:text=""
+                    android:textColor="#ECEEF3"
                     android:textSize="12.5sp"
                     android:textStyle="bold" />
             </LinearLayout>

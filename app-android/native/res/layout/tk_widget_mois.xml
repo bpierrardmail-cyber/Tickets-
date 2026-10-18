@@ -79,26 +79,43 @@
         android:importantForAccessibility="no"
         android:scaleType="fitXY" />
 
-    <FrameLayout
+    <ImageView
+        android:id="@+id/tk_chart"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_marginTop="8dp"
         android:layout_weight="1"
-        android:minHeight="6dp" />
+        android:contentDescription="Cumul des dépenses du mois comparé au mois dernier"
+        android:minHeight="24dp"
+        android:scaleType="fitXY" />
+
+    <TextView
+        android:id="@+id/tk_legend"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:layout_marginBottom="2dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="— ce mois   - - sept.   ▼ 32 de moins qu'en sept. à cette date"
+        android:textColor="#7C828E"
+        android:textSize="10sp" />
+
     <LinearLayout
         android:id="@+id/tk_c1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="0dp"
+        android:layout_marginTop="5dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <TextView
             android:id="@+id/tk_c1n"
-            android:layout_width="92dp"
+            android:layout_width="100dp"
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="1"
-            android:text="Transport"
+            android:text="Hygiène et soins"
             android:textColor="#ECEEF3"
             android:textSize="12.5sp" />
 
@@ -114,30 +131,31 @@
 
         <TextView
             android:id="@+id/tk_c1v"
-            android:layout_width="66dp"
+            android:layout_width="62dp"
             android:layout_height="wrap_content"
             android:gravity="end"
             android:maxLines="1"
-            android:text="361,97"
+            android:text="69,98"
             android:textColor="#ECEEF3"
             android:textSize="12.5sp"
             android:textStyle="bold" />
     </LinearLayout>
+
     <LinearLayout
         android:id="@+id/tk_c2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="5dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <TextView
             android:id="@+id/tk_c2n"
-            android:layout_width="92dp"
+            android:layout_width="100dp"
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="1"
-            android:text="Santé"
+            android:text="Bricolage"
             android:textColor="#ECEEF3"
             android:textSize="12.5sp" />
 
@@ -153,30 +171,31 @@
 
         <TextView
             android:id="@+id/tk_c2v"
-            android:layout_width="66dp"
+            android:layout_width="62dp"
             android:layout_height="wrap_content"
             android:gravity="end"
             android:maxLines="1"
-            android:text="144,80"
+            android:text="68,21"
             android:textColor="#ECEEF3"
             android:textSize="12.5sp"
             android:textStyle="bold" />
     </LinearLayout>
+
     <LinearLayout
         android:id="@+id/tk_c3"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="5dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <TextView
             android:id="@+id/tk_c3n"
-            android:layout_width="92dp"
+            android:layout_width="100dp"
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="1"
-            android:text="Loisirs"
+            android:text="Alimentation"
             android:textColor="#ECEEF3"
             android:textSize="12.5sp" />
 
@@ -192,11 +211,91 @@
 
         <TextView
             android:id="@+id/tk_c3v"
-            android:layout_width="66dp"
+            android:layout_width="62dp"
             android:layout_height="wrap_content"
             android:gravity="end"
             android:maxLines="1"
-            android:text="137,19"
+            android:text="66,35"
+            android:textColor="#ECEEF3"
+            android:textSize="12.5sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/tk_c4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tk_c4n"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Santé"
+            android:textColor="#ECEEF3"
+            android:textSize="12.5sp" />
+
+        <ImageView
+            android:id="@+id/tk_c4b"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:importantForAccessibility="no"
+            android:scaleType="fitXY" />
+
+        <TextView
+            android:id="@+id/tk_c4v"
+            android:layout_width="62dp"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:maxLines="1"
+            android:text="25,24"
+            android:textColor="#ECEEF3"
+            android:textSize="12.5sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/tk_c5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tk_c5n"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Maison"
+            android:textColor="#ECEEF3"
+            android:textSize="12.5sp" />
+
+        <ImageView
+            android:id="@+id/tk_c5b"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:importantForAccessibility="no"
+            android:scaleType="fitXY" />
+
+        <TextView
+            android:id="@+id/tk_c5v"
+            android:layout_width="62dp"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:maxLines="1"
+            android:text="12,10"
             android:textColor="#ECEEF3"
             android:textSize="12.5sp"
             android:textStyle="bold" />

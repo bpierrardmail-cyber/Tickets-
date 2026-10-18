@@ -49,7 +49,7 @@ import java.util.Map;
 public final class TkWidgets {
     static final String PREFS = "tickets_widgets";
     static final int ACCENT = 0xFF4FD6A0, CORAL = 0xFFF4796B, AMBER = 0xFFE6B450, INK = 0xFFECEEF3, SOFT = 0xFFA4AAB6, MUTED = 0xFF7C828E,
-            TRACK = 0x1FFFFFFF, GREY = 0xFF8A909C, BLUE = 0xFF7C9CF4, ORANGE = 0xFFE0A458;
+            TRACK = 0x1FFFFFFF, GREY = 0xFF8A909C, BLUE = 0xFF7C9CF4, ORANGE = 0xFFE0A458, PURPLE = 0xFFC78BD6;
     static final String[] MOIS_COURTS = { "janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc." };
 
     static final Class<?>[] PROVIDERS = { TkWidgetScan.class, TkWidgetSolde.class, TkWidgetCommun.class,
@@ -201,20 +201,20 @@ public final class TkWidgets {
         return v;
     }
 
-    /** Dépenses du mois (tickets), budget et 3 plus grosses catégories. */
+    /** Dépenses du mois : total, budget, cumul jour par jour comparé au mois dernier, plus grosses catégories. */
     static RemoteViews mois(Context c, int id, JSONObject d, boolean mask, String sym, Bundle o) throws Exception {
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.tk_widget_mois);
         JSONObject x = d.optJSONObject("mois");
         if (x == null) x = new JSONObject();
         double spent = x.optDouble("spent", 0), budget = x.optDouble("budget", 0), perDay = x.optDouble("perDay", 0);
-        int w = widthDp(o, 358) - 30;
+        int w = widthDp(o, 358) - 30, h = heightDp(o, 180);
         v.setTextViewText(R.id.tk_title, "Dépensé en " + d.optString("monthName", "ce mois"));
         if (mask) {
             v.setTextViewText(R.id.tk_big, "•••• " + sym); v.setTextColor(R.id.tk_big, SOFT);
             v.setTextViewText(R.id.tk_right, "touche pour voir"); v.setTextViewText(R.id.tk_right2, "");
         } else {
             v.setTextViewText(R.id.tk_big, big(spent, sym)); v.setTextColor(R.id.tk_big, INK);
-            v.setTextViewText(R.id.tk_right, budget > 0 ? "budget " + money(budget, sym, 0) : x.optInt("n", 0) + " tickets");
+            v.setTextViewText(R.id.tk_right, budget > 0 ? "budget " + money(budget, sym, 0) : x.optInt("n", 0) + " ticket" + (x.optInt("n", 0) > 1 ? "s" : ""));
             v.setTextViewText(R.id.tk_right2, (budget > 0 ? Math.round(spent / budget * 100) + " % · " : "") + num(perDay, 2) + " " + sym + "/jour");
         }
         if (budget > 0) {
@@ -222,81 +222,136 @@ public final class TkWidgets {
             v.setViewVisibility(R.id.tk_bar, View.VISIBLE);
             v.setImageViewBitmap(R.id.tk_bar, bar(c, w, 5, (float) Math.min(1, r), r > 1 ? CORAL : (r >= 0.8 ? AMBER : ACCENT)));
         } else v.setViewVisibility(R.id.tk_bar, View.GONE);
+        // Place disponible : courbe du mois si le widget est assez haut, et 3 ou 5 catégories
         JSONArray cats = x.optJSONArray("cats");
-        int[] rows = { R.id.tk_c1, R.id.tk_c2, R.id.tk_c3 }, names = { R.id.tk_c1n, R.id.tk_c2n, R.id.tk_c3n },
-                bars = { R.id.tk_c1b, R.id.tk_c2b, R.id.tk_c3b }, vals = { R.id.tk_c1v, R.id.tk_c2v, R.id.tk_c3v };
+        int nCats = cats == null ? 0 : cats.length();
+        boolean chart = h >= 150;
+        int rowsMax = h >= 250 ? 5 : 3;
+        int fixedDp = 24 + 18 + 38 + (budget > 0 ? 9 : 0) + Math.min(nCats, rowsMax) * 22;
+        if (chart) {
+            int ch = Math.max(30, h - fixedDp - 20);
+            v.setViewVisibility(R.id.tk_chart, View.VISIBLE);
+            v.setViewVisibility(R.id.tk_legend, View.VISIBLE);
+            v.setImageViewBitmap(R.id.tk_chart, cumul(c, w, ch, x.optJSONArray("cum"), x.optJSONArray("prevCum")));
+            v.setTextViewText(R.id.tk_legend, legende(d));
+        } else {
+            v.setViewVisibility(R.id.tk_chart, View.GONE);
+            v.setViewVisibility(R.id.tk_legend, View.GONE);
+        }
+        int[] rows = { R.id.tk_c1, R.id.tk_c2, R.id.tk_c3, R.id.tk_c4, R.id.tk_c5 }, names = { R.id.tk_c1n, R.id.tk_c2n, R.id.tk_c3n, R.id.tk_c4n, R.id.tk_c5n },
+                bars = { R.id.tk_c1b, R.id.tk_c2b, R.id.tk_c3b, R.id.tk_c4b, R.id.tk_c5b }, vals = { R.id.tk_c1v, R.id.tk_c2v, R.id.tk_c3v, R.id.tk_c4v, R.id.tk_c5v };
         double max = 0;
-        for (int i = 0; cats != null && i < cats.length(); i++) max = Math.max(max, cats.getJSONObject(i).optDouble("v", 0));
-        for (int i = 0; i < 3; i++) {
-            if (cats == null || i >= cats.length()) { v.setViewVisibility(rows[i], View.INVISIBLE); continue; }
+        for (int i = 0; i < nCats; i++) max = Math.max(max, cats.getJSONObject(i).optDouble("v", 0));
+        for (int i = 0; i < 5; i++) {
+            if (i >= rowsMax || i >= nCats) { v.setViewVisibility(rows[i], View.GONE); continue; }
             JSONObject cx = cats.getJSONObject(i);
             v.setViewVisibility(rows[i], View.VISIBLE);
             v.setTextViewText(names[i], cx.optString("n"));
             v.setTextViewText(vals[i], mask ? "••••" : num(cx.optDouble("v", 0), 2));
-            v.setImageViewBitmap(bars[i], bar(c, Math.max(40, w - 160), 4, max > 0 ? (float) (cx.optDouble("v", 0) / max) : 0, color(cx.optString("c"), BLUE)));
+            v.setImageViewBitmap(bars[i], bar(c, Math.max(40, w - 170), 4, max > 0 ? (float) (cx.optDouble("v", 0) / max) : 0, color(cx.optString("c"), BLUE)));
         }
-        if (cats == null || cats.length() == 0) { v.setViewVisibility(R.id.tk_c1, View.VISIBLE); v.setTextViewText(R.id.tk_c1n, "Aucun ticket ce mois-ci"); v.setTextViewText(R.id.tk_c1v, ""); }
+        if (nCats == 0) { v.setViewVisibility(R.id.tk_c1, View.VISIBLE); v.setTextViewText(R.id.tk_c1n, "Aucun ticket ce mois-ci"); v.setTextViewText(R.id.tk_c1v, ""); }
         v.setOnClickPendingIntent(R.id.tk_root, open(c, "mois", id));
         return v;
     }
 
-    /** Comptes du foyer : ce qu'il y a sur les comptes de chacun aujourd'hui (estimé). */
+    /** Légende de la courbe du mois : écart avec le mois dernier à la même date. */
+    static CharSequence legende(JSONObject d) {
+        JSONObject x = d.optJSONObject("mois");
+        JSONArray cum = x == null ? null : x.optJSONArray("cum"), prev = x == null ? null : x.optJSONArray("prevCum");
+        String pm = prevMonthShort(d);
+        if (cum == null || cum.length() == 0 || prev == null || prev.length() == 0) return "Cumul du mois";
+        int i = Math.min(cum.length(), prev.length()) - 1;
+        double a = cum.optDouble(cum.length() - 1, 0), b = prev.optDouble(i, 0), dl = a - b;
+        String t = "— ce mois   - - " + pm + "   ";
+        String e = Math.abs(dl) < 0.5 ? "comme en " + pm : (dl > 0 ? "▲ " + num(dl, 0) + " de plus qu'en " + pm : "▼ " + num(-dl, 0) + " de moins qu'en " + pm) + " à cette date";
+        SpannableStringBuilder s = new SpannableStringBuilder(t + e);
+        s.setSpan(new ForegroundColorSpan(dl > 0.5 ? CORAL : ACCENT), t.length(), s.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        return s;
+    }
+
+    /** Foyer : ce qu'il y a en banque aujourd'hui, la répartition (comptes, épargne, provisions, bourse), puis le détail. */
     static RemoteViews foyer(Context c, int id, JSONObject d, boolean mask, String sym, Bundle o) throws Exception {
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.tk_widget_foyer);
         JSONObject x = d.optJSONObject("foyer");
         if (x == null) x = new JSONObject();
-        int n = x.optInt("n", 1), accts = x.optInt("accts", 1);
+        int n = x.optInt("n", 1), accts = x.optInt("accts", 1), w = widthDp(o, 358) - 30, h = heightDp(o, 180);
+        double tot = x.optDouble("total", 0), ep = x.optDouble("ep", 0), prov = x.optDouble("prov", 0), bo = x.optDouble("bo", 0);
         v.setTextViewText(R.id.tk_title, "Foyer · " + (n > 1 ? n + " personnes · " : "") + accts + " compte" + (accts > 1 ? "s" : ""));
         if (mask) { v.setTextViewText(R.id.tk_big, "•••• " + sym); v.setTextColor(R.id.tk_big, SOFT); }
-        else { double t = x.optDouble("total", 0); v.setTextViewText(R.id.tk_big, big(t, sym)); v.setTextColor(R.id.tk_big, t < 0 ? CORAL : INK); }
-        JSONArray ppl = x.optJSONArray("ppl");
-        int cnt = ppl == null ? 0 : ppl.length();
-        int[] cn = { R.id.tk_p1n, R.id.tk_p2n, R.id.tk_p3n, R.id.tk_p4n, R.id.tk_p5n }, cv = { R.id.tk_p1v, R.id.tk_p2v, R.id.tk_p3v, R.id.tk_p4v, R.id.tk_p5v },
-                cr = { R.id.tk_p1, R.id.tk_p2, R.id.tk_p3, R.id.tk_p4, R.id.tk_p5 };
-        int shown = cnt > 5 ? 4 : cnt;
-        for (int i = 0; i < 5; i++) {
-            if (i < shown) {
-                JSONObject p = ppl.getJSONObject(i);
-                v.setViewVisibility(cr[i], View.VISIBLE);
-                v.setTextViewText(cn[i], dot(p.optString("n"), color(p.optString("c"), BLUE)));
-                v.setTextViewText(cv[i], mask ? "••••" : money(p.optDouble("v", 0), sym, 0));
-            } else if (i == 4 && cnt > 5) {
-                double rest = 0;
-                for (int j = 4; j < cnt; j++) rest += ppl.getJSONObject(j).optDouble("v", 0);
-                v.setViewVisibility(cr[i], View.VISIBLE);
-                v.setTextViewText(cn[i], dot("+ " + (cnt - 4) + " autres", GREY));
-                v.setTextViewText(cv[i], mask ? "••••" : money(rest, sym, 0));
-            } else v.setViewVisibility(cr[i], View.INVISIBLE);
+        else { v.setTextViewText(R.id.tk_big, big(tot, sym)); v.setTextColor(R.id.tk_big, tot < 0 ? CORAL : INK); }
+        v.setImageViewBitmap(R.id.tk_bar, stack(c, w, 6, new double[] { Math.max(0, tot), ep, prov, bo }, new int[] { ACCENT, BLUE, PURPLE, ORANGE }));
+        // Lignes : les personnes (ou les comptes s'il n'y a qu'une personne), puis épargne, provisions, bourse
+        List<Object[]> items = new ArrayList<>(), fixed = new ArrayList<>();
+        JSONArray src = n > 1 ? x.optJSONArray("ppl") : x.optJSONArray("list");
+        if (src == null) src = x.optJSONArray("ppl");
+        for (int i = 0; src != null && i < src.length(); i++) { JSONObject p = src.getJSONObject(i); items.add(new Object[] { p.optString("n"), p.optDouble("v", 0), color(p.optString("c"), ACCENT) }); }
+        if (ep > 0) fixed.add(new Object[] { "Épargne", ep, BLUE });
+        if (prov > 0) fixed.add(new Object[] { "Provisions", prov, PURPLE });
+        if (bo > 0) fixed.add(new Object[] { "Bourse", bo, ORANGE });
+        int rowsFit = Math.max(1, Math.min(4, (h - 24 - 18 - 38 - 14) / 22));
+        int total = items.size() + fixed.size();
+        boolean twoCols = total > rowsFit;
+        int cells = twoCols ? rowsFit * 2 : rowsFit;
+        if (total > cells) {   // trop de personnes : les dernières sont regroupées
+            int keep = Math.max(1, cells - fixed.size() - 1);
+            double rest = 0;
+            for (int i = keep; i < items.size(); i++) rest += ((Number) items.get(i)[1]).doubleValue();
+            int more = items.size() - keep;
+            items = new ArrayList<>(items.subList(0, keep));
+            items.add(new Object[] { "+ " + more + " autre" + (more > 1 ? "s" : ""), rest, GREY });
         }
-        double ep = x.optDouble("ep", 0);
-        v.setTextViewText(R.id.tk_p6n, "Épargne");
-        v.setTextViewText(R.id.tk_p6v, mask ? "••••" : money(ep, sym, 0));
+        items.addAll(fixed);
+        int[] rows = { R.id.tk_r1, R.id.tk_r2, R.id.tk_r3, R.id.tk_r4 }, gaps = { R.id.tk_s1, R.id.tk_s2, R.id.tk_s3, R.id.tk_s4 };
+        int[] cn = { R.id.tk_g1n, R.id.tk_g2n, R.id.tk_g3n, R.id.tk_g4n, R.id.tk_g5n, R.id.tk_g6n, R.id.tk_g7n, R.id.tk_g8n },
+                cv = { R.id.tk_g1v, R.id.tk_g2v, R.id.tk_g3v, R.id.tk_g4v, R.id.tk_g5v, R.id.tk_g6v, R.id.tk_g7v, R.id.tk_g8v },
+                cc = { R.id.tk_g1, R.id.tk_g2, R.id.tk_g3, R.id.tk_g4, R.id.tk_g5, R.id.tk_g6, R.id.tk_g7, R.id.tk_g8 };
+        int nRows = twoCols ? (items.size() + 1) / 2 : items.size();
+        for (int r = 0; r < 4; r++) {
+            v.setViewVisibility(rows[r], r < nRows ? View.VISIBLE : View.GONE);
+            v.setViewVisibility(gaps[r], twoCols ? View.VISIBLE : View.GONE);
+            for (int k = 0; k < 2; k++) {
+                int cell = r * 2 + k, idx = twoCols ? cell : (k == 0 ? r : -1);
+                if (idx < 0) { v.setViewVisibility(cc[cell], View.GONE); continue; }
+                if (idx >= items.size()) { v.setViewVisibility(cc[cell], View.INVISIBLE); continue; }
+                Object[] it = items.get(idx);
+                v.setViewVisibility(cc[cell], View.VISIBLE);
+                v.setTextViewText(cn[cell], dot((String) it[0], ((Number) it[2]).intValue()));
+                v.setTextViewText(cv[cell], mask ? "••••" : money(((Number) it[1]).doubleValue(), sym, 0));
+            }
+        }
         v.setOnClickPendingIntent(R.id.tk_root, open(c, "foyer", id));
         return v;
     }
 
-    /** Bourse du jour : total, variation depuis hier soir, courbe de la journée. */
+    /** Bourse : total, variation et courbe des 24 dernières heures (comme « 1J » dans l'onglet Bourse). */
     static RemoteViews bourse(Context c, int id, JSONObject d, boolean mask, String sym, Bundle o) throws Exception {
         JSONObject b = d.optJSONObject("bourse");
         if (b == null) return message(c, id, "Bourse", "Ajoute ton portefeuille dans l'onglet Bourse de Tickets.", "bourse");
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.tk_widget_bourse);
         SharedPreferences p = prefs(c);
+        long now = System.currentTimeMillis(), from = now - 24 * 3600000L;
         long tApp = d.optLong("t", 0), tNat = p.getLong("bn_t", 0);
         double total = b.optDouble("total", 0);
         long tLast = tApp;
         if (tNat > tApp) { total = Double.longBitsToDouble(p.getLong("bn_total", Double.doubleToLongBits(total))); tLast = tNat; }
-        // points du jour : ceux de l'appli + ceux calculés ici
-        long day0 = startOfDay(System.currentTimeMillis());
+        // points : la courbe de l'appli, puis ceux calculés ici après elle
         List<double[]> pts = new ArrayList<>();
+        double lastApp = 0;
         JSONArray h = b.optJSONArray("hist");
-        for (int i = 0; h != null && i < h.length(); i++) { JSONArray q = h.optJSONArray(i); if (q != null && q.optLong(0) >= day0) pts.add(new double[] { q.optDouble(0), q.optDouble(1) }); }
-        try { JSONArray nh = new JSONArray(p.getString("bn_hist", "[]")); for (int i = 0; i < nh.length(); i++) { JSONArray q = nh.optJSONArray(i); if (q != null && q.optLong(0) >= day0) pts.add(new double[] { q.optDouble(0), q.optDouble(1) }); } }
-        catch (Exception ignored) { }
-        if (tLast >= day0 && total > 0) pts.add(new double[] { tLast, total });
+        for (int i = 0; h != null && i < h.length(); i++) { JSONArray q = h.optJSONArray(i); if (q != null && q.optLong(0) >= from) { pts.add(new double[] { q.optDouble(0), q.optDouble(1) }); lastApp = Math.max(lastApp, q.optDouble(0)); } }
+        try {
+            JSONArray nh = new JSONArray(p.getString("bn_hist", "[]"));
+            for (int i = 0; i < nh.length(); i++) { JSONArray q = nh.optJSONArray(i); if (q != null && q.optLong(0) >= from && q.optDouble(0) > lastApp) pts.add(new double[] { q.optDouble(0), q.optDouble(1) }); }
+        } catch (Exception ignored) { }
+        if (total > 0 && tLast > lastApp) pts.add(new double[] { Math.max(tLast, lastApp + 1), total });
         Collections.sort(pts, (a, z) -> Double.compare(a[0], z[0]));
-        double ref = b.isNull("ref") ? (pts.isEmpty() ? total : pts.get(0)[1]) : b.optDouble("ref", total);
+        double ref;
+        if (!pts.isEmpty() && pts.get(0)[0] <= from + 3 * 3600000L) ref = pts.get(0)[1];
+        else ref = b.isNull("ref") ? (pts.isEmpty() ? total : pts.get(0)[1]) : b.optDouble("ref", total);
+        if (!pts.isEmpty() && pts.get(0)[0] > from) pts.add(0, new double[] { from, ref });
         double chg = total - ref, pc = ref != 0 ? chg / Math.abs(ref) * 100 : 0;
-        v.setTextViewText(R.id.tk_title, "Bourse · aujourd'hui");
+        v.setTextViewText(R.id.tk_title, "Bourse · 24 h");
         v.setTextViewText(R.id.tk_time, tLast > 0 ? "maj " + hhmm(tLast) : "");
         if (mask) {
             v.setTextViewText(R.id.tk_big, "•••• " + sym); v.setTextColor(R.id.tk_big, SOFT);
@@ -306,12 +361,11 @@ public final class TkWidgets {
             v.setTextViewText(R.id.tk_chg, (chg >= 0 ? "▲ +" : "▼ −") + num(Math.abs(chg), 2) + " " + sym + " · " + (chg >= 0 ? "+" : "−") + num(Math.abs(pc), 2) + " %");
         }
         v.setTextColor(R.id.tk_chg, chg >= 0 ? ACCENT : CORAL);
-        long x0 = day0 + 8 * 3600000L, x1 = day0 + 22 * 3600000L;
-        if (!pts.isEmpty()) { x0 = Math.min(x0, (long) pts.get(0)[0]); x1 = Math.max(x1, (long) pts.get(pts.size() - 1)[0]); }
-        int w = widthDp(o, 358) - 30, hh = Math.max(36, heightDp(o, 178) - 100);
-        v.setImageViewBitmap(R.id.tk_chart, line(c, w, hh, pts, ref, x0, x1, chg >= 0 ? ACCENT : CORAL));
+        int w = widthDp(o, 358) - 30, hh = Math.max(36, heightDp(o, 180) - 100);
+        v.setImageViewBitmap(R.id.tk_chart, line(c, w, hh, pts, ref, from, now, chg >= 0 ? ACCENT : CORAL));
         int[] lab = { R.id.tk_x0, R.id.tk_x1, R.id.tk_x2, R.id.tk_x3 };
-        for (int i = 0; i < 4; i++) v.setTextViewText(lab[i], hhmm(x0 + (x1 - x0) * i / 3));
+        long day0 = startOfDay(now);
+        for (int i = 0; i < 4; i++) { long t = from + (now - from) * i / 3; v.setTextViewText(lab[i], (t < day0 ? "hier " : "") + hhmm(t)); }
         v.setOnClickPendingIntent(R.id.tk_root, open(c, "bourse", id));
         Intent r = new Intent(c, TkWidgetBourse.class);
         r.setAction(TkWidgetBourse.REFRESH);
@@ -395,10 +449,10 @@ public final class TkWidgets {
 
     static String join(List<String> l) { StringBuilder s = new StringBuilder(); for (String x : l) { if (s.length() > 0) s.append(','); s.append(x); } return s.toString(); }
 
-    /** Garde le total calculé ici et ajoute un point à la courbe du jour. */
+    /** Garde le total calculé ici et ajoute un point à la courbe (24 dernières heures). */
     static void recordNative(Context c, double total) {
         SharedPreferences p = prefs(c);
-        long now = System.currentTimeMillis(), day0 = startOfDay(now);
+        long now = System.currentTimeMillis(), day0 = now - 24 * 3600000L;
         JSONArray out = new JSONArray();
         try {
             JSONArray h = new JSONArray(p.getString("bn_hist", "[]"));
@@ -510,7 +564,49 @@ public final class TkWidgets {
         return bm;
     }
 
-    /** Courbe du jour : ligne de référence (hier soir) en pointillés, courbe et dégradé dessous. */
+    /** Cumul des dépenses jour par jour : ce mois-ci (ligne pleine) et le mois dernier (pointillés). */
+    static Bitmap cumul(Context c, int wDp, int hDp, JSONArray cur, JSONArray prev) {
+        float k = density();
+        int w = Math.max(40, Math.round(wDp * k)), h = Math.max(20, Math.round(hDp * k));
+        Bitmap bm = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        Canvas cv = new Canvas(bm);
+        int days = 31;
+        double hi = 1;
+        for (int i = 0; cur != null && i < cur.length(); i++) hi = Math.max(hi, cur.optDouble(i, 0));
+        for (int i = 0; prev != null && i < prev.length(); i++) hi = Math.max(hi, prev.optDouble(i, 0));
+        hi *= 1.08;
+        float top = 3 * k, bot = h - 2 * k;
+        Paint grid = new Paint(Paint.ANTI_ALIAS_FLAG); grid.setColor(0x14FFFFFF); grid.setStrokeWidth(1 * k);
+        cv.drawLine(0, bot, w, bot, grid);
+        if (prev != null && prev.length() > 1) {
+            Path pp = new Path();
+            for (int i = 0; i < prev.length(); i++) { float x = (float) i / (days - 1) * w, y = (float) (bot - prev.optDouble(i, 0) / hi * (bot - top)); if (i == 0) pp.moveTo(x, y); else pp.lineTo(x, y); }
+            Paint dp = new Paint(Paint.ANTI_ALIAS_FLAG); dp.setColor(0x73FFFFFF); dp.setStyle(Paint.Style.STROKE); dp.setStrokeWidth(1.5f * k);
+            dp.setPathEffect(new DashPathEffect(new float[] { 4 * k, 4 * k }, 0));
+            cv.drawPath(pp, dp);
+        }
+        if (cur != null && cur.length() > 0) {
+            Path ln = new Path(), area = new Path();
+            float lx = 0, ly = bot;
+            for (int i = 0; i < cur.length(); i++) {
+                float x = (float) i / (days - 1) * w, y = (float) (bot - cur.optDouble(i, 0) / hi * (bot - top));
+                if (i == 0) { ln.moveTo(x, y); area.moveTo(x, bot); area.lineTo(x, y); } else { ln.lineTo(x, y); area.lineTo(x, y); }
+                lx = x; ly = y;
+            }
+            area.lineTo(lx, bot); area.close();
+            Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
+            fill.setShader(new LinearGradient(0, top, 0, bot, 0x404FD6A0, 0x004FD6A0, Shader.TileMode.CLAMP));
+            cv.drawPath(area, fill);
+            Paint st = new Paint(Paint.ANTI_ALIAS_FLAG); st.setColor(ACCENT); st.setStyle(Paint.Style.STROKE); st.setStrokeWidth(2 * k);
+            st.setStrokeJoin(Paint.Join.ROUND); st.setStrokeCap(Paint.Cap.ROUND);
+            cv.drawPath(ln, st);
+            Paint dt = new Paint(Paint.ANTI_ALIAS_FLAG); dt.setColor(ACCENT);
+            cv.drawCircle(lx, ly, 3.5f * k, dt);
+        }
+        return bm;
+    }
+
+    /** Courbe : ligne de référence (début de période) en pointillés, courbe et dégradé dessous. */
     static Bitmap line(Context c, int wDp, int hDp, List<double[]> pts, double ref, long x0, long x1, int color) {
         float k = density();
         int w = Math.max(40, Math.round(wDp * k)), h = Math.max(20, Math.round(hDp * k));
