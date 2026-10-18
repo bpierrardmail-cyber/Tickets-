@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="18/10 12:33" />
+  <meta name="build" content="18/10 13:01" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -6325,6 +6325,7 @@
             return;
           }
           var mid=fyRand(9), km=fyRand(32);
+          fyEnsurePerson(st.name);
           fyCfg.members[mid]={ name:st.name, role:st.role, tabs:tabs, accts:st.accts, tk:(st.accts!=null && st.tk==="all")?"all":"own", km:km, created:Date.now(), ack:0 };
           fyInvite(mid).then(function(){ s.close(); render(); }).catch(function(e){ delete fyCfg.members[mid]; fySave(); b.disabled=false; bad("Pas de connexion au relais : réessaie."); });
         };
@@ -6472,6 +6473,23 @@
       });
     }
     // Première ouverture : commencer, rejoindre un foyer ou récupérer le sien
+    // Un membre du foyer est une personne active chez le propriétaire : ajoutée, ou rétablie si elle avait été supprimée
+    function fyEnsurePerson(n){
+      n=(n||"").trim(); if(!n || n==="Commun" || n===mePerson()) return 0;
+      var r=personRec(n);
+      if(r && r.archived){
+        fraisCommuns.forEach(function(f){ if((f.personne||"").trim()===n && f.endByArchive){ delete f.endMonth; delete f.endByArchive; } }); persistFrais();
+        delete r.archived; persistPersonnes(); return 2;
+      }
+      if(!r){ personnes.push({ nom:n }); persistPersonnes(); return 1; }
+      return 0;
+    }
+    function fyEnsureMembersPersons(){
+      if(!fyCfg || fyCfg.role!=="owner") return;
+      var back=[];
+      Object.keys(fyCfg.members||{}).forEach(function(id){ var n=fyCfg.members[id].name; if(fyEnsurePerson(n)===2) back.push(n); });
+      if(back.length) setTimeout(function(){ uiToast(back.join(", ")+(back.length>1?" sont":" est")+" de retour dans tes Personnes : membre du foyer"); }, 1200);
+    }
     function fyWelcome(){
       uiChoice("Bienvenue dans Tickets 👋", "C'est ta première fois, ou quelqu'un t'invite dans son foyer ?", [
         { l:"Je commence", fn:askFirstName },
@@ -6484,6 +6502,7 @@
       fyApplyMode();
       if(!fyCfg) return;
       if(fyCfg.role!=="view") fyDetect();   // changements faits pendant que l'appli était fermée
+      fyEnsureMembersPersons();
       fyEnsureLock();
       if(store.read("fyRecovered", null)){ try{ localStorage.removeItem("fyRecovered"); }catch(e){} setTimeout(function(){ uiToast("Foyer récupéré ✓"); }, 900); }
       render();
