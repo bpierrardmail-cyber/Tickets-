@@ -12,6 +12,8 @@
     android:paddingBottom="12dp">
 
     <LinearLayout
+        android:id="@+id/tk_head"
+        android:minHeight="22dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"

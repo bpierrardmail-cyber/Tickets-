@@ -13,4 +13,4 @@
     android:description="@string/tk_d_commun"
     android:widgetCategory="home_screen"
     android:configure="__PKG__.TkWidgetConfig"
-    android:widgetFeatures="reconfigurable" />
+    android:widgetFeatures="reconfigurable|configuration_optional" />

@@ -12,6 +12,8 @@
     android:paddingBottom="9dp">
 
     <LinearLayout
+        android:id="@+id/tk_head"
+        android:minHeight="22dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
@@ -90,6 +92,20 @@
         android:layout_weight="1"
         android:contentDescription="Courbe du portefeuille aujourd'hui"
         android:scaleType="fitXY" />
+
+    <TextView
+        android:id="@+id/tk_hint"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="6dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:maxLines="2"
+        android:text="touche pour afficher avec ton empreinte"
+        android:textColor="#7C828E"
+        android:textSize="12sp"
+        android:visibility="gone" />
 
     <LinearLayout
         android:id="@+id/tk_xrow"

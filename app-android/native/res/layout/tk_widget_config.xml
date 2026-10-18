@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Réglage d'un widget (au moment de le poser) : Moi / Foyer et montants masqués -->
+<!-- Réglages d'un widget (appui long) : Moi / Foyer et masquage automatique -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -81,7 +81,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:labelFor="@+id/tk_cfg_mask"
-                android:text="Masquer les montants"
+                android:text="Se masquer après 2 minutes"
                 android:textColor="#ECEEF3"
                 android:textSize="16sp"
                 android:textStyle="bold" />

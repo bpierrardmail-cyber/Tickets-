@@ -23,6 +23,15 @@ const add =
   receiver("TkWidgetFoyer", "tk_info_foyer", "tk_w_foyer") +
   // Bourse : seulement dans l'appli perso (la version Store n'a pas de Bourse)
   receiver("TkWidgetBourse", "tk_info_bourse", "tk_w_bourse", ' android:enabled="@bool/tk_bourse"') + `
+        <receiver android:name=".TkWidgetActions" android:exported="false" />
+        <activity
+            android:name=".TkUnlockActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@style/TkTranslucent" />
+        <!-- Lecteur de QR code de Google Play (invitation au foyer partagé) : installé avec l'appli -->
+        <meta-data android:name="com.google.mlkit.vision.DEPENDENCIES" android:value="barcode_ui" />
         <activity
             android:name=".TkWidgetConfig"
             android:exported="true"

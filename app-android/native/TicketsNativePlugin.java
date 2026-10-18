@@ -18,6 +18,10 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.google.mlkit.vision.barcode.common.Barcode;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanner;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning;
 
 /**
  * Fonctions Android utilisées par l'appli :
@@ -26,6 +30,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
  *  - biometric({ title, ... })    : demande l'empreinte, sans adresse de site
  *  - widgetData({ json })         : résumé des chiffres pour les widgets de l'écran d'accueil
  *  - launchTarget()               : { target } si l'appli a été ouverte depuis un widget (une seule fois)
+ *  - scanQr()                     : { text } lu par le lecteur de QR code de Google Play (invitation au foyer)
  */
 @CapacitorPlugin(name = "TicketsNative")
 public class TicketsNativePlugin extends Plugin {
@@ -87,6 +92,23 @@ public class TicketsNativePlugin extends Plugin {
                 prompt.authenticate(info);
             } catch (Exception e) {
                 call.reject("Empreinte indisponible : " + e.getMessage(), e);
+            }
+        });
+    }
+
+    @PluginMethod
+    public void scanQr(final PluginCall call) {
+        getActivity().runOnUiThread(() -> {
+            try {
+                GmsBarcodeScannerOptions o = new GmsBarcodeScannerOptions.Builder()
+                        .setBarcodeFormats(Barcode.FORMAT_QR_CODE).build();
+                GmsBarcodeScanner sc = GmsBarcodeScanning.getClient(getActivity(), o);
+                sc.startScan()
+                        .addOnSuccessListener(bc -> { JSObject r = new JSObject(); r.put("text", bc.getRawValue()); call.resolve(r); })
+                        .addOnCanceledListener(() -> call.reject("Lecture annulée", "cancel"))
+                        .addOnFailureListener(e -> call.reject("Lecteur de QR code indisponible : " + e.getMessage(), "fail"));
+            } catch (Exception e) {
+                call.reject("Lecteur de QR code indisponible : " + e.getMessage(), "fail");
             }
         });
     }

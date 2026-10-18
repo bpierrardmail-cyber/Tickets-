@@ -31,4 +31,6 @@ dependencies {
     implementation 'androidx.biometric:biometric:1.1.0'
     // Widgets : mise à jour de la Bourse en arrière-plan (toutes les 15 minutes)
     implementation 'androidx.work:work-runtime:2.9.1'
+    // Foyer partagé : lecture du QR code d'invitation (lecteur de Google Play, sans permission caméra)
+    implementation 'com.google.android.gms:play-services-code-scanner:16.1.0'
 }

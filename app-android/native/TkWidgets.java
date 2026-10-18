@@ -1,10 +1,13 @@
 package fr.bpierrard.tickets.beta;
 
+import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -14,13 +17,17 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Shader;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.view.View;
 import android.widget.RemoteViews;
+
+import androidx.core.content.ContextCompat;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -65,11 +72,88 @@ public final class TkWidgets {
 
     static void save(Context c, String json) { prefs(c).edit().putString("data", json).apply(); }
 
-    /** Montants masqués : réglé sur le widget, sinon oui si le verrouillage par code est activé dans l'appli. */
-    static boolean masked(Context c, int id, JSONObject d) {
-        SharedPreferences p = prefs(c);
-        if (p.contains("mask_" + id)) return p.getBoolean("mask_" + id, false);
-        return d != null && d.optBoolean("lock", false);
+    // ---------- Masquer / afficher (tous les widgets Tickets ensemble) ----------
+    // Masqués par défaut. Toucher le montant : afficher (empreinte ou code du téléphone, TkUnlockActivity)
+    // ou masquer (tout de suite). Ils se masquent seuls après 2 minutes, ou quand l'écran s'éteint.
+    static final long SHOW_MS = 2 * 60 * 1000L;
+
+    static boolean masked(Context c) { return System.currentTimeMillis() >= prefs(c).getLong("vis_until", 0); }
+
+    /** Se masquer à nouveau après 2 minutes (réglage du widget, par un appui long). */
+    static boolean autoMask(Context c) { return prefs(c).getBoolean("auto", true); }
+
+    static void showAll(Context c) {
+        boolean auto = autoMask(c);
+        long until = auto ? System.currentTimeMillis() + SHOW_MS : Long.MAX_VALUE;
+        prefs(c).edit().putLong("vis_until", until).commit();
+        if (auto) scheduleHide(c); else cancelHide(c);
+        watchScreen(c);
+        updateAll(c);
+    }
+
+    static void hideAll(Context c) {
+        prefs(c).edit().putLong("vis_until", 0).commit();
+        cancelHide(c);
+        updateAll(c);
+    }
+
+    static PendingIntent remaskIntent(Context c) {
+        Intent i = new Intent(c, TkWidgetActions.class);
+        i.setAction(TkWidgetActions.REMASK);
+        return PendingIntent.getBroadcast(c, 8999, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    static void scheduleHide(Context c) {
+        try {
+            AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
+            long at = SystemClock.elapsedRealtime() + SHOW_MS;
+            PendingIntent pi = remaskIntent(c);
+            if (Build.VERSION.SDK_INT < 31 || am.canScheduleExactAlarms())
+                am.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, at, pi);
+            else am.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, at, pi);
+        } catch (Exception e) { android.util.Log.w("TicketsWidgets", "masquage auto : " + e); }
+    }
+
+    static void cancelHide(Context c) {
+        try { ((AlarmManager) c.getSystemService(Context.ALARM_SERVICE)).cancel(remaskIntent(c)); } catch (Exception ignored) { }
+    }
+
+    private static BroadcastReceiver screenOff;
+
+    /** Écran éteint (verrouillé) : on masque tout de suite, tant que l'appli est encore en mémoire. */
+    static synchronized void watchScreen(Context c) {
+        if (screenOff != null) return;
+        final Context app = c.getApplicationContext();
+        screenOff = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context x, Intent i) { if (!masked(app)) hideAll(app); }
+        };
+        try { ContextCompat.registerReceiver(app, screenOff, new IntentFilter(Intent.ACTION_SCREEN_OFF), ContextCompat.RECEIVER_NOT_EXPORTED); }
+        catch (Exception e) { screenOff = null; }
+    }
+
+    /** Toucher le widget : afficher (avec empreinte) ou masquer ; toucher le titre › : ouvrir Tickets. */
+    static void taps(RemoteViews v, Context c, int id, boolean mask, String what, String target) {
+        if (mask) {
+            Intent i = new Intent(c, TkUnlockActivity.class);
+            i.setAction("tickets.widget.SHOW." + id);
+            i.putExtra("what", what);
+            i.putExtra("target", target);
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
+            v.setOnClickPendingIntent(R.id.tk_root, PendingIntent.getActivity(c, 7000 + id, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+        } else {
+            Intent i = new Intent(c, TkWidgetActions.class);
+            i.setAction(TkWidgetActions.HIDE);
+            v.setOnClickPendingIntent(R.id.tk_root, PendingIntent.getBroadcast(c, 8000 + id, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+        }
+        v.setOnClickPendingIntent(R.id.tk_head, open(c, target, id));
+    }
+
+    /** Titre du widget suivi de « › » : c'est là qu'on touche pour ouvrir Tickets. */
+    static CharSequence head(String t) {
+        SpannableStringBuilder b = new SpannableStringBuilder(t + "  ›");
+        b.setSpan(new ForegroundColorSpan(INK), b.length() - 1, b.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        return b;
     }
 
     static String scope(Context c, int id) { return prefs(c).getString("scope_" + id, "moi"); }
@@ -106,12 +190,16 @@ public final class TkWidgets {
     }
 
     // ---------- Ouvrir l'appli ----------
-    static PendingIntent open(Context c, String target, int req) {
+    static Intent openIntent(Context c, String target) {
         Intent i = new Intent(c, MainActivity.class);
         i.setAction("tickets.widget." + target);
         i.putExtra("tk_target", target);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        return PendingIntent.getActivity(c, req, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        return i;
+    }
+
+    static PendingIntent open(Context c, String target, int req) {
+        return PendingIntent.getActivity(c, req, openIntent(c, target), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
     // ---------- Construction des widgets ----------
@@ -129,7 +217,7 @@ public final class TkWidgets {
             return v;
         }
         if (d == null) return message(c, id, "Tickets", "Ouvre Tickets une fois pour afficher tes chiffres ici.", "list");
-        boolean mask = masked(c, id, d);
+        boolean mask = masked(c);
         String sym = d.optString("sym", "€");
         Bundle o = m.getAppWidgetOptions(id);
         if (k == TkWidgetSolde.class) return solde(c, id, d, mask, sym, o);
@@ -156,7 +244,7 @@ public final class TkWidgets {
         JSONObject s = d.optJSONObject("solde");
         JSONObject x = s == null ? null : s.optJSONObject(foyer ? "foyer" : "moi");
         double val = x == null ? 0 : x.optDouble("v", 0), dl = x == null ? 0 : x.optDouble("d", 0);
-        v.setTextViewText(R.id.tk_title, "Fin de mois");
+        v.setTextViewText(R.id.tk_title, head("Fin de mois"));
         if (multi) { v.setViewVisibility(R.id.tk_chip, View.VISIBLE); v.setTextViewText(R.id.tk_chip, foyer ? "Foyer" : "Moi"); }
         else v.setViewVisibility(R.id.tk_chip, View.GONE);
         if (mask) {
@@ -170,7 +258,7 @@ public final class TkWidgets {
         // avancée du mois (jour 17 sur 31)
         float frac = monthFraction(d);
         v.setImageViewBitmap(R.id.tk_bar, bar(c, widthDp(o, 172) - 26, 4, frac, ACCENT));
-        v.setOnClickPendingIntent(R.id.tk_root, open(c, foyer ? "compte_foyer" : "compte", id));
+        taps(v, c, id, mask, "Fin de mois", foyer ? "compte_foyer" : "compte");
         return v;
     }
 
@@ -180,12 +268,12 @@ public final class TkWidgets {
         JSONObject x = d.optJSONObject("commun");
         v.setViewVisibility(R.id.tk_chip, View.GONE);
         if (x == null) {
-            v.setTextViewText(R.id.tk_title, "Commun");
+            v.setTextViewText(R.id.tk_title, head("Commun"));
             v.setTextViewText(R.id.tk_big, "—");
             v.setTextViewText(R.id.tk_sub, "");
         } else {
             double pct = x.optDouble("pct", 0);
-            v.setTextViewText(R.id.tk_title, "Commun · ta part (" + pctTxt(pct) + ")");
+            v.setTextViewText(R.id.tk_title, head("Commun · ta part (" + pctTxt(pct) + ")"));
             if (mask) masquer(v, sym);
             else {
                 v.setTextViewText(R.id.tk_big, big(x.optDouble("part", 0), sym));
@@ -197,7 +285,7 @@ public final class TkWidgets {
             v.setImageViewBitmap(R.id.tk_bar, stack(c, widthDp(o, 172) - 26, 4,
                     new double[] { x.optDouble("perso", 0), x.optDouble("com", 0), x.optDouble("prod", 0) }, new int[] { GREY, BLUE, ORANGE }));
         }
-        v.setOnClickPendingIntent(R.id.tk_root, open(c, "communes", id));
+        taps(v, c, id, mask, "Commun", "communes");
         return v;
     }
 
@@ -208,10 +296,10 @@ public final class TkWidgets {
         if (x == null) x = new JSONObject();
         double spent = x.optDouble("spent", 0), budget = x.optDouble("budget", 0), perDay = x.optDouble("perDay", 0);
         int w = widthDp(o, 358) - 30, h = heightDp(o, 180);
-        v.setTextViewText(R.id.tk_title, "Dépensé en " + d.optString("monthName", "ce mois"));
+        v.setTextViewText(R.id.tk_title, head("Dépensé en " + d.optString("monthName", "ce mois")));
         if (mask) {
             v.setTextViewText(R.id.tk_big, "•••• " + sym); v.setTextColor(R.id.tk_big, SOFT);
-            v.setTextViewText(R.id.tk_right, "touche pour voir"); v.setTextViewText(R.id.tk_right2, "");
+            v.setTextViewText(R.id.tk_right, "touche pour afficher"); v.setTextViewText(R.id.tk_right2, "");
         } else {
             v.setTextViewText(R.id.tk_big, big(spent, sym)); v.setTextColor(R.id.tk_big, INK);
             v.setTextViewText(R.id.tk_right, budget > 0 ? "budget " + money(budget, sym, 0) : x.optInt("n", 0) + " ticket" + (x.optInt("n", 0) > 1 ? "s" : ""));
@@ -221,7 +309,7 @@ public final class TkWidgets {
         boolean narrow = w < 190;
         v.setViewVisibility(R.id.tk_right, narrow ? View.GONE : View.VISIBLE);
         v.setViewVisibility(R.id.tk_right2, narrow ? View.GONE : View.VISIBLE);
-        if (budget > 0 && h >= 70) {
+        if (budget > 0 && h >= 70 && !mask) {
             double r = spent / budget;
             v.setViewVisibility(R.id.tk_bar, View.VISIBLE);
             v.setImageViewBitmap(R.id.tk_bar, bar(c, w, 5, (float) Math.min(1, r), r > 1 ? CORAL : (r >= 0.8 ? AMBER : ACCENT)));
@@ -229,7 +317,7 @@ public final class TkWidgets {
         // Place disponible : courbe du mois si le widget est assez haut, et 3 ou 5 catégories
         JSONArray cats = x.optJSONArray("cats");
         int nCats = cats == null ? 0 : cats.length();
-        boolean chart = h >= 150;
+        boolean chart = h >= 150 && !mask;
         int rowsMax = narrow ? 0 : (h >= 250 ? 5 : (h >= 150 ? 3 : Math.max(0, Math.min(3, (h - 24 - 18 - 38 - (budget > 0 ? 9 : 0)) / 22))));
         int fixedDp = 24 + 18 + 38 + (budget > 0 ? 9 : 0) + Math.min(nCats, rowsMax) * 22;
         if (chart) {
@@ -253,9 +341,10 @@ public final class TkWidgets {
             v.setTextViewText(names[i], cx.optString("n"));
             v.setTextViewText(vals[i], mask ? "••••" : num(cx.optDouble("v", 0), 2));
             v.setImageViewBitmap(bars[i], bar(c, Math.max(40, w - 170), 4, max > 0 ? (float) (cx.optDouble("v", 0) / max) : 0, color(cx.optString("c"), BLUE)));
+            v.setViewVisibility(bars[i], mask ? View.INVISIBLE : View.VISIBLE);
         }
         if (nCats == 0 && rowsMax > 0) { v.setViewVisibility(R.id.tk_c1, View.VISIBLE); v.setTextViewText(R.id.tk_c1n, "Aucun ticket ce mois-ci"); v.setTextViewText(R.id.tk_c1v, ""); }
-        v.setOnClickPendingIntent(R.id.tk_root, open(c, "mois", id));
+        taps(v, c, id, mask, "Mois en cours", "mois");
         return v;
     }
 
@@ -281,10 +370,10 @@ public final class TkWidgets {
         if (x == null) x = new JSONObject();
         int n = x.optInt("n", 1), accts = x.optInt("accts", 1), w = widthDp(o, 358) - 30, h = heightDp(o, 180);
         double tot = x.optDouble("total", 0), ep = x.optDouble("ep", 0), prov = x.optDouble("prov", 0), bo = x.optDouble("bo", 0);
-        v.setTextViewText(R.id.tk_title, "Foyer · " + (n > 1 ? n + " personnes · " : "") + accts + " compte" + (accts > 1 ? "s" : ""));
+        v.setTextViewText(R.id.tk_title, head("Foyer · " + (n > 1 ? n + " personnes · " : "") + accts + " compte" + (accts > 1 ? "s" : "")));
         if (mask) { v.setTextViewText(R.id.tk_big, "•••• " + sym); v.setTextColor(R.id.tk_big, SOFT); }
         else { v.setTextViewText(R.id.tk_big, big(tot, sym)); v.setTextColor(R.id.tk_big, tot < 0 ? CORAL : INK); }
-        v.setViewVisibility(R.id.tk_bar, h >= 80 ? View.VISIBLE : View.GONE);
+        v.setViewVisibility(R.id.tk_bar, h >= 80 && !mask ? View.VISIBLE : View.GONE);
         v.setImageViewBitmap(R.id.tk_bar, stack(c, w, 6, new double[] { Math.max(0, tot), ep, prov, bo }, new int[] { ACCENT, BLUE, PURPLE, ORANGE }));
         // Lignes : les personnes (ou les comptes s'il n'y a qu'une personne), puis épargne, provisions, bourse
         List<Object[]> items = new ArrayList<>(), fixed = new ArrayList<>();
@@ -327,7 +416,7 @@ public final class TkWidgets {
                 v.setTextViewText(cv[cell], mask ? "••••" : money(((Number) it[1]).doubleValue(), sym, 0));
             }
         }
-        v.setOnClickPendingIntent(R.id.tk_root, open(c, "foyer", id));
+        taps(v, c, id, mask, "Foyer", "foyer");
         return v;
     }
 
@@ -358,18 +447,20 @@ public final class TkWidgets {
         else ref = b.isNull("ref") ? (pts.isEmpty() ? total : pts.get(0)[1]) : b.optDouble("ref", total);
         if (!pts.isEmpty() && pts.get(0)[0] > from) pts.add(0, new double[] { from, ref });
         double chg = total - ref, pc = ref != 0 ? chg / Math.abs(ref) * 100 : 0;
-        v.setTextViewText(R.id.tk_title, "Bourse · 24 h");
+        v.setTextViewText(R.id.tk_title, head("Bourse · 24 h"));
         v.setTextViewText(R.id.tk_time, tLast > 0 ? "maj " + hhmm(tLast) : "");
         if (mask) {
             v.setTextViewText(R.id.tk_big, "•••• " + sym); v.setTextColor(R.id.tk_big, SOFT);
-            v.setTextViewText(R.id.tk_chg, (chg >= 0 ? "▲ +" : "▼ −") + num(Math.abs(pc), 2) + " %");
+            v.setTextViewText(R.id.tk_chg, "");
         } else {
             v.setTextViewText(R.id.tk_big, big(total, sym)); v.setTextColor(R.id.tk_big, INK);
             v.setTextViewText(R.id.tk_chg, (chg >= 0 ? "▲ +" : "▼ −") + num(Math.abs(chg), 2) + " " + sym + " · " + (chg >= 0 ? "+" : "−") + num(Math.abs(pc), 2) + " %");
         }
         v.setTextColor(R.id.tk_chg, chg >= 0 ? ACCENT : CORAL);
         int w = widthDp(o, 358) - 30, hAll = heightDp(o, 180), hh = Math.max(36, hAll - 100);
-        boolean narrow = w < 190, chart = hAll >= 110;
+        boolean narrow = w < 190, chart = hAll >= 110 && !mask;
+        // masqué : ni montant ni courbe, une invitation à toucher
+        v.setViewVisibility(R.id.tk_hint, mask && hAll >= 90 ? View.VISIBLE : View.GONE);
         v.setViewVisibility(R.id.tk_time, narrow ? View.GONE : View.VISIBLE);
         if (narrow && !mask) v.setTextViewText(R.id.tk_chg, (chg >= 0 ? "▲ +" : "▼ −") + num(Math.abs(pc), 2) + " %");
         v.setViewVisibility(R.id.tk_chart, chart ? View.VISIBLE : View.GONE);
@@ -378,7 +469,7 @@ public final class TkWidgets {
         int[] lab = { R.id.tk_x0, R.id.tk_x1, R.id.tk_x2, R.id.tk_x3 };
         long day0 = startOfDay(now);
         for (int i = 0; i < 4; i++) { long t = from + (now - from) * i / 3; v.setTextViewText(lab[i], (t < day0 ? "hier " : "") + hhmm(t)); }
-        v.setOnClickPendingIntent(R.id.tk_root, open(c, "bourse", id));
+        taps(v, c, id, mask, "Bourse · 24 h", "bourse");
         Intent r = new Intent(c, TkWidgetBourse.class);
         r.setAction(TkWidgetBourse.REFRESH);
         v.setOnClickPendingIntent(R.id.tk_refresh, PendingIntent.getBroadcast(c, 9000 + id, r, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
@@ -388,7 +479,7 @@ public final class TkWidgets {
     static void masquer(RemoteViews v, String sym) {
         v.setTextViewText(R.id.tk_big, "•••• " + sym);
         v.setTextColor(R.id.tk_big, SOFT);
-        v.setTextViewText(R.id.tk_sub, "touche pour voir");
+        v.setTextViewText(R.id.tk_sub, "touche pour afficher");
         v.setTextColor(R.id.tk_sub, SOFT);
     }
 

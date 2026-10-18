@@ -13,8 +13,8 @@ import android.widget.TextView;
 import org.json.JSONObject;
 
 /**
- * Réglage d'un widget, au moment de le poser (et plus tard par un appui long) :
- * Moi ou Foyer (widget Solde, s'il y a plusieurs comptes) et « Masquer les montants ».
+ * Réglages d'un widget, par un appui long (« Paramètres du widget ») ; plus rien à régler au moment de le poser
+ * sur Android 12 et plus récents. Moi ou Foyer (widget Solde, s'il y a plusieurs comptes) et masquage automatique.
  */
 public class TkWidgetConfig extends Activity {
     private int id = AppWidgetManager.INVALID_APPWIDGET_ID;
@@ -48,18 +48,23 @@ public class TkWidgetConfig extends Activity {
         foyer.setChecked(isFoyer);
 
         final Switch mask = findViewById(R.id.tk_cfg_mask);
-        mask.setChecked(TkWidgets.masked(this, id, d));
-        ((TextView) findViewById(R.id.tk_cfg_mask_help)).setText(d != null && d.optBoolean("lock", false)
-                ? "Conseillé : le verrouillage par code est activé dans Tickets, et n'importe qui peut voir ton écran d'accueil."
-                : "Les montants sont cachés sur l'écran d'accueil ; touche le widget pour les voir dans Tickets.");
+        mask.setChecked(TkWidgets.autoMask(this));
+        ((TextView) findViewById(R.id.tk_cfg_mask_help)).setText(
+                "Touche le montant d'un widget pour afficher les montants (ton empreinte ou le code du téléphone est demandé), "
+                + "touche à nouveau pour les masquer. Touche le titre › pour ouvrir Tickets. Vaut pour tous les widgets Tickets.");
 
         findViewById(R.id.tk_cfg_cancel).setOnClickListener(v -> finish());
         findViewById(R.id.tk_cfg_ok).setOnClickListener(v -> {
+            boolean auto = mask.isChecked();
             TkWidgets.prefs(this).edit()
-                    .putBoolean("mask_" + id, mask.isChecked())
+                    .putBoolean("auto", auto)
                     .putString("scope_" + id, foyer.isChecked() ? "foyer" : "moi")
                     .apply();
-            TkWidgets.update(this, m, id, kind);
+            // masquage auto activé alors que les montants sont affichés pour toujours : ils se masquent dans 2 minutes
+            long until = TkWidgets.prefs(this).getLong("vis_until", 0);
+            if (auto && until == Long.MAX_VALUE) TkWidgets.showAll(this);
+            else if (!auto && !TkWidgets.masked(this)) { TkWidgets.prefs(this).edit().putLong("vis_until", Long.MAX_VALUE).apply(); TkWidgets.cancelHide(this); }
+            TkWidgets.updateAll(this);
             Intent r = new Intent();
             r.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id);
             setResult(RESULT_OK, r);
