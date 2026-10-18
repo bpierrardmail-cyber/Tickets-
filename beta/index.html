@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="18/10 11:58" />
+  <meta name="build" content="18/10 12:06" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -790,6 +790,9 @@
     /* Filtre par personne */
     .psel{ display:flex; gap:4px; padding:4px; border-radius:14px; background:var(--card); border:1px solid var(--line); margin:0 0 8px; overflow-x:auto; scrollbar-width:none; }
     .psel::-webkit-scrollbar{ display:none; }
+    .psel.ov{ -webkit-mask-image:linear-gradient(to right, #000 82%, transparent); mask-image:linear-gradient(to right, #000 82%, transparent); }
+    .psel.ovl{ -webkit-mask-image:linear-gradient(to right, transparent, #000 18%); mask-image:linear-gradient(to right, transparent, #000 18%); }
+    .psel.ov.ovl{ -webkit-mask-image:linear-gradient(to right, transparent, #000 18%, #000 82%, transparent); mask-image:linear-gradient(to right, transparent, #000 18%, #000 82%, transparent); }
     .psel-b{ flex:1 0 auto; min-height:40px; border:0; border-radius:10px; background:transparent; color:var(--ink-soft); font-family:var(--sans); font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:7px; padding:0 12px; white-space:nowrap; cursor:pointer; }
     .psel-b i{ width:9px; height:9px; border-radius:50%; flex:0 0 9px; }
     .psel-b.on{ background:#2b303b; color:var(--ink); }
@@ -2715,7 +2718,7 @@
     function persistBudgetsP(){ store.write("budgetsP", budgetsP); }
     // ---------- Filtre par personne (Accueil, Articles, Analyse) ----------
     // « Moi », une personne ou « Tout le foyer », selon qui a payé le ticket. Le choix vaut pour les trois onglets et reste sur ce téléphone.
-    var PV_COLS=["#7c9cf4","#e0a458","#c78bd6","#5bc0d4","#e88fb0","#9bd35e","#d6c35c"], pvMemo=null;
+    var PV_COLS=["#7c9cf4","#e0a458","#c78bd6","#5bc0d4","#e88fb0","#d6c35c","#f4796b","#9b8cf4","#d68f5c","#6fb3f0","#b8c0cc","#9bd35e"], pvMemo=null;
     function payerOf(e){ var p=(e.payePar||"").trim(); if(p) return p; return (fyMember() && fyCfg.owner) ? fyCfg.owner : mePerson(); }   // sans « payé par » : le titulaire (avant le foyer, tout était à lui)
     function viewPersons(){
       if(pvMemo) return pvMemo;
@@ -2744,6 +2747,12 @@
     }
     function pvCapTxt(n, total){ var v=pvCur(); return (v==="moi"?"Tes tickets":(v==="all"?"Tout le foyer":"Tickets de "+v))+" · "+n+" ticket"+(n>1?"s":"")+" · "+fmt(total); }
     function wirePV(){
+      [].forEach.call(app.querySelectorAll(".psel"), function(sc){
+        var on=sc.querySelector(".psel-b.on");
+        if(on){ var l=on.offsetLeft-sc.offsetLeft, r=l+on.offsetWidth; if(r>sc.clientWidth-8) sc.scrollLeft=Math.max(0, l-(sc.clientWidth-on.offsetWidth)/2); }
+        function upd(){ sc.classList.toggle("ov", sc.scrollWidth>sc.clientWidth+1 && sc.scrollLeft+sc.clientWidth<sc.scrollWidth-2); sc.classList.toggle("ovl", sc.scrollLeft>2); }
+        upd(); sc.onscroll=upd;
+      });
       [].forEach.call(document.querySelectorAll("[data-pv]"), function(b){ b.onclick=function(ev){ ev.stopPropagation(); var v=b.getAttribute("data-pv"); if(v===mePerson()) v="moi"; state.personView=v; store.write("personView", v); render(); window.scrollTo(0,0); }; });
     }
     // Pour qui on peut fixer un budget : le foyer (tous les tickets), toi, les autres personnes
@@ -2764,7 +2773,7 @@
       scopes.forEach(function(o){ draft[o.v]=JSON.parse(JSON.stringify(o.v==="__foyer" ? budgets : (budgetsP[o.v]||{}))); });
       function stash(api){ var o={}; list.forEach(function(c){ var x=api.get(c); if(x && x>0) o[c]=x; }); draft[curScope]=o; }
       var fields=[];
-      if(scopes.length>1) fields.push({ key:"__scope", label:"Pour qui ?", type:"seg", value:start, options:scopes,
+      if(scopes.length>1) fields.push({ key:"__scope", label:"Pour qui ?", type:(scopes.length>4?"select":"seg"), value:start, options:scopes,
         help:"Foyer : compte les tickets de tout le monde. Une personne : seulement les tickets qu'elle a payés.",
         onChange:function(v, api){ stash(api); curScope=v; list.forEach(function(c){ api.set(c, draft[v][c]||""); }); } });
       list.forEach(function(c){ fields.push({ key:c, label:catIcon(c).e+"  "+c, type:"money", value:(draft[start][c]||"") }); });
@@ -3037,7 +3046,7 @@
           if(pOth.length){ var oT=pOth.reduce(function(t,p){ return t+parPayeur[p]; },0);
             pSub+='<i style="flex:'+(oT||0.001)+';background:'+pGrey+'"></i>';
             pLg+='<span><i class="hdot" style="background:'+pGrey+'"></i>'+pOth.length+' autres<b>'+(totAll?Math.round(oT/totAll*100):0)+' %</b></span>'; }
-          payOrder.forEach(function(p,i){ var col=(i<pShown.length)?(pvOn?personColor(p):(i<pcols.length?pcols[i]:pGrey)):pGrey, pc=totAll?Math.round(parPayeur[p]/totAll*100):0;
+          payOrder.forEach(function(p,i){ var col=pvOn?personColor(p):((i<pShown.length && i<pcols.length)?pcols[i]:pGrey), pc=totAll?Math.round(parPayeur[p]/totAll*100):0;
             if(pvOn){ var me0=p===mePerson(), on=pvC!=="all" && pvName(pvC)===p;
               pB+='<button type="button" class="dfrow pvrow'+(on?' on':'')+'" data-pv="'+esc(me0?"moi":p)+'"><span class="n"><i class="hdot" style="background:'+col+'"></i>'+esc(p)+(me0?' <span style="font-size:11px;color:var(--accent);font-weight:600">· toi</span>':'')+'</span><span class="k">'+pc+' %</span><span class="a">'+fmtK(parPayeur[p])+'</span><span class="k">›</span></button>'; }
             else pB+='<div class="dfrow"><span class="n"><i class="hdot" style="background:'+col+'"></i>'+esc(p)+'</span><span class="k">'+pc+' %</span><span class="a">'+fmtK(parPayeur[p])+'</span></div>'; });
