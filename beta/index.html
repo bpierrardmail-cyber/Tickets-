@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="18/10 10:25" />
+  <meta name="build" content="18/10 11:13" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -6173,13 +6173,13 @@
         h+='<div class="ui-help">'+(st.role==="edit"?'Voit et modifie : tickets, scans, frais payés… La dernière modification gagne.':'Voit les chiffres, ne peut rien modifier. Idéal pour un enfant.')+'</div>';
         var noTab=function(v){ return st.accts!=null && (v==="communes" || v==="bourse" || (!st.accts.length && v==="compte")); };   // comptes choisis : ni Commun ni Bourse ; aucun compte : pas d'onglet Compte
         h+='<label class="ui-l">Onglets visibles</label><div class="fy-tabs">'+FY_TABS.map(function(t){ var off=noTab(t.v), on=!off && st.tabs.indexOf(t.v)>=0; return '<button type="button" class="fy-tab'+(on?' on':'')+(off?' off':'')+'" data-t="'+t.v+'"'+(off?' disabled':'')+'><i>'+(on?'✓':'')+'</i>'+esc(t.l)+'</button>'; }).join("")+'</div>';
-        if(comptes.length>1){
+        if(comptes.length){   // même avec un seul compte : « Aucun · ses tickets » doit rester possible
           h+='<label class="ui-l">Comptes visibles</label><div class="fy-chips"><button type="button" class="chip'+(st.accts==null?' on':'')+'" data-a="__all">Tous</button><button type="button" class="chip'+(st.accts && !st.accts.length?' on':'')+'" data-a="__none">Aucun · ses tickets</button>'+comptes.map(function(a){ var on=st.accts!=null && st.accts.indexOf(a.key)>=0; return '<button type="button" class="chip'+(on?' on':'')+'" data-a="'+esc(a.key)+'">'+esc(a.nom)+(acctOwner(a)?' · '+esc(acctOwner(a)):'')+'</button>'; }).join("")+'</div>';
           if(st.accts && !st.accts.length) h+='<div class="ui-help">Ses tickets arrivent chez toi (Articles, Analyse, dépenses) sans toucher à aucun compte. Il ne reçoit que ses propres tickets.</div>';
           else if(st.accts!=null) h+='<div class="ui-help">Avec des comptes choisis, il ne reçoit que leurs tickets, virements et frais ; pas le Commun ni la Bourse.</div>';
         }
         var vis=FY_TABS.filter(function(t){ return st.tabs.indexOf(t.v)>=0 && !noTab(t.v); }).map(function(t){ return t.l; });
-        h+='<div class="fy-sum">'+esc((st.name||"Ce membre")+(st.role==="edit"?" pourra modifier : ":" pourra consulter : ")+(vis.join(", ")||"rien")+(comptes.length>1?" · "+(st.accts==null?"tous les comptes":(fyAcctsLabel({accts:st.accts}))):"")+". Rien d'autre ne part sur son téléphone.")+'</div>';
+        h+='<div class="fy-sum">'+esc((st.name||"Ce membre")+(st.role==="edit"?" pourra modifier : ":" pourra consulter : ")+(vis.join(", ")||"rien")+(comptes.length?" · "+(st.accts==null?"tous les comptes":(fyAcctsLabel({accts:st.accts}))):"")+". Rien d'autre ne part sur son téléphone.")+'</div>';
         h+='<div class="ui-err" style="display:none"></div><div class="ui-actions"><button type="button" class="btn ghost ui-no">Annuler</button><button type="button" class="btn primary" id="fyOk">'+(M?'Enregistrer':'Créer le QR code')+'</button></div>';
         s.q("#fyF").innerHTML=h;
         var ni=s.q("#fyName"); if(ni){ ni.oninput=function(){ st.name=ni.value.trim(); defAccts(); }; ni.onchange=function(){ draw(); }; }
@@ -6226,7 +6226,7 @@
       var m=fyCfg.members[mid];
       var s=uiSheet('<div class="sheet-title">Inviter '+esc(m.name)+'</div><div class="fy-qr">'+qrSvg(text, 236)+'</div>'+
         '<div class="fy-qrt"><b>Scanne ce code avec Tickets sur le téléphone de '+esc(m.name)+'</b><small id="fyExp"></small></div>'+
-        '<div class="fy-card fy-list fy-recap"><div><span>Accès</span><b>'+esc(fyRoleLabel(m.role))+'</b></div><div><span>Onglets</span><b>'+esc(fyTabsLabel(m))+'</b></div>'+(comptes.length>1?'<div><span>Comptes</span><b>'+esc(fyAcctsLabel(m))+'</b></div>':'')+'<div><span>Sur son téléphone</span><b style="color:var(--accent)">code + empreinte obligatoires</b></div></div>'+
+        '<div class="fy-card fy-list fy-recap"><div><span>Accès</span><b>'+esc(fyRoleLabel(m.role))+'</b></div><div><span>Onglets</span><b>'+esc(fyTabsLabel(m))+'</b></div>'+(comptes.length?'<div><span>Comptes</span><b>'+esc(fyAcctsLabel(m))+'</b></div>':'')+'<div><span>Sur son téléphone</span><b style="color:var(--accent)">code + empreinte obligatoires</b></div></div>'+
         '<div class="ui-stack"><button type="button" class="btn ghost" id="fyShare">Le QR ne passe pas ? Envoyer l\'invitation</button><button type="button" class="btn primary ui-no">Terminé</button></div>');
       var tick=setInterval(function(){
         var e=s.q("#fyExp"); if(!e || !document.body.contains(s.ov)){ clearInterval(tick); return; }
