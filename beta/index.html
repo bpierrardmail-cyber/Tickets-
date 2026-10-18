@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="18/10 07:49" />
+  <meta name="build" content="18/10 08:46" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -5866,6 +5866,69 @@
       fyResetBase(); fyRawWrite("fyPend", fyPend); fyRawWrite("askName", false);
       C.role=snap.role; C.me=snap.me; C.owner=snap.owner; C.tabs=snap.tabs||null; C.accts=snap.accts==null?null:snap.accts; C.snapT=snap.t; C.lastOk=Date.now();
       fySave(); fyReloadVars(); fyApplyMode(); render();
+      if(C.imp){ delete C.imp; fySave(); if(C.role==="edit") setTimeout(fyImport, 0); }
+    }
+    // Ses données d'avant (gardées de côté en rejoignant) : combien, et faut-il les ajouter au foyer ?
+    function fyPrevCount(prev){ prev=prev||store.read("fyAvant", null); if(!prev) return 0; var n=0; ["entries","virements","epargne","provisions","fraisCommuns"].forEach(function(k){ n+=(prev[k]||[]).length; }); return n; }
+    function fyAskImport(snap){
+      var prev=store.read("fyAvant", null), n=(prev && prev.entries || []).length;
+      if(!fyCfg || fyCfg.role!=="edit" || !fyPrevCount(prev)) return Promise.resolve(false);
+      var who=(snap && snap.owner) || "la personne qui t'invite";
+      return new Promise(function(res){
+        uiConfirm("Ajouter tes données actuelles au foyer de "+esc(who)+" ?<br><small style=\"color:var(--ink-soft)\">"+(n?n+" ticket"+(n>1?"s":"")+", ":"")+"tes virements, frais, épargnes et provisions partent sur son téléphone, sur ton compte. La Bourse et les budgets restent de côté. Sinon, tout est gardé de côté ici et revient si tu quittes le foyer.</small>",
+          function(){ res(true); }, { ok:"Ajouter au foyer", no:"Garder de côté", onNo:function(){ res(false); } });
+      });
+    }
+    // Verse les données d'avant dans le foyer, rattachées à ce membre (son compte, son prénom). Elles partent comme ses autres changements.
+    function fyImport(){
+      var prev=store.read("fyAvant", null); if(!prev || !fyCfg || fyCfg.role!=="edit") return 0;
+      var me=fyCfg.me || mePerson(), restricted=fyCfg.accts!=null, pc=(prev.comptes||[]).filter(function(a){ return a && a.key; });
+      var oldMain=pc.filter(function(a){ return a.main; })[0] || pc[0], oldMe=((oldMain && oldMain.payer) || "").trim() || "Moi";
+      function pn(x){ x=(x||"").trim(); return (x===oldMe || x==="Moi") ? me : x; }
+      var mine=comptes.filter(function(a){ return (a.payer||"")===me; })[0], target=mine || (restricted ? (comptes[0]||mainAcct()) : null);
+      var used={}, amap={}, newAccts=[];
+      comptes.forEach(function(a){ used[a.key]=1; });
+      pc.forEach(function(a){
+        var same=comptes.filter(function(c){ return c.nom===a.nom && (c.payer||"")===pn(a.payer); })[0];
+        if(same) amap[a.key]=same.key;
+        else if(a===oldMain && target) amap[a.key]=target.key;
+        else if(restricted) amap[a.key]=target ? target.key : null;
+        else { var k=a.key; while(used[k]) k=a.key+"-"+fyRand(3); used[k]=1; var na=JSON.parse(JSON.stringify(a)); na.key=k; delete na.main; na.payer=pn(a.payer)||me; newAccts.push(na); amap[a.key]=k; if(a===oldMain && !target) target=na; }
+      });
+      if(!target) return 0;
+      function ak(k){ return amap[k] || target.key; }
+      function idf(list){ var u={}; (list||[]).forEach(function(x){ if(x && x.id!=null) u[String(x.id)]=1; }); var n=0; return function(id){ var v=id; if(v==null || u[String(v)]){ v=Date.now()+(n++); while(u[String(v)]) v++; } u[String(v)]=1; return v; }; }
+      function cp(x){ return JSON.parse(JSON.stringify(x)); }
+      var count=0;
+      // tickets
+      var nid=idf(state.entries), ents=state.entries.slice();
+      (prev.entries||[]).forEach(function(e){ e=cp(e); var old=e.id; e.id=nid(e.id); if(e.id!==old) e.photo=false; if((e.payePar||"").trim()) e.payePar=pn(e.payePar); if(e.compte) e.compte=ak(e.compte); ents.push(e); count++; });
+      // virements, frais, épargne, provisions
+      var vid=idf(virements), virs=virements.slice();
+      (prev.virements||[]).forEach(function(v){ v=cp(v); v.id=vid(v.id); v.person=ak(v.person); virs.push(v); count++; });
+      var fid2=idf(fraisCommuns), frs=fraisCommuns.slice();
+      (prev.fraisCommuns||[]).forEach(function(f){ f=cp(f); f.id=fid2(f.id); if(f.personne) f.personne=pn(f.personne); if(f.compte) f.compte=ak(f.compte); frs.push(f); count++; });
+      var eid=idf(epargne), eps=epargne.slice();
+      (prev.epargne||[]).forEach(function(x){ if(x.bourseLink) return; x=cp(x); x.id=eid(x.id); x.owner=pn(x.owner)||me; eps.push(x); count++; });
+      var pid=idf(provisions), pvs=provisions.slice();
+      (prev.provisions||[]).forEach(function(x){ x=cp(x); x.id=pid(x.id); x.owner=pn(x.owner)||me; pvs.push(x); count++; });
+      // soldes de départ, liquide, argent du mois : seulement là où le foyer n'a rien
+      function mergeMap(cur, src){ var o=cp(cur||{}); Object.keys(src||{}).forEach(function(k){ var nk=amap[k]||(pc.some(function(a){ return a.key===k; })?target.key:pn(k)), v=src[k];
+        if(v && typeof v==="object"){ if(!o[nk] || typeof o[nk]!=="object") o[nk]={}; Object.keys(v).forEach(function(m){ if(!(m in o[nk])) o[nk][m]=v[m]; }); } else if(!(nk in o)) o[nk]=v; }); return o; }
+      // catégories, familles, produits, classement appris : on ajoute ce qui manque
+      function union(cur, src){ var out=(cur||[]).slice(); (src||[]).forEach(function(x){ if(out.indexOf(x)<0) out.push(x); }); return out; }
+      function addMissing(cur, src){ var o=cp(cur||{}); Object.keys(src||{}).forEach(function(k){ if(!(k in o)) o[k]=src[k]; }); return o; }
+      if(newAccts.length) store.write("comptes", comptes.concat(newAccts));
+      store.write("entries", ents); store.write("virements", virs); store.write("fraisCommuns", frs); store.write("epargne", eps); store.write("provisions", pvs);
+      store.write("soldeInit", mergeMap(soldeInit, prev.soldeInit)); store.write("liquideMois", mergeMap(liquideMois, prev.liquideMois)); store.write("argentMois", mergeMap(argentMois, prev.argentMois));
+      if(prev.cats) store.write("cats", union(CATS, prev.cats));
+      if(prev.familles) store.write("familles", union(FAMILLES, prev.familles));
+      if(prev.produits) store.write("produits", union(PRODUITS, prev.produits));
+      if(prev.appris) store.write("appris", addMissing(APPRIS, prev.appris));
+      if(prev.familleDe) store.write("familleDe", addMissing(FAMILLE_DE, prev.familleDe));
+      fyReloadVars(); render();
+      uiToast(count+" élément"+(count>1?"s":"")+" ajouté"+(count>1?"s":"")+" au foyer");
+      return count;
     }
     function fyGone(kind){ var e=new Error("foyer"); e.fyGone=kind; return e; }
     function fyHandleGone(kind){
@@ -6220,7 +6283,7 @@
         if(!m) return bad("Ce n'est pas une invitation Tickets.");
         var has=state.entries.length || virements.length || epargne.length || fraisCommuns.length;
         var run=function(){ bad(""); var b=s.q("#fyGo"); b.disabled=true; fyJoinWith(m[1], m[2], m[3], m[4]).then(function(){ s.close(); }).catch(function(e){ b.disabled=false; bad((e && e.message)||"Pas de connexion au relais : réessaie."); }); };
-        if(has) uiConfirm("Les données déjà sur ce téléphone seront remplacées par celles du foyer.<br><small style=\"color:var(--ink-soft)\">Une copie est gardée ici : elle revient si tu quittes le foyer.</small>", run, { ok:"Continuer" });
+        if(has) uiConfirm("Ce téléphone a déjà des données Tickets.<br><small style=\"color:var(--ink-soft)\">Si on t'invite en modification, tu pourras les ajouter au foyer. Sinon elles sont gardées de côté ici et reviennent si tu quittes le foyer.</small>", run, { ok:"Continuer" });
         else run();
       }
     }
@@ -6234,8 +6297,13 @@
         fyCfg={ role:r.j.role, fid:fid, mid:mid, tok:tok, km:km, joined:Date.now() }; fyPend={}; fyRawWrite("fyPend", fyPend); fySave();
         return fyCall("GET","/snap");
       }).then(function(r){
+        if(r.status===200 && r.j.v) return fyOpen(km, r.j.v).then(function(snap){ snap.t=r.j.t; return snap; });
+        return null;
+      }).then(function(snap){
+        return fyAskImport(snap).then(function(imp){ if(imp){ fyCfg.imp=1; fySave(); } return snap; });
+      }).then(function(snap){
         var done=function(){ fyApplyMode(); state.view=fyFirstTab(); render(); fyEnsureLock(function(){ uiToast("Bienvenue dans le foyer de "+(fyCfg.owner||"…")+" !"); }); };
-        if(r.status===200 && r.j.v) return fyOpen(km, r.j.v).then(function(snap){ snap.t=r.j.t; setTimeout(function(){ fyApplySnap(snap); done(); }, 50); });
+        if(snap){ setTimeout(function(){ fyApplySnap(snap); done(); }, 50); return; }
         // copie pas encore prête : elle arrivera à la prochaine mise à jour
         Object.keys(FY_KEYS).forEach(function(k){ fyRawWrite(k, fyDefault(k)); }); fyRawWrite("comptes", [{ key:"principal", nom:"Compte courant", payer:"", main:true }]);
         fyRawWrite("askName", false); fyResetBase(); fyReloadVars(); setTimeout(done, 50); fySyncSoon(4000);
