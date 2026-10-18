@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="18/10 08:46" />
+  <meta name="build" content="18/10 10:11" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2499,12 +2499,15 @@
     var SENS_OPTS=[{v:"in",l:"Entrée +"},{v:"out",l:"Sortie −"}];
 
     function openScanChooser(){
+      if(fyRO()){ uiToast("Consultation : tu ne peux pas ajouter de ticket"); return; }
+      var manual=fyRole()==="edit" && !fyTabOn(fyCfg,"list");   // sans l'Accueil, la saisie à la main passe par ici
       var ov=document.createElement("div");
       ov.className="sheet-overlay";
       ov.innerHTML='<div class="sheet">'+
         '<div class="sheet-title">Ajouter un ticket</div>'+
         '<button class="btn primary" id="sc-cam" type="button">📷 Prendre une photo</button>'+
         '<button class="btn" id="sc-gal" type="button">🖼️ Choisir dans la galerie</button>'+
+        (manual?'<button class="btn" id="sc-man" type="button">✏️ Saisir sans photo</button>':'')+
         '<button class="btn ghost" id="sc-cancel" type="button">Annuler</button>'+
         '</div>';
       document.body.appendChild(ov);
@@ -2513,6 +2516,7 @@
       document.getElementById("sc-cam").onclick=function(){ close(); filein.setAttribute("capture","environment"); filein.click(); };
       document.getElementById("sc-gal").onclick=function(){ close(); filein.removeAttribute("capture"); filein.click(); };
       document.getElementById("sc-cancel").onclick=close;
+      var scm=document.getElementById("sc-man"); if(scm) scm.onclick=function(){ close(); newDraft(); };
     }
     var restorein = document.getElementById("restorein");
 
@@ -2533,7 +2537,8 @@
     });
     document.getElementById("navscan").onclick=function(){ openScanChooser(); };
     function setNav(active, show){
-      navEl.className = "nav" + (show ? "" : " hidden") + (active==="list" ? "" : " noscan");
+      var scanHere = active==="list" || (fyRole()==="edit" && !fyTabOn(fyCfg,"list") && active===fyFirstTab());   // foyer : scanner depuis son premier onglet
+      navEl.className = "nav" + (show ? "" : " hidden") + (scanHere ? "" : " noscan");
       [].forEach.call(navEl.querySelectorAll(".navi"), function(b){
         if(b.getAttribute("data-view")===active) b.classList.add("on"); else b.classList.remove("on");
       });
@@ -3114,11 +3119,12 @@
       h += '<label class="f">Catégorie</label><div class="chips" id="chips">';
       CATS.forEach(function(c){ h += '<button class="chip'+(d.categorie===c?" on":"")+'" data-cat="'+esc(c)+'">'+esc(c)+'</button>'; });
       h += '</div>';
-      var payers=uniquePersons(); if(d.payePar && d.payePar!=="Commun" && payers.indexOf(d.payePar)<0) payers.push(d.payePar);
+      var fyLim=fyMember() && fyCfg.accts!=null;   // foyer, accès limité à ses comptes : seulement leurs titulaires
+      var payers=fyLim ? fyPayers() : uniquePersons(); if(d.payePar && d.payePar!=="Commun" && payers.indexOf(d.payePar)<0) payers.push(d.payePar);
       h += '<label class="f">Payé par</label><div class="chips" id="payer">';
-      h += '<button class="chip'+(!(d.payePar||"")?" on":"")+'" data-payer="">—</button>';
+      if(!fyLim) h += '<button class="chip'+(!(d.payePar||"")?" on":"")+'" data-payer="">—</button>';
       payers.forEach(function(p){ h += '<button class="chip'+(d.payePar===p?" on":"")+'" data-payer="'+esc(p)+'">'+esc(p)+'</button>'; });
-      h += '<button class="chip" data-payer="__new">+ Autre</button>';
+      if(!fyLim) h += '<button class="chip" data-payer="__new">+ Autre</button>';
       h += '</div>';
       if(comptes.length>1){
         h += '<label class="f">Compte</label><div class="chips" id="acctc"><button class="chip'+(!d.compte?" on":"")+'" data-acct="">Auto</button>';
@@ -3218,7 +3224,7 @@
       state.draft.articles=arts;
     }
 
-    function newDraft(){ state.note=""; state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[],payePar:"",photo:""}; state.view="form"; render(); }
+    function newDraft(){ state.note=""; state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[],payePar:fyDefPayer(),photo:""}; state.view="form"; render(); }
     function editEntry(id){
       var e=state.entries.filter(function(x){ return String(x.id)===String(id); })[0];
       if(!e) return;
@@ -3249,7 +3255,7 @@
           return {label:(a.label||"").trim(), prix:pr, produit:prod, commun:!!a.commun};
         }).filter(function(a){ return a.label || a.produit || a.prix; });
       var entry={ id:state.draft.id, montant:montant, date:state.draft.date||todayISO(),
-        marchand:(state.draft.marchand||"").trim()||"Sans nom", categorie:state.draft.categorie, payePar:(state.draft.payePar||""), articles:arts, photo:(state.draft.photo||"") };
+        marchand:(state.draft.marchand||"").trim()||"Sans nom", categorie:state.draft.categorie, payePar:(state.draft.payePar||((fyMember() && fyCfg.accts!=null && !state.draft.compte)?fyDefPayer():"")), articles:arts, photo:(state.draft.photo||"") };
       arts.forEach(function(a){
         if(a.produit && a.label){ APPRIS[norm(a.label)]=a.produit; }
         if(a.produit && a.produit!=="Remise" && FAMILLES.indexOf(a.produit)<0 && PRODUITS.indexOf(a.produit)<0){ PRODUITS.push(a.produit); persistProd(); if(!(a.produit in FAMILLE_DE)){ FAMILLE_DE[a.produit]="Divers"; persistFamille(); } }
@@ -4824,7 +4830,7 @@
       if(!files.length) return;
       state.busy=true; state.prog=0; state.note="";
       state.scanMsg = files.length>1 ? ("Lecture 1/"+files.length+"…") : (capPlugin("TicketOcr") ? "Lecture du ticket sur le téléphone…" : "Lecture du ticket en cours…");
-      state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[],payePar:"",photo:""};
+      state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[],payePar:fyDefPayer(),photo:""};
       state.view="form"; render();
       if(files[0]) fileToThumb(files[0], function(t){ if(t && state.draft && state.view==="form"){ state.draft.photo=t; render(); } });
       function tessText(src){ return Tesseract.recognize(src, "fra+eng", { logger:function(m){
@@ -5522,6 +5528,8 @@
     function fyRoleLabel(r){ return r==="edit"?"Modification":(r==="view"?"Consultation":"Propriétaire"); }
     function fyTabsLabel(m){ if(!m.tabs) return "tous les onglets"; var l=FY_TABS.filter(function(t){ return m.tabs.indexOf(t.v)>=0; }).map(function(t){ return t.l; }); return l.length===FY_TABS.length?"tous les onglets":(l.join(", ")||"aucun onglet"); }
     function fyAcctsLabel(m){ if(m.accts==null) return "tous les comptes"; var l=comptes.filter(function(a){ return m.accts.indexOf(a.key)>=0; }).map(function(a){ return a.nom; }); return l.join(", ")||"aucun compte"; }
+    function fyDefPayer(){ return fyMember() ? mePerson() : ""; }
+    function fyPayers(){ var l=[]; comptes.forEach(function(a){ var p=(a.payer||"").trim(); if(p && p!=="Commun" && l.indexOf(p)<0) l.push(p); }); if(fyCfg && fyCfg.me && l.indexOf(fyCfg.me)<0) l.unshift(fyCfg.me); return l; }
     function myAcct(){
       if(fyMember() && fyCfg.me){ var a=comptes.filter(function(c){ return (c.payer||"")===fyCfg.me; })[0]; if(a) return a; if(fyCfg.accts) return comptes[0]||mainAcct(); }
       return mainAcct();
@@ -5980,6 +5988,7 @@
       if(!fyMember() || !FY_SUB) return;
       var v=state.view; if(v==="foyer" || v==="bilan") return;
       if(fyRO() && v==="form"){ state.view=fyFirstTab(); state.draft=null; return; }
+      if(fyCfg.role==="edit" && (v==="form" || v==="photo")) return;   // saisir un ticket : toujours possible en modification
       var tb=FY_SUB[v]||v; if(!fyTabOn(fyCfg, tb)) state.view=fyFirstTab();
     }
     function fyRoStrip(){
@@ -6465,6 +6474,7 @@
       state.view=map[t]||"list"; render(); window.scrollTo(0,0);
     }
     function widgetScan(){
+      if(fyRO()){ uiToast("Consultation : tu ne peux pas ajouter de ticket"); return; }
       var Cam=capPlugin("Camera"); if(!Cam || typeof Cam.getPhoto!=="function"){ openScanChooser(); return; }
       Cam.getPhoto({ quality:88, width:2400, resultType:"dataUrl", source:"CAMERA", correctOrientation:true, saveToGallery:false, allowEditing:false }).then(function(ph){
         var u=ph && ph.dataUrl; if(!u) return;
