@@ -6,7 +6,7 @@
     android:minResizeHeight="40dp"
     android:targetCellWidth="1"
     android:targetCellHeight="1"
-    android:resizeMode="none"
+    android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/tk_widget_scan"
     android:previewLayout="@layout/tk_widget_scan"

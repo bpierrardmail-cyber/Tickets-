@@ -217,7 +217,11 @@ public final class TkWidgets {
             v.setTextViewText(R.id.tk_right, budget > 0 ? "budget " + money(budget, sym, 0) : x.optInt("n", 0) + " ticket" + (x.optInt("n", 0) > 1 ? "s" : ""));
             v.setTextViewText(R.id.tk_right2, (budget > 0 ? Math.round(spent / budget * 100) + " % · " : "") + num(perDay, 2) + " " + sym + "/jour");
         }
-        if (budget > 0) {
+        // Widget étroit (2 cases) : seulement le titre et le montant
+        boolean narrow = w < 190;
+        v.setViewVisibility(R.id.tk_right, narrow ? View.GONE : View.VISIBLE);
+        v.setViewVisibility(R.id.tk_right2, narrow ? View.GONE : View.VISIBLE);
+        if (budget > 0 && h >= 70) {
             double r = spent / budget;
             v.setViewVisibility(R.id.tk_bar, View.VISIBLE);
             v.setImageViewBitmap(R.id.tk_bar, bar(c, w, 5, (float) Math.min(1, r), r > 1 ? CORAL : (r >= 0.8 ? AMBER : ACCENT)));
@@ -226,7 +230,7 @@ public final class TkWidgets {
         JSONArray cats = x.optJSONArray("cats");
         int nCats = cats == null ? 0 : cats.length();
         boolean chart = h >= 150;
-        int rowsMax = h >= 250 ? 5 : 3;
+        int rowsMax = narrow ? 0 : (h >= 250 ? 5 : (h >= 150 ? 3 : Math.max(0, Math.min(3, (h - 24 - 18 - 38 - (budget > 0 ? 9 : 0)) / 22))));
         int fixedDp = 24 + 18 + 38 + (budget > 0 ? 9 : 0) + Math.min(nCats, rowsMax) * 22;
         if (chart) {
             int ch = Math.max(30, h - fixedDp - 20);
@@ -250,7 +254,7 @@ public final class TkWidgets {
             v.setTextViewText(vals[i], mask ? "••••" : num(cx.optDouble("v", 0), 2));
             v.setImageViewBitmap(bars[i], bar(c, Math.max(40, w - 170), 4, max > 0 ? (float) (cx.optDouble("v", 0) / max) : 0, color(cx.optString("c"), BLUE)));
         }
-        if (nCats == 0) { v.setViewVisibility(R.id.tk_c1, View.VISIBLE); v.setTextViewText(R.id.tk_c1n, "Aucun ticket ce mois-ci"); v.setTextViewText(R.id.tk_c1v, ""); }
+        if (nCats == 0 && rowsMax > 0) { v.setViewVisibility(R.id.tk_c1, View.VISIBLE); v.setTextViewText(R.id.tk_c1n, "Aucun ticket ce mois-ci"); v.setTextViewText(R.id.tk_c1v, ""); }
         v.setOnClickPendingIntent(R.id.tk_root, open(c, "mois", id));
         return v;
     }
@@ -280,6 +284,7 @@ public final class TkWidgets {
         v.setTextViewText(R.id.tk_title, "Foyer · " + (n > 1 ? n + " personnes · " : "") + accts + " compte" + (accts > 1 ? "s" : ""));
         if (mask) { v.setTextViewText(R.id.tk_big, "•••• " + sym); v.setTextColor(R.id.tk_big, SOFT); }
         else { v.setTextViewText(R.id.tk_big, big(tot, sym)); v.setTextColor(R.id.tk_big, tot < 0 ? CORAL : INK); }
+        v.setViewVisibility(R.id.tk_bar, h >= 80 ? View.VISIBLE : View.GONE);
         v.setImageViewBitmap(R.id.tk_bar, stack(c, w, 6, new double[] { Math.max(0, tot), ep, prov, bo }, new int[] { ACCENT, BLUE, PURPLE, ORANGE }));
         // Lignes : les personnes (ou les comptes s'il n'y a qu'une personne), puis épargne, provisions, bourse
         List<Object[]> items = new ArrayList<>(), fixed = new ArrayList<>();
@@ -289,12 +294,13 @@ public final class TkWidgets {
         if (ep > 0) fixed.add(new Object[] { "Épargne", ep, BLUE });
         if (prov > 0) fixed.add(new Object[] { "Provisions", prov, PURPLE });
         if (bo > 0) fixed.add(new Object[] { "Bourse", bo, ORANGE });
-        int rowsFit = Math.max(1, Math.min(4, (h - 24 - 18 - 38 - 14) / 22));
+        int rowsFit = Math.max(0, Math.min(4, (h - 24 - 18 - 38 - 14) / 22));
+        v.setViewVisibility(R.id.tk_rows, rowsFit > 0 ? View.VISIBLE : View.GONE);
         int total = items.size() + fixed.size();
-        boolean twoCols = total > rowsFit;
+        boolean twoCols = total > rowsFit && w >= 220;
         int cells = twoCols ? rowsFit * 2 : rowsFit;
         if (total > cells) {   // trop de personnes : les dernières sont regroupées
-            int keep = Math.max(1, cells - fixed.size() - 1);
+            int keep = Math.max(0, cells - fixed.size() - 1);
             double rest = 0;
             for (int i = keep; i < items.size(); i++) rest += ((Number) items.get(i)[1]).doubleValue();
             int more = items.size() - keep;
@@ -302,6 +308,7 @@ public final class TkWidgets {
             items.add(new Object[] { "+ " + more + " autre" + (more > 1 ? "s" : ""), rest, GREY });
         }
         items.addAll(fixed);
+        if (items.size() > cells) items = new ArrayList<>(items.subList(0, cells));
         int[] rows = { R.id.tk_r1, R.id.tk_r2, R.id.tk_r3, R.id.tk_r4 }, gaps = { R.id.tk_s1, R.id.tk_s2, R.id.tk_s3, R.id.tk_s4 };
         int[] cn = { R.id.tk_g1n, R.id.tk_g2n, R.id.tk_g3n, R.id.tk_g4n, R.id.tk_g5n, R.id.tk_g6n, R.id.tk_g7n, R.id.tk_g8n },
                 cv = { R.id.tk_g1v, R.id.tk_g2v, R.id.tk_g3v, R.id.tk_g4v, R.id.tk_g5v, R.id.tk_g6v, R.id.tk_g7v, R.id.tk_g8v },
@@ -361,7 +368,12 @@ public final class TkWidgets {
             v.setTextViewText(R.id.tk_chg, (chg >= 0 ? "▲ +" : "▼ −") + num(Math.abs(chg), 2) + " " + sym + " · " + (chg >= 0 ? "+" : "−") + num(Math.abs(pc), 2) + " %");
         }
         v.setTextColor(R.id.tk_chg, chg >= 0 ? ACCENT : CORAL);
-        int w = widthDp(o, 358) - 30, hh = Math.max(36, heightDp(o, 180) - 100);
+        int w = widthDp(o, 358) - 30, hAll = heightDp(o, 180), hh = Math.max(36, hAll - 100);
+        boolean narrow = w < 190, chart = hAll >= 110;
+        v.setViewVisibility(R.id.tk_time, narrow ? View.GONE : View.VISIBLE);
+        if (narrow && !mask) v.setTextViewText(R.id.tk_chg, (chg >= 0 ? "▲ +" : "▼ −") + num(Math.abs(pc), 2) + " %");
+        v.setViewVisibility(R.id.tk_chart, chart ? View.VISIBLE : View.GONE);
+        v.setViewVisibility(R.id.tk_xrow, chart ? View.VISIBLE : View.GONE);
         v.setImageViewBitmap(R.id.tk_chart, line(c, w, hh, pts, ref, from, now, chg >= 0 ? ACCENT : CORAL));
         int[] lab = { R.id.tk_x0, R.id.tk_x1, R.id.tk_x2, R.id.tk_x3 };
         long day0 = startOfDay(now);
