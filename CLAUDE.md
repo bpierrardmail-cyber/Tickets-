@@ -1,0 +1,111 @@
+# Tickets — guide pour Claude Code
+
+Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes, commun, épargne, bourse), écrite par et pour Benoît, en route vers une version Play Store gratuite avec fonctions payantes (« Tickets Plus »).
+
+## Règles de travail avec Benoît
+
+- Répondre **en français**, court et concret.
+- « Ne fais rien », « comment tu vois ça », « montre-moi » → donner un avis ou une maquette, **ne pas modifier l'appli**. Par défaut, montrer la proposition avant de modifier ; il dit « tu peux intégrer directement » quand il veut qu'on le fasse.
+- On travaille dans `beta/index.html`. Le `index.html` à la racine est l'ancienne version stable : ne pas y toucher sans demande.
+- Avant chaque commit, mettre à jour l'étiquette de version (heure de Paris) :
+  `sed -i "s#<meta name=\"build\" content=\"[^\"]*\" />#<meta name=\"build\" content=\"$(TZ=Europe/Paris date +'%d/%m %H:%M')\" />#" beta/index.html`
+- Commits en français, préfixés « β » quand ils touchent la β, poussés directement sur `main`.
+- Exigences permanentes : marcher sans bug pour une grande famille (10 personnes et plus, plus de 10 comptes, affichage lisible) ; rien à configurer pour l'utilisateur ; aucune source de données payante ; le relais ne doit jamais pouvoir lire les données du foyer.
+
+## Dépôt
+
+| Chemin | Rôle |
+|---|---|
+| `beta/index.html` | **L'appli** (≈ 6 800 lignes) : HTML + CSS + JS dans un seul fichier. Servie par GitHub Pages (`/Tickets-/beta/`). |
+| `index.html`, `sw.js`, `manifest.webmanifest` | Ancienne version stable à la racine + service worker (réseau d'abord). |
+| `relais/cours-worker.js` | Worker Cloudflare : cours Yahoo / CoinGecko (`/search`, `/quote`, `/chart`, `/crypto/*`) et routage `/foyer`. |
+| `relais/foyer.js` | Foyer partagé : un Durable Object SQLite par foyer (classe `Foyer`). |
+| `wrangler.jsonc` | Config du Worker ; déployé par Workers Builds à chaque push sur `main`. |
+| `app-android/` | Appli Android Capacitor 7 qui charge la β en ligne (`server.url`), plus le code natif dans `native/`. |
+| `.github/workflows/apk-beta.yml` | Compile deux APK (Perso et Store) quand `app-android/**` change ; publiés dans la release `apk-beta`. |
+
+## Code de `beta/index.html`
+
+- **ES5 uniquement** : `var`, `function`, pas de `let`/`const`, de flèches, de gabarits ni d'`async`. Tout le JS est dans un seul `<script>` (IIFE).
+- Méthode d'édition qui marche bien : script Python qui remplace un extrait exact avec `assert s.count(old)==1`, en écrivant les vrais caractères Unicode (pas d'échappements `\u`).
+- Vérifier la syntaxe après chaque modification :
+  `node -e "const h=require('fs').readFileSync('beta/index.html','utf8');const m=h.match(/<script>\n  \(function\(\)\{[\s\S]*?<\/script>/);new Function(m[0].replace(/^<script>/,'').replace(/<\/script>$/,''));console.log('OK')"`
+- Repères : les sections sont annoncées par `// ---------- Titre ----------` (Comptes, Éditions, Budgets, Filtre par personne, Analyse, Appli Android, Foyer partagé, Widgets…).
+- Outils internes :
+  - `store.read(k, def)` / `store.write(k, v)` : JSON dans localStorage.
+  - `render()` : redessine tout ; il remet aussi les mémos à zéro (`pvMemo`, `fsMemo`). `renderView()` choisit l'écran selon `state.view`.
+  - `uiForm({title, fields}, cb)`, `uiChoice`, `uiToast` : fenêtres intégrées. Les champs de `uiForm` sont de type `seg`, `select`, `money`… ; `api.show/get/set` dans `onChange`.
+  - `fmt`, `fmtK`, `fmtS` : montants. **Tout texte inséré en HTML passe par `esc()`.**
+- Écran mobile, thème sombre (variables CSS `--bg`, `--card`, `--ink`, `--accent`…). Tester à 412 px de large.
+
+## Données (clés localStorage)
+
+- `entries` : tickets `{id, date, marchand, montant, categorie, payePar, compte?, articles[]}`.
+- `comptes` : `{key, nom, payer, main}` (un compte principal).
+- `personnes` : `{nom, archived?}`.
+- `fraisCommuns` : frais fixes `{id, label, montant, personne ("Commun" ou un prénom), recurrent, month, endMonth?, compte?, split?, doneMonths}`.
+- `virements`, `epargne`, `provisions`, `bourse`.
+- `budgets` (budgets du foyer par catégorie), `budgetsP` (`{personne: {catégorie: montant}}`).
+- `communParts` (part de chacun dans le commun, en %), `argentMois`, `liquideMois`, `soldeInit`, `devise`.
+- Taxonomie : `cats`, `familles`, `produits`, `appris`, `familleDe`.
+
+## Notions métier à connaître
+
+- **Ticket ↔ compte** : le compte choisi sur le ticket, sinon celui dont le `payer` est égal à `payePar` (`ticketInAcct`). Un `payePar` vide compte pour le propriétaire (`payerOf`).
+- **Commun** : `communModel(month)` calcule les parts. Les parts **ne changent pas les soldes des comptes**. Un frais « Commun » est retiré :
+  - en entier du compte principal (ou de `f.compte`) par défaut ;
+  - avec `f.split` (« chacun sa part ») : la part de chacun sur son propre compte (`payAcctOf`).
+  
+  Toujours passer par `fraisKind(f, compte)` et `fraisAcctAmt(f, compte, mois)` pour les soldes.
+- **Filtre par personne** (Accueil, Articles, Analyse) : `pvCur()` vaut `moi`, un prénom ou `all` ; utiliser `vEntries()` et `inView()`. Il ne s'applique ni aux comptes, ni au Commun, ni au Bilan, ni aux widgets.
+- **Analyse « + Frais fixes »** : `fraisLines(mois, qui)` donne ce qui sort réellement du compte de la personne. `anFraisLines` limite le calcul aux mois qui ont des tickets.
+- **Éditions** : `EDITION` vaut `perso` ou `store`. L'appli Android l'annonce par `TicketsApp/<édition>` dans son identifiant de navigateur ; dans un navigateur, ajouter `?edition=store`.
+  - La version Store n'a pas la Bourse.
+  - `PLUS_FEATURES = ["widgets","foyer"]` sont réservées à Tickets Plus dans la version Store ; vérifier avec `canUse()`.
+  - Rejoindre un foyer est gratuit.
+
+## Foyer partagé (modèle « le propriétaire est le centre »)
+
+- Le téléphone du propriétaire a toutes les données. Il publie sur le relais une copie **chiffrée** (AES-GCM, gzip, format `g1.`) pour chaque membre, filtrée par `fyFilter(m)` selon les onglets, les comptes et `tk`.
+- Un membre en **modification** envoie ses changements dans `/inbox`. Le propriétaire les fusionne fiche par fiche (le plus récent l'emporte), les contrôle avec `fyAllowed` et les remet en forme avec `fyFromMember`, puis republie.
+- `FY_KEYS` liste les données synchronisées. Chaque fiche a pour chemin `clé + "\u001f" + id`.
+- Membre (`fyCfg` : `{role: owner|view|edit, fid, tok, km, me, tabs, accts, tk}`) :
+  - `accts: null` = tous les comptes ; `[]` = « Aucun · ses tickets » (compte fictif `__tickets`) ;
+  - `tk: "all"` = tous les tickets et tous les frais fixes du foyer, ceux des autres en lecture seule (`fyCanEdit`, `fyFraisCanEdit`).
+- Invitation par QR code `TK1.<fid>.<mid>.<inv>.<km>`, sans dépendance externe (`qrMatrix`).
+- Code à 6 chiffres + empreinte obligatoires sur tous les téléphones du foyer. Code de récupération du propriétaire : 26 caractères.
+- Retirer un membre ou changer une clé coupe son accès. Un enfant est en consultation seulement.
+
+## Appli Android (`app-android/native`)
+
+- `TicketsNativePlugin` : sauvegarde, partage, widgets, `scanQr` (Google code scanner).
+- `TicketOcrPlugin` : lecture des tickets par ML Kit. Dans le navigateur, c'est Tesseract.js.
+- Widgets (`TkWidgets.java` + layouts `tk_*`) :
+  - masqués par défaut ; on touche le montant → `TkUnlockActivity` (empreinte ou code de l'appareil) ;
+  - remasqués au bout de 2 min ou quand l'écran s'éteint ;
+  - réglages par appui long (`TkWidgetConfig`).
+- `patch-manifest.js` et `tickets.gradle` sont appliqués par le workflow. Le widget Bourse n'existe que dans l'édition Perso.
+
+## Tests
+
+Il n'y a pas de tests dans le dépôt. Ceux qui ont servi sont des scripts Playwright en Python :
+- Chromium sans interface, viewport 412×900 ;
+- données injectées dans localStorage puis `reload()` ;
+- plusieurs contextes de navigateur pour simuler le propriétaire et les membres ;
+- une imitation locale du relais (Node + `node:sqlite`, sur `localhost:8787`, adresse injectée par la clé `foyerApi`) ;
+- QR codes relus avec OpenCV.
+
+Le réseau étant souvent restreint dans les environnements de Claude, bloquer toute requête hors `file:` et du relais local.
+
+## Encore à décider (ne pas trancher seul)
+
+- Répartition gratuit / Plus et prix de Plus.
+- Nom définitif de l'appli et identifiant Store.
+- Type de compte Google Play.
+- Avant la sortie Store :
+  - QR code lisible par l'appareil photo (lien Play Store + install referrer) ;
+  - offre Workers Paid ;
+  - WebSocket à la place de l'interrogation régulière ;
+  - protection contre les abus à la création de foyer ;
+  - copies différentielles ;
+  - domaine propre en juridiction UE.
