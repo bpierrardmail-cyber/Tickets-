@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 17:59" />
+  <meta name="build" content="21/10 18:16" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2697,6 +2697,12 @@
       hint.onclick=function(ev){ ev.stopPropagation(); try{ c.scrollBy({ top:Math.round(c.clientHeight*.7), behavior:"smooth" }); }catch(e){ c.scrollTop+=Math.round(c.clientHeight*.7); } };
       upd();
     }
+    (function(){ var t=null, w0=window.innerWidth, h0=window.innerHeight;
+      window.addEventListener("resize", function(){ clearTimeout(t); t=setTimeout(function(){
+        var w=window.innerWidth, h=window.innerHeight, a=document.activeElement, typing=a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
+        if(w===w0 && Math.abs(h-h0)<4) return; if(typing && w===w0) return; w0=w; h0=h;
+        if(fitView() && !document.querySelector(".sheet-overlay")){ fitMemo={}; render(); } }, 200); });
+    })();
     function v0key(){ var on=document.querySelector(".thero .cch-tabs button.on"); return state.view+"|"+(on?on.getAttribute("data-m"):""); }
     function render(){ pvMemo=null; fsMemo={}; if(!fitting) CHB=fitView()?(fitMemo[state.view+"|"+(state.view==="communes"?(state.comChart||store.read("comChartDef","rep")):state.view==="articles"?(state.artChart||store.read("artChartDef","fam")):state.view==="analyse"?(state.anChart||store.read("anChartDef","mois")):"")]||0):0; fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); wirePV(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); try{ fitHero(); }catch(err){ console.warn(err); } }
     function renderView(){
@@ -4760,14 +4766,21 @@
         // ---- Dépenses qui reviennent : marchands présents au moins 3 mois sur les 6 derniers (filtre par personne respecté)
         var fxOnR=anFraisOn(), fwR=(pvCur()==="all") ? null : pvName(pvCur());
         var m6=[], mk6=curM; for(var i6=0;i6<6;i6++){ m6.unshift(mk6); mk6=prevMonthKey(mk6); }
-        var byM={}; vEntries().forEach(function(e){ var k=monthKey(e.date); if(m6.indexOf(k)<0) return; var nm=(e.marchand||"").trim(), key=nm.toLowerCase(); if(!key) return;
-          if(!byM[key]) byM[key]={ name:nm, m:{} }; byM[key].m[k]=(byM[key].m[k]||0)+(Number(e.montant)||0); });
-        var recs=[]; Object.keys(byM).forEach(function(k){ var o=byM[k], ks=Object.keys(o.m); if(ks.length<3) return; var t=0; ks.forEach(function(x){ t+=o.m[x]; }); recs.push({ name:o.name, n:ks.length, avg:t/ks.length, fx:false }); });
+        var recBy=state.recBy||store.read("recBy","cat"); if(recBy!=="cat" && recBy!=="mag") recBy="cat";
+        // nom de magasin rapproché : sans accents, majuscules, ponctuation ni numéros (« Intermarché » = « INTERMARCHE 1234 »)
+        function magKey(x){ x=String(x||"").toLowerCase(); try{ x=x.normalize("NFD").replace(/[\u0300-\u036f]/g,""); }catch(e){}
+          return x.replace(/[^a-z ]+/g," ").replace(/\b(sas|sarl|sa|eurl|snc|magasin|store|station|super|hyper|market)\b/g," ").replace(/\s+/g," ").trim(); }
+        var byM={}; vEntries().forEach(function(e){ var k=monthKey(e.date); if(m6.indexOf(k)<0) return;
+          var nm=recBy==="cat" ? ((e.categorie||"").trim()||"Autre") : (e.marchand||"").trim(), key=recBy==="cat" ? nm.toLowerCase() : magKey(nm); if(!key) return;
+          if(!byM[key]) byM[key]={ names:{}, m:{} }; byM[key].names[nm]=(byM[key].names[nm]||0)+1; byM[key].m[k]=(byM[key].m[k]||0)+(Number(e.montant)||0); });
+        var recs=[]; Object.keys(byM).forEach(function(k){ var o=byM[k], ks=Object.keys(o.m); if(ks.length<3) return; var t=0; ks.forEach(function(x){ t+=o.m[x]; });
+          var nm=Object.keys(o.names).sort(function(a,b){ return o.names[b]-o.names[a]; })[0]; recs.push({ name:nm, n:ks.length, avg:t/ks.length, fx:false }); });
         if(fxOnR){ var fxSeen={}; anFraisLines(curM, fwR).forEach(function(x){ var k="fx|"+x.label; if(fxSeen[k]) { fxSeen[k].avg+=x.v; return; } fxSeen[k]={ name:x.label, n:6, avg:x.v, fx:true }; recs.push(fxSeen[k]); }); }
         recs.sort(function(a,b){ return b.avg-a.avg; });
         var recT=recs.reduce(function(t,x){ return t+x.avg; },0), recMax=recs.length?recs[0].avg:1;
         if(fraisCommuns.length) fxBtn='<button type="button" class="anfx anfx-corner'+(fxOnR?' on':'')+'" id="anFx" aria-pressed="'+fxOnR+'">'+(fxOnR?'✓':'＋')+' Frais fixes</button>';
-        if(!recs.length) chart+='<div class="cch-note" style="margin:24px 0">Rien ne revient encore : il faut un même magasin au moins 3 mois sur les 6 derniers.</div>';
+        chart+='<div class="dmode" id="recBy" style="justify-content:center;margin:2px 0 4px"><button type="button" data-v="cat"'+(recBy==="cat"?' class="on"':'')+'>Par catégorie</button><button type="button" data-v="mag"'+(recBy==="mag"?' class="on"':'')+'>Par magasin</button></div>';
+        if(!recs.length) chart+='<div class="cch-note" style="margin:24px 0">Rien ne revient encore : il faut '+(recBy==="cat"?"une même catégorie":"un même magasin")+' au moins 3 mois sur les 6 derniers.</div>';
         else { chart+='<div style="margin-top:6px">'; recs.forEach(function(x){ var pc=Math.max(2, Math.round(x.avg/recMax*100));
           chart+='<div class="bar-row" style="margin:10px 2px"><div class="bar-top"><span class="bl">'+esc(x.name)+' <small class="muted">'+(x.fx?'frais fixe':x.n+' mois sur 6')+'</small></span><span class="bv">'+fmtK(x.avg)+'<small class="muted"> /mois</small></span></div><div class="bar-track"><i style="width:'+pc+'%;background:'+(x.fx?'#c78bd6':'#7c9cf4')+'"></i></div></div>'; });
           chart+='</div><div class="cch-note">Montant moyen par mois où la dépense apparaît</div>'; }
@@ -4848,6 +4861,7 @@
       wireChartDefaults();
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.anChart=bt.getAttribute("data-m"); store.write("anChart", state.anChart); render(); }; });
       var hc=document.getElementById("histcat"); if(hc) hc.onchange=function(){ state.histCat=hc.value; render(); };
+      [].forEach.call(document.querySelectorAll("#recBy button"), function(b){ b.onclick=function(){ state.recBy=b.getAttribute("data-v"); store.write("recBy", state.recBy); render(); }; });
       var afx=document.getElementById("anFx"); if(afx) afx.onclick=function(){ state.anFrais=!anFraisOn(); store.write("anFrais", state.anFrais); render(); };
       var gp=document.getElementById("gper"); if(gp) gp.onchange=function(){ state.graphPeriod=gp.value; render(); };
       var gd=document.getElementById("gdim"); if(gd) gd.onchange=function(){ state.graphDim=gd.value; render(); };
