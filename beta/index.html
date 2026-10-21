@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 15:29" />
+  <meta name="build" content="21/10 15:41" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -607,6 +607,9 @@
     .ap-row em{ font-style:normal; color:var(--accent); }
     .ap-row b{ flex:0 0 auto; font-variant-numeric:tabular-nums; }
     .ap-row b.neg{ color:var(--coral); }
+    .com-tools{ display:flex; justify-content:flex-start; margin:12px 0 0; }
+    .com-tools + .thero{ margin-top:10px; }
+    .ap-tool.com-add{ width:auto; padding:0 12px; background:var(--card); font-size:12.5px; font-weight:600; font-family:var(--sans); }
     .ap-tool{ width:34px; height:30px; border-radius:9px; border:1px dashed var(--line2); background:none; color:var(--accent); font-size:15px; padding:0; cursor:pointer; }
     /* Parts du commun */
     .cp-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin:12px 0 4px; }
@@ -3778,6 +3781,7 @@
       var cSub=state.comSub; if(cSub!=="commun" && cSub!=="prod" && cSub!=="perso") cSub=null;   // sous-pages : frais communs, produits partagés, frais perso
       var h=header(!!cSub, cSub==="commun"?"Frais communs":(cSub==="prod"?"Produits partagés":(cSub==="perso"?"Frais perso":"")))+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>';
       var myEff=effPct(me);
+      if(!cSub) h+='<div class="com-tools"><button type="button" class="ap-tool com-add" id="addfrais" aria-label="Ajouter un frais fixe">＋ Frais fixe</button></div>';
       if(!cSub) h+=tabHero({ label:"Ta part ce mois ("+esc(me)+")", big:partOf(me), sub:(myEff>0?"frais perso + "+pctTxt(myEff)+" du commun":"frais perso seulement (0 % du commun)"), extra:chart, stats:hst });
       // Ligne « Parts du commun » : résumé, touche pour régler
       var pSum;
@@ -3822,7 +3826,6 @@
       if(cSub){ h+=subBody; if(cSub!=="prod") h+='<section class="paper cacc"><div class="clink" id="addfrais" style="margin:10px 2px"><span>+ Ajouter un frais fixe</span><span></span></div></section>'; }
       else {
         h+='<section class="paper cacc">'+partsRow+rowsMain+'</section>';
-        h+='<section class="paper cacc"><div class="dtot" style="padding:13px 2px 4px"><span>Total frais fixes</span><span class="v" style="color:var(--ink)">'+fmtK(D.fraisTot)+'</span></div><div class="clink" id="addfrais" style="margin:6px 2px 12px"><span>+ Ajouter un frais fixe</span><span></span></div></section>';
       }
 
       app.innerHTML=h;
