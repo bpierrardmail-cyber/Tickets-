@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 18:40" />
+  <meta name="build" content="21/10 18:44" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -276,6 +276,7 @@
     .thero{ margin-bottom:12px; }
     .thero.fit{ display:flex; flex-direction:column; }
     .thero.fit > *{ flex-shrink:0; }
+    .thero.fit > .bsl{ padding-bottom:3px; }
     .thero .cch-hint{ display:none; }
     .thero.cmore > .cch{ -webkit-mask-image:linear-gradient(#000 calc(100% - 44px), transparent); mask-image:linear-gradient(#000 calc(100% - 44px), transparent); }
     .thero.cmore .cch-hint{ display:block; align-self:center; position:relative; z-index:2; margin:-30px 0 6px; padding:5px 12px; border-radius:999px; border:1px solid var(--line2); background:var(--card2); color:var(--ink-soft); font-family:var(--sans); font-size:11.5px; font-weight:600; cursor:pointer; }
@@ -2683,10 +2684,18 @@
       var hr=hero.getBoundingClientRect(), last=app.lastElementChild, after=last ? Math.max(0, last.getBoundingClientRect().bottom-hr.bottom) : 0;
       var top=hr.top+(window.scrollY||0), target=Math.floor(window.innerHeight-navH-top-after-12);
       if(target<200) target=200;
+      // mesure faite avec la mise en page finale (colonne flexible : les marges ne se chevauchent plus), sinon il manque quelques pixels
+      hero.classList.add("fit"); hero.style.setProperty("--chb", Math.max(0,CHB)+"px");
       var diff=target-hero.offsetHeight, nb=Math.max(-70, Math.min(420, CHB+diff));
       if(fitting<3 && Math.abs(nb-CHB)>1){ fitting++; CHB=nb; fitMemo[v0key()]=nb; try{ render(); }finally{ fitting--; } return; }
-      hero=document.querySelector(".thero"); if(hero){ hero.classList.add("fit"); hero.style.setProperty("--chb", Math.max(0,CHB)+"px"); hero.style.height=target+"px"; fitMore(hero); }
+      hero=document.querySelector(".thero"); if(hero){ hero.classList.add("fit"); hero.style.setProperty("--chb", Math.max(0,CHB)+"px"); hero.style.height=target+"px";
+        // 1 à 3 px de trop (arrondis) : on bloque le défilement interne, sinon le graphique « bouge » au toucher
+        [].forEach.call(hero.children, function(x){ if((x.classList.contains("cch") || x.classList.contains("bsl")) && x.scrollHeight-x.clientHeight<=3) x.style.overflowY="hidden"; });
+        fitMore(hero); }
+      // polices chargées après coup : les textes changent un peu de taille, on refait le calcul une fois
+      if(!fitFontsHooked && document.fonts && document.fonts.ready){ fitFontsHooked=true; document.fonts.ready.then(function(){ if(fitView() && !document.querySelector(".sheet-overlay")){ fitMemo={}; render(); } }); }
     }
+    var fitFontsHooked=false;
     // Graphique trop long pour la carte : fondu en bas + « ⌄ Voir la suite » tant qu'il reste quelque chose plus bas
     function fitMore(hero){
       var c=null; [].forEach.call(hero.children, function(x){ if(x.classList.contains("cch")) c=x; }); if(!c) return;
