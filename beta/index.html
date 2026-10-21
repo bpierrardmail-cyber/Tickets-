@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 16:08" />
+  <meta name="build" content="21/10 16:25" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -276,6 +276,7 @@
     .thero{ margin-bottom:12px; }
     .thero.fit{ display:flex; flex-direction:column; }
     .thero.fit > .cch, .thero.fit > .bsl{ flex:1; display:flex; flex-direction:column; justify-content:center; }
+    .thero.fit > .cch.cch-top{ justify-content:flex-start; }
     .thero.fit .hstats{ margin-top:auto; padding-top:14px; }
     .thero.fit .cdon-big svg{ flex-basis:calc(128px + min(var(--chb,0px)*.1, 14px)); width:calc(128px + min(var(--chb,0px)*.1, 14px)); height:calc(128px + min(var(--chb,0px)*.1, 14px)); }
     .thero.fit .crep-b{ height:calc(14px + min(var(--chb,0px)*.04, 12px)); }
@@ -3762,7 +3763,7 @@
       // ---- Carte du haut : ta part + 3 graphiques (onglets ou glissé)
       var MODES=[["rep","Répartition"],["postes","Postes"],["6m","6 mois"]];
       var cm=state.comChart||store.read("comChartDef","rep"); if(!MODES.some(function(x){ return x[0]===cm; })) cm="rep";
-      var chart=chartTabsHTML(MODES, cm, "comChartDef", "rep")+'<div class="cch">';
+      var chart=chartTabsHTML(MODES, cm, "comChartDef", "rep")+'<div class="cch'+(cm==="rep"?' cch-top':'')+'">';
       if(cm==="rep"){
         // Toi d'abord, puis les plus grosses parts ; par pages de 5 personnes au-delà de 5
         var rp=ppl.filter(function(p){ return p===me || partOf(p)>0.004; }), rRest=rp.filter(function(p){ return p!==me; }).sort(function(a,b){ return partOf(b)-partOf(a); });
@@ -3802,8 +3803,10 @@
       chart+='</div>';
       var hst=[];
       // Frais fixes de chaque personne : ses frais perso + sa part des frais communs (sans les produits partagés)
-      ppl.forEach(function(p){ var t=persoOf(p)+communShareOf(p); if(p===me || t>0.004) hst.push({l:esc(p)+(p===me?" (toi)":""), v:fmtS(t), d:"frais fixes"}); });
-      hst.push({l:"Total foyer", v:fmtS(D.fraisTot), d:"frais fixes"});
+      // Les chiffres de la personne de ce téléphone (sur le téléphone de Sylvette : ceux de Sylvette)
+      hst.push({l:"Total frais fixes", v:fmtS(persoOf(me)+communShareOf(me)), d:"perso + commun"});
+      hst.push({l:"Frais partagés", v:fmtS(D.prod*pctOf(me)/100), d:"ta part"});
+      hst.push({l:"Total foyer", v:fmtS(D.fraisTot+D.prod), d:"fixes + partagés"});
       var myPc=pctOf(me);
       var cSub=state.comSub; if(cSub!=="frais" && cSub!=="prod") cSub=null;   // sous-pages : frais fixes (communs + perso), produits partagés
       var h=header(!!cSub, cSub==="frais"?"Frais fixes":(cSub==="prod"?"Produits partagés":""))+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>';
