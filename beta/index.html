@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 16:56" />
+  <meta name="build" content="21/10 17:25" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -276,6 +276,9 @@
     .thero{ margin-bottom:12px; }
     .thero.fit{ display:flex; flex-direction:column; }
     .thero.fit > *{ flex-shrink:0; }
+    .thero .cch-hint{ display:none; }
+    .thero.cmore > .cch{ -webkit-mask-image:linear-gradient(#000 calc(100% - 44px), transparent); mask-image:linear-gradient(#000 calc(100% - 44px), transparent); }
+    .thero.cmore .cch-hint{ display:block; align-self:center; position:relative; z-index:2; margin:-30px 0 6px; padding:5px 12px; border-radius:999px; border:1px solid var(--line2); background:var(--card2); color:var(--ink-soft); font-family:var(--sans); font-size:11.5px; font-weight:600; cursor:pointer; }
     .thero.fit > .cch, .thero.fit > .bsl{ flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; display:flex; flex-direction:column; justify-content:center; justify-content:safe center; }
     .thero.fit > .cch.cch-top{ justify-content:flex-start; }
     .thero.fit .hstats{ margin-top:auto; padding-top:14px; }
@@ -2677,7 +2680,17 @@
       if(target<200) target=200;
       var diff=target-hero.offsetHeight, nb=Math.max(-70, Math.min(420, CHB+diff));
       if(fitting<3 && Math.abs(nb-CHB)>1){ fitting++; CHB=nb; fitMemo[v0key()]=nb; try{ render(); }finally{ fitting--; } return; }
-      hero=document.querySelector(".thero"); if(hero){ hero.classList.add("fit"); hero.style.setProperty("--chb", Math.max(0,CHB)+"px"); hero.style.height=target+"px"; }
+      hero=document.querySelector(".thero"); if(hero){ hero.classList.add("fit"); hero.style.setProperty("--chb", Math.max(0,CHB)+"px"); hero.style.height=target+"px"; fitMore(hero); }
+    }
+    // Graphique trop long pour la carte : fondu en bas + « ⌄ Voir la suite » tant qu'il reste quelque chose plus bas
+    function fitMore(hero){
+      var c=null; [].forEach.call(hero.children, function(x){ if(x.classList.contains("cch")) c=x; }); if(!c) return;
+      var hint=document.createElement("button"); hint.type="button"; hint.className="cch-hint"; hint.textContent="⌄ Voir la suite";
+      c.parentNode.insertBefore(hint, c.nextSibling);
+      function upd(){ hero.classList.toggle("cmore", c.scrollHeight-c.scrollTop-c.clientHeight>4); }
+      c.addEventListener("scroll", upd, { passive:true });
+      hint.onclick=function(ev){ ev.stopPropagation(); try{ c.scrollBy({ top:Math.round(c.clientHeight*.7), behavior:"smooth" }); }catch(e){ c.scrollTop+=Math.round(c.clientHeight*.7); } };
+      upd();
     }
     function v0key(){ var on=document.querySelector(".thero .cch-tabs button.on"); return state.view+"|"+(on?on.getAttribute("data-m"):""); }
     function render(){ pvMemo=null; fsMemo={}; if(!fitting) CHB=fitView()?(fitMemo[state.view+"|"+(state.view==="communes"?(state.comChart||store.read("comChartDef","rep")):state.view==="articles"?(state.artChart||store.read("artChartDef","fam")):state.view==="analyse"?(state.anChart||store.read("anChartDef","mois")):"")]||0):0; fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); wirePV(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); try{ fitHero(); }catch(err){ console.warn(err); } }
