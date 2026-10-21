@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 20:00" />
+  <meta name="build" content="21/10 20:04" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4858,8 +4858,21 @@
         if(!payL.length) chart+='<div class="cch-note" style="margin:24px 0">Aucune dépense sur cette période.</div>';
         else { chart+='<div style="margin-top:6px">'; payL.forEach(function(x){ var pc=Math.max(2, Math.round(x.v/payMax*100));
           var dim=selP && x.name!==selP;
-          chart+='<div class="bar-row" style="margin:12px 2px;'+(dim?'opacity:.5':'')+'"><div class="bar-top"><span class="bl"'+(selP && !dim?' style="font-weight:800"':'')+'>'+esc(x.name)+(x.name===mePerson()?' <small class="muted">toi</small>':'')+'</span><span class="bv">'+fmtK(x.v)+' <small class="muted">'+Math.round(x.v/(payT||1)*100)+' %</small></span></div><div class="bar-track"><i style="width:'+pc+'%;background:'+personColor(x.name)+'"></i></div></div>'; });
+          chart+='<div class="bar-row payrow clk" data-name="'+esc(x.name)+'" style="margin:12px 2px;'+(dim?'opacity:.5':'')+'"><div class="bar-top"><span class="bl"'+(selP && !dim?' style="font-weight:800"':'')+'>'+esc(x.name)+(x.name===mePerson()?' <small class="muted">toi</small>':'')+'</span><span class="bv">'+fmtK(x.v)+' <small class="muted">'+Math.round(x.v/(payT||1)*100)+' %</small></span></div><div class="bar-track"><i style="width:'+pc+'%;background:'+personColor(x.name)+'"></i></div></div>'; });
           chart+='</div>'; }
+        // page d'une personne : ses tickets par catégorie (repliables) et ses frais fixes
+        if(state.anSub==="pay" && state.paySel){ var who=state.paySel, mine=state.entries.filter(function(e){ return msP[monthKey(e.date)] && payerOf(e)===who; }).sort(function(a,b){ return String(b.date||"").localeCompare(String(a.date||"")); });
+          var pc={}, pcl={}, ptot=0; mine.forEach(function(e){ var c=e.categorie||"Autre", v=Number(e.montant)||0; pc[c]=(pc[c]||0)+v; (pcl[c]=pcl[c]||[]).push(e); ptot+=v; });
+          var pfx={}, pfxT=0; if(fxOnP) Object.keys(msP).forEach(function(mk){ anFraisLines(mk, who).forEach(function(x){ pfx[x.label]=(pfx[x.label]||0)+x.v; pfxT+=x.v; }); });
+          var po=state.payOpen||(state.payOpen={}), PC=["#7c9cf4","#e0a458","#4fd6a0","#c78bd6","#5bc0d4","#e88fb0","#9bd35e","#d4a05b","#8a92e0","#6fcaa8","#d98c5f","#b0b6c2"];
+          function pg(key, col, title, sub, val, body){ return '<div class="dgrp'+(po[key]?' open':'')+'" data-g="'+esc(key)+'"><div class="dgh"><i class="cdot" style="background:'+col+';margin:0"></i><span class="t">'+esc(title)+'<em class="ds">'+sub+'</em></span><span class="v">'+fmtK(val)+'</span><span class="chev">›</span></div><div class="dgb">'+body+'</div></div>'; }
+          var pp='<section class="paper cacc"><div class="cacc-h" style="cursor:default;padding-bottom:6px"><span class="t">Payé par '+esc(who)+'<small>'+esc(perP)+' · '+mine.length+' ticket'+(mine.length>1?'s':'')+(pfxT>0?' + frais fixes':'')+' · touche une ligne pour la déplier</small></span><span class="v" style="color:var(--accent)">'+fmtK(ptot+pfxT)+'</span></div>';
+          Object.keys(pc).sort(function(a,b){ return pc[b]-pc[a]; }).forEach(function(c, ci){
+            var body=pcl[c].map(function(e){ var dd=(e.date||"").split("-"); return '<div class="entry ecomp" data-id="'+esc(e.id)+'"><span class="n">'+esc(e.marchand||"—")+'<small>'+esc(dd.length===3?dd[2]+"/"+dd[1]+"/"+dd[0].slice(2):"")+'</small></span><span class="a">'+fmtK(e.montant)+'</span></div>'; }).join("");
+            pp+=pg("c|"+c, PC[ci%PC.length], c, pcl[c].length+" ticket"+(pcl[c].length>1?"s":"")+" · "+Math.round(pc[c]/((ptot+pfxT)||1)*100)+" %", pc[c], body); });
+          if(pfxT>0) pp+=pg("fx", "#c78bd6", "Frais fixes", Object.keys(pfx).length+" frais", pfxT, Object.keys(pfx).sort(function(a,b){ return pfx[b]-pfx[a]; }).map(function(l){ return '<div class="dfrow"><span class="n">'+esc(l)+'</span><span class="a">'+fmtK(pfx[l])+'</span></div>'; }).join(""));
+          if(!mine.length && !(pfxT>0)) pp+='<div class="muted" style="font-size:12px;margin:10px 2px 14px">Rien de payé par '+esc(who)+' sur cette période.</div>';
+          recPage=pp+'</section>'; recPageTitle=who; }
         hero={ label:"Qui a payé · "+esc(perP), big:(selP ? (byP[selP]||0) : payT), color:"var(--ink)", sub:(selP ? "payé par "+esc(selP)+" · "+(payT>0?Math.round((byP[selP]||0)/payT*100):0)+" % des "+fmtK(payT)+" du foyer" : "tout le foyer") };
       } else {
         // ---- Répartition (ex-Graphes · Dépenses)
@@ -4903,11 +4916,12 @@
       }
       chart+='</div>'; chart=fxBtn+chart; hero.extra=chart;
       var nSub=(state.anSub==="mois");   // sous-page « Par mois »
-      if(state.anSub==="rec" && recPage===null) state.anSub=null;
+      if((state.anSub==="rec" || state.anSub==="pay") && recPage===null) state.anSub=null;
       var h=header(nSub || recPage!==null, nSub?"Par mois":recPageTitle)+pvBarHTML()+(nSub || recPage!==null?'':tabHero(hero));
       if(recPage!==null){
         app.innerHTML=h+recPage;
-        bindBack(function(){ state.anSub=null; state.recSel=null; render(); window.scrollTo(0,0); });
+        bindBack(function(){ state.anSub=null; state.recSel=null; state.paySel=null; render(); window.scrollTo(0,0); });
+        [].forEach.call(document.querySelectorAll(".dgrp .dgh"), function(hd){ hd.onclick=function(){ var g=hd.parentNode, k=g.getAttribute("data-g"), o=state.payOpen||(state.payOpen={}); o[k]=!o[k]; g.classList.toggle("open", !!o[k]); }; });
         [].forEach.call(document.querySelectorAll(".entry[data-id]"), function(n){ n.onclick=function(){ editEntry(n.getAttribute("data-id")); }; });
         setNav("analyse", true); return;
       }
@@ -4925,6 +4939,7 @@
       wireChartDefaults();
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.anChart=bt.getAttribute("data-m"); store.write("anChart", state.anChart); render(); }; });
       var hc=document.getElementById("histcat"); if(hc) hc.onchange=function(){ state.histCat=hc.value; render(); };
+      [].forEach.call(document.querySelectorAll(".payrow"), function(r){ r.onclick=function(){ state.paySel=r.getAttribute("data-name"); state.payOpen={}; state.anSub="pay"; render(); window.scrollTo(0,0); }; });
       [].forEach.call(document.querySelectorAll(".recrow"), function(r){ r.onclick=function(){ state.recSel={ by:recByPeek(), key:r.getAttribute("data-key"), name:r.getAttribute("data-name") }; state.anSub="rec"; render(); window.scrollTo(0,0); }; });
       [].forEach.call(document.querySelectorAll("#recBy button"), function(b){ b.onclick=function(){ state.recBy=b.getAttribute("data-v"); store.write("recBy", state.recBy); render(); }; });
       var afx=document.getElementById("anFx"); if(afx) afx.onclick=function(){ state.anFrais=!anFraisOn(); store.write("anFrais", state.anFrais); render(); };
