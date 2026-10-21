@@ -43,7 +43,9 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 - `entries` : tickets `{id, date, marchand, montant, categorie, payePar, compte?, articles[]}`.
 - `comptes` : `{key, nom, payer, main}` (un compte principal).
 - `personnes` : `{nom, archived?}`.
-- `fraisCommuns` : frais fixes `{id, label, montant, personne ("Commun" ou un prénom), recurrent, month, endMonth?, compte?, split?, doneMonths}`.
+- `fraisCommuns` : frais fixes `{id, label, montant, personne ("Commun" ou un prénom), recurrent, month, startMonth?, endMonth?, compte?, split?, amounts?, parts?, doneMonths}`.
+  - `startMonth` : premier mois d'un frais récurrent (sinon déduit par `fraisStart`). `amounts` et `parts` sont indexés par mois de début (« à partir de »).
+  - `parts` : `{"AAAA-MM": {prénom: %} ou null}` = parts propres au frais ; toujours passer par `fraisPct(f, qui, mois)`.
 - `virements`, `epargne`, `provisions`, `bourse`.
 - `budgets` (budgets du foyer par catégorie), `budgetsP` (`{personne: {catégorie: montant}}`).
 - `communParts` (part de chacun dans le commun, en %), `argentMois`, `liquideMois`, `soldeInit`, `devise`.
