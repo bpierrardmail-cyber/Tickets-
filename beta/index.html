@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 13:58" />
+  <meta name="build" content="21/10 14:48" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2602,7 +2602,7 @@
       '</div>';
     document.body.appendChild(navEl);
     [].forEach.call(navEl.querySelectorAll(".navi"), function(b){
-      b.onclick=function(){ var v=b.getAttribute("data-view"); if(v==="analyse") state.histMonth=null; if(v==="articles") state.artSel=null; if(v==="bourse") state.bSub=null; state.view=v; render(); window.scrollTo(0,0); };
+      b.onclick=function(){ var v=b.getAttribute("data-view"); if(v==="analyse") state.histMonth=null; if(v==="articles"){ state.artSel=null; state.artSub=null; } if(v==="analyse") state.anSub=null; if(v==="bourse") state.bSub=null; state.view=v; render(); window.scrollTo(0,0); };
     });
     document.getElementById("navscan").onclick=function(){ openScanChooser(); };
     function setNav(active, show){
@@ -3471,7 +3471,8 @@
       var month = (state.months&&state.months.articles)||curM;
       var D=artMonthData(month), col={};
       D.famKeys.forEach(function(f,i){ col[f]=(f==="Remise")?"#8a92a6":ARTPAL[i%ARTPAL.length]; });
-      var h=header()+pvBarHTML()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabelOf(month))), month, curM)+'</div>';
+      var aSub=(state.artSub==="fam" && D.famKeys.length)?"fam":null;   // sous-page « Par famille »
+      var h=header(!!aSub, aSub?"Par famille":"")+pvBarHTML()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabelOf(month))), month, curM)+'</div>';
       if(!D.famKeys.length){
         h+='<section class="paper cacc" style="padding:18px 16px"><div class="center muted" style="font-size:12.5px;line-height:1.5">Aucun article rangé ce mois-ci.<br>Scanne un ticket et classe ses lignes par produit.</div></section>';
       } else {
@@ -3491,26 +3492,30 @@
           chart+=artAvgBars(trimLead(ms.map(function(m){ return { m:m, lbl:artMShort(m), v:artMonthData(m).grand }; }), function(r){ return r.v; }), month);
         }
         chart+='</div>';
-        h+=tabHero({ label:"Articles achetés", big:D.grand, sub:D.nArt+" article"+(D.nArt>1?"s":"")+" · "+D.famKeys.length+" famille"+(D.famKeys.length>1?"s":""), extra:chart,
+        if(!aSub) h+=tabHero({ label:"Articles achetés", big:D.grand, sub:D.nArt+" article"+(D.nArt>1?"s":"")+" · "+D.famKeys.length+" famille"+(D.famKeys.length>1?"s":""), extra:chart,
           stats:[ {l:"Le plus acheté", v:(D.most?esc(D.most.name):"—"), d:(D.most?"×"+D.most.n:"")}, {l:"Le plus cher", v:(D.top?esc(D.top.name):"—"), d:(D.top?fmtS(D.top.amt):"")}, {l:"Prix moyen", v:fmtS(D.nArt?D.grand/D.nArt:0), d:"par article"} ] });
         // ---- familles repliables
         var open=state.artOpen||(state.artOpen={});
-        h+='<div class="bsec-h">Par famille<small>touche pour déplier</small></div><section class="paper cacc">';
+        var famH='<section class="paper cacc">';
         D.famKeys.forEach(function(f){
           var F=D.fams[f], names=Object.keys(F.items).sort(function(a,b){ return F.items[b].total-F.items[a].total; }), pc=D.grand?Math.round(F.total/D.grand*100):0;
           var body=names.map(function(nm){ var it=F.items[nm]; return '<div class="arow artclk" data-fam="'+esc(f)+'" data-name="'+esc(nm)+'"><span class="n">'+esc(nm)+'</span><span class="q">×'+it.n+'</span><span class="a">'+fmtK(it.total)+'</span><span class="c">›</span></div>'; }).join("");
-          h+='<div class="dgrp'+(open[f]?' open':'')+'" data-g="'+esc(f)+'"><div class="dgh"><i class="cdot" style="background:'+col[f]+';margin:0"></i><span class="t">'+esc(f)+'<em class="ds">'+names.length+' produit'+(names.length>1?'s':'')+' · '+F.n+' article'+(F.n>1?'s':'')+(f!=="Remise"?' · '+pc+' %':'')+'</em></span><span class="v">'+fmtK(F.total)+'</span><span class="chev">›</span></div><div class="dgb">'+body+'</div></div>';
+          famH+='<div class="dgrp'+(open[f]?' open':'')+'" data-g="'+esc(f)+'"><div class="dgh"><i class="cdot" style="background:'+col[f]+';margin:0"></i><span class="t">'+esc(f)+'<em class="ds">'+names.length+' produit'+(names.length>1?'s':'')+' · '+F.n+' article'+(F.n>1?'s':'')+(f!=="Remise"?' · '+pc+' %':'')+'</em></span><span class="v">'+fmtK(F.total)+'</span><span class="chev">›</span></div><div class="dgb">'+body+'</div></div>';
         });
-        h+='</section>';
+        famH+='</section>';
+        if(aSub) h+='<div class="muted" style="font-size:12px;margin:12px 4px 0">Touche une famille pour la déplier, puis un produit pour son détail.</div>'+famH;
       }
-      h+='<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="artprod"><span class="t">Produits &amp; catégories<small>ranger, renommer, regrouper</small></span><span class="ch">›</span></div></div></section>';
+      if(!aSub) h+='<section class="paper cacc">'+(D.famKeys.length?'<div class="cacc-sec"><div class="cacc-h" id="artfam"><span class="t">🛒 Par famille · '+D.famKeys.length+'</span><span class="v">'+fmtK(D.grand)+'</span><span class="ch">›</span></div></div>':'')+
+        '<div class="cacc-sec"><div class="cacc-h" id="artprod"><span class="t">⚙︎ Produits &amp; catégories<small>ranger, renommer, regrouper</small></span><span class="ch">›</span></div></div></section>';
       app.innerHTML=h;
+      if(aSub) bindBack(function(){ state.artSub=null; render(); window.scrollTo(0,0); });
+      var afm=document.getElementById("artfam"); if(afm) afm.onclick=function(){ state.artSub="fam"; render(); window.scrollTo(0,0); };
       [].forEach.call(document.querySelectorAll(".dgrp .dgh"), function(hd){ hd.onclick=function(){ var g=hd.parentNode, k=g.getAttribute("data-g"); state.artOpen[k]=!state.artOpen[k]; g.classList.toggle("open", !!state.artOpen[k]); }; });
       [].forEach.call(document.querySelectorAll(".artclk"), function(row){ row.onclick=function(){ state.artSel={ fam:row.getAttribute("data-fam"), name:row.getAttribute("data-name") }; state.view="artDetail"; render(); window.scrollTo(0,0); }; });
       wireChartDefaults();
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.artChart=bt.getAttribute("data-m"); render(); }; });
       var ap=document.getElementById("artprod"); if(ap) ap.onclick=function(){ state.prodFrom="articles"; state.view="produits"; render(); window.scrollTo(0,0); };
-      if(D.famKeys.length) wireHeroSwipe(state.artChart||store.read("artChartDef","fam"), ["fam","top","6m"], function(k){ state.artChart=k; });
+      if(D.famKeys.length && !aSub) wireHeroSwipe(state.artChart||store.read("artChartDef","fam"), ["fam","top","6m"], function(k){ state.artChart=k; });
       wireMonthNav(month, curM, "articles");
       setNav("articles", true);
     }
@@ -4635,7 +4640,7 @@
         if(fraisCommuns.length) chart+='<button type="button" class="anfx'+(fxOn?' on':'')+'" id="anFx" aria-pressed="'+fxOn+'"'+(sel?' disabled':'')+'>'+(fxOn?'✓':'＋')+' Frais fixes</button>';
         chart+=compteBarsSVG(shown.map(function(d){ return { m:d.key, lbl:mShort(d.key), v:d.total, fx:fxIn?d.fx:0 }; }), curM, function(r){ return anCol(r.v); });
         chart+='<div class="cch-leg"><span><i style="background:#7c9cf4"></i>Sous la moyenne</span><span><i style="background:#e0a458"></i>Au-dessus</span>'+(fxIn?'<span><i style="background:#c78bd6"></i>Frais fixes</span>':'')+'</div>';
-        chart+='<div class="cch-note">'+(sel?'« '+esc(selLabel)+' » par mois'+(fxOn?' · frais fixes seulement avec « Toutes les dépenses »':''):(fxIn?'Tickets + frais fixes par mois':'Total des tickets par mois'))+' · le détail de chaque mois est plus bas</div>';
+        chart+='<div class="cch-note">'+(sel?'« '+esc(selLabel)+' » par mois'+(fxOn?' · frais fixes seulement avec « Toutes les dépenses »':''):(fxIn?'Tickets + frais fixes par mois':'Total des tickets par mois'))+' · le détail de chaque mois est dans « Par mois »</div>';
         hero={ label:"Dépensé sur "+shown.length+" mois"+(sel?" · "+esc(selLabel):""), big:grand, color:"var(--ink)",
                sub:(fxIn && fxSum>0 ? "dont frais fixes "+fmtK(fxSum)+(fxOthers>0.5?" · dont "+fmtK(fxOthers)+" de part commune des autres":"") : ""),
                stats:[ {l:"Moyenne / mois", v:fmtS(avg)}, {l:"Mois record", v:(best&&best.total>0?esc(best.short):"—"), d:(best&&best.total>0?fmtS(best.total):"")}, {l:"Mois actifs", v:String(active)} ] };
@@ -4680,15 +4685,19 @@
         hero={ label:"Répartition · "+esc(perLabel), big:visTotal, color:"var(--ink)", sub:(nHid?nHid+" poste"+(nHid>1?"s":"")+" masqué"+(nHid>1?"s":""):"") };
       }
       chart+='</div>'; hero.extra=chart;
-      var h=header()+pvBarHTML()+tabHero(hero);
+      var nSub=(state.anSub==="mois");   // sous-page « Par mois »
+      var h=header(nSub, nSub?"Par mois":"")+pvBarHTML()+(nSub?'':tabHero(hero));
+      if(!nSub) h+='<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="anGoMois"><span class="t">📅 Par mois · '+shown.length+(sel?'<small>'+esc(selLabel)+'</small>':'')+'</span><span class="v">'+fmtK(grand)+'</span><span class="ch">›</span></div></div></section>';
       // ---- Liste des mois (toucher = détail du mois et ses tickets)
-      h+='<div class="bsec-h">Par mois<small>'+(sel?esc(selLabel):'touche un mois')+'</small></div><section class="paper cacc anlist">';
-      shown.slice().reverse().forEach(function(d){
+      if(nSub) h+='<div class="muted" style="font-size:12px;margin:12px 4px 0">'+(sel?'« '+esc(selLabel)+' » · ':'')+'Touche un mois pour son détail et ses tickets.</div><section class="paper cacc anlist">';
+      if(nSub) shown.slice().reverse().forEach(function(d){
         var pct=Math.max(d.total>0?2:0, Math.round(d.total/maxV*100));
         h+='<div class="bar-row clk" data-month="'+esc(d.key)+'"><div class="bar-top"><span class="bl">'+esc(d.label)+(d.key===curM?' <small class="muted">en cours</small>':'')+'</span><span class="bv">'+fmtK(d.total)+' <span class="ch">›</span></span></div><div class="bar-track"><i style="width:'+pct+'%;background:'+anCol(d.total)+'"></i></div></div>';
       });
-      h+='</section>';
+      if(nSub) h+='</section>';
       app.innerHTML=h;
+      if(nSub) bindBack(function(){ state.anSub=null; render(); window.scrollTo(0,0); });
+      var agm=document.getElementById("anGoMois"); if(agm) agm.onclick=function(){ state.anSub="mois"; render(); window.scrollTo(0,0); };
       wireChartDefaults();
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.anChart=bt.getAttribute("data-m"); store.write("anChart", state.anChart); render(); }; });
       var hc=document.getElementById("histcat"); if(hc) hc.onchange=function(){ state.histCat=hc.value; render(); };
@@ -4698,7 +4707,7 @@
       [].forEach.call(document.querySelectorAll("#gtype button"), function(b){ b.onclick=function(){ state.graphType=b.getAttribute("data-t"); render(); }; });
       [].forEach.call(document.querySelectorAll(".lgd[data-name]"), function(b){ b.onclick=function(){ var key=(state.graphDim||"fam")+"|"+b.getAttribute("data-name"); if(!state.graphHide) state.graphHide={}; if(state.graphHide[key]) delete state.graphHide[key]; else state.graphHide[key]=true; render(); }; });
       [].forEach.call(document.querySelectorAll(".anlist .bar-row.clk"), function(row){ row.onclick=function(){ state.histMonth=row.getAttribute("data-month"); state.view="month"; render(); window.scrollTo(0,0); }; });
-      wireHeroSwipe(mode, TABS.map(function(x){ return x[0]; }), function(k){ state.anChart=k; store.write("anChart", k); });
+      if(!nSub) wireHeroSwipe(mode, TABS.map(function(x){ return x[0]; }), function(k){ state.anChart=k; store.write("anChart", k); });
       setNav("analyse", true);
     }
     // Glisser à gauche / à droite dans la carte du haut pour changer de graphique (générique)
