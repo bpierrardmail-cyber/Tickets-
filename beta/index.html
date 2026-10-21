@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 18:44" />
+  <meta name="build" content="21/10 18:48" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4774,7 +4774,8 @@
       } else if(mode==="rec"){
         // ---- Dépenses qui reviennent : 12 derniers mois (depuis le premier ticket au plus), tout est listé, du plus fréquent au moins fréquent
         // coût par mois = total ÷ nombre de mois couverts (un plein tous les deux mois compte pour moitié)
-        var fxOnR=anFraisOn(), fwR=(pvCur()==="all") ? null : pvName(pvCur()), fdR=firstDataMonth();
+        var fxOnR=anFraisOn(), fwR=(pvCur()==="all") ? null : pvName(pvCur()), fdR=null;
+        vEntries().forEach(function(e){ var k=e.date && monthKey(e.date); if(k && k<=curM && (!fdR || k<fdR)) fdR=k; });   // premier ticket de la personne affichée
         var m6=[], mk6=curM; for(var i6=0;i6<12;i6++){ if(fdR && mk6<fdR) break; m6.unshift(mk6); mk6=prevMonthKey(mk6); }
         var nM=m6.length||1;
         var recBy=state.recBy||store.read("recBy","cat"); if(["cat","mag","art"].indexOf(recBy)<0) recBy="cat";
