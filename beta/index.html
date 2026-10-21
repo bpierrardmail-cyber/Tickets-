@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 17:45" />
+  <meta name="build" content="21/10 17:59" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -821,8 +821,7 @@
     .cb-oth{ color:var(--ink-soft); }
     .anfx{ display:inline-flex; align-items:center; gap:6px; margin:8px 0 2px; min-height:38px; padding:0 14px; border-radius:999px; border:1px solid var(--line2); background:var(--card2); color:var(--ink-soft); font-family:var(--sans); font-size:13px; font-weight:700; cursor:pointer; }
     .anfx.on{ background:rgba(199,139,214,.16); border-color:#c78bd6; color:var(--ink); }
-    .cch-tabs .anfx.anfx-top{ margin:0 0 0 auto; min-height:0; padding:6px 11px; font-size:12px; font-weight:600; }
-    .cch-tabs .anfx.anfx-top.on{ background:rgba(199,139,214,.16); border-color:#c78bd6; color:var(--ink); }
+    .anfx.anfx-corner{ position:absolute; top:14px; right:14px; z-index:3; margin:0; min-height:0; padding:5px 11px; font-size:12px; font-weight:600; }
     .anfx:disabled{ opacity:.45; cursor:default; }
     .ro-note{ border-radius:12px; background:rgba(124,156,244,.12); border:1px solid rgba(124,156,244,.32); padding:9px 12px; font-size:12.5px; margin-bottom:12px; }
     /* Foyer partagé */
@@ -4704,7 +4703,7 @@
     // ---------- Analyse : Historique + Graphes réunis ----------
     function renderAnalyse(){
       var curM=monthKey(todayISO());
-      var mode=state.anChart||store.read("anChartDef","mois"); if(mode!=="mois" && mode!=="rep") mode="mois";
+      var mode=state.anChart||store.read("anChartDef","mois"); if(["mois","rep","rec","pay"].indexOf(mode)<0) mode="mois";
       function mShort(m){ var pm=m.split("-"); return new Date(+pm[0], +pm[1]-1, 1).toLocaleDateString("fr-FR",{month:"short"}).replace(".",""); }
       // ---- Mois par mois (ex-Historique) : 12 derniers mois, filtre catégorie / grande catégorie / produit
       var months=lastMonths(12), monthsSet={}; months.forEach(function(mo){ monthsSet[mo.key]=true; });
@@ -4740,9 +4739,9 @@
       function anCol(v){ return v>avg?"#e0a458":"#7c9cf4"; }   // ambre au-dessus de la moyenne, bleu en dessous
 
       // ---- Carte du haut : deux graphiques (onglets ou glissé)
-      var TABS=[["mois","Mois par mois"],["rep","Répartition"]];
-      // « + Frais fixes » : sur la ligne des onglets, tout à droite
-      var chart=chartTabsHTML(TABS, mode, "anChartDef", "mois").replace(/<\/div>$/, '%%FX%%</div>')+'<div class="cch'+(mode==="rep"?' cch-top':'')+'">', fxBtn='';
+      var TABS=[["mois","Mois"],["rep","Répartition"],["rec","Récurrentes"],["pay","Qui a payé"]];
+      // « + Frais fixes » : en haut à droite de la carte
+      var chart=chartTabsHTML(TABS, mode, "anChartDef", "mois")+'<div class="cch'+(mode!=="mois"?' cch-top':'')+'">', fxBtn='';
       var hero;
       if(mode==="mois"){
         chart+='<select class="f anf" id="histcat"><option value=""'+(sel===""?" selected":"")+'>Toutes les dépenses</option>';
@@ -4750,13 +4749,48 @@
         if(famList.length){ chart+='<optgroup label="Grandes catégories (produits)">'; famList.forEach(function(f){ var v="fam:"+f; chart+='<option value="'+esc(v)+'"'+(sel===v?" selected":"")+'>'+esc(f)+'</option>'; }); chart+='</optgroup>'; }
         if(prodList.length){ chart+='<optgroup label="Produits">'; prodList.forEach(function(pp){ var v="prod:"+pp; chart+='<option value="'+esc(v)+'"'+(sel===v?" selected":"")+'>'+esc(pp)+'</option>'; }); chart+='</optgroup>'; }
         chart+='</select>';
-        if(fraisCommuns.length) fxBtn='<button type="button" class="anfx anfx-top'+(fxOn?' on':'')+'" id="anFx" aria-pressed="'+fxOn+'"'+(sel?' disabled':'')+'>'+(fxOn?'✓':'＋')+' Frais fixes</button>';
+        if(fraisCommuns.length) fxBtn='<button type="button" class="anfx anfx-corner'+(fxOn?' on':'')+'" id="anFx" aria-pressed="'+fxOn+'"'+(sel?' disabled':'')+'>'+(fxOn?'✓':'＋')+' Frais fixes</button>';
         chart+=compteBarsSVG(shown.map(function(d){ return { m:d.key, lbl:mShort(d.key), v:d.total, fx:fxIn?d.fx:0 }; }), curM, function(r){ return anCol(r.v); });
         chart+='<div class="cch-leg"><span><i style="background:#7c9cf4"></i>Sous la moyenne</span><span><i style="background:#e0a458"></i>Au-dessus</span>'+(fxIn?'<span><i style="background:#c78bd6"></i>Frais fixes</span>':'')+'</div>';
         chart+='<div class="cch-note">'+(sel?'« '+esc(selLabel)+' » par mois'+(fxOn?' · frais fixes seulement avec « Toutes les dépenses »':''):(fxIn?'Tickets + frais fixes par mois':'Total des tickets par mois'))+' · le détail de chaque mois est dans « Par mois »</div>';
         hero={ label:"Dépensé sur "+shown.length+" mois"+(sel?" · "+esc(selLabel):""), big:grand, color:"var(--ink)",
                sub:(fxIn && fxSum>0 ? "dont frais fixes "+fmtK(fxSum)+(fxOthers>0.5?" · dont "+fmtK(fxOthers)+" de part commune des autres":"") : ""),
                stats:[ {l:"Moyenne / mois", v:fmtS(avg)}, {l:"Mois record", v:(best&&best.total>0?esc(best.short):"—"), d:(best&&best.total>0?fmtS(best.total):"")}, {l:"Mois actifs", v:String(active)} ] };
+      } else if(mode==="rec"){
+        // ---- Dépenses qui reviennent : marchands présents au moins 3 mois sur les 6 derniers (filtre par personne respecté)
+        var fxOnR=anFraisOn(), fwR=(pvCur()==="all") ? null : pvName(pvCur());
+        var m6=[], mk6=curM; for(var i6=0;i6<6;i6++){ m6.unshift(mk6); mk6=prevMonthKey(mk6); }
+        var byM={}; vEntries().forEach(function(e){ var k=monthKey(e.date); if(m6.indexOf(k)<0) return; var nm=(e.marchand||"").trim(), key=nm.toLowerCase(); if(!key) return;
+          if(!byM[key]) byM[key]={ name:nm, m:{} }; byM[key].m[k]=(byM[key].m[k]||0)+(Number(e.montant)||0); });
+        var recs=[]; Object.keys(byM).forEach(function(k){ var o=byM[k], ks=Object.keys(o.m); if(ks.length<3) return; var t=0; ks.forEach(function(x){ t+=o.m[x]; }); recs.push({ name:o.name, n:ks.length, avg:t/ks.length, fx:false }); });
+        if(fxOnR){ var fxSeen={}; anFraisLines(curM, fwR).forEach(function(x){ var k="fx|"+x.label; if(fxSeen[k]) { fxSeen[k].avg+=x.v; return; } fxSeen[k]={ name:x.label, n:6, avg:x.v, fx:true }; recs.push(fxSeen[k]); }); }
+        recs.sort(function(a,b){ return b.avg-a.avg; });
+        var recT=recs.reduce(function(t,x){ return t+x.avg; },0), recMax=recs.length?recs[0].avg:1;
+        if(fraisCommuns.length) fxBtn='<button type="button" class="anfx anfx-corner'+(fxOnR?' on':'')+'" id="anFx" aria-pressed="'+fxOnR+'">'+(fxOnR?'✓':'＋')+' Frais fixes</button>';
+        if(!recs.length) chart+='<div class="cch-note" style="margin:24px 0">Rien ne revient encore : il faut un même magasin au moins 3 mois sur les 6 derniers.</div>';
+        else { chart+='<div style="margin-top:6px">'; recs.forEach(function(x){ var pc=Math.max(2, Math.round(x.avg/recMax*100));
+          chart+='<div class="bar-row" style="margin:10px 2px"><div class="bar-top"><span class="bl">'+esc(x.name)+' <small class="muted">'+(x.fx?'frais fixe':x.n+' mois sur 6')+'</small></span><span class="bv">'+fmtK(x.avg)+'<small class="muted"> /mois</small></span></div><div class="bar-track"><i style="width:'+pc+'%;background:'+(x.fx?'#c78bd6':'#7c9cf4')+'"></i></div></div>'; });
+          chart+='</div><div class="cch-note">Montant moyen par mois où la dépense apparaît</div>'; }
+        hero={ label:"Dépenses qui reviennent · 6 mois", big:recT, color:"var(--ink)", sub:recs.length?recs.length+" dépense"+(recs.length>1?"s":"")+" · environ par mois":"" };
+      } else if(mode==="pay"){
+        // ---- Qui a payé : les dépenses affichées (filtre par personne), réparties selon la personne qui a payé
+        var pP=state.graphPeriod||"cur", fxOnP=anFraisOn();
+        var perP = pP==="all" ? "12 derniers mois" : (pP.indexOf("m:")===0 ? new Date(pP.slice(2)+"-01T00:00:00").toLocaleDateString("fr-FR",{month:"long",year:"numeric"}) : new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"}));
+        var byP={}; gPeriodEntries().forEach(function(e){ var w=payerOf(e); byP[w]=(byP[w]||0)+(Number(e.montant)||0); });
+        if(fxOnP){ var pmsP=pP==="all" ? lastMonths(12).map(function(m){ return m.key; }) : [pP.indexOf("m:")===0 ? pP.slice(2) : curM], fwP=(pvCur()==="all") ? null : pvName(pvCur());
+          var whoP={}; viewPersons().concat(uniquePersons()).forEach(function(x){ whoP[x]=1; }); whoP[mePerson()]=1;
+          pmsP.forEach(function(mk){ Object.keys(whoP).forEach(function(x){ if(fwP && x!==fwP) return; var t=anFraisTotal(mk, x); if(t>0) byP[x]=(byP[x]||0)+t; }); }); }
+        var payL=Object.keys(byP).map(function(k){ return { name:k, v:byP[k] }; }).filter(function(x){ return x.v>0.004; }).sort(function(a,b){ return b.v-a.v; });
+        var payT=payL.reduce(function(t,x){ return t+x.v; },0), payMax=payL.length?payL[0].v:1;
+        chart+='<div class="anctl"><select class="f anf" id="gper"><option value="cur"'+(pP==="cur"?" selected":"")+'>Ce mois-ci</option><option value="all"'+(pP==="all"?" selected":"")+'>12 derniers mois</option><optgroup label="Un mois précis">';
+        lastMonths(12).slice().reverse().forEach(function(m){ var v="m:"+m.key; chart+='<option value="'+v+'"'+(pP===v?" selected":"")+'>'+esc(capFirst(m.date.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})))+'</option>'; });
+        chart+='</optgroup></select></div>';
+        if(fraisCommuns.length) fxBtn='<button type="button" class="anfx anfx-corner'+(fxOnP?' on':'')+'" id="anFx" aria-pressed="'+fxOnP+'">'+(fxOnP?'✓':'＋')+' Frais fixes</button>';
+        if(!payL.length) chart+='<div class="cch-note" style="margin:24px 0">Aucune dépense sur cette période.</div>';
+        else { chart+='<div style="margin-top:6px">'; payL.forEach(function(x){ var pc=Math.max(2, Math.round(x.v/payMax*100));
+          chart+='<div class="bar-row" style="margin:12px 2px"><div class="bar-top"><span class="bl">'+esc(x.name)+(x.name===mePerson()?' <small class="muted">toi</small>':'')+'</span><span class="bv">'+fmtK(x.v)+' <small class="muted">'+Math.round(x.v/(payT||1)*100)+' %</small></span></div><div class="bar-track"><i style="width:'+pc+'%;background:'+personColor(x.name)+'"></i></div></div>'; });
+          chart+='</div>'; }
+        hero={ label:"Qui a payé · "+esc(perP), big:payT, color:"var(--ink)", sub:(pvCur()==="all"?"tout le foyer":"dépenses de "+esc(pvName(pvCur()))) };
       } else {
         // ---- Répartition (ex-Graphes · Dépenses)
         var p=state.graphPeriod||"cur", dim=state.graphDim||"fam", typ=state.graphType||"donut";
@@ -4783,7 +4817,7 @@
         chart+='<div class="anctl"><select class="f anf" id="gper"><option value="cur"'+(p==="cur"?" selected":"")+'>Ce mois-ci</option><option value="all"'+(p==="all"?" selected":"")+'>12 derniers mois</option><optgroup label="Un mois précis">';
         lastMonths(12).slice().reverse().forEach(function(m){ var v="m:"+m.key; chart+='<option value="'+v+'"'+(p===v?" selected":"")+'>'+esc(capFirst(m.date.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})))+'</option>'; });
         chart+='</optgroup></select><select class="f anf" id="gdim"><option value="fam"'+(dim==="fam"?" selected":"")+'>Familles</option><option value="prod"'+(dim==="prod"?" selected":"")+'>Produits</option><option value="cat"'+(dim==="cat"?" selected":"")+'>Catégories</option>'+(pvActive()?'<option value="pers"'+(dim==="pers"?" selected":"")+'>Qui a payé</option>':'')+'</select></div>';
-        if(fraisCommuns.length) fxBtn='<button type="button" class="anfx anfx-top'+(fxOn2?' on':'')+'" id="anFx" aria-pressed="'+fxOn2+'">'+(fxOn2?'✓':'＋')+' Frais fixes</button>';
+        if(fraisCommuns.length) fxBtn='<button type="button" class="anfx anfx-corner'+(fxOn2?' on':'')+'" id="anFx" aria-pressed="'+fxOn2+'">'+(fxOn2?'✓':'＋')+' Frais fixes</button>';
         chart+='<div class="dmode" id="gtype" style="justify-content:center;margin:10px 0 4px"><button type="button" data-t="donut"'+(typ==="donut"?' class="on"':'')+'>Anneau</button><button type="button" data-t="bars"'+(typ==="bars"?' class="on"':'')+'>Barres</button></div>';
         if(!all.length) chart+='<div class="cch-note" style="margin:24px 0">Aucune dépense sur cette période.</div>';
         else {
@@ -4797,7 +4831,7 @@
         }
         hero={ label:"Répartition · "+esc(perLabel), big:visTotal, color:"var(--ink)", sub:(nHid?nHid+" poste"+(nHid>1?"s":"")+" masqué"+(nHid>1?"s":""):"") };
       }
-      chart+='</div>'; chart=chart.replace('%%FX%%', fxBtn); hero.extra=chart;
+      chart+='</div>'; chart=fxBtn+chart; hero.extra=chart;
       var nSub=(state.anSub==="mois");   // sous-page « Par mois »
       var h=header(nSub, nSub?"Par mois":"")+pvBarHTML()+(nSub?'':tabHero(hero));
       if(!nSub) h+='<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="anGoMois"><span class="t"><span class="tic">📅</span> Par mois · '+shown.length+(sel?'<small>'+esc(selLabel)+'</small>':'')+'</span><span class="v">'+fmtK(grand)+'</span><span class="ch">›</span></div></div></section>';
@@ -4820,6 +4854,7 @@
       [].forEach.call(document.querySelectorAll("#gtype button"), function(b){ b.onclick=function(){ state.graphType=b.getAttribute("data-t"); render(); }; });
       [].forEach.call(document.querySelectorAll(".lgd[data-name]"), function(b){ b.onclick=function(){ var key=(state.graphDim||"fam")+"|"+b.getAttribute("data-name"); if(!state.graphHide) state.graphHide={}; if(state.graphHide[key]) delete state.graphHide[key]; else state.graphHide[key]=true; render(); }; });
       [].forEach.call(document.querySelectorAll(".anlist .bar-row.clk"), function(row){ row.onclick=function(){ state.histMonth=row.getAttribute("data-month"); state.view="month"; render(); window.scrollTo(0,0); }; });
+      var aOn=document.querySelector(".thero .cch-tabs button.on"); if(aOn && aOn.parentNode){ var atb=aOn.parentNode; atb.scrollLeft=Math.max(0, aOn.offsetLeft-(atb.clientWidth-aOn.offsetWidth)/2); }
       if(!nSub) wireHeroSwipe(mode, TABS.map(function(x){ return x[0]; }), function(k){ state.anChart=k; store.write("anChart", k); });
       setNav("analyse", true);
     }
