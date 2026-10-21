@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 15:41" />
+  <meta name="build" content="21/10 15:57" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -607,8 +607,8 @@
     .ap-row em{ font-style:normal; color:var(--accent); }
     .ap-row b{ flex:0 0 auto; font-variant-numeric:tabular-nums; }
     .ap-row b.neg{ color:var(--coral); }
-    .com-tools{ display:flex; justify-content:flex-start; margin:12px 0 0; }
-    .com-tools + .thero{ margin-top:10px; }
+    .com-tools{ display:flex; flex-wrap:wrap; justify-content:flex-start; gap:8px; margin:12px 0 0; }
+    .com-tools + .thero, .com-tools + .pvbar{ margin-top:10px; }
     .ap-tool.com-add{ width:auto; padding:0 12px; background:var(--card); font-size:12.5px; font-weight:600; font-family:var(--sans); }
     .ap-tool{ width:34px; height:30px; border-radius:9px; border:1px dashed var(--line2); background:none; color:var(--accent); font-size:15px; padding:0; cursor:pointer; }
     /* Parts du commun */
@@ -2646,6 +2646,8 @@
       b='<div class="hleft"><button class="hmenu" id="hmenu" type="button" aria-label="Menu"><span></span>'+(bkOld?'<i class="hdot"></i>':'')+'</button>'+b+'</div>';
       return '<header class="head'+(back?' hasback':'')+'">'+b+'<div class="htitle">'+esc(title||VIEW_TITLES[state.view]||"Tickets")+'</div></header>';
     }
+    // Rangée d'actions au-dessus du graphique : [[id, libellé], …]
+    function tabTools(list){ return '<div class="com-tools">'+list.map(function(x){ return '<button type="button" class="ap-tool com-add" id="'+x[0]+'">'+x[1]+'</button>'; }).join("")+'</div>'; }
     function bindBack(fn){ var hb=document.getElementById("hback"); if(hb) hb.onclick=fn; }
 
     var fyRendering=false;
@@ -3489,6 +3491,7 @@
       D.famKeys.forEach(function(f,i){ col[f]=(f==="Remise")?"#8a92a6":ARTPAL[i%ARTPAL.length]; });
       var aSub=(state.artSub==="fam" && D.famKeys.length)?"fam":null;   // sous-page « Par famille »
       var h=header(!!aSub, aSub?"Par famille":"")+pvBarHTML()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabelOf(month))), month, curM)+'</div>';
+      if(!D.famKeys.length) h+=tabTools([["artprod","⚙︎ Produits & catégories"]]);
       if(!D.famKeys.length){
         h+='<section class="paper cacc" style="padding:18px 16px"><div class="center muted" style="font-size:12.5px;line-height:1.5">Aucun article rangé ce mois-ci.<br>Scanne un ticket et classe ses lignes par produit.</div></section>';
       } else {
@@ -3508,6 +3511,7 @@
           chart+=artAvgBars(trimLead(ms.map(function(m){ return { m:m, lbl:artMShort(m), v:artMonthData(m).grand }; }), function(r){ return r.v; }), month);
         }
         chart+='</div>';
+        if(!aSub) h+=tabTools([["artprod","⚙︎ Produits & catégories"]]);
         if(!aSub) h+=tabHero({ label:"Articles achetés", big:D.grand, sub:D.nArt+" article"+(D.nArt>1?"s":"")+" · "+D.famKeys.length+" famille"+(D.famKeys.length>1?"s":""), extra:chart,
           stats:[ {l:"Le plus acheté", v:(D.most?esc(D.most.name):"—"), d:(D.most?"×"+D.most.n:"")}, {l:"Le plus cher", v:(D.top?esc(D.top.name):"—"), d:(D.top?fmtS(D.top.amt):"")}, {l:"Prix moyen", v:fmtS(D.nArt?D.grand/D.nArt:0), d:"par article"} ] });
         // ---- familles repliables
@@ -3521,8 +3525,8 @@
         famH+='</section>';
         if(aSub) h+='<div class="muted" style="font-size:12px;margin:12px 4px 0">Touche une famille pour la déplier, puis un produit pour son détail.</div>'+famH;
       }
-      if(!aSub) h+='<section class="paper cacc">'+(D.famKeys.length?'<div class="cacc-sec"><div class="cacc-h" id="artfam"><span class="t"><span class="tic">🛒</span> Par famille · '+D.famKeys.length+'</span><span class="v">'+fmtK(D.grand)+'</span><span class="ch">›</span></div></div>':'')+
-        '<div class="cacc-sec"><div class="cacc-h" id="artprod"><span class="t"><span class="tic">⚙︎</span> Produits &amp; catégories<small>ranger, renommer, regrouper</small></span><span class="ch">›</span></div></div></section>';
+      if(!aSub && D.famKeys.length) h+='<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="artfam"><span class="t"><span class="tic">🛒</span> Par famille · '+D.famKeys.length+'</span><span class="v">'+fmtK(D.grand)+'</span><span class="ch">›</span></div></div></section>';
+
       app.innerHTML=h;
       if(aSub) bindBack(function(){ state.artSub=null; render(); window.scrollTo(0,0); });
       var afm=document.getElementById("artfam"); if(afm) afm.onclick=function(){ state.artSub="fam"; render(); window.scrollTo(0,0); };
@@ -3778,10 +3782,10 @@
       ppl.forEach(function(p){ var t=persoOf(p)+communShareOf(p); if(p===me || t>0.004) hst.push({l:esc(p)+(p===me?" (toi)":""), v:fmtS(t), d:"frais fixes"}); });
       hst.push({l:"Total foyer", v:fmtS(D.fraisTot), d:"frais fixes"});
       var myPc=pctOf(me);
-      var cSub=state.comSub; if(cSub!=="commun" && cSub!=="prod" && cSub!=="perso") cSub=null;   // sous-pages : frais communs, produits partagés, frais perso
-      var h=header(!!cSub, cSub==="commun"?"Frais communs":(cSub==="prod"?"Produits partagés":(cSub==="perso"?"Frais perso":"")))+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>';
+      var cSub=state.comSub; if(cSub!=="frais" && cSub!=="prod") cSub=null;   // sous-pages : frais fixes (communs + perso), produits partagés
+      var h=header(!!cSub, cSub==="frais"?"Frais fixes":(cSub==="prod"?"Produits partagés":""))+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>';
       var myEff=effPct(me);
-      if(!cSub) h+='<div class="com-tools"><button type="button" class="ap-tool com-add" id="addfrais" aria-label="Ajouter un frais fixe">＋ Frais fixe</button></div>';
+      if(!cSub) h+=tabTools([["addfrais","＋ Frais fixe"],["comParts","⚙︎ Parts"]]);
       if(!cSub) h+=tabHero({ label:"Ta part ce mois ("+esc(me)+")", big:partOf(me), sub:(myEff>0?"frais perso + "+pctTxt(myEff)+" du commun":"frais perso seulement (0 % du commun)"), extra:chart, stats:hst });
       // Ligne « Parts du commun » : résumé, touche pour régler
       var pSum;
@@ -3795,13 +3799,9 @@
       var comOpen = state.comOpen || (state.comOpen={});
       function nb(n, one, many){ return n+" "+(n>1?many:one); }
       function paidCount(items){ return items.filter(function(f){ return fraisDone(f, month); }).length; }
-      var rowsMain='', subBody='';
-      function grp(key, dot, title, sub, val, body){
-        var ic={ commun:"🏠", prod:"🛒", perso:"👤" }[key]||"";
-        if(cSub===key) subBody='<section class="paper cacc"><div class="dgrp open"><div class="dgb"><div class="dsub"><span>'+(sub||"")+'</span><span>'+fmtK(val)+'</span></div>'+body+'</div></div></section>';
-        rowsMain+='<div class="cacc-sec"><div class="cacc-h comGo" data-sub="'+key+'"><span class="t">'+(ic?'<span class="tic">'+ic+'</span> ':'')+title+(sub?'<small>'+sub+'</small>':'')+'</span><span class="v">'+fmtK(val)+'</span><span class="ch">›</span></div></div>';
-        return "";
-      }
+      var G={};
+      function grp(key, dot, title, sub, val, body){ G[key]={ title:title, sub:sub, val:val, body:body }; return ""; }
+      function gSec(g){ return '<section class="paper cacc"><div class="cacc-h" style="cursor:default;padding-bottom:4px"><span class="t">'+g.title+(g.sub?'<small>'+g.sub+'</small>':'')+'</span><span class="v">'+fmtK(g.val)+'</span></div><div class="dgrp open"><div class="dgb">'+g.body+'</div></div></section>'; }
       function fraisRows(items){
         return items.slice().sort(function(a,b){ return fraisMontant(b,month)-fraisMontant(a,month); }).map(function(f){ var dn=fraisDone(f, month);
           return '<div class="fxrow"><button class="fxdone'+(dn?' on':'')+'" type="button" data-id="'+esc(f.id)+'" aria-label="Payé">'+(dn?'✓':'')+'</button><span class="n">'+esc(f.label)+'<small>'+(f.recurrent?"chaque mois":"ce mois")+(f.split?" · chacun sa part":"")+(((f.personne||"").trim()||"Commun")==="Commun"?" · ta part "+pctTxt(fPct(f, me))+(fraisPartsAt(f, month)?" ✦":"")+" ("+fmtK(fraisMontant(f, month)*fPct(f, me)/100)+")":"")+'</small></span><span class="a">'+fmtK(fraisMontant(f, month))+'</span><button class="fxmore" type="button" data-id="'+esc(f.id)+'">⋯</button></div>'; }).join("");
@@ -3822,10 +3822,14 @@
         pW.forEach(function(w){ var it=D.byP[w].items; allIt=allIt.concat(it); pTot+=persoOf(w);
           pBody+='<div class="dsub"><span>'+esc(w)+(w===me?' · toi':'')+'</span><span>'+fmtK(persoOf(w))+'</span></div>'+fraisRows(it); });
         gp=grp("perso", COLP, "Frais perso · "+pW.length+" personnes", nb(allIt.length,"frais","frais")+" · "+paidCount(allIt)+" payé"+(paidCount(allIt)>1?"s":"")+" sur "+allIt.length, pTot, pBody); }
-      if(cSub && !subBody) cSub=null;
+      // Une ligne « Frais fixes » (communs + perso, détaillés dans sa page) et une ligne « Produits partagés »
+      var fxAll=ci.slice(); ppl.forEach(function(w){ if(D.byP[w]) fxAll=fxAll.concat(D.byP[w].items); });
+      var rowsMain='<div class="cacc-sec"><div class="cacc-h comGo" data-sub="frais"><span class="t"><span class="tic">🏠</span> Frais fixes · '+fxAll.length+'<small>'+(fxAll.length?paidCount(fxAll)+"/"+fxAll.length+" payé"+(paidCount(fxAll)>1?"s":""):"aucun")+'</small></span><span class="v">'+fmtK(D.fraisTot)+'</span><span class="ch">›</span></div></div>'+
+        '<div class="cacc-sec"><div class="cacc-h comGo" data-sub="prod"><span class="t"><span class="tic">🛒</span> Produits partagés<small>'+G.prod.sub+'</small></span><span class="v">'+fmtK(G.prod.val)+'</span><span class="ch">›</span></div></div>';
+      var subBody=cSub==="frais" ? gSec(G.commun)+(G.perso?gSec(G.perso):'') : (cSub==="prod" ? gSec(G.prod) : '');
       if(cSub){ h+=subBody; if(cSub!=="prod") h+='<section class="paper cacc"><div class="clink" id="addfrais" style="margin:10px 2px"><span>+ Ajouter un frais fixe</span><span></span></div></section>'; }
       else {
-        h+='<section class="paper cacc">'+partsRow+rowsMain+'</section>';
+        h+='<section class="paper cacc">'+rowsMain+'</section>';
       }
 
       app.innerHTML=h;
@@ -4491,7 +4495,7 @@
       }
       // Page principale (total + deux boutons) ou sous-page : « comptes » (les fiches) / « gerer » (les actions)
       var bSub=state.bSub; if(bSub!=="comptes" && bSub!=="gerer") bSub=null;
-      var h=header(!!bSub, bSub==="comptes"?"Mes comptes":(bSub==="gerer"?"Gérer":""))+(bSub==="gerer"?'':'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>')+'%%HERO%%', accH='';
+      var h=header(!!bSub, bSub==="comptes"?"Mes comptes":(bSub==="gerer"?"Gérer":""))+(bSub==="gerer"?'':'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>')+(bSub?'':tabTools([["addbrs","＋ Compte"],["addpos","＋ Action ou crypto"],["bgoMng","⚙︎ Gérer"]]))+'%%HERO%%', accH='';
       var emptyB=''; if(!bourse.some(function(c){ return bAt(c,month) && !bClosedAt(c,month); })) emptyB='<div class="muted" style="font-size:12px;margin:4px 2px 8px">Aucun compte'+(month===curM?". Ajoute ton premier compte bourse.":" ce mois-ci.")+'</div>';
       var totCap=0, totVal=0, totCash=0, totPrevVal=null, totFirstVal=null, totFirstCap=null;
       var pm=prevMonthKey(month);
@@ -4528,8 +4532,7 @@
         h+='<section class="paper" style="margin-top:14px;border:1px solid var(--accent)"><div style="font-weight:700;margin-bottom:6px">🛟 Ta Bourse est vide</div><div class="muted" style="font-size:12.5px;line-height:1.45">Une copie automatique de '+bsafe.bourse.length+' compte'+(bsafe.bourse.length>1?'s':'')+' existe (du '+esc(new Date(bsafe.t).toLocaleString("fr-FR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}))+').</div><button class="btn primary" id="bsafeGo" type="button" style="width:100%;margin-top:10px">Remettre cette copie</button></section>';
       }
       if(!bSub){
-        h+='<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="bgoAcc"><span class="t"><span class="tic">🏦</span> Mes comptes · '+visB.length+'</span><span class="v">'+fmtK(totVal+totCash)+'</span><span class="ch">›</span></div></div>'+
-           '<div class="cacc-sec"><div class="cacc-h" id="bgoMng"><span class="t"><span class="tic">⚙︎</span> Gérer</span><span class="ch">›</span></div></div></section>';
+        h+='<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="bgoAcc"><span class="t"><span class="tic">🏦</span> Mes comptes · '+visB.length+'</span><span class="v">'+fmtK(totVal+totCash)+'</span><span class="ch">›</span></div></div></section>';
       }
       if(bSub==="gerer") h+='<section class="paper bacts">';
       function bAct(id, ic, t, sub){ return '<button class="dr-item" id="'+id+'" type="button"><span class="ic">'+ic+'</span><span>'+t+'<small>'+sub+'</small></span><span class="chev">›</span></button>'; }
