@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 16:51" />
+  <meta name="build" content="21/10 16:56" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -818,6 +818,8 @@
     .cb-oth{ color:var(--ink-soft); }
     .anfx{ display:inline-flex; align-items:center; gap:6px; margin:8px 0 2px; min-height:38px; padding:0 14px; border-radius:999px; border:1px solid var(--line2); background:var(--card2); color:var(--ink-soft); font-family:var(--sans); font-size:13px; font-weight:700; cursor:pointer; }
     .anfx.on{ background:rgba(199,139,214,.16); border-color:#c78bd6; color:var(--ink); }
+    .cch-tabs .anfx.anfx-top{ margin:0 0 0 auto; min-height:0; padding:6px 11px; font-size:12px; font-weight:600; }
+    .cch-tabs .anfx.anfx-top.on{ background:rgba(199,139,214,.16); border-color:#c78bd6; color:var(--ink); }
     .anfx:disabled{ opacity:.45; cursor:default; }
     .ro-note{ border-radius:12px; background:rgba(124,156,244,.12); border:1px solid rgba(124,156,244,.32); padding:9px 12px; font-size:12.5px; margin-bottom:12px; }
     /* Foyer partagé */
@@ -4720,7 +4722,8 @@
 
       // ---- Carte du haut : deux graphiques (onglets ou glissé)
       var TABS=[["mois","Mois par mois"],["rep","Répartition"]];
-      var chart=chartTabsHTML(TABS, mode, "anChartDef", "mois")+'<div class="cch">';
+      // « + Frais fixes » : sur la ligne des onglets, tout à droite
+      var chart=chartTabsHTML(TABS, mode, "anChartDef", "mois").replace(/<\/div>$/, '%%FX%%</div>')+'<div class="cch">', fxBtn='';
       var hero;
       if(mode==="mois"){
         chart+='<select class="f anf" id="histcat"><option value=""'+(sel===""?" selected":"")+'>Toutes les dépenses</option>';
@@ -4728,7 +4731,7 @@
         if(famList.length){ chart+='<optgroup label="Grandes catégories (produits)">'; famList.forEach(function(f){ var v="fam:"+f; chart+='<option value="'+esc(v)+'"'+(sel===v?" selected":"")+'>'+esc(f)+'</option>'; }); chart+='</optgroup>'; }
         if(prodList.length){ chart+='<optgroup label="Produits">'; prodList.forEach(function(pp){ var v="prod:"+pp; chart+='<option value="'+esc(v)+'"'+(sel===v?" selected":"")+'>'+esc(pp)+'</option>'; }); chart+='</optgroup>'; }
         chart+='</select>';
-        if(fraisCommuns.length) chart+='<button type="button" class="anfx'+(fxOn?' on':'')+'" id="anFx" aria-pressed="'+fxOn+'"'+(sel?' disabled':'')+'>'+(fxOn?'✓':'＋')+' Frais fixes</button>';
+        if(fraisCommuns.length) fxBtn='<button type="button" class="anfx anfx-top'+(fxOn?' on':'')+'" id="anFx" aria-pressed="'+fxOn+'"'+(sel?' disabled':'')+'>'+(fxOn?'✓':'＋')+' Frais fixes</button>';
         chart+=compteBarsSVG(shown.map(function(d){ return { m:d.key, lbl:mShort(d.key), v:d.total, fx:fxIn?d.fx:0 }; }), curM, function(r){ return anCol(r.v); });
         chart+='<div class="cch-leg"><span><i style="background:#7c9cf4"></i>Sous la moyenne</span><span><i style="background:#e0a458"></i>Au-dessus</span>'+(fxIn?'<span><i style="background:#c78bd6"></i>Frais fixes</span>':'')+'</div>';
         chart+='<div class="cch-note">'+(sel?'« '+esc(selLabel)+' » par mois'+(fxOn?' · frais fixes seulement avec « Toutes les dépenses »':''):(fxIn?'Tickets + frais fixes par mois':'Total des tickets par mois'))+' · le détail de chaque mois est dans « Par mois »</div>';
@@ -4761,7 +4764,7 @@
         chart+='<div class="anctl"><select class="f anf" id="gper"><option value="cur"'+(p==="cur"?" selected":"")+'>Ce mois-ci</option><option value="all"'+(p==="all"?" selected":"")+'>12 derniers mois</option><optgroup label="Un mois précis">';
         lastMonths(12).slice().reverse().forEach(function(m){ var v="m:"+m.key; chart+='<option value="'+v+'"'+(p===v?" selected":"")+'>'+esc(capFirst(m.date.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})))+'</option>'; });
         chart+='</optgroup></select><select class="f anf" id="gdim"><option value="fam"'+(dim==="fam"?" selected":"")+'>Par grande catégorie</option><option value="prod"'+(dim==="prod"?" selected":"")+'>Par produit</option><option value="cat"'+(dim==="cat"?" selected":"")+'>Par catégorie ticket</option>'+(pvActive()?'<option value="pers"'+(dim==="pers"?" selected":"")+'>Par personne (qui a payé)</option>':'')+'</select></div>';
-        if(fraisCommuns.length) chart+='<button type="button" class="anfx'+(fxOn2?' on':'')+'" id="anFx" aria-pressed="'+fxOn2+'">'+(fxOn2?'✓':'＋')+' Frais fixes</button>';
+        if(fraisCommuns.length) fxBtn='<button type="button" class="anfx anfx-top'+(fxOn2?' on':'')+'" id="anFx" aria-pressed="'+fxOn2+'">'+(fxOn2?'✓':'＋')+' Frais fixes</button>';
         chart+='<div class="dmode" id="gtype" style="justify-content:center;margin:10px 0 4px"><button type="button" data-t="donut"'+(typ==="donut"?' class="on"':'')+'>Anneau</button><button type="button" data-t="bars"'+(typ==="bars"?' class="on"':'')+'>Barres</button></div>';
         if(!all.length) chart+='<div class="cch-note" style="margin:24px 0">Aucune dépense sur cette période.</div>';
         else {
@@ -4775,7 +4778,7 @@
         }
         hero={ label:"Répartition · "+esc(perLabel), big:visTotal, color:"var(--ink)", sub:(nHid?nHid+" poste"+(nHid>1?"s":"")+" masqué"+(nHid>1?"s":""):"") };
       }
-      chart+='</div>'; hero.extra=chart;
+      chart+='</div>'; chart=chart.replace('%%FX%%', fxBtn); hero.extra=chart;
       var nSub=(state.anSub==="mois");   // sous-page « Par mois »
       var h=header(nSub, nSub?"Par mois":"")+pvBarHTML()+(nSub?'':tabHero(hero));
       if(!nSub) h+='<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="anGoMois"><span class="t"><span class="tic">📅</span> Par mois · '+shown.length+(sel?'<small>'+esc(selLabel)+'</small>':'')+'</span><span class="v">'+fmtK(grand)+'</span><span class="ch">›</span></div></div></section>';
