@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 18:36" />
+  <meta name="build" content="21/10 18:40" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4802,8 +4802,11 @@
         // ---- Qui a payé : les dépenses affichées (filtre par personne), réparties selon la personne qui a payé
         var pP=state.graphPeriod||"cur", fxOnP=anFraisOn();
         var perP = pP==="all" ? "12 derniers mois" : (pP.indexOf("m:")===0 ? new Date(pP.slice(2)+"-01T00:00:00").toLocaleDateString("fr-FR",{month:"long",year:"numeric"}) : new Date().toLocaleDateString("fr-FR",{month:"long",year:"numeric"}));
-        var byP={}; gPeriodEntries().forEach(function(e){ var w=payerOf(e); byP[w]=(byP[w]||0)+(Number(e.montant)||0); });
-        if(fxOnP){ var pmsP=pP==="all" ? lastMonths(12).map(function(m){ return m.key; }) : [pP.indexOf("m:")===0 ? pP.slice(2) : curM], fwP=(pvCur()==="all") ? null : pvName(pvCur());
+        // toujours tout le foyer (le filtre du haut ne garderait que la personne choisie) ; la personne choisie est mise en avant
+        var selP=(pvCur()==="all") ? null : pvName(pvCur()), msP={};
+        if(pP==="all") lastMonths(12).forEach(function(m){ msP[m.key]=1; }); else msP[pP.indexOf("m:")===0 ? pP.slice(2) : curM]=1;
+        var byP={}; state.entries.forEach(function(e){ if(!msP[monthKey(e.date)]) return; var w=payerOf(e); byP[w]=(byP[w]||0)+(Number(e.montant)||0); });
+        if(fxOnP){ var pmsP=pP==="all" ? lastMonths(12).map(function(m){ return m.key; }) : [pP.indexOf("m:")===0 ? pP.slice(2) : curM], fwP=null;
           var whoP={}; viewPersons().concat(uniquePersons()).forEach(function(x){ whoP[x]=1; }); whoP[mePerson()]=1;
           pmsP.forEach(function(mk){ Object.keys(whoP).forEach(function(x){ if(fwP && x!==fwP) return; var t=anFraisTotal(mk, x); if(t>0) byP[x]=(byP[x]||0)+t; }); }); }
         var payL=Object.keys(byP).map(function(k){ return { name:k, v:byP[k] }; }).filter(function(x){ return x.v>0.004; }).sort(function(a,b){ return b.v-a.v; });
@@ -4814,9 +4817,10 @@
         if(fraisCommuns.length) fxBtn='<button type="button" class="anfx anfx-corner'+(fxOnP?' on':'')+'" id="anFx" aria-pressed="'+fxOnP+'">'+(fxOnP?'✓':'＋')+' Frais fixes</button>';
         if(!payL.length) chart+='<div class="cch-note" style="margin:24px 0">Aucune dépense sur cette période.</div>';
         else { chart+='<div style="margin-top:6px">'; payL.forEach(function(x){ var pc=Math.max(2, Math.round(x.v/payMax*100));
-          chart+='<div class="bar-row" style="margin:12px 2px"><div class="bar-top"><span class="bl">'+esc(x.name)+(x.name===mePerson()?' <small class="muted">toi</small>':'')+'</span><span class="bv">'+fmtK(x.v)+' <small class="muted">'+Math.round(x.v/(payT||1)*100)+' %</small></span></div><div class="bar-track"><i style="width:'+pc+'%;background:'+personColor(x.name)+'"></i></div></div>'; });
+          var dim=selP && x.name!==selP;
+          chart+='<div class="bar-row" style="margin:12px 2px;'+(dim?'opacity:.5':'')+'"><div class="bar-top"><span class="bl"'+(selP && !dim?' style="font-weight:800"':'')+'>'+esc(x.name)+(x.name===mePerson()?' <small class="muted">toi</small>':'')+'</span><span class="bv">'+fmtK(x.v)+' <small class="muted">'+Math.round(x.v/(payT||1)*100)+' %</small></span></div><div class="bar-track"><i style="width:'+pc+'%;background:'+personColor(x.name)+'"></i></div></div>'; });
           chart+='</div>'; }
-        hero={ label:"Qui a payé · "+esc(perP), big:payT, color:"var(--ink)", sub:(pvCur()==="all"?"tout le foyer":"dépenses de "+esc(pvName(pvCur()))) };
+        hero={ label:"Qui a payé · "+esc(perP), big:payT, color:"var(--ink)", sub:"tout le foyer"+(selP?" · "+esc(selP)+" en avant":"") };
       } else {
         // ---- Répartition (ex-Graphes · Dépenses)
         var p=state.graphPeriod||"cur", dim=state.graphDim||"fam", typ=state.graphType||"donut";
