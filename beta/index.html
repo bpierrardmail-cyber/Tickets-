@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 19:03" />
+  <meta name="build" content="21/10 19:09" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4806,15 +4806,16 @@
           var nm=Object.keys(o.names).sort(function(a,b){ return o.names[b]-o.names[a]; })[0]; recs.push({ key:k, name:nm, n:ks.length, avg:t/nM, fx:false }); });
         if(fxOnR){ var fxSeen={}; m6.forEach(function(mk){ anFraisLines(mk, fwR).forEach(function(x){ var k="fx|"+x.label; if(!fxSeen[k]){ fxSeen[k]={ name:x.label, n:0, t:0, ms:{}, avg:0, fx:true }; recs.push(fxSeen[k]); }
           var o=fxSeen[k]; o.t+=x.v; if(!o.ms[mk]){ o.ms[mk]=1; o.n++; } o.avg=o.t/nM; }); }); }
+        recs=recs.filter(function(x){ return x.fx || x.n>=2; });   // acheté au moins 2 mois différents : les achats uniques de l'année ne sont pas des dépenses qui reviennent
         recs.sort(function(a,b){ return (b.avg-a.avg) || (b.n-a.n); });   // du plus cher au moins cher
         var recT=recs.reduce(function(t,x){ return t+x.avg; },0), recMax=recs.reduce(function(m,x){ return Math.max(m,x.avg); },0)||1;
         if(fraisCommuns.length) fxBtn='<button type="button" class="anfx anfx-corner'+(fxOnR?' on':'')+'" id="anFx" aria-pressed="'+fxOnR+'">'+(fxOnR?'✓':'＋')+' Frais fixes</button>';
         chart+='<div class="dmode" id="recBy" style="justify-content:center;margin:2px 0 4px"><button type="button" data-v="cat"'+(recBy==="cat"?' class="on"':'')+'>Par catégorie</button><button type="button" data-v="mag"'+(recBy==="mag"?' class="on"':'')+'>Par magasin</button><button type="button" data-v="art"'+(recBy==="art"?' class="on"':'')+'>Par article</button></div>';
-        if(!recs.length) chart+='<div class="cch-note" style="margin:24px 0">'+(recBy==="art"?"Aucun article : seuls les tickets scannés avec leurs lignes comptent.":"Aucune dépense sur les 12 derniers mois.")+'</div>';
+        if(!recs.length) chart+='<div class="cch-note" style="margin:24px 0">'+(recBy==="art"?"Aucun article acheté au moins 2 mois différents (seuls les tickets scannés avec leurs lignes comptent).":"Aucune dépense revenue au moins 2 mois différents sur la période.")+'</div>';
         else { chart+='<div style="margin-top:6px">'; recs.forEach(function(x){ var pc=Math.max(2, Math.round(x.avg/recMax*100));
           var evo=(x.art && Math.abs(x.evo)>=0.5)?' <small style="color:'+(x.evo>0?'var(--coral)':'var(--accent)')+';font-weight:700">'+(x.evo>0?'▲ +':'▼ ')+String(Math.round(x.evo*10)/10).replace(".",",")+' %</small>':'';
           chart+='<div class="bar-row'+(x.fx?'':' recrow clk')+'"'+(x.fx?'':' data-key="'+esc(x.key)+'" data-name="'+esc(x.name)+'"')+' style="margin:10px 2px"><div class="bar-top"><span class="bl">'+esc(x.name)+' <small class="muted">'+(x.fx?'frais fixe · ':'')+x.n+' mois sur '+nM+'</small>'+evo+'</span><span class="bv">'+fmtK(x.avg)+'<small class="muted"> /mois</small></span></div><div class="bar-track"><i style="width:'+pc+'%;background:'+(x.fx?'#c78bd6':'#7c9cf4')+'"></i></div></div>'; });
-          chart+='</div><div class="cch-note">Du plus cher au moins cher · coût moyen par mois sur '+nM+' mois'+(recBy==="art"?' · ▲▼ prix d\'une ligne, premier mois → dernier':'')+' · touche une ligne pour ses tickets</div>'; }
+          chart+='</div><div class="cch-note">Au moins 2 mois différents · du plus cher au moins cher · coût moyen par mois sur '+nM+' mois'+(recBy==="art"?' · ▲▼ prix d\'une ligne, premier mois → dernier':'')+' · touche une ligne pour ses tickets</div>'; }
         if(recSel){ var hT=0; recHits.sort(function(a,b){ return String(b.e.date||"").localeCompare(String(a.e.date||"")); });
           var rp='<div class="muted" style="font-size:12px;margin:12px 4px 0">'+recHits.length+' achat'+(recHits.length>1?'s':'')+' sur '+nM+' mois · touche un ticket pour l\'ouvrir</div>', curMo="";
           recHits.forEach(function(x){ hT+=x.amt; });
