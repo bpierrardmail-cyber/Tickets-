@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 19:09" />
+  <meta name="build" content="21/10 19:24" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4944,39 +4944,38 @@
     }
 
     function renderMonth(){
+      // Détail d'un mois : une seule carte, une ligne par catégorie (repliable, avec ses tickets) puis les frais fixes
       var mk=state.histMonth||monthKey(todayISO());
       var entries=vEntries().filter(function(e){ return monthKey(e.date)===mk; })
         .sort(function(a,b){ return String(b.date||"").localeCompare(String(a.date||"")); });
-      var parCat={}, total=0;
-      entries.forEach(function(e){ var v=Number(e.montant)||0; parCat[e.categorie]=(parCat[e.categorie]||0)+v; total+=v; });
+      var parCat={}, byCat={}, total=0;
+      entries.forEach(function(e){ var v=Number(e.montant)||0, c=e.categorie||"Autre"; parCat[c]=(parCat[c]||0)+v; (byCat[c]=byCat[c]||[]).push(e); total+=v; });
       var cats=Object.keys(parCat).sort(function(a,b){ return parCat[b]-parCat[a]; });
-      var label=new Date(mk+"-01T00:00:00").toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
-      var h=header("analyse")+'<section class="paper torn">';
-      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">'+esc(label)+'</div><hr class="rule">';
+      var label=capFirst(new Date(mk+"-01T00:00:00").toLocaleDateString("fr-FR",{month:"long",year:"numeric"}));
       var fxL=anFraisOn() ? anFraisLines(mk, pvCur()==="all" ? null : pvName(pvCur())) : [], fxT=fxL.reduce(function(t,x){ return t+x.v; },0);
-      if(cats.length===0 && !fxL.length) h+='<div class="center muted" style="font-size:12px">Aucune dépense ce mois-ci.</div>';
-      cats.forEach(function(c){ h+='<div class="leader"><span class="lbl">'+esc(c)+'</span><span class="fill"></span><span class="val">'+fmt(parCat[c])+'</span></div>'; });
+      var open=state.monOpen||(state.monOpen={}), COLS=["#7c9cf4","#e0a458","#4fd6a0","#c78bd6","#5bc0d4","#e88fb0","#9bd35e","#d4a05b","#8a92e0","#6fcaa8","#d98c5f","#b0b6c2"];
+      function grp(key, col, title, sub, val, body){
+        return '<div class="dgrp'+(open[key]?' open':'')+'" data-g="'+esc(key)+'"><div class="dgh"><i class="cdot" style="background:'+col+';margin:0"></i><span class="t">'+esc(title)+'<em class="ds">'+sub+'</em></span><span class="v">'+fmtK(val)+'</span><span class="chev">›</span></div><div class="dgb">'+body+'</div></div>';
+      }
+      var h=header(true, label)+pvBarHTML()+'<section class="paper cacc">';
+      h+='<div class="cacc-h" style="cursor:default;padding-bottom:6px"><span class="t">Total du mois<small>'+entries.length+' ticket'+(entries.length>1?'s':'')+(fxL.length?' + '+fxL.length+' frais fixe'+(fxL.length>1?'s':''):'')+' · touche une ligne pour la déplier</small></span><span class="v" style="color:var(--accent)">'+fmtK(total+fxT)+'</span></div>';
+      if(!cats.length && !fxL.length) h+='<div class="muted" style="font-size:12px;margin:10px 2px 14px">Aucune dépense ce mois-ci.</div>';
+      cats.forEach(function(c, ci){
+        var body=byCat[c].map(function(e){ var dd=(e.date||"").split("-");
+          return '<div class="entry ecomp" data-id="'+esc(e.id)+'"><span class="n">'+esc(e.marchand||"—")+'<small>'+esc(payerOf(e))+'</small></span><span class="d">'+esc(dd.length===3?dd[2]+"/"+dd[1]:"")+'</span><span class="a">'+fmtK(e.montant)+'</span></div>'; }).join("");
+        h+=grp("c|"+c, COLS[ci%COLS.length], c, byCat[c].length+" ticket"+(byCat[c].length>1?"s":"")+" · "+Math.round(parCat[c]/((total+fxT)||1)*100)+" %", parCat[c], body);
+      });
       if(fxL.length){
-        h+='<hr class="rule"><div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:0 2px 6px">Frais fixes</div>';
-        fxL.sort(function(a,b){ return b.v-a.v; }).forEach(function(x){
-          var nt=x.kind==="part" ? "part "+pctTxt(x.pct)+" de "+fmt(x.full) : (x.kind==="paid" && x.others>0.5 ? "dont "+fmt(x.others)+" pour les autres" : (x.kind==="perso" ? (pvCur()==="all"?x.who:"perso") : "commun"));
-          h+='<div class="leader"><span class="lbl">'+esc(x.label)+' <small class="muted">'+esc(nt)+'</small></span><span class="fill"></span><span class="val">'+fmt(x.v)+'</span></div>';
-        });
+        var fb=fxL.slice().sort(function(a,b){ return b.v-a.v; }).map(function(x){
+          var nt=x.kind==="part" ? "part "+pctTxt(x.pct)+" de "+fmtK(x.full) : (x.kind==="paid" && x.others>0.5 ? "dont "+fmtK(x.others)+" pour les autres" : (x.kind==="perso" ? (pvCur()==="all"?x.who:"perso") : "commun"));
+          return '<div class="dfrow"><span class="n">'+esc(x.label)+'<small>'+esc(nt)+'</small></span><span class="a">'+fmtK(x.v)+'</span></div>'; }).join("");
+        h+=grp("fx", "#c78bd6", "Frais fixes", fxL.length+" frais", fxT, fb);
       }
-      if(cats.length || fxL.length) h+='<hr class="rule"><div class="leader total"><span class="lbl">Total'+(fxL.length?' (tickets + frais fixes)':'')+'</span><span class="fill"></span><span class="val">'+fmt(total+fxT)+'</span></div>';
       h+='</section>';
-      if(entries.length){
-        h+='<div class="muted" style="font-size:11px;margin:14px 2px 4px">Tickets ('+entries.length+') — touche pour modifier</div>';
-        entries.forEach(function(e){
-          h+='<div class="entry" data-id="'+esc(e.id)+'">'+
-               '<div class="row1"><span class="name">'+esc(e.marchand)+'</span><span class="amt">'+fmt(e.montant)+'</span></div>'+
-               '<div class="row2"><span class="cat">'+esc(e.categorie)+'</span><span>'+esc((e.date||"").split("-").reverse().join("/"))+'</span></div>'+
-             '</div>';
-        });
-      }
       app.innerHTML=h;
       bindBack(function(){ state.view="analyse"; render(); window.scrollTo(0,0); });
-      [].forEach.call(document.querySelectorAll(".entry"), function(node){ node.onclick=function(){ editEntry(node.getAttribute("data-id")); }; });
+      [].forEach.call(document.querySelectorAll(".dgrp .dgh"), function(hd){ hd.onclick=function(){ var g=hd.parentNode, k=g.getAttribute("data-g"); open[k]=!open[k]; g.classList.toggle("open", !!open[k]); }; });
+      [].forEach.call(document.querySelectorAll(".entry[data-id]"), function(node){ node.onclick=function(){ editEntry(node.getAttribute("data-id")); }; });
       setNav("analyse", true);
     }
 
