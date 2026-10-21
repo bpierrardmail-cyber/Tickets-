@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 13:48" />
+  <meta name="build" content="21/10 13:58" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2602,7 +2602,7 @@
       '</div>';
     document.body.appendChild(navEl);
     [].forEach.call(navEl.querySelectorAll(".navi"), function(b){
-      b.onclick=function(){ var v=b.getAttribute("data-view"); if(v==="analyse") state.histMonth=null; if(v==="articles") state.artSel=null; state.view=v; render(); window.scrollTo(0,0); };
+      b.onclick=function(){ var v=b.getAttribute("data-view"); if(v==="analyse") state.histMonth=null; if(v==="articles") state.artSel=null; if(v==="bourse") state.bSub=null; state.view=v; render(); window.scrollTo(0,0); };
     });
     document.getElementById("navscan").onclick=function(){ openScanChooser(); };
     function setNav(active, show){
@@ -4436,7 +4436,9 @@
         });
         if(ch) persistBourse();
       }
-      var h=header()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>%%HERO%%%%MESC%%';
+      // Page principale (total + deux boutons) ou sous-page : « comptes » (les fiches) / « gerer » (les actions)
+      var bSub=state.bSub; if(bSub!=="comptes" && bSub!=="gerer") bSub=null;
+      var h=header(!!bSub, bSub==="comptes"?"Mes comptes":(bSub==="gerer"?"Gérer":""))+(bSub==="gerer"?'':'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>')+'%%HERO%%', accH='';
       var emptyB=''; if(!bourse.some(function(c){ return bAt(c,month) && !bClosedAt(c,month); })) emptyB='<div class="muted" style="font-size:12px;margin:4px 2px 8px">Aucun compte'+(month===curM?". Ajoute ton premier compte bourse.":" ce mois-ci.")+'</div>';
       var totCap=0, totVal=0, totCash=0, totPrevVal=null, totFirstVal=null, totFirstCap=null;
       var pm=prevMonthKey(month);
@@ -4450,43 +4452,52 @@
         if(first){ totFirstVal=(totFirstVal||0)+Number(first.valeur||0); totFirstCap=(totFirstCap||0)+Number(first.capital||0); }
         // Jauge de plus-value : hauteur = % gagné ou perdu sur le capital (pleine à +100 %)
         var gp=cap>0?pv/cap*100:0, gz=Math.abs(pv)<0.005, gcol=gz?"var(--muted)":(pv>0?"var(--accent)":"var(--coral)"), gf=gz?0:Math.max(8,Math.min(100,Math.abs(gp)));
-        h+='<section class="paper bacct"><span class="bgauge"><i style="height:'+gf+'%;background:'+gcol+'"></i></span><div style="margin:0 0 2px">';
-        h+='<div class="prow bhead" data-bid="'+esc(c.id)+'" style="cursor:pointer"><span class="pname" style="font-weight:700">'+esc(c.nom)+(c.closed?' <span style="font-size:9.5px;color:var(--muted);font-weight:600">clôturé en '+esc(monthLabelOf(c.closed).split(" ")[0])+'</span>':'')+((c.sol&&month===curM)?' <span style="font-size:9px;color:var(--accent);font-weight:600">● live</span>':'')+'</span>'+
+        accH+='<section class="paper bacct"><span class="bgauge"><i style="height:'+gf+'%;background:'+gcol+'"></i></span><div style="margin:0 0 2px">';
+        accH+='<div class="prow bhead" data-bid="'+esc(c.id)+'" style="cursor:pointer"><span class="pname" style="font-weight:700">'+esc(c.nom)+(c.closed?' <span style="font-size:9.5px;color:var(--muted);font-weight:600">clôturé en '+esc(monthLabelOf(c.closed).split(" ")[0])+'</span>':'')+((c.sol&&month===curM)?' <span style="font-size:9px;color:var(--accent);font-weight:600">● live</span>':'')+'</span>'+
            '<span class="btot"><b>'+fmtK(tot)+'</b>'+(cap>0?'<small style="color:'+gcol+'">'+(pv>=0?"+":"-")+Math.abs(gp).toFixed(1).replace(".",",")+' % · '+(pv>=0?"+":"")+fmtK(pv)+'</small>':'')+'</span>'+
            '<button class="btn ghost bedit" type="button" data-id="'+esc(c.id)+'">✎</button>'+
            (vi>0?'<button class="btn ghost bmove" type="button" data-id="'+esc(c.id)+'" data-to="'+esc(visB[vi-1].id)+'" style="display:none">▲</button>':'')+
            (vi<visB.length-1?'<button class="btn ghost bmove" type="button" data-id="'+esc(c.id)+'" data-to="'+esc(visB[vi+1].id)+'" style="display:none">▼</button>':'')+
            '<button class="btn ghost bdel" type="button" data-id="'+esc(c.id)+'">✕</button></div>';
-        h+='<div style="font-size:12.5px;color:var(--ink-soft);margin:2px 6px 0">Capital investi : '+fmtK(cap)+'</div>';
-        h+='<div style="font-size:12.5px;color:var(--ink-soft);margin:3px 6px 0">Reste à investir : <span style="color:'+(cash?'var(--ink)':'var(--muted)')+';font-weight:600">'+((last.cashCur&&last.cashCur!==BASE&&last.cashOrig!=null)?fmtCur(Number(last.cashOrig),last.cashCur)+'</span> <span style="color:var(--muted)">≈ '+fmtK(cash):fmtK(cash))+'</span></div>';
+        accH+='<div style="font-size:12.5px;color:var(--ink-soft);margin:2px 6px 0">Capital investi : '+fmtK(cap)+'</div>';
+        accH+='<div style="font-size:12.5px;color:var(--ink-soft);margin:3px 6px 0">Reste à investir : <span style="color:'+(cash?'var(--ink)':'var(--muted)')+';font-weight:600">'+((last.cashCur&&last.cashCur!==BASE&&last.cashOrig!=null)?fmtCur(Number(last.cashOrig),last.cashCur)+'</span> <span style="color:var(--muted)">≈ '+fmtK(cash):fmtK(cash))+'</span></div>';
         var badges=[];
         if(prev) badges.push(bBadge(Number(prev.valeur||0),val,"Mois préc. :"));
         if(first&&bMonths(c).length>1) badges.push(bBadge(Number(first.valeur||0),val,"Depuis création :"));
-        badges.forEach(function(b){ if(b) h+='<div style="font-size:12.5px;margin:3px 6px 0">'+b+'</div>'; });
-        h+='</div>';
-        h+=positionsHTML(c);
-        h+='</section>';
+        badges.forEach(function(b){ if(b) accH+='<div style="font-size:12.5px;margin:3px 6px 0">'+b+'</div>'; });
+        accH+='</div>';
+        accH+=positionsHTML(c);
+        accH+='</section>';
       });
-      h=h.replace("%%MESC%%", visB.length?'<div class="bsec-h">Mes comptes<small>'+visB.length+' compte'+(visB.length>1?'s':'')+'</small></div>':'');
-      var bsafe=(!bourse.length) ? store.read("bourseSafe", null) : null;
+      if(bSub==="comptes") h+=(emptyB?'<section class="paper bacts">'+emptyB+'</section>':'')+accH;
+      var bsafe=(!bourse.length && !bSub) ? store.read("bourseSafe", null) : null;
       if(bsafe && bsafe.bourse && bsafe.bourse.length){
         h+='<section class="paper" style="margin-top:14px;border:1px solid var(--accent)"><div style="font-weight:700;margin-bottom:6px">🛟 Ta Bourse est vide</div><div class="muted" style="font-size:12.5px;line-height:1.45">Une copie automatique de '+bsafe.bourse.length+' compte'+(bsafe.bourse.length>1?'s':'')+' existe (du '+esc(new Date(bsafe.t).toLocaleString("fr-FR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}))+').</div><button class="btn primary" id="bsafeGo" type="button" style="width:100%;margin-top:10px">Remettre cette copie</button></section>';
       }
-      h+='<div class="bsec-h">Gérer</div><section class="paper bacts">'+emptyB;
+      if(!bSub){
+        h+='<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="bgoAcc"><span class="t">🏦 Mes comptes · '+visB.length+'</span><span class="v">'+fmtK(totVal+totCash)+'</span><span class="ch">›</span></div></div>'+
+           '<div class="cacc-sec"><div class="cacc-h" id="bgoMng"><span class="t">⚙︎ Gérer</span><span class="ch">›</span></div></div></section>';
+      }
+      if(bSub==="gerer") h+='<section class="paper bacts">';
       function bAct(id, ic, t, sub){ return '<button class="dr-item" id="'+id+'" type="button"><span class="ic">'+ic+'</span><span>'+t+'<small>'+sub+'</small></span><span class="chev">›</span></button>'; }
-      h+=bAct("addpos","📈","Ajouter une crypto ou une action","Suivie en direct, ou saisie à la main");
-      h+=bAct("addbrs","🏦","Ajouter un compte bourse","eToro, PEA, Boursorama…");
-      h+=bAct("restbrs","🛟","Restaurer depuis une sauvegarde","Toute la Bourse, ou un compte supprimé");
+      if(bSub==="gerer"){
+        h+=bAct("addpos","📈","Ajouter une crypto ou une action","Suivie en direct, ou saisie à la main");
+        h+=bAct("addbrs","🏦","Ajouter un compte bourse","eToro, PEA, Boursorama…");
+        h+=bAct("restbrs","🛟","Restaurer depuis une sauvegarde","Toute la Bourse, ou un compte supprimé");
+        h+='</section>';
+      }
       (function(){
         var st=[{l:"Capital investi", v:fmtS(totCap)}];
         if(totCap>0){ var pv=totVal-totCap; st.push({l:"Plus-value", v:signS(pv), d:(bPct(totCap,totVal)||""), c:heroCol(pv)}); }
         // Total du mois précédent tel qu'affiché ce mois-là (tous les comptes ouverts alors, y compris ceux clôturés depuis)
         var prevTot=null; bourse.forEach(function(c){ var sp=bAt(c,pm); if(!sp || bClosedAt(c,pm)) return; prevTot=(prevTot||0)+(Number(sp.valeur)||0)+bCash(sp); });
         if(prevTot!==null){ var curTot=totVal+totCash, dp=curTot-prevTot; st.push({l:"vs mois préc.", v:signS(dp), d:(bPct(prevTot,curTot)||""), c:heroCol(dp)}); }
-        h=h.replace("%%HERO%%", bourse.length?tabHero({ label:"Total portefeuille", big:totVal+totCash, sub:(totCash?"dont "+fmt(totCash)+" à investir":""), extra:bourseSlides(bourseChartHTML(), bourseBarsHTML(month, curM)), stats:st }):"");
+        h=h.replace("%%HERO%%", (bourse.length && !bSub)?tabHero({ label:"Total portefeuille", big:totVal+totCash, sub:(totCash?"dont "+fmt(totCash)+" à investir":""), extra:bourseSlides(bourseChartHTML(), bourseBarsHTML(month, curM)), stats:st }):"");
       })();
-      h+='</section>';
       app.innerHTML=h;
+      if(bSub) bindBack(function(){ state.bSub=null; render(); window.scrollTo(0,0); });
+      var bga=document.getElementById("bgoAcc"); if(bga) bga.onclick=function(){ if(!visB.length && month===curM){ addBourse(); return; } state.bSub="comptes"; render(); window.scrollTo(0,0); };
+      var bgm=document.getElementById("bgoMng"); if(bgm) bgm.onclick=function(){ state.bSub="gerer"; render(); window.scrollTo(0,0); };
       var rs=document.getElementById("refreshsol"); if(rs) rs.onclick=function(){ state.solPrice=null; fetchSolPrice(); };
       var pa=document.getElementById("prixact"); if(pa){ pa.oninput=function(){ state.prixActuel=pa.value; render(); }; }
       var ab=document.getElementById("addbrs"); if(ab) ab.onclick=addBourse;
