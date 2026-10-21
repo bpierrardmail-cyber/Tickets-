@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 19:32" />
+  <meta name="build" content="21/10 19:40" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4788,8 +4788,19 @@
         // nom de magasin rapproché : sans accents, majuscules, ponctuation ni numéros (« Intermarché » = « INTERMARCHE 1234 »)
         function magKey(x){ x=String(x||"").toLowerCase(); try{ x=x.normalize("NFD").replace(/[\u0300-\u036f]/g,""); }catch(e){}
           return x.replace(/[^a-z ]+/g," ").replace(/\b(sas|sarl|sa|eurl|snc|magasin|store|station|super|hyper|market)\b/g," ").replace(/\s+/g," ").trim(); }
-        var byM={}; vEntries().forEach(function(e){ var k=monthKey(e.date); if(m6.indexOf(k)<0) return;
+        var rows0=[], kCount={}; vEntries().forEach(function(e){ var k=monthKey(e.date); if(m6.indexOf(k)<0) return;
           var nm=recBy==="cat" ? ((e.categorie||"").trim()||"Autre") : (e.marchand||"").trim(), key=recBy==="cat" ? nm.toLowerCase() : magKey(nm); if(!key) return;
+          rows0.push({ e:e, k:k, nm:nm, key:key }); kCount[key]=(kCount[key]||0)+1; });
+        // magasins : noms presque identiques regroupés (faute de lecture du ticket : « INTERMACHE » = « Intermarché »)
+        var alias={};
+        if(recBy==="mag"){
+          function lev(a,b){ if(Math.abs(a.length-b.length)>2) return 9; var d=[], i, j; for(i=0;i<=a.length;i++){ d[i]=[i]; } for(j=1;j<=b.length;j++) d[0][j]=j;
+            for(i=1;i<=a.length;i++) for(j=1;j<=b.length;j++) d[i][j]=Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1]+(a.charAt(i-1)===b.charAt(j-1)?0:1)); return d[a.length][b.length]; }
+          function near(a,b){ var a1=a.split(" ")[0], b1=b.split(" ")[0], m=Math.min(a1.length,b1.length); if(m<5) return a===b; return lev(a1,b1)<=(m>=9?2:1); }
+          var heads=Object.keys(kCount).sort(function(a,b){ return kCount[b]-kCount[a]; }), keep=[];
+          heads.forEach(function(k){ var h0=null; for(var q=0;q<keep.length;q++){ if(near(k, keep[q])){ h0=keep[q]; break; } } if(h0) alias[k]=h0; else keep.push(k); });
+        }
+        var byM={}; rows0.forEach(function(r){ var key=alias[r.key]||r.key, e=r.e, k=r.k, nm=r.nm;
           if(recSel && recBy!=="art" && recSel.key===key) recHits.push({ e:e, amt:Number(e.montant)||0 });
           if(!byM[key]) byM[key]={ names:{}, m:{} }; byM[key].names[nm]=(byM[key].names[nm]||0)+1; byM[key].m[k]=(byM[key].m[k]||0)+(Number(e.montant)||0); });
         var recs=[];
