@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 20:04" />
+  <meta name="build" content="21/10 22:28" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4773,9 +4773,11 @@
         chart+=compteBarsSVG(shown.map(function(d){ return { m:d.key, lbl:mShort(d.key), v:d.total, fx:fxIn?d.fx:0 }; }), curM, function(r){ return anCol(r.v); });
         chart+='<div class="cch-leg"><span><i style="background:#7c9cf4"></i>Sous la moyenne</span><span><i style="background:#e0a458"></i>Au-dessus</span>'+(fxIn?'<span><i style="background:#c78bd6"></i>Frais fixes</span>':'')+'</div>';
         chart+='<div class="cch-note">'+(sel?'« '+esc(selLabel)+' » par mois'+(fxOn?' · frais fixes seulement avec « Toutes les dépenses »':''):(fxIn?'Tickets + frais fixes par mois':'Total des tickets par mois'))+' · touche une barre pour le détail du mois</div>';
-        hero={ label:"Dépensé sur "+shown.length+" mois"+(sel?" · "+esc(selLabel):""), big:grand, color:"var(--ink)",
-               sub:(fxIn && fxSum>0 ? "dont frais fixes "+fmtK(fxSum)+(fxOthers>0.5?" · dont "+fmtK(fxOthers)+" de part commune des autres":"") : ""),
-               stats:[ {l:"Moyenne / mois", v:fmtS(avg)}, {l:"Mois record", v:(best&&best.total>0?esc(best.short):"—"), d:(best&&best.total>0?fmtS(best.total):"")}, {l:"Mois actifs", v:String(active)} ] };
+        // en grand : le mois en cours ; le total de la période passe dans les encadrés
+        var cm0=data[data.length-1]||{ total:0, fx:0 };
+        hero={ label:"Dépensé en "+esc(monthLabelOf(curM))+(sel?" · "+esc(selLabel):""), big:cm0.total, color:"var(--ink)",
+               sub:(fxIn && cm0.fx>0 ? "dont frais fixes "+fmtK(cm0.fx) : (avg>0 ? (cm0.total>avg?"au-dessus":"en dessous")+" de la moyenne de "+fmtK(avg) : "")),
+               stats:[ {l:"Moyenne / mois", v:fmtS(avg)}, {l:"Mois record", v:(best&&best.total>0?esc(best.short):"—"), d:(best&&best.total>0?fmtS(best.total):"")}, {l:"Sur "+shown.length+" mois", v:fmtS(grand)} ] };
       } else if(mode==="rec"){
         // ---- Dépenses qui reviennent : 12 derniers mois (depuis le premier ticket au plus), tout est listé, du plus fréquent au moins fréquent
         // coût par mois = total ÷ nombre de mois couverts (un plein tous les deux mois compte pour moitié)
