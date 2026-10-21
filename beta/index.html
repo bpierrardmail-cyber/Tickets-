@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 16:44" />
+  <meta name="build" content="21/10 16:51" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -276,7 +276,7 @@
     .thero{ margin-bottom:12px; }
     .thero.fit{ display:flex; flex-direction:column; }
     .thero.fit > *{ flex-shrink:0; }
-    .thero.fit > .cch, .thero.fit > .bsl{ flex:1 0 auto; display:flex; flex-direction:column; justify-content:center; }
+    .thero.fit > .cch, .thero.fit > .bsl{ flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; display:flex; flex-direction:column; justify-content:center; justify-content:safe center; }
     .thero.fit > .cch.cch-top{ justify-content:flex-start; }
     .thero.fit .hstats{ margin-top:auto; padding-top:14px; }
     .thero.fit .cdon-big svg{ flex-basis:calc(128px + min(var(--chb,0px)*.1, 14px)); width:calc(128px + min(var(--chb,0px)*.1, 14px)); height:calc(128px + min(var(--chb,0px)*.1, 14px)); }
@@ -2675,7 +2675,7 @@
       if(target<200) target=200;
       var diff=target-hero.offsetHeight, nb=Math.max(-70, Math.min(420, CHB+diff));
       if(fitting<3 && Math.abs(nb-CHB)>1){ fitting++; CHB=nb; fitMemo[v0key()]=nb; try{ render(); }finally{ fitting--; } return; }
-      hero=document.querySelector(".thero"); if(hero){ hero.classList.add("fit"); hero.style.setProperty("--chb", Math.max(0,CHB)+"px"); hero.style.minHeight=target+"px"; if(hero.scrollHeight<=target+4) hero.style.height=target+"px"; }
+      hero=document.querySelector(".thero"); if(hero){ hero.classList.add("fit"); hero.style.setProperty("--chb", Math.max(0,CHB)+"px"); hero.style.height=target+"px"; }
     }
     function v0key(){ var on=document.querySelector(".thero .cch-tabs button.on"); return state.view+"|"+(on?on.getAttribute("data-m"):""); }
     function render(){ pvMemo=null; fsMemo={}; if(!fitting) CHB=fitView()?(fitMemo[state.view+"|"+(state.view==="communes"?(state.comChart||store.read("comChartDef","rep")):state.view==="articles"?(state.artChart||store.read("artChartDef","fam")):state.view==="analyse"?(state.anChart||store.read("anChartDef","mois")):"")]||0):0; fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); wirePV(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); try{ fitHero(); }catch(err){ console.warn(err); } }
