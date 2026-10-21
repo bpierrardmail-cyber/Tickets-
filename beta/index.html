@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 19:24" />
+  <meta name="build" content="21/10 19:28" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4899,10 +4899,10 @@
         [].forEach.call(document.querySelectorAll(".entry[data-id]"), function(n){ n.onclick=function(){ editEntry(n.getAttribute("data-id")); }; });
         setNav("analyse", true); return;
       }
-      if(!nSub) h+='<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="anGoMois"><span class="t"><span class="tic">📅</span> Par mois · '+shown.length+(sel?'<small>'+esc(selLabel)+'</small>':'')+'</span><span class="v">'+fmtK(grand)+'</span><span class="ch">›</span></div></div></section>';
+      if(!nSub) h+='<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="anGoMois"><span class="t"><span class="tic">📅</span> Par mois · '+data.length+(sel?'<small>'+esc(selLabel)+'</small>':'')+'</span><span class="v">'+fmtK(grand)+'</span><span class="ch">›</span></div></div></section>';
       // ---- Liste des mois (toucher = détail du mois et ses tickets)
       if(nSub) h+='<div class="muted" style="font-size:12px;margin:12px 4px 0">'+(sel?'« '+esc(selLabel)+' » · ':'')+'Touche un mois pour son détail et ses tickets.</div><section class="paper cacc anlist">';
-      if(nSub) shown.slice().reverse().forEach(function(d){
+      if(nSub) data.slice().reverse().forEach(function(d){   // les 12 derniers mois, même vides
         var pct=Math.max(d.total>0?2:0, Math.round(d.total/maxV*100));
         h+='<div class="bar-row clk" data-month="'+esc(d.key)+'"><div class="bar-top"><span class="bl">'+esc(d.label)+(d.key===curM?' <small class="muted">en cours</small>':'')+'</span><span class="bv">'+fmtK(d.total)+' <span class="ch">›</span></span></div><div class="bar-track"><i style="width:'+pct+'%;background:'+anCol(d.total)+'"></i></div></div>';
       });
