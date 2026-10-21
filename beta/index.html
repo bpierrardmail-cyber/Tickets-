@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 19:28" />
+  <meta name="build" content="21/10 19:32" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4848,7 +4848,7 @@
           var dim=selP && x.name!==selP;
           chart+='<div class="bar-row" style="margin:12px 2px;'+(dim?'opacity:.5':'')+'"><div class="bar-top"><span class="bl"'+(selP && !dim?' style="font-weight:800"':'')+'>'+esc(x.name)+(x.name===mePerson()?' <small class="muted">toi</small>':'')+'</span><span class="bv">'+fmtK(x.v)+' <small class="muted">'+Math.round(x.v/(payT||1)*100)+' %</small></span></div><div class="bar-track"><i style="width:'+pc+'%;background:'+personColor(x.name)+'"></i></div></div>'; });
           chart+='</div>'; }
-        hero={ label:"Qui a payé · "+esc(perP), big:payT, color:"var(--ink)", sub:"tout le foyer"+(selP?" · "+esc(selP)+" en avant":"") };
+        hero={ label:"Qui a payé · "+esc(perP), big:(selP ? (byP[selP]||0) : payT), color:"var(--ink)", sub:(selP ? "payé par "+esc(selP)+" · "+(payT>0?Math.round((byP[selP]||0)/payT*100):0)+" % des "+fmtK(payT)+" du foyer" : "tout le foyer") };
       } else {
         // ---- Répartition (ex-Graphes · Dépenses)
         var p=state.graphPeriod||"cur", dim=state.graphDim||"fam", typ=state.graphType||"donut";
