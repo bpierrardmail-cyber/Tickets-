@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 15:57" />
+  <meta name="build" content="21/10 16:08" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -274,6 +274,12 @@
     .tabtop{ margin:0 0 12px; }
     /* Bandeau de synthèse des onglets */
     .thero{ margin-bottom:12px; }
+    .thero.fit{ display:flex; flex-direction:column; }
+    .thero.fit > .cch, .thero.fit > .bsl{ flex:1; display:flex; flex-direction:column; justify-content:center; }
+    .thero.fit .hstats{ margin-top:auto; padding-top:14px; }
+    .thero.fit .cdon-big svg{ flex-basis:calc(128px + min(var(--chb,0px)*.1, 14px)); width:calc(128px + min(var(--chb,0px)*.1, 14px)); height:calc(128px + min(var(--chb,0px)*.1, 14px)); }
+    .thero.fit .crep-b{ height:calc(14px + min(var(--chb,0px)*.04, 12px)); }
+    .thero.fit .crep-r{ margin-top:calc(10px + min(var(--chb,0px)*.05, 14px)); }
     .thero .dash-big{ font-size:38px; }
     .hstats{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:14px; }
     .hstat{ background:rgba(255,255,255,.04); border:1px solid var(--line); border-radius:12px; padding:8px 10px; min-width:0; }
@@ -1792,7 +1798,7 @@
       if(!mx) mx=1;
       var sel=vals.filter(function(v){ return v.mk===month; })[0], LET="JFMAMJJASOND";
       function pc(r){ return (r>=0?"+":"−")+Math.abs(r).toFixed(1).replace(".",",")+" %"; }
-      var H=70, cols='';
+      var H=70+Math.round(CHB/2), cols='';
       vals.forEach(function(v,i){
         var on=v.mk===month, fut=v.mk>curM, r=v.r, col=r===null?"":(r>=0?"var(--accent)":"var(--coral)");
         var hh=r===null?0:Math.max(3,Math.abs(r)/mx*(H-16));
@@ -1893,7 +1899,7 @@
       var t0=pts[0].t, t1=Math.max(pts[pts.length-1].t, t0+1);
       var vmin=Infinity, vmax=-Infinity; pts.forEach(function(p){ if(p.v<vmin) vmin=p.v; if(p.v>vmax) vmax=p.v; });
       var pad=(vmax-vmin)*0.12 || Math.max(1, vmax*0.02); vmin-=pad; vmax+=pad;
-      var W=1000, H=160;
+      var W=1000, H=160+CHB;
       function X(t){ return (t-t0)/(t1-t0)*W; } function Y(v){ return H-(v-vmin)/(vmax-vmin)*H; }
       var line=pts.map(function(p,i){ return (i?"L":"M")+X(p.t).toFixed(1)+" "+Y(p.v).toFixed(1); }).join(" ");
       var area=line+" L"+W+" "+H+" L0 "+H+" Z";
@@ -1904,7 +1910,7 @@
       var lp=pts[pts.length-1];
       var h='<button type="button" class="bch-mode" id="bchMode">Courbe : <b>'+(mode==="pl"?"plus-value":"valeur")+'</b> ⇄</button><div class="bch">';
       h+='<div class="bch-read" id="bchRead">'+bReadDefault()+'</div>';
-      h+='<div class="bch-plot" id="bchPlot"><svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-label="Évolution du portefeuille '+esc(R[2])+'">'+
+      h+='<div class="bch-plot" id="bchPlot" style="height:'+H+'px"><svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-label="Évolution du portefeuille '+esc(R[2])+'">'+
          '<defs><linearGradient id="bchG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+col+'" stop-opacity=".30"/><stop offset="1" stop-color="'+col+'" stop-opacity="0"/></linearGradient></defs>'+
          '<path d="'+area+'" fill="url(#bchG)"/>'+zero+
          '<path d="'+line+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>'+
@@ -2651,7 +2657,24 @@
     function bindBack(fn){ var hb=document.getElementById("hback"); if(hb) hb.onclick=fn; }
 
     var fyRendering=false;
-    function render(){ pvMemo=null; fsMemo={}; fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); wirePV(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); }
+    // ---------- Graphiques plein écran ----------
+    // Commun, Articles, Analyse, Bourse (page principale) : la carte du haut remplit l'écran ; CHB = hauteur ajoutée aux graphiques
+    var CHB=0, fitMemo={}, fitting=false;
+    function fitView(){ var v=state.view;
+      if(v==="communes") return !state.comSub; if(v==="articles") return !state.artSub; if(v==="analyse") return !state.anSub; if(v==="bourse") return !state.bSub; return false; }
+    function fitHero(){
+      var hero=document.querySelector(".thero"); if(!fitView() || !hero){ CHB=0; return; }
+      var nav=document.getElementById("nav"), navH=(nav && nav.offsetHeight)||0;
+      // la carte + les lignes du dessous (Frais fixes, Par famille, Mes comptes…) tiennent ensemble dans l'écran
+      var hr=hero.getBoundingClientRect(), last=app.lastElementChild, after=last ? Math.max(0, last.getBoundingClientRect().bottom-hr.bottom) : 0;
+      var top=hr.top+(window.scrollY||0), target=Math.floor(window.innerHeight-navH-top-after-12);
+      if(target<200) target=200;
+      var diff=target-hero.offsetHeight, nb=Math.max(-70, Math.min(420, CHB+diff));
+      if(!fitting && Math.abs(nb-CHB)>6){ fitting=true; CHB=nb; fitMemo[v0key()]=nb; try{ render(); }finally{ fitting=false; } return; }
+      hero=document.querySelector(".thero"); if(hero){ hero.style.minHeight=target+"px"; hero.style.setProperty("--chb", Math.max(0,CHB)+"px"); hero.classList.add("fit"); }
+    }
+    function v0key(){ var on=document.querySelector(".thero .cch-tabs button.on"); return state.view+"|"+(on?on.getAttribute("data-m"):""); }
+    function render(){ pvMemo=null; fsMemo={}; if(!fitting) CHB=fitView()?(fitMemo[state.view+"|"+(state.view==="communes"?(state.comChart||store.read("comChartDef","rep")):state.view==="articles"?(state.artChart||store.read("artChartDef","fam")):state.view==="analyse"?(state.anChart||store.read("anChartDef","mois")):"")]||0):0; fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); wirePV(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); try{ fitHero(); }catch(err){ console.warn(err); } }
     function renderView(){
       armBack();
       fyViewGuard();
@@ -3767,7 +3790,7 @@
       } else {
         var six=[], mk=month; for(var i=0;i<6;i++){ six.unshift(mk); mk=prevMonthKey(mk); }
         var S=trimLead(six.map(function(m){ var d=monthData(m); return { m:m, c:d.commun, p:d.prod }; }), function(r){ return r.c+r.p; }), smx=0; S.forEach(function(r){ smx=Math.max(smx, r.c+r.p); }); if(!smx) smx=1;
-        var W=340, H=170, top=20, bot=22, ph=H-top-bot, slot=W/Math.max(S.length,3), bw=Math.min(30, slot*0.5), g='';
+        var W=340, H=170+CHB, top=20, bot=22, ph=H-top-bot, slot=W/Math.max(S.length,3), bw=Math.min(30, slot*0.5), g='';
         S.forEach(function(r,i){ var cx=slot*i+slot/2, hc=r.c/smx*ph, hp=r.p/smx*ph, on=r.m===month, y0=top+ph, op=on?1:.5;
           if(hc>0) g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(y0-hc).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hc.toFixed(1)+'" rx="3" style="fill:'+COLC+';opacity:'+op+'"/>';
           if(hp>0) g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(y0-hc-hp-(hc>0?2:0)).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hp.toFixed(1)+'" rx="3" style="fill:'+COLR+';opacity:'+op+'"/>';
@@ -3963,7 +3986,7 @@
       };
     }
     function compteBarsSVG(rows, sel, color){
-      var W=340, H=178, top=22, bot=24, ph=H-top-bot, vals=[0];
+      var W=340, H=178+CHB, top=22, bot=24, ph=H-top-bot, vals=[0];
       rows.forEach(function(r){ vals.push(r.v); });
       var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals); if(hi-lo<1) hi=lo+1;
       function y(v){ return top+(hi-v)/(hi-lo)*ph; }
@@ -3981,7 +4004,7 @@
       return '<svg viewBox="0 0 '+W+' '+H+'" role="img">'+g+'</svg>';
     }
     function compteLineSVG(rows, sel, color){
-      var W=340, H=178, top=24, bot=24, ph=H-top-bot, padX=20, vals=[];
+      var W=340, H=178+CHB, top=24, bot=24, ph=H-top-bot, padX=20, vals=[];
       rows.forEach(function(r){ vals.push(r.v); });
       var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals);
       var pad=(hi-lo)*0.15 || Math.max(1,Math.abs(hi)*0.1); lo-=pad; hi+=pad; if(lo>0 && Math.min.apply(null,vals)>=0) lo=Math.max(0,lo);
