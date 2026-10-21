@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 18:54" />
+  <meta name="build" content="21/10 19:03" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -3374,9 +3374,9 @@
            '<button class="btn primary" id="save" type="button">Enregistrer</button></div></section>';
       app.innerHTML = h;
       setNav(null, false);
-      bindBack(function(){ state.view="list"; state.draft=null; render(); });
+      bindBack(function(){ state.view=formBackView(); state.draft=null; render(); });
 
-      document.getElementById("cancel").onclick=function(){ state.view="list"; state.draft=null; render(); };
+      document.getElementById("cancel").onclick=function(){ state.view=formBackView(); state.draft=null; render(); };
       var del=document.getElementById("del"); if(del) del.onclick=delDraft;
       document.getElementById("save").onclick=saveDraft;
       var photoadd=document.getElementById("photoadd"); if(photoadd) photoadd.onclick=function(){ readForm(); var pi=document.getElementById("photoin"); if(pi) pi.click(); };
@@ -3471,8 +3471,10 @@
       state.draft={id:e.id,montant:e.montant,date:e.date,marchand:e.marchand,categorie:e.categorie,payePar:e.payePar||"",compte:e.compte||"",photo:photoOf(e),
         articles:(e.articles||[]).map(function(a){ return {label:a.label,prix:a.prix,produit:a.produit,commun:!!a.commun}; })};
       state.draftRO=!fyCanEdit(e);
+      state.formFrom=(state.view==="analyse" || state.view==="month") ? state.view : null;
       state.view="form"; render();
     }
+    function formBackView(){ var v=state.formFrom||"list"; state.formFrom=null; return v; }
     function saveDraft(){
       if(state.draftRO) return;
       readForm();
@@ -3511,12 +3513,12 @@
       else { entry.photo=false; delete PHOTOS[String(entry.id)]; idbDel(entry.id); }
       if(isNew){ state.entries.unshift(entry); }
       else { state.entries=state.entries.map(function(e){ return String(e.id)===String(entry.id)?entry:e; }); }
-      persist(); state.view="list"; state.draft=null; render();
+      persist(); state.view=formBackView(); state.draft=null; render();
     }
     function delDraft(){
       if(state.draftRO) return;
       if(state.draft && state.draft.id){ idbDel(state.draft.id); delete PHOTOS[String(state.draft.id)]; state.entries=state.entries.filter(function(e){ return String(e.id)!==String(state.draft.id); }); persist(); }
-      state.view="list"; state.draft=null; render();
+      state.view=formBackView(); state.draft=null; render();
     }
     // ---------- Articles : même présentation que Compte, Commun et Analyse ----------
     var ARTPAL=["#7c9cf4","#e0a458","#4fd6a0","#c78bd6","#5bc0d4","#e88fb0","#9bd35e","#d4a05b","#8a92e0","#6fcaa8","#d98c5f","#b0b6c2","#f4796b"];
@@ -4756,6 +4758,8 @@
       // ---- Carte du haut : deux graphiques (onglets ou glissé)
       var TABS=[["mois","Mois"],["rep","Répartition"],["rec","Récurrentes"],["pay","Qui a payé"]];
       // « + Frais fixes » : en haut à droite de la carte
+      var recPage=null, recPageTitle="";
+      function recByPeek(){ var r=state.recBy||store.read("recBy","cat"); return ["cat","mag","art"].indexOf(r)<0?"cat":r; }
       var chart=chartTabsHTML(TABS, mode, "anChartDef", "mois")+'<div class="cch'+(mode!=="mois"?' cch-top':'')+'">', fxBtn='';
       var hero;
       if(mode==="mois"){
@@ -4774,6 +4778,7 @@
       } else if(mode==="rec"){
         // ---- Dépenses qui reviennent : 12 derniers mois (depuis le premier ticket au plus), tout est listé, du plus fréquent au moins fréquent
         // coût par mois = total ÷ nombre de mois couverts (un plein tous les deux mois compte pour moitié)
+        var recSel=(state.anSub==="rec" && state.recSel && state.recSel.by===recByPeek()) ? state.recSel : null, recHits=[];
         var fxOnR=anFraisOn(), fwR=(pvCur()==="all") ? null : pvName(pvCur()), fdR=null;
         // premier mois avec un ticket de la personne affichée, dans les 12 derniers mois (un ticket plus ancien ou mal daté ne compte pas)
         var m12=lastMonths(12)[0].key; vEntries().forEach(function(e){ var k=e.date && monthKey(e.date); if(k && k>=m12 && k<=curM && (!fdR || k<fdR)) fdR=k; });
@@ -4785,18 +4790,20 @@
           return x.replace(/[^a-z ]+/g," ").replace(/\b(sas|sarl|sa|eurl|snc|magasin|store|station|super|hyper|market)\b/g," ").replace(/\s+/g," ").trim(); }
         var byM={}; vEntries().forEach(function(e){ var k=monthKey(e.date); if(m6.indexOf(k)<0) return;
           var nm=recBy==="cat" ? ((e.categorie||"").trim()||"Autre") : (e.marchand||"").trim(), key=recBy==="cat" ? nm.toLowerCase() : magKey(nm); if(!key) return;
+          if(recSel && recBy!=="art" && recSel.key===key) recHits.push({ e:e, amt:Number(e.montant)||0 });
           if(!byM[key]) byM[key]={ names:{}, m:{} }; byM[key].names[nm]=(byM[key].names[nm]||0)+1; byM[key].m[k]=(byM[key].m[k]||0)+(Number(e.montant)||0); });
         var recs=[];
         if(recBy==="art"){
           // Par article : produits rangés (onglet Articles), avec l'évolution du prix moyen d'une ligne entre le premier et le dernier mois
           var byA={}; vEntries().forEach(function(e){ var k=monthKey(e.date); if(m6.indexOf(k)<0) return;
             (e.articles||[]).forEach(function(a){ var c=classifyArticle(a); if(c.fam==="Remise" || !(c.amt>0)) return; var key=c.fam+"|"+c.name;
+              if(recSel && recSel.key===key) recHits.push({ e:e, amt:c.amt, lbl:((a.label||"").trim()||c.name) });
               if(!byA[key]) byA[key]={ fam:c.fam, name:c.name, m:{}, n:{} }; byA[key].m[k]=(byA[key].m[k]||0)+c.amt; byA[key].n[k]=(byA[key].n[k]||0)+1; }); });
           Object.keys(byA).forEach(function(key){ var o=byA[key], ks=Object.keys(o.m).sort(), t=0; ks.forEach(function(x){ t+=o.m[x]; });
             var p0=o.m[ks[0]]/o.n[ks[0]], p1=o.m[ks[ks.length-1]]/o.n[ks[ks.length-1]];
-            recs.push({ name:o.name, fam:o.fam, n:ks.length, avg:t/nM, fx:false, art:true, evo:(ks.length>1 && p0>0?(p1-p0)/p0*100:0) }); });
+            recs.push({ key:key, name:o.name, fam:o.fam, n:ks.length, avg:t/nM, fx:false, art:true, evo:(ks.length>1 && p0>0?(p1-p0)/p0*100:0) }); });
         } else Object.keys(byM).forEach(function(k){ var o=byM[k], ks=Object.keys(o.m), t=0; ks.forEach(function(x){ t+=o.m[x]; });
-          var nm=Object.keys(o.names).sort(function(a,b){ return o.names[b]-o.names[a]; })[0]; recs.push({ name:nm, n:ks.length, avg:t/nM, fx:false }); });
+          var nm=Object.keys(o.names).sort(function(a,b){ return o.names[b]-o.names[a]; })[0]; recs.push({ key:k, name:nm, n:ks.length, avg:t/nM, fx:false }); });
         if(fxOnR){ var fxSeen={}; m6.forEach(function(mk){ anFraisLines(mk, fwR).forEach(function(x){ var k="fx|"+x.label; if(!fxSeen[k]){ fxSeen[k]={ name:x.label, n:0, t:0, ms:{}, avg:0, fx:true }; recs.push(fxSeen[k]); }
           var o=fxSeen[k]; o.t+=x.v; if(!o.ms[mk]){ o.ms[mk]=1; o.n++; } o.avg=o.t/nM; }); }); }
         recs.sort(function(a,b){ return (b.avg-a.avg) || (b.n-a.n); });   // du plus cher au moins cher
@@ -4806,8 +4813,17 @@
         if(!recs.length) chart+='<div class="cch-note" style="margin:24px 0">'+(recBy==="art"?"Aucun article : seuls les tickets scannés avec leurs lignes comptent.":"Aucune dépense sur les 12 derniers mois.")+'</div>';
         else { chart+='<div style="margin-top:6px">'; recs.forEach(function(x){ var pc=Math.max(2, Math.round(x.avg/recMax*100));
           var evo=(x.art && Math.abs(x.evo)>=0.5)?' <small style="color:'+(x.evo>0?'var(--coral)':'var(--accent)')+';font-weight:700">'+(x.evo>0?'▲ +':'▼ ')+String(Math.round(x.evo*10)/10).replace(".",",")+' %</small>':'';
-          chart+='<div class="bar-row'+(x.art?' recart clk':'')+'"'+(x.art?' data-fam="'+esc(x.fam)+'" data-name="'+esc(x.name)+'"':'')+' style="margin:10px 2px"><div class="bar-top"><span class="bl">'+esc(x.name)+' <small class="muted">'+(x.fx?'frais fixe · ':'')+x.n+' mois sur '+nM+'</small>'+evo+'</span><span class="bv">'+fmtK(x.avg)+'<small class="muted"> /mois</small></span></div><div class="bar-track"><i style="width:'+pc+'%;background:'+(x.fx?'#c78bd6':'#7c9cf4')+'"></i></div></div>'; });
-          chart+='</div><div class="cch-note">Du plus cher au moins cher · coût moyen par mois sur '+nM+' mois'+(recBy==="art"?' · ▲▼ prix d\'une ligne, premier mois → dernier · touche un article pour sa fiche':'')+'</div>'; }
+          chart+='<div class="bar-row'+(x.fx?'':' recrow clk')+'"'+(x.fx?'':' data-key="'+esc(x.key)+'" data-name="'+esc(x.name)+'"')+' style="margin:10px 2px"><div class="bar-top"><span class="bl">'+esc(x.name)+' <small class="muted">'+(x.fx?'frais fixe · ':'')+x.n+' mois sur '+nM+'</small>'+evo+'</span><span class="bv">'+fmtK(x.avg)+'<small class="muted"> /mois</small></span></div><div class="bar-track"><i style="width:'+pc+'%;background:'+(x.fx?'#c78bd6':'#7c9cf4')+'"></i></div></div>'; });
+          chart+='</div><div class="cch-note">Du plus cher au moins cher · coût moyen par mois sur '+nM+' mois'+(recBy==="art"?' · ▲▼ prix d\'une ligne, premier mois → dernier':'')+' · touche une ligne pour ses tickets</div>'; }
+        if(recSel){ var hT=0; recHits.sort(function(a,b){ return String(b.e.date||"").localeCompare(String(a.e.date||"")); });
+          var rp='<div class="muted" style="font-size:12px;margin:12px 4px 0">'+recHits.length+' achat'+(recHits.length>1?'s':'')+' sur '+nM+' mois · touche un ticket pour l\'ouvrir</div>', curMo="";
+          recHits.forEach(function(x){ hT+=x.amt; });
+          rp+='<section class="paper cacc" style="padding:4px 14px 8px"><div class="dtot" style="padding:12px 2px 6px"><span>Total</span><span class="v" style="color:var(--ink)">'+fmtK(hT)+'</span></div><div class="dsub" style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin:0 2px 6px"><span>Coût moyen par mois</span><span>'+fmtK(hT/nM)+'</span></div>';
+          recHits.forEach(function(x){ var mo=monthKey(x.e.date), dd=(x.e.date||"").split("-");
+            if(mo!==curMo){ curMo=mo; rp+='<div class="dsub" style="display:flex;justify-content:space-between;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:12px 2px 4px"><span>'+esc(monthLabelOf(mo))+'</span><span></span></div>'; }
+            rp+='<div class="entry ecomp" data-id="'+esc(x.e.id)+'" style="display:flex;align-items:center;gap:10px;background:none;border:0;border-top:1px solid var(--line);border-radius:0;margin:0;padding:10px 2px;box-shadow:none;cursor:pointer"><span class="n" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(x.lbl||x.e.marchand||"—")+'<small style="display:block;font-size:10.5px;color:var(--muted)">'+esc(x.lbl?(x.e.marchand||""):(x.e.categorie||""))+'</small></span><span class="d" style="color:var(--muted);font-size:12px">'+esc(dd.length===3?dd[2]+"/"+dd[1]:"")+'</span><span class="a" style="font-weight:700;font-variant-numeric:tabular-nums">'+fmtK(x.amt)+'</span></div>'; });
+          if(!recHits.length) rp+='<div class="muted" style="font-size:12px;margin:12px 2px">Aucun ticket sur la période.</div>';
+          recPage=rp+'</section>'; recPageTitle=recSel.name; }
         hero={ label:"Dépenses qui reviennent · "+nM+" mois", big:recT, color:"var(--ink)", sub:recs.length?recs.length+" dépense"+(recs.length>1?"s":"")+" · environ par mois":"" };
       } else if(mode==="pay"){
         // ---- Qui a payé : les dépenses affichées (filtre par personne), réparties selon la personne qui a payé
@@ -4874,7 +4890,14 @@
       }
       chart+='</div>'; chart=fxBtn+chart; hero.extra=chart;
       var nSub=(state.anSub==="mois");   // sous-page « Par mois »
-      var h=header(nSub, nSub?"Par mois":"")+pvBarHTML()+(nSub?'':tabHero(hero));
+      if(state.anSub==="rec" && recPage===null) state.anSub=null;
+      var h=header(nSub || recPage!==null, nSub?"Par mois":recPageTitle)+pvBarHTML()+(nSub || recPage!==null?'':tabHero(hero));
+      if(recPage!==null){
+        app.innerHTML=h+recPage;
+        bindBack(function(){ state.anSub=null; state.recSel=null; render(); window.scrollTo(0,0); });
+        [].forEach.call(document.querySelectorAll(".entry[data-id]"), function(n){ n.onclick=function(){ editEntry(n.getAttribute("data-id")); }; });
+        setNav("analyse", true); return;
+      }
       if(!nSub) h+='<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="anGoMois"><span class="t"><span class="tic">📅</span> Par mois · '+shown.length+(sel?'<small>'+esc(selLabel)+'</small>':'')+'</span><span class="v">'+fmtK(grand)+'</span><span class="ch">›</span></div></div></section>';
       // ---- Liste des mois (toucher = détail du mois et ses tickets)
       if(nSub) h+='<div class="muted" style="font-size:12px;margin:12px 4px 0">'+(sel?'« '+esc(selLabel)+' » · ':'')+'Touche un mois pour son détail et ses tickets.</div><section class="paper cacc anlist">';
@@ -4889,7 +4912,7 @@
       wireChartDefaults();
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.anChart=bt.getAttribute("data-m"); store.write("anChart", state.anChart); render(); }; });
       var hc=document.getElementById("histcat"); if(hc) hc.onchange=function(){ state.histCat=hc.value; render(); };
-      [].forEach.call(document.querySelectorAll(".recart"), function(r){ r.onclick=function(){ state.artSel={ fam:r.getAttribute("data-fam"), name:r.getAttribute("data-name") }; state.artFrom="analyse"; state.view="artDetail"; render(); window.scrollTo(0,0); }; });
+      [].forEach.call(document.querySelectorAll(".recrow"), function(r){ r.onclick=function(){ state.recSel={ by:recByPeek(), key:r.getAttribute("data-key"), name:r.getAttribute("data-name") }; state.anSub="rec"; render(); window.scrollTo(0,0); }; });
       [].forEach.call(document.querySelectorAll("#recBy button"), function(b){ b.onclick=function(){ state.recBy=b.getAttribute("data-v"); store.write("recBy", state.recBy); render(); }; });
       var afx=document.getElementById("anFx"); if(afx) afx.onclick=function(){ state.anFrais=!anFraisOn(); store.write("anFrais", state.anFrais); render(); };
       var gp=document.getElementById("gper"); if(gp) gp.onchange=function(){ state.graphPeriod=gp.value; render(); };
