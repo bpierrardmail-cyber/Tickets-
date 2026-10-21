@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 15:09" />
+  <meta name="build" content="21/10 15:29" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -432,6 +432,10 @@
     .crep-h b{ font-variant-numeric:tabular-nums; }
     .crep-b{ display:flex; gap:2px; height:14px; }
     .crep-b i{ display:block; height:100%; border-radius:3px; }
+    .cch-leg.leg1{ flex-wrap:nowrap; white-space:nowrap; gap:10px; font-size:11px; }
+    .crep-v{ display:flex; flex-wrap:wrap; gap:4px 12px; margin-top:5px; font-size:11px; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+    .crep-v span{ display:inline-flex; align-items:center; gap:5px; }
+    .crep-v i{ width:8px; height:8px; border-radius:2px; display:inline-block; }
     .fxrow{ display:flex; align-items:center; gap:10px; padding:8px 2px; border-top:1px solid var(--line); }
     .fxrow .fxdone{ flex:0 0 auto; width:24px; height:24px; border-radius:50%; border:1.5px solid var(--line2); background:none; color:#0a130f; font-size:13px; font-weight:800; padding:0; cursor:pointer; }
     .fxrow .fxdone.on{ background:var(--accent); border-color:var(--accent); }
@@ -3735,14 +3739,16 @@
         rp=[me].concat(rRest);
         var mx=0; rp.forEach(function(p){ mx=Math.max(mx, partOf(p)); }); if(!mx) mx=1;
         function seg(v,col){ return v>0?'<i style="width:'+(v/mx*100).toFixed(2)+'%;background:'+col+'"></i>':''; }
+        function repVals(p){ var a=[[persoOf(p),COLP],[communShareOf(p),COLC],[D.prod*pctOf(p)/100,COLR]].filter(function(x){ return x[0]>0.004; });
+          return a.length?'<div class="crep-v">'+a.map(function(x){ return '<span><i style="background:'+x[1]+'"></i>'+fmtK(x[0])+'</span>'; }).join("")+'</div>':''; }
         function repRow(p){ var pc=effPct(p);
-          return '<div class="crep-r"><div class="crep-h"><span>'+esc(p)+(p===me?' <small>toi</small>':'')+'<small class="pc">'+pctTxt(pc)+'</small></span>'+(p===me?'':'<b>'+fmtK(partOf(p))+'</b>')+'</div><div class="crep-b">'+seg(persoOf(p),COLP)+seg(communShareOf(p),COLC)+seg(D.prod*pc/100,COLR)+'</div></div>'; }
+          return '<div class="crep-r"><div class="crep-h"><span>'+esc(p)+(p===me?' <small>toi</small>':'')+'<small class="pc">'+pctTxt(pc)+'</small></span>'+(p===me?'':'<b>'+fmtK(partOf(p))+'</b>')+'</div><div class="crep-b">'+seg(persoOf(p),COLP)+seg(communShareOf(p),COLC)+seg(D.prod*pc/100,COLR)+'</div>'+repVals(p)+'</div>'; }
         var rPages=[]; for(var rk=0; rk<rp.length; rk+=5) rPages.push('<div class="crep">'+rp.slice(rk, rk+5).map(repRow).join("")+'</div>');
         chart+='<div class="crep-full">'+(rp.length>5?'<div class="crep-tot">'+rp.length+' personnes · total '+fmtK(D.fraisTot+D.prod)+'</div>':'')+pagerHTML("comRep", rPages, { cls:"bleed18" })+'</div>';
         // Petite carte de l'Accueil : toi, les 2 plus grosses parts, puis « + N autres »
         var rOth=rp.slice(3), rOthT=rOth.reduce(function(t,p){ return t+partOf(p); },0);
         chart+='<div class="crep-mini"><div class="crep">'+rp.slice(0,3).map(repRow).join("")+'</div>'+(rOth.length?'<div class="crep-more"><span>+ '+rOth.length+' autre'+(rOth.length>1?'s':'')+'</span><b>'+fmtK(rOthT)+'</b></div>':'')+'</div>';
-        chart+='<div class="cch-leg"><span><i style="background:'+COLP+'"></i>Frais perso</span><span><i style="background:'+COLC+'"></i>Part des frais communs</span><span><i style="background:'+COLR+'"></i>Part des produits partagés</span></div>';
+        chart+='<div class="cch-leg leg1"><span><i style="background:'+COLP+'"></i>Frais perso</span><span><i style="background:'+COLC+'"></i>Frais communs</span><span><i style="background:'+COLR+'"></i>Produits partagés</span></div>';
       } else if(cm==="postes"){
         var DCOL=["#7c9cf4","#5bc0d4","#c78bd6","#e88fb0","#9bd35e","#4fd6a0"], parts=[];
         (D.byP.Commun?D.byP.Commun.items:[]).forEach(function(f){ parts.push({ l:f.label, v:fraisMontant(f, month) }); });
@@ -3758,14 +3764,16 @@
         S.forEach(function(r,i){ var cx=slot*i+slot/2, hc=r.c/smx*ph, hp=r.p/smx*ph, on=r.m===month, y0=top+ph, op=on?1:.5;
           if(hc>0) g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(y0-hc).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hc.toFixed(1)+'" rx="3" style="fill:'+COLC+';opacity:'+op+'"/>';
           if(hp>0) g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(y0-hc-hp-(hc>0?2:0)).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hp.toFixed(1)+'" rx="3" style="fill:'+COLR+';opacity:'+op+'"/>';
-          if(on || i===0) g+='<text x="'+cx.toFixed(1)+'" y="'+(y0-hc-hp-(hc>0&&hp>0?2:0)-5).toFixed(1)+'" text-anchor="middle" style="fill:var(--ink-soft);font-size:10.5px;font-weight:600;font-family:var(--sans)">'+cptK(r.c+r.p)+'</text>';
+          if(r.c+r.p>0) g+='<text x="'+cx.toFixed(1)+'" y="'+(y0-hc-hp-(hc>0&&hp>0?2:0)-5).toFixed(1)+'" text-anchor="middle" style="fill:var(--ink-soft);font-size:10.5px;font-weight:600;font-family:var(--sans)">'+cptK(r.c+r.p)+'</text>';
           g+='<text x="'+cx.toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" style="fill:'+(on?'var(--ink)':'var(--muted)')+';font-size:10px;font-weight:'+(on?700:400)+';font-family:var(--sans)">'+esc(mShort(r.m))+'</text>'; });
         chart+='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Dépenses communes sur 6 mois">'+g+'</svg>';
         chart+='<div class="cch-leg"><span><i style="background:'+COLC+'"></i>Frais communs</span><span><i style="background:'+COLR+'"></i>Produits partagés</span></div>';
       }
       chart+='</div>';
       var hst=[];
-      hst.push({l:"Frais communs", v:fmtS(D.commun)}); hst.push({l:"Produits partagés", v:fmtS(D.prod)}); hst.push({l:"Frais perso", v:fmtS(persoOf(me))});
+      // Frais fixes de chaque personne : ses frais perso + sa part des frais communs (sans les produits partagés)
+      ppl.forEach(function(p){ var t=persoOf(p)+communShareOf(p); if(p===me || t>0.004) hst.push({l:esc(p)+(p===me?" (toi)":""), v:fmtS(t), d:"frais fixes"}); });
+      hst.push({l:"Total foyer", v:fmtS(D.fraisTot), d:"frais fixes"});
       var myPc=pctOf(me);
       var cSub=state.comSub; if(cSub!=="commun" && cSub!=="prod" && cSub!=="perso") cSub=null;   // sous-pages : frais communs, produits partagés, frais perso
       var h=header(!!cSub, cSub==="commun"?"Frais communs":(cSub==="prod"?"Produits partagés":(cSub==="perso"?"Frais perso":"")))+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>';
