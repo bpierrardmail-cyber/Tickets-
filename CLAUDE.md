@@ -59,7 +59,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
   - avec `f.split` (« chacun sa part ») : la part de chacun sur son propre compte (`payAcctOf`).
   
   Toujours passer par `fraisKind(f, compte)` et `fraisAcctAmt(f, compte, mois)` pour les soldes.
-- **Filtre par personne** (Accueil, Articles, Analyse) : `pvCur()` vaut `moi`, un prénom ou `all` ; utiliser `vEntries()` et `inView()`. Il ne s'applique ni aux comptes, ni au Commun, ni au Bilan, ni aux widgets.
+- **Filtre par personne** (Accueil, Articles, Analyse, Commun) : `pvCur()` vaut `moi`, un prénom ou `all` ; utiliser `vEntries()` et `inView()`. Dans Commun, il choisit seulement la part affichée en grand et dans les bulles. « Qui a payé » (Analyse) montre toujours tout le foyer. Il ne s'applique ni aux comptes, ni au Bilan, ni aux widgets.
 - **Analyse « + Frais fixes »** : `fraisLines(mois, qui)` donne ce qui sort réellement du compte de la personne. `anFraisLines` limite le calcul aux mois qui ont des tickets.
 - **Éditions** : `EDITION` vaut `perso` ou `store`. L'appli Android l'annonce par `TicketsApp/<édition>` dans son identifiant de navigateur ; dans un navigateur, ajouter `?edition=store`.
   - La version Store n'a pas la Bourse.

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 22:28" />
+  <meta name="build" content="21/10 22:39" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -3809,6 +3809,8 @@
       var monthLabel = monthLabelOf(month);
       var CM=communModel(month), monthData=CM.monthData, D=CM.D, me=CM.me, ppl=CM.ppl, CP=CM.CP, persoOf=CM.persoOf, pctOf=CM.pctOf, shareOf=CM.shareOf, partOf=CM.partOf, fPct=CM.fPct, communShareOf=CM.communShareOf, effPct=CM.effPct;
       var COLP="#8a92a6", COLC="#7c9cf4", COLR="#e0a458";
+      // bandeau des personnes : la personne choisie (Moi par défaut) ou tout le foyer
+      var cpv=pvActive() ? pvCur() : "moi", cw=(cpv==="all") ? null : pvName(cpv), cMe=(cw===me);
       function mShort(m){ var pm=m.split("-"); return new Date(+pm[0], +pm[1]-1, 1).toLocaleDateString("fr-FR",{month:"short"}).replace(".",""); }
 
       // ---- Carte du haut : ta part + 3 graphiques (onglets ou glissé)
@@ -3824,7 +3826,7 @@
         function repVals(p){ var a=[[persoOf(p),COLP],[communShareOf(p),COLC],[D.prod*pctOf(p)/100,COLR]].filter(function(x){ return x[0]>0.004; });
           return a.length?'<div class="crep-v">'+a.map(function(x){ return '<span><i style="background:'+x[1]+'"></i>'+fmtK(x[0])+'</span>'; }).join("")+'</div>':''; }
         function repRow(p){ var pc=effPct(p);
-          return '<div class="crep-r"><div class="crep-h"><span>'+esc(p)+(p===me?' <small>toi</small>':'')+'<small class="pc">'+pctTxt(pc)+'</small></span>'+(p===me?'':'<b>'+fmtK(partOf(p))+'</b>')+'</div><div class="crep-b">'+seg(persoOf(p),COLP)+seg(communShareOf(p),COLC)+seg(D.prod*pc/100,COLR)+'</div>'+repVals(p)+'</div>'; }
+          return '<div class="crep-r"'+(cw && p!==cw?' style="opacity:.5"':'')+'><div class="crep-h"><span>'+esc(p)+(p===me?' <small>toi</small>':'')+'<small class="pc">'+pctTxt(pc)+'</small></span>'+(p===me?'':'<b>'+fmtK(partOf(p))+'</b>')+'</div><div class="crep-b">'+seg(persoOf(p),COLP)+seg(communShareOf(p),COLC)+seg(D.prod*pc/100,COLR)+'</div>'+repVals(p)+'</div>'; }
         var rPages=[]; for(var rk=0; rk<rp.length; rk+=5) rPages.push('<div class="crep">'+rp.slice(rk, rk+5).map(repRow).join("")+'</div>');
         chart+='<div class="crep-full">'+(rp.length>5?'<div class="crep-tot">'+rp.length+' personnes · total '+fmtK(D.fraisTot+D.prod)+'</div>':'')+pagerHTML("comRep", rPages, { cls:"bleed18" })+'</div>';
         // Petite carte de l'Accueil : toi, les 2 plus grosses parts, puis « + N autres »
@@ -3855,15 +3857,22 @@
       var hst=[];
       // Frais fixes de chaque personne : ses frais perso + sa part des frais communs (sans les produits partagés)
       // Les chiffres de la personne de ce téléphone (sur le téléphone de Sylvette : ceux de Sylvette)
-      hst.push({l:"Total frais fixes", v:fmtS(persoOf(me)+communShareOf(me)), d:"perso + commun"});
-      hst.push({l:"Frais partagés", v:fmtS(D.prod*pctOf(me)/100), d:"ta part"});
+      if(cw){
+        hst.push({l:"Total frais fixes", v:fmtS(persoOf(cw)+communShareOf(cw)), d:"perso + commun"});
+        hst.push({l:"Frais partagés", v:fmtS(D.prod*pctOf(cw)/100), d:(cMe?"ta part":"sa part")});
+      } else {
+        hst.push({l:"Frais fixes", v:fmtS(D.fraisTot), d:"du foyer"});
+        hst.push({l:"Frais partagés", v:fmtS(D.prod), d:"produits"});
+      }
       hst.push({l:"Total foyer", v:fmtS(D.fraisTot+D.prod), d:"fixes + partagés"});
       var myPc=pctOf(me);
       var cSub=state.comSub; if(cSub!=="frais" && cSub!=="prod") cSub=null;   // sous-pages : frais fixes (communs + perso), produits partagés
-      var h=header(!!cSub, cSub==="frais"?"Frais fixes":(cSub==="prod"?"Produits partagés":""))+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>';
+      var h=header(!!cSub, cSub==="frais"?"Frais fixes":(cSub==="prod"?"Produits partagés":""))+(cSub?'':pvBarHTML())+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>';
       var myEff=effPct(me);
       if(!cSub) h+=tabTools([["addfrais","＋ Frais fixe"],["comParts","⚙︎ Parts"]]);
-      if(!cSub) h+=tabHero({ label:"Ta part ce mois ("+esc(me)+")", big:partOf(me), sub:(myEff>0?"frais perso + "+pctTxt(myEff)+" du commun":"frais perso seulement (0 % du commun)"), extra:chart, stats:hst });
+      var cwEff=cw?effPct(cw):0;
+      if(!cSub) h+=tabHero(cw ? { label:(cMe?"Ta part ce mois ("+esc(me)+")":"Part de "+esc(cw)+" ce mois"), big:partOf(cw), sub:(cwEff>0?"frais perso + "+pctTxt(cwEff)+" du commun":"frais perso seulement (0 % du commun)"), extra:chart, stats:hst }
+                              : { label:"Commun du foyer ce mois", big:D.fraisTot+D.prod, sub:ppl.length+" personne"+(ppl.length>1?"s":"")+" · frais fixes + produits partagés", extra:chart, stats:hst });
       // Ligne « Parts du commun » : résumé, touche pour régler
       var pSum;
       if(!CP) pSum=(ppl.length>1?"Parts égales · "+pctTxt(100/ppl.length)+" chacun":"Toi seul · 100 %")+(ppl.length>2?" · touche pour régler":"");
