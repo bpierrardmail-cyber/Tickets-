@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 19:40" />
+  <meta name="build" content="21/10 19:55" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4759,7 +4759,7 @@
       var TABS=[["mois","Mois"],["rep","Répartition"],["rec","Récurrentes"],["pay","Qui a payé"]];
       // « + Frais fixes » : en haut à droite de la carte
       var recPage=null, recPageTitle="";
-      function recByPeek(){ var r=state.recBy||store.read("recBy","cat"); return ["cat","mag","art"].indexOf(r)<0?"cat":r; }
+      function recByPeek(){ var r=state.recBy||store.read("recBy","cat"); return ["cat","fam","mag","art"].indexOf(r)<0?"cat":r; }
       var chart=chartTabsHTML(TABS, mode, "anChartDef", "mois")+'<div class="cch'+(mode!=="mois"?' cch-top':'')+'">', fxBtn='';
       var hero;
       if(mode==="mois"){
@@ -4784,7 +4784,7 @@
         var m12=lastMonths(12)[0].key; vEntries().forEach(function(e){ var k=e.date && monthKey(e.date); if(k && k>=m12 && k<=curM && (!fdR || k<fdR)) fdR=k; });
         var m6=[], mk6=curM; for(var i6=0;i6<12;i6++){ if(fdR && mk6<fdR) break; m6.unshift(mk6); mk6=prevMonthKey(mk6); }
         var nM=m6.length||1;
-        var recBy=state.recBy||store.read("recBy","cat"); if(["cat","mag","art"].indexOf(recBy)<0) recBy="cat";
+        var recBy=state.recBy||store.read("recBy","cat"); if(["cat","fam","mag","art"].indexOf(recBy)<0) recBy="cat";
         // nom de magasin rapproché : sans accents, majuscules, ponctuation ni numéros (« Intermarché » = « INTERMARCHE 1234 »)
         function magKey(x){ x=String(x||"").toLowerCase(); try{ x=x.normalize("NFD").replace(/[\u0300-\u036f]/g,""); }catch(e){}
           return x.replace(/[^a-z ]+/g," ").replace(/\b(sas|sarl|sa|eurl|snc|magasin|store|station|super|hyper|market)\b/g," ").replace(/\s+/g," ").trim(); }
@@ -4801,18 +4801,18 @@
           heads.forEach(function(k){ var h0=null; for(var q=0;q<keep.length;q++){ if(near(k, keep[q])){ h0=keep[q]; break; } } if(h0) alias[k]=h0; else keep.push(k); });
         }
         var byM={}; rows0.forEach(function(r){ var key=alias[r.key]||r.key, e=r.e, k=r.k, nm=r.nm;
-          if(recSel && recBy!=="art" && recSel.key===key) recHits.push({ e:e, amt:Number(e.montant)||0 });
+          if(recSel && recBy!=="art" && recBy!=="fam" && recSel.key===key) recHits.push({ e:e, amt:Number(e.montant)||0 });
           if(!byM[key]) byM[key]={ names:{}, m:{} }; byM[key].names[nm]=(byM[key].names[nm]||0)+1; byM[key].m[k]=(byM[key].m[k]||0)+(Number(e.montant)||0); });
         var recs=[];
-        if(recBy==="art"){
+        if(recBy==="art" || recBy==="fam"){
           // Par article : produits rangés (onglet Articles), avec l'évolution du prix moyen d'une ligne entre le premier et le dernier mois
           var byA={}; vEntries().forEach(function(e){ var k=monthKey(e.date); if(m6.indexOf(k)<0) return;
-            (e.articles||[]).forEach(function(a){ var c=classifyArticle(a); if(c.fam==="Remise" || !(c.amt>0)) return; var key=c.fam+"|"+c.name;
+            (e.articles||[]).forEach(function(a){ var c=classifyArticle(a); if(c.fam==="Remise" || !(c.amt>0)) return; var key=recBy==="fam" ? c.fam : c.fam+"|"+c.name;
               if(recSel && recSel.key===key) recHits.push({ e:e, amt:c.amt, lbl:((a.label||"").trim()||c.name) });
-              if(!byA[key]) byA[key]={ fam:c.fam, name:c.name, m:{}, n:{} }; byA[key].m[k]=(byA[key].m[k]||0)+c.amt; byA[key].n[k]=(byA[key].n[k]||0)+1; }); });
+              if(!byA[key]) byA[key]={ fam:c.fam, name:(recBy==="fam"?c.fam:c.name), m:{}, n:{} }; byA[key].m[k]=(byA[key].m[k]||0)+c.amt; byA[key].n[k]=(byA[key].n[k]||0)+1; }); });
           Object.keys(byA).forEach(function(key){ var o=byA[key], ks=Object.keys(o.m).sort(), t=0; ks.forEach(function(x){ t+=o.m[x]; });
             var p0=o.m[ks[0]]/o.n[ks[0]], p1=o.m[ks[ks.length-1]]/o.n[ks[ks.length-1]];
-            recs.push({ key:key, name:o.name, fam:o.fam, n:ks.length, avg:t/nM, fx:false, art:true, evo:(ks.length>1 && p0>0?(p1-p0)/p0*100:0) }); });
+            recs.push({ key:key, name:o.name, fam:o.fam, n:ks.length, avg:t/nM, fx:false, art:recBy==="art", evo:(ks.length>1 && p0>0?(p1-p0)/p0*100:0) }); });
         } else Object.keys(byM).forEach(function(k){ var o=byM[k], ks=Object.keys(o.m), t=0; ks.forEach(function(x){ t+=o.m[x]; });
           var nm=Object.keys(o.names).sort(function(a,b){ return o.names[b]-o.names[a]; })[0]; recs.push({ key:k, name:nm, n:ks.length, avg:t/nM, fx:false }); });
         if(fxOnR){ var fxSeen={}; m6.forEach(function(mk){ anFraisLines(mk, fwR).forEach(function(x){ var k="fx|"+x.label; if(!fxSeen[k]){ fxSeen[k]={ name:x.label, n:0, t:0, ms:{}, avg:0, fx:true }; recs.push(fxSeen[k]); }
@@ -4821,8 +4821,8 @@
         recs.sort(function(a,b){ return (b.avg-a.avg) || (b.n-a.n); });   // du plus cher au moins cher
         var recT=recs.reduce(function(t,x){ return t+x.avg; },0), recMax=recs.reduce(function(m,x){ return Math.max(m,x.avg); },0)||1;
         if(fraisCommuns.length) fxBtn='<button type="button" class="anfx anfx-corner'+(fxOnR?' on':'')+'" id="anFx" aria-pressed="'+fxOnR+'">'+(fxOnR?'✓':'＋')+' Frais fixes</button>';
-        chart+='<div class="dmode" id="recBy" style="justify-content:center;margin:2px 0 4px"><button type="button" data-v="cat"'+(recBy==="cat"?' class="on"':'')+'>Par catégorie</button><button type="button" data-v="mag"'+(recBy==="mag"?' class="on"':'')+'>Par magasin</button><button type="button" data-v="art"'+(recBy==="art"?' class="on"':'')+'>Par article</button></div>';
-        if(!recs.length) chart+='<div class="cch-note" style="margin:24px 0">'+(recBy==="art"?"Aucun article acheté au moins 2 mois différents (seuls les tickets scannés avec leurs lignes comptent).":"Aucune dépense revenue au moins 2 mois différents sur la période.")+'</div>';
+        chart+='<div class="dmode" id="recBy" style="justify-content:center;margin:2px 0 4px"><button type="button" data-v="cat"'+(recBy==="cat"?' class="on"':'')+'>Catégories</button><button type="button" data-v="fam"'+(recBy==="fam"?' class="on"':'')+'>Familles</button><button type="button" data-v="mag"'+(recBy==="mag"?' class="on"':'')+'>Magasins</button><button type="button" data-v="art"'+(recBy==="art"?' class="on"':'')+'>Articles</button></div>';
+        if(!recs.length) chart+='<div class="cch-note" style="margin:24px 0">'+((recBy==="art"||recBy==="fam")?"Rien acheté au moins 2 mois différents (seuls les tickets scannés avec leurs lignes comptent).":"Aucune dépense revenue au moins 2 mois différents sur la période.")+'</div>';
         else { chart+='<div style="margin-top:6px">'; recs.forEach(function(x){ var pc=Math.max(2, Math.round(x.avg/recMax*100));
           var evo=(x.art && Math.abs(x.evo)>=0.5)?' <small style="color:'+(x.evo>0?'var(--coral)':'var(--accent)')+';font-weight:700">'+(x.evo>0?'▲ +':'▼ ')+String(Math.round(x.evo*10)/10).replace(".",",")+' %</small>':'';
           chart+='<div class="bar-row'+(x.fx?'':' recrow clk')+'"'+(x.fx?'':' data-key="'+esc(x.key)+'" data-name="'+esc(x.name)+'"')+' style="margin:10px 2px"><div class="bar-top"><span class="bl">'+esc(x.name)+' <small class="muted">'+(x.fx?'frais fixe · ':'')+x.n+' mois sur '+nM+'</small>'+evo+'</span><span class="bv">'+fmtK(x.avg)+'<small class="muted"> /mois</small></span></div><div class="bar-track"><i style="width:'+pc+'%;background:'+(x.fx?'#c78bd6':'#7c9cf4')+'"></i></div></div>'; });
