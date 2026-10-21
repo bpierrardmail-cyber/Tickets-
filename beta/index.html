@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 15:05" />
+  <meta name="build" content="21/10 15:09" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -364,6 +364,7 @@
     .cacc-h .t{ flex:1; font-size:15px; font-weight:700; }
     .cacc-h .t small{ display:block; font-size:11.5px; font-weight:500; color:var(--muted); margin-top:2px; }
     .cacc-h .v{ font-variant-numeric:tabular-nums; font-weight:700; font-size:15px; }
+    .tic{ display:inline-block; filter:grayscale(1) brightness(1.15); opacity:.8; font-style:normal; }
     .cacc-h .ch{ width:14px; text-align:center; color:var(--muted); font-size:12px; }
     .cacc-sec + .cacc-sec{ border-top:1px solid var(--line); }
     .cacc-b{ padding:0 2px 12px; }
@@ -3513,8 +3514,8 @@
         famH+='</section>';
         if(aSub) h+='<div class="muted" style="font-size:12px;margin:12px 4px 0">Touche une famille pour la déplier, puis un produit pour son détail.</div>'+famH;
       }
-      if(!aSub) h+='<section class="paper cacc">'+(D.famKeys.length?'<div class="cacc-sec"><div class="cacc-h" id="artfam"><span class="t">🛒 Par famille · '+D.famKeys.length+'</span><span class="v">'+fmtK(D.grand)+'</span><span class="ch">›</span></div></div>':'')+
-        '<div class="cacc-sec"><div class="cacc-h" id="artprod"><span class="t">⚙︎ Produits &amp; catégories<small>ranger, renommer, regrouper</small></span><span class="ch">›</span></div></div></section>';
+      if(!aSub) h+='<section class="paper cacc">'+(D.famKeys.length?'<div class="cacc-sec"><div class="cacc-h" id="artfam"><span class="t"><span class="tic">🛒</span> Par famille · '+D.famKeys.length+'</span><span class="v">'+fmtK(D.grand)+'</span><span class="ch">›</span></div></div>':'')+
+        '<div class="cacc-sec"><div class="cacc-h" id="artprod"><span class="t"><span class="tic">⚙︎</span> Produits &amp; catégories<small>ranger, renommer, regrouper</small></span><span class="ch">›</span></div></div></section>';
       app.innerHTML=h;
       if(aSub) bindBack(function(){ state.artSub=null; render(); window.scrollTo(0,0); });
       var afm=document.getElementById("artfam"); if(afm) afm.onclick=function(){ state.artSub="fam"; render(); window.scrollTo(0,0); };
@@ -3776,7 +3777,7 @@
       else { var nz=ppl.filter(function(p){ return pctOf(p)>0; }).sort(function(a,b){ return pctOf(b)-pctOf(a); }), z=ppl.length-nz.length;
         var eq=nz.length===ppl.length && nz.every(function(p){ return Math.abs(pctOf(p)-pctOf(nz[0]))<0.05; });
         pSum=eq ? "Parts égales · "+pctTxt(pctOf(nz[0]))+" chacun" : nz.slice(0,3).map(function(p){ return p+" "+pctTxt(pctOf(p)); }).join(" · ")+(nz.length>3?" · +"+(nz.length-3)+" autres":"")+(z?" · "+z+" à 0 %":""); }
-      var partsRow='<div class="cacc-sec"><div class="cacc-h" id="comParts"><span class="t">👥 Parts du commun<small>'+esc(pSum)+'</small></span><span class="ch">›</span></div></div>';
+      var partsRow='<div class="cacc-sec"><div class="cacc-h" id="comParts"><span class="t"><span class="tic">👥</span> Parts du commun<small>'+esc(pSum)+'</small></span><span class="ch">›</span></div></div>';
 
       // ---- Groupes repliables
       var comOpen = state.comOpen || (state.comOpen={});
@@ -3786,7 +3787,7 @@
       function grp(key, dot, title, sub, val, body){
         var ic={ commun:"🏠", prod:"🛒", perso:"👤" }[key]||"";
         if(cSub===key) subBody='<section class="paper cacc"><div class="dgrp open"><div class="dgb"><div class="dsub"><span>'+(sub||"")+'</span><span>'+fmtK(val)+'</span></div>'+body+'</div></div></section>';
-        rowsMain+='<div class="cacc-sec"><div class="cacc-h comGo" data-sub="'+key+'"><span class="t">'+ic+' '+title+(sub?'<small>'+sub+'</small>':'')+'</span><span class="v">'+fmtK(val)+'</span><span class="ch">›</span></div></div>';
+        rowsMain+='<div class="cacc-sec"><div class="cacc-h comGo" data-sub="'+key+'"><span class="t">'+(ic?'<span class="tic">'+ic+'</span> ':'')+title+(sub?'<small>'+sub+'</small>':'')+'</span><span class="v">'+fmtK(val)+'</span><span class="ch">›</span></div></div>';
         return "";
       }
       function fraisRows(items){
@@ -4044,8 +4045,8 @@
       });
       acc+='<div class="cacc-sec"><div class="cacc-h" style="cursor:default"><span class="t">Total des comptes</span><span class="v" style="color:'+(totB<0?"var(--coral)":"var(--accent)")+'">'+fmtS(totB)+'</span><span class="ch"></span></div></div></section>';
       acc+='<section class="paper cacc">';
-      acc+='<div class="cacc-sec"><div class="cacc-h allGo" data-acct="'+esc(myAcct().key)+'" data-page="ep"><span class="t">🐷 Épargne<small>'+epargne.length+' compte'+(epargne.length>1?'s':'')+' épargne</small></span><span class="v">'+fmtS(ep)+'</span><span class="ch">›</span></div></div>';
-      acc+='<div class="cacc-sec"><div class="cacc-h" id="goprov"><span class="t">📦 Provisions<small>'+provisions.length+' enveloppe'+(provisions.length>1?'s':'')+'</small></span><span class="v">'+fmtS(prov)+'</span><span class="ch">›</span></div></div>';
+      acc+='<div class="cacc-sec"><div class="cacc-h allGo" data-acct="'+esc(myAcct().key)+'" data-page="ep"><span class="t"><span class="tic">🐷</span> Épargne<small>'+epargne.length+' compte'+(epargne.length>1?'s':'')+' épargne</small></span><span class="v">'+fmtS(ep)+'</span><span class="ch">›</span></div></div>';
+      acc+='<div class="cacc-sec"><div class="cacc-h" id="goprov"><span class="t"><span class="tic">📦</span> Provisions<small>'+provisions.length+' enveloppe'+(provisions.length>1?'s':'')+'</small></span><span class="v">'+fmtS(prov)+'</span><span class="ch">›</span></div></div>';
       acc+='<div class="cacc-sec"><div class="cacc-h" style="cursor:default"><span class="t">Comptes + épargne</span><span class="v" style="color:var(--accent)">'+fmtS(totB+ep)+'</span><span class="ch"></span></div></div></section>';
       h+=acc;
       app.innerHTML=h;
@@ -4221,7 +4222,7 @@
       function nb(n, one, many){ return n+" "+(n>1?many:one); }
       function sec(key, dot, title, val, valCol, sub){
         var ic={ es:"🔁", dep:"🧾", ep:"🐷", res:"🏦" }[key]||"";
-        return '<div class="cacc-sec"><div class="cacc-h cptGo" data-page="'+key+'"><span class="t">'+ic+' '+title+(sub?'<small>'+sub+'</small>':'')+'</span><span class="v" style="color:'+(valCol||"var(--ink)")+'">'+val+'</span><span class="ch">›</span></div></div>';
+        return '<div class="cacc-sec"><div class="cacc-h cptGo" data-page="'+key+'"><span class="t">'+(ic?'<span class="tic">'+ic+'</span> ':'')+title+(sub?'<small>'+sub+'</small>':'')+'</span><span class="v" style="color:'+(valCol||"var(--ink)")+'">'+val+'</span><span class="ch">›</span></div></div>';
       }
       var acc='<section class="paper cacc">';
 
@@ -4311,7 +4312,7 @@
       var provT=0; try{ provT=provTotalAt(month); }catch(e){}
       // Groupes : 1. Virements + Dépenses · 2. Provisions + Épargne (compte principal) · 3. Solde bancaire estimé
       acc+='</section>';
-      if(acct.main) acc+='<section class="paper cacc">'+'<div class="cacc-sec"><div class="cacc-h" id="goprov"><span class="t">📦 Provisions<small>'+provisions.length+' enveloppe'+(provisions.length>1?'s':'')+'</small></span><span class="v">'+fmtS(provT)+'</span><span class="ch">›</span></div></div>'+accEp+'</section>';
+      if(acct.main) acc+='<section class="paper cacc">'+'<div class="cacc-sec"><div class="cacc-h" id="goprov"><span class="t"><span class="tic">📦</span> Provisions<small>'+provisions.length+' enveloppe'+(provisions.length>1?'s':'')+'</small></span><span class="v">'+fmtS(provT)+'</span><span class="ch">›</span></div></div>'+accEp+'</section>';
       acc+='<section class="paper cacc">'+accRes+'</section>';
       if(!page){
         if(multi) h+=acctPagerHTML(person, month);
@@ -4516,8 +4517,8 @@
         h+='<section class="paper" style="margin-top:14px;border:1px solid var(--accent)"><div style="font-weight:700;margin-bottom:6px">🛟 Ta Bourse est vide</div><div class="muted" style="font-size:12.5px;line-height:1.45">Une copie automatique de '+bsafe.bourse.length+' compte'+(bsafe.bourse.length>1?'s':'')+' existe (du '+esc(new Date(bsafe.t).toLocaleString("fr-FR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}))+').</div><button class="btn primary" id="bsafeGo" type="button" style="width:100%;margin-top:10px">Remettre cette copie</button></section>';
       }
       if(!bSub){
-        h+='<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="bgoAcc"><span class="t">🏦 Mes comptes · '+visB.length+'</span><span class="v">'+fmtK(totVal+totCash)+'</span><span class="ch">›</span></div></div>'+
-           '<div class="cacc-sec"><div class="cacc-h" id="bgoMng"><span class="t">⚙︎ Gérer</span><span class="ch">›</span></div></div></section>';
+        h+='<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="bgoAcc"><span class="t"><span class="tic">🏦</span> Mes comptes · '+visB.length+'</span><span class="v">'+fmtK(totVal+totCash)+'</span><span class="ch">›</span></div></div>'+
+           '<div class="cacc-sec"><div class="cacc-h" id="bgoMng"><span class="t"><span class="tic">⚙︎</span> Gérer</span><span class="ch">›</span></div></div></section>';
       }
       if(bSub==="gerer") h+='<section class="paper bacts">';
       function bAct(id, ic, t, sub){ return '<button class="dr-item" id="'+id+'" type="button"><span class="ic">'+ic+'</span><span>'+t+'<small>'+sub+'</small></span><span class="chev">›</span></button>'; }
@@ -4723,7 +4724,7 @@
       chart+='</div>'; hero.extra=chart;
       var nSub=(state.anSub==="mois");   // sous-page « Par mois »
       var h=header(nSub, nSub?"Par mois":"")+pvBarHTML()+(nSub?'':tabHero(hero));
-      if(!nSub) h+='<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="anGoMois"><span class="t">📅 Par mois · '+shown.length+(sel?'<small>'+esc(selLabel)+'</small>':'')+'</span><span class="v">'+fmtK(grand)+'</span><span class="ch">›</span></div></div></section>';
+      if(!nSub) h+='<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="anGoMois"><span class="t"><span class="tic">📅</span> Par mois · '+shown.length+(sel?'<small>'+esc(selLabel)+'</small>':'')+'</span><span class="v">'+fmtK(grand)+'</span><span class="ch">›</span></div></div></section>';
       // ---- Liste des mois (toucher = détail du mois et ses tickets)
       if(nSub) h+='<div class="muted" style="font-size:12px;margin:12px 4px 0">'+(sel?'« '+esc(selLabel)+' » · ':'')+'Touche un mois pour son détail et ses tickets.</div><section class="paper cacc anlist">';
       if(nSub) shown.slice().reverse().forEach(function(d){
