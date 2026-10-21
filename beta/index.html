@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 17:31" />
+  <meta name="build" content="21/10 17:45" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -640,8 +640,8 @@
     .wide .hm-ch{ margin-top:2px; }
     .crange{ justify-content:center; margin:8px 0 0; }
     .anf{ margin:8px 0 2px; padding:9px 12px; font-size:13px; }
-    .anctl{ display:grid; grid-template-columns:1fr; gap:0; }
-    .anctl .anf{ margin:6px 0 0; }
+    .anctl{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .anctl .anf{ margin:6px 0 0; min-width:0; padding:9px 26px 9px 10px; font-size:12.5px; text-overflow:ellipsis; }
     .anlist{ padding:2px 14px 8px; }
     .anlist .bar-row{ margin:12px 2px; }
     .anlist .bar-top .bl small{ font-size:10.5px; font-weight:500; }
@@ -4742,7 +4742,7 @@
       // ---- Carte du haut : deux graphiques (onglets ou glissé)
       var TABS=[["mois","Mois par mois"],["rep","Répartition"]];
       // « + Frais fixes » : sur la ligne des onglets, tout à droite
-      var chart=chartTabsHTML(TABS, mode, "anChartDef", "mois").replace(/<\/div>$/, '%%FX%%</div>')+'<div class="cch">', fxBtn='';
+      var chart=chartTabsHTML(TABS, mode, "anChartDef", "mois").replace(/<\/div>$/, '%%FX%%</div>')+'<div class="cch'+(mode==="rep"?' cch-top':'')+'">', fxBtn='';
       var hero;
       if(mode==="mois"){
         chart+='<select class="f anf" id="histcat"><option value=""'+(sel===""?" selected":"")+'>Toutes les dépenses</option>';
@@ -4782,7 +4782,7 @@
         var mv=0; vis.forEach(function(it){ if(it.value>mv) mv=it.value; }); if(mv<=0) mv=1;
         chart+='<div class="anctl"><select class="f anf" id="gper"><option value="cur"'+(p==="cur"?" selected":"")+'>Ce mois-ci</option><option value="all"'+(p==="all"?" selected":"")+'>12 derniers mois</option><optgroup label="Un mois précis">';
         lastMonths(12).slice().reverse().forEach(function(m){ var v="m:"+m.key; chart+='<option value="'+v+'"'+(p===v?" selected":"")+'>'+esc(capFirst(m.date.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})))+'</option>'; });
-        chart+='</optgroup></select><select class="f anf" id="gdim"><option value="fam"'+(dim==="fam"?" selected":"")+'>Par grande catégorie</option><option value="prod"'+(dim==="prod"?" selected":"")+'>Par produit</option><option value="cat"'+(dim==="cat"?" selected":"")+'>Par catégorie ticket</option>'+(pvActive()?'<option value="pers"'+(dim==="pers"?" selected":"")+'>Par personne (qui a payé)</option>':'')+'</select></div>';
+        chart+='</optgroup></select><select class="f anf" id="gdim"><option value="fam"'+(dim==="fam"?" selected":"")+'>Familles</option><option value="prod"'+(dim==="prod"?" selected":"")+'>Produits</option><option value="cat"'+(dim==="cat"?" selected":"")+'>Catégories</option>'+(pvActive()?'<option value="pers"'+(dim==="pers"?" selected":"")+'>Qui a payé</option>':'')+'</select></div>';
         if(fraisCommuns.length) fxBtn='<button type="button" class="anfx anfx-top'+(fxOn2?' on':'')+'" id="anFx" aria-pressed="'+fxOn2+'">'+(fxOn2?'✓':'＋')+' Frais fixes</button>';
         chart+='<div class="dmode" id="gtype" style="justify-content:center;margin:10px 0 4px"><button type="button" data-t="donut"'+(typ==="donut"?' class="on"':'')+'>Anneau</button><button type="button" data-t="bars"'+(typ==="bars"?' class="on"':'')+'>Barres</button></div>';
         if(!all.length) chart+='<div class="cch-note" style="margin:24px 0">Aucune dépense sur cette période.</div>';
