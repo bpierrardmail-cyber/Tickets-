@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 12:09" />
+  <meta name="build" content="21/10 13:48" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -3462,6 +3462,9 @@
       var act=rows.filter(function(r){ return r.v>0; }), avg=act.length?act.reduce(function(t,r){ return t+r.v; },0)/act.length:0;
       return compteBarsSVG(rows, sel, function(r){ return r.v>avg?"#e0a458":"#7c9cf4"; })+'<div class="cch-leg"><span><i style="background:#7c9cf4"></i>Sous la moyenne</span><span><i style="background:#e0a458"></i>Au-dessus</span></div>';
     }
+    // Graphes sur 6 mois : on ne montre pas les mois d'avant les premières données (mois vides en tête retirés, le mois affiché reste)
+    function firstDataMonth(){ if(fsMemo.fdm===undefined){ var f0=null; state.entries.forEach(function(e){ var k=e.date && monthKey(e.date); if(k && (!f0 || k<f0)) f0=k; }); fsMemo.fdm=f0; } return fsMemo.fdm; }
+    function trimLead(rows, val){ var f0=firstDataMonth(), r=rows.filter(function(x,i){ return i===rows.length-1 || !f0 || x.m>=f0; }); while(r.length>1 && !(val(r[0])>0)) r.shift(); return r; }
     function artMShort(m){ var pm=m.split("-"); return new Date(+pm[0], +pm[1]-1, 1).toLocaleDateString("fr-FR",{month:"short"}).replace(".",""); }
     function renderArticles(){
       var curM = monthKey(todayISO());
@@ -3485,7 +3488,7 @@
           chart+='<div class="cch-note">Les 8 produits qui t\'ont coûté le plus ce mois-ci · touche pour le détail</div>';
         } else {
           var ms=[], mk=month; for(var i=0;i<6;i++){ ms.unshift(mk); mk=prevMonthKey(mk); }
-          chart+=artAvgBars(ms.map(function(m){ return { m:m, lbl:artMShort(m), v:artMonthData(m).grand }; }), month);
+          chart+=artAvgBars(trimLead(ms.map(function(m){ return { m:m, lbl:artMShort(m), v:artMonthData(m).grand }; }), function(r){ return r.v; }), month);
         }
         chart+='</div>';
         h+=tabHero({ label:"Articles achetés", big:D.grand, sub:D.nArt+" article"+(D.nArt>1?"s":"")+" · "+D.famKeys.length+" famille"+(D.famKeys.length>1?"s":""), extra:chart,
@@ -3527,7 +3530,7 @@
       var ms=[], mk=month; for(var i=0;i<6;i++){ ms.unshift(mk); mk=prevMonthKey(mk); }
       var h=header("articles");
       h+=tabHero({ label:esc(sel.name||"")+' · '+esc(sel.fam||"")+' · '+esc(monthLabelOf(month)), big:L.total, sub:L.rows.length+" achat"+(L.rows.length>1?"s":"")+(L.rows.length?" · "+fmtK(L.total/L.rows.length)+" en moyenne":""),
-        extra:'<div class="cch" style="margin-top:12px">'+artAvgBars(ms.map(function(m){ return { m:m, lbl:artMShort(m), v:linesOf(m).total }; }), month)+'<div class="cch-note">Ce que ce produit t\'a coûté, sur 6 mois</div></div>' });
+        extra:'<div class="cch" style="margin-top:12px">'+artAvgBars(trimLead(ms.map(function(m){ return { m:m, lbl:artMShort(m), v:linesOf(m).total }; }), function(r){ return r.v; }), month)+'<div class="cch-note">Ce que ce produit t\'a coûté, sur 6 mois au plus</div></div>' });
       h+='<div class="bsec-h">Achats du mois<small>touche pour ouvrir le ticket</small></div><section class="paper cacc" style="padding:2px 14px 6px">';
       if(!L.rows.length) h+='<div class="muted" style="font-size:12px;margin:12px 2px">Aucun achat de ce produit ce mois-ci.</div>';
       L.rows.forEach(function(r){ var dd=(r.date||"").split("-"); h+='<div class="entry ecomp" data-id="'+esc(r.id)+'"><span class="n">'+esc(r.label||sel.name||"—")+'<small>'+esc(r.marchand||"")+'</small></span><span class="d">'+esc(dd.length===3?dd[2]+"/"+dd[1]:"")+'</span><span class="a">'+fmtK(r.prix)+'</span></div>'; });
@@ -3719,8 +3722,8 @@
         else chart+='<div class="cch-note" style="margin:30px 0">Rien en commun ce mois-ci.</div>';
       } else {
         var six=[], mk=month; for(var i=0;i<6;i++){ six.unshift(mk); mk=prevMonthKey(mk); }
-        var S=six.map(function(m){ var d=monthData(m); return { m:m, c:d.commun, p:d.prod }; }), smx=0; S.forEach(function(r){ smx=Math.max(smx, r.c+r.p); }); if(!smx) smx=1;
-        var W=340, H=170, top=20, bot=22, ph=H-top-bot, slot=W/6, bw=Math.min(30, slot*0.5), g='';
+        var S=trimLead(six.map(function(m){ var d=monthData(m); return { m:m, c:d.commun, p:d.prod }; }), function(r){ return r.c+r.p; }), smx=0; S.forEach(function(r){ smx=Math.max(smx, r.c+r.p); }); if(!smx) smx=1;
+        var W=340, H=170, top=20, bot=22, ph=H-top-bot, slot=W/Math.max(S.length,3), bw=Math.min(30, slot*0.5), g='';
         S.forEach(function(r,i){ var cx=slot*i+slot/2, hc=r.c/smx*ph, hp=r.p/smx*ph, on=r.m===month, y0=top+ph, op=on?1:.5;
           if(hc>0) g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(y0-hc).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hc.toFixed(1)+'" rx="3" style="fill:'+COLC+';opacity:'+op+'"/>';
           if(hp>0) g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(y0-hc-hp-(hc>0?2:0)).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hp.toFixed(1)+'" rx="3" style="fill:'+COLR+';opacity:'+op+'"/>';
