@@ -20,8 +20,17 @@ public class MainActivity extends BridgeActivity {
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                WebView wv = (getBridge() != null) ? getBridge().getWebView() : null;
-                if (wv != null && wv.canGoBack()) { wv.goBack(); return; }
+                final WebView wv = (getBridge() != null) ? getBridge().getWebView() : null;
+                if (wv == null) { systemBack(); return; }
+                // La page dit si elle a traité le retour (true) ou s'il faut quitter (false)
+                wv.evaluateJavascript("(function(){try{return window.tkBack?String(window.tkBack()):'none'}catch(e){return 'none'}})()", value -> {
+                    String v = value == null ? "" : value.replace("\"", "");
+                    if ("true".equals(v)) return;
+                    if ("none".equals(v) && wv.canGoBack()) { wv.goBack(); return; }
+                    systemBack();
+                });
+            }
+            private void systemBack() {
                 setEnabled(false);
                 getOnBackPressedDispatcher().onBackPressed();
                 setEnabled(true);

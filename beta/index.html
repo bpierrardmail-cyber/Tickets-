@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="21/10 17:25" />
+  <meta name="build" content="21/10 17:31" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2546,19 +2546,25 @@
     // puis revient à l'écran précédent, puis à l'accueil ; depuis l'accueil, un 2e geste quitte l'app.
     var backArmed=false, backExitAt=0;
     function armBack(){ if(backArmed) return; try{ history.pushState({tk:Date.now()}, ""); backArmed=true; }catch(e){} }
+    // Une étape de retour : true = traitée dans la page, false = rien à faire (quitter)
+    function backStep(){
+      if(document.getElementById("lockscreen")) return true;
+      if(document.querySelector(".drawer-ov")){ closeMenu(); return true; }
+      var ovs=document.querySelectorAll(".sheet-overlay");
+      if(ovs.length){ var top=ovs[ovs.length-1]; top.dispatchEvent(new MouseEvent("click", {bubbles:true})); if(top.parentNode) top.parentNode.removeChild(top); return true; }
+      var lb=document.getElementById("lbclose"); if(lb){ lb.click(); return true; }
+      var hb=document.getElementById("hback"); if(hb){ hb.click(); return true; }
+      var home=fyMember()?fyFirstTab():"list";
+      if(state.view!==home){ state.view=home; render(); window.scrollTo(0,0); return true; }
+      if(Date.now()-backExitAt<2500) return false;
+      backExitAt=Date.now(); uiToast("Refais le geste retour pour quitter"); return true;
+    }
+    // Appli Android : le geste appelle directement la page (l'historique n'est pas fiable avant le premier toucher)
+    window.tkBack=function(){ try{ return backStep(); }catch(e){ return false; } };
     window.addEventListener("popstate", function(){
       backArmed=false;
-      if(document.getElementById("lockscreen")){ armBack(); return; }
-      if(document.querySelector(".drawer-ov")){ closeMenu(); armBack(); return; }
-      var ovs=document.querySelectorAll(".sheet-overlay");
-      if(ovs.length){ var top=ovs[ovs.length-1]; top.dispatchEvent(new MouseEvent("click", {bubbles:true})); if(top.parentNode) top.parentNode.removeChild(top); armBack(); return; }
-      var lb=document.getElementById("lbclose"); if(lb){ lb.click(); armBack(); return; }
-      var hb=document.getElementById("hback"); if(hb){ hb.click(); armBack(); return; }
-      var home=fyMember()?fyFirstTab():"list";
-      if(state.view!==home){ state.view=home; render(); window.scrollTo(0,0); return; }
-      if(Date.now()-backExitAt<2500){ try{ history.back(); }catch(e){} return; }
-      backExitAt=Date.now(); uiToast("Refais le geste retour pour quitter");
-      setTimeout(function(){ if(!backArmed && Date.now()-backExitAt>=2500) armBack(); }, 2600);
+      if(backStep()){ armBack(); return; }
+      try{ history.back(); }catch(e){}
     });
 
     function personOptions(current){
