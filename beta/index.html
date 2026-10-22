@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 11:06" />
+  <meta name="build" content="22/10 11:08" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -1257,7 +1257,7 @@
       return s;
     }
     function fraisActif(f, month){
-      if(f.recurrent){ var st=fraisStart(f); return (!st || month>=st) && (!f.endMonth || month<=f.endMonth); }
+      if(f.recurrent){ var st=fraisStart(f); return (!st || month>=st) && (!f.endMonth || month<=f.endMonth) && !(f.skipMonths && f.skipMonths[month]); }
       return f.month===month;
     }
     function fraisDone(f, month){ return !!(f.doneMonths && f.doneMonths[month]); }
@@ -3836,6 +3836,7 @@
       if(f.recurrent){
         var dm=(state.months&&state.months.communes)||monthKey(todayISO());
         uiChoice("Arrêter « "+f.label+" »", "Les montants des mois passés peuvent être gardés.", [
+          {l:"Retirer seulement en "+monthLabelOf(dm), fn:function(){ if(!f.skipMonths) f.skipMonths={}; f.skipMonths[dm]=1; persistFrais(); render(); uiToast("« "+f.label+" » retiré de "+monthLabelOf(dm)); }},
           {l:"Arrêter à partir de "+monthLabelOf(dm), fn:function(){ f.endMonth=prevMonthKey(dm); persistFrais(); render(); }},
           {l:"Supprimer de tous les mois", danger:true, fn:function(){ fraisCommuns=fraisCommuns.filter(function(x){ return String(x.id)!==String(id); }); persistFrais(); render(); }}
         ]);
@@ -4046,6 +4047,9 @@
       var rowsMain='<div class="cacc-sec"><div class="cacc-h comGo" data-sub="frais"><span class="t"><span class="tic">🏠</span> Frais fixes · '+fxAll.length+'<small>'+(fxAll.length?paidCount(fxAll)+"/"+fxAll.length+" payé"+(paidCount(fxAll)>1?"s":""):"aucun")+'</small></span><span class="v">'+fmtK(D.fraisTot)+'</span><span class="ch">›</span></div></div>'+
         '<div class="cacc-sec"><div class="cacc-h comGo" data-sub="prod"><span class="t"><span class="tic">🛒</span> Produits partagés<small>'+G.prod.sub+'</small></span><span class="v">'+fmtK(G.prod.val)+'</span><span class="ch">›</span></div></div>';
       var subBody=cSub==="frais" ? gSec(G.commun)+(G.perso?gSec(G.perso):'') : (cSub==="prod" ? gSec(G.prod) : '');
+      var skM=(state.months&&state.months.communes)||monthKey(todayISO()), skL=(cSub==="frais") ? fraisCommuns.filter(function(f){ return f.skipMonths && f.skipMonths[skM]; }) : [];
+      if(skL.length) subBody+='<section class="paper cacc" style="padding:6px 14px 8px"><div class="muted" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin:6px 2px 2px">Retirés de '+esc(monthLabelOf(skM))+'</div>'+
+        skL.map(function(f){ return '<div style="display:flex;align-items:center;gap:8px;padding:8px 2px;border-top:1px solid var(--line)"><span style="flex:1;min-width:0;color:var(--ink-soft);text-decoration:line-through;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(f.label)+'</span><button class="btn ghost fxunskip" type="button" data-id="'+esc(f.id)+'" style="padding:6px 10px;font-size:12px;flex:0 0 auto">↺ Rétablir</button></div>'; }).join("")+'</section>';
       if(cSub){ h+=subBody; if(cSub!=="prod") h+='<section class="paper cacc"><div class="clink" id="addfrais" style="margin:10px 2px"><span>+ Ajouter un frais fixe</span><span></span></div></section>'; }
       else {
         h+='<section class="paper cacc">'+rowsMain+'</section>';
@@ -4058,6 +4062,8 @@
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.comChart=bt.getAttribute("data-m"); store.write("comChart", state.comChart); render(); }; });
       var cOn=document.querySelector(".cch-tabs button.on"); if(cOn && cOn.parentNode){ var tb=cOn.parentNode; tb.scrollLeft=Math.max(0, cOn.offsetLeft-(tb.clientWidth-cOn.offsetWidth)/2); }
       var af=document.getElementById("addfrais"); if(af) af.onclick=addFraisCommun;
+      [].forEach.call(document.querySelectorAll(".fxunskip"), function(b){ b.onclick=function(){ var f=fraisCommuns.filter(function(x){ return String(x.id)===b.getAttribute("data-id"); })[0]; if(!f || !f.skipMonths) return;
+        if(!fyFraisCanEdit(f)){ uiToast("Frais d'un autre compte : en consultation seulement"); return; } delete f.skipMonths[skM]; if(!Object.keys(f.skipMonths).length) delete f.skipMonths; persistFrais(); render(); }; });
       // graphiques touchables : une personne → la choisir en haut ; un poste → sa page ; une colonne → ce mois
       if(!cSub){
         [].forEach.call(document.querySelectorAll(".thero .crep-full .crep-r[data-p]"), function(r){ r.addEventListener("click", function(){ var p=r.getAttribute("data-p"); state.personView=(p===me?"moi":p); store.write("personView", state.personView); render(); }); });
