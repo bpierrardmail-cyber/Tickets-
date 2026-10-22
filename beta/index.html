@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 22:36" />
+  <meta name="build" content="22/10 22:53" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -834,6 +834,12 @@
     .ui-toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:calc(104px + env(safe-area-inset-bottom)); z-index:130;
       background:#2b303b; color:var(--ink); border:1px solid var(--line2); padding:10px 16px; border-radius:12px; font-size:13px; box-shadow:0 10px 26px rgba(0,0,0,.4); max-width:86vw; text-align:center; }
     /* Filtre par personne */
+    .hpv{ position:absolute; right:0; top:12px; height:36px; max-width:118px; display:flex; align-items:center; gap:6px; padding:0 10px 0 11px; background:var(--card2); border:1px solid var(--line); border-radius:10px; color:var(--ink); font-family:var(--sans); font-size:13px; font-weight:600; cursor:pointer; }
+    .hpv i{ flex:0 0 8px; width:8px; height:8px; border-radius:50%; }
+    .hpv span{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .hpv b{ flex:0 0 auto; font-size:10px; color:var(--muted); font-weight:400; }
+    .head.haspv .htitle{ padding:0 122px; }
+    .head.haspv.hasback .htitle{ padding:0 122px; }
     .psel{ display:flex; gap:4px; padding:4px; border-radius:14px; background:var(--card); border:1px solid var(--line); margin:0 0 8px; overflow-x:auto; scrollbar-width:none; }
     .psel::-webkit-scrollbar{ display:none; }
     .psel.ov{ -webkit-mask-image:linear-gradient(to right, #000 82%, transparent); mask-image:linear-gradient(to right, #000 82%, transparent); }
@@ -2584,7 +2590,7 @@
     }
     function uiChoice(title, msg, choices){
       var h='<div class="sheet-title">'+esc(title)+'</div>'+(msg?'<div class="ui-intro">'+msg+'</div>':'')+'<div class="ui-stack">';
-      choices.forEach(function(c,i){ h+='<button type="button" class="btn '+(c.danger?'danger':(i===0?'primary':''))+'" data-i="'+i+'">'+esc(c.l)+'</button>'; });
+      choices.forEach(function(c,i){ h+='<button type="button" class="btn '+(c.danger?'danger':((c.primary!=null?c.primary:i===0)?'primary':''))+'" data-i="'+i+'">'+esc(c.l)+'</button>'; });
       h+='<button type="button" class="btn ghost ui-no">Annuler</button></div>';
       var s=uiSheet(h);
       s.q(".ui-no").onclick=s.close;
@@ -2784,7 +2790,7 @@
         if(fitView() && !document.querySelector(".sheet-overlay")){ fitMemo={}; render(); } }, 200); });
     })();
     function v0key(){ var on=document.querySelector(".thero .cch-tabs button.on"); return state.view+"|"+(on?on.getAttribute("data-m"):""); }
-    function render(){ pvMemo=null; fsMemo={}; if(!fitting) CHB=fitView()?(fitMemo[state.view+"|"+(state.view==="communes"?(state.comChart||store.read("comChartDef","rep")):state.view==="articles"?(state.artChart||store.read("artChartDef","prod")):state.view==="analyse"?(state.anChart||store.read("anChartDef","mois")):state.view==="compte"?(function(){ var c=state.cptChart||store.read("cptChartDef","mois"); return c==="6m"?"es":c; })():"")]||0):0; fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); wirePV(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); try{ fitHero(); }catch(err){ console.warn(err); } }
+    function render(){ pvMemo=null; fsMemo={}; pvWanted=false; if(!fitting) CHB=fitView()?(fitMemo[state.view+"|"+(state.view==="communes"?(state.comChart||store.read("comChartDef","rep")):state.view==="articles"?(state.artChart||store.read("artChartDef","prod")):state.view==="analyse"?(state.anChart||store.read("anChartDef","mois")):state.view==="compte"?(function(){ var c=state.cptChart||store.read("cptChartDef","mois"); return c==="6m"?"es":c; })():"")]||0):0; fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); wirePV(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); try{ fitHero(); }catch(err){ console.warn(err); } }
     function renderView(){
       armBack();
       fyViewGuard();
@@ -2945,14 +2951,24 @@
     function inView(e){ var v=pvCur(); return v==="all" || payerOf(e)===pvName(v); }
     function vEntries(){ return pvCur()==="all" ? state.entries : state.entries.filter(inView); }
     function personColor(p){ if(p===mePerson()) return "var(--accent)"; var ps=viewPersons().filter(function(x){ return x!==mePerson(); }), i=ps.indexOf(p); return i<0 ? "#8a909c" : PV_COLS[i%PV_COLS.length]; }
+    // Filtre par personne : un bouton en haut à droite (à l'opposé du menu), posé sur l'en-tête par wirePV
+    var pvWanted=false;
+    function pvItems(){ var me=mePerson(); return [{ v:"moi", l:"Moi", c:"var(--accent)" }].concat(viewPersons().filter(function(p){ return p!==me; }).map(function(p){ return { v:p, l:p, c:personColor(p) }; })).concat([{ v:"all", l:"Tout le foyer", c:"var(--ink)" }]); }
     function pvBarHTML(cap){
       if(!pvActive()) return "";
-      var cur=pvCur(), me=mePerson();
-      var items=[{ v:"moi", l:"Moi", c:"var(--accent)" }].concat(viewPersons().filter(function(p){ return p!==me; }).map(function(p){ return { v:p, l:p, c:personColor(p) }; })).concat([{ v:"all", l:"Tout le foyer", c:"var(--ink)" }]);
-      return '<div class="psel" role="group" aria-label="Dépenses de">'+items.map(function(it){ var on=it.v===cur; return '<button type="button" class="psel-b'+(on?' on':'')+'" data-pv="'+esc(it.v)+'" aria-pressed="'+on+'"><i style="background:'+it.c+'"></i>'+esc(it.l)+'</button>'; }).join("")+'</div>'+(cap?'<div class="psel-c">'+esc(cap)+'</div>':'');
+      pvWanted=true;
+      return cap?'<div class="psel-c">'+esc(cap)+'</div>':'';
     }
     function pvCapTxt(n, total){ var v=pvCur(); return (v==="moi"?"Tes tickets":(v==="all"?"Tout le foyer":"Tickets de "+v))+" · "+n+" ticket"+(n>1?"s":"")+" · "+fmt(total); }
     function wirePV(){
+      var hd=app.querySelector("header.head");
+      if(pvWanted && hd && !hd.querySelector(".hpv")){
+        var cur=pvCur(), it=pvItems().filter(function(x){ return x.v===cur; })[0]||pvItems()[0];
+        hd.classList.add("haspv");
+        hd.insertAdjacentHTML("beforeend", '<button type="button" class="hpv" id="hpv" aria-label="Dépenses de : '+esc(it.l)+'"><i style="background:'+it.c+'"></i><span>'+esc(it.v==="all"?"Foyer":it.l)+'</span><b>▾</b></button>');
+        hd.querySelector(".hpv").onclick=function(ev){ ev.stopPropagation(); var c0=pvCur();
+          uiChoice("Dépenses de", "", pvItems().map(function(x){ return { l:(x.v===c0?"✓ ":"")+x.l, primary:(x.v===c0), fn:function(){ state.personView=x.v; store.write("personView", x.v); render(); window.scrollTo(0,0); } }; })); };
+      }
       [].forEach.call(app.querySelectorAll(".psel"), function(sc){
         var on=sc.querySelector(".psel-b.on");
         if(on){ var l=on.offsetLeft-sc.offsetLeft, r=l+on.offsetWidth; if(r>sc.clientWidth-8) sc.scrollLeft=Math.max(0, l-(sc.clientWidth-on.offsetWidth)/2); }
