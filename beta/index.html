@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 11:53" />
+  <meta name="build" content="22/10 12:07" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2816,7 +2816,7 @@
       if(o.extra) h+=o.extra;
       if(o.stats && o.stats.length){
         h+='<div class="hstats">';
-        o.stats.forEach(function(s){ h+='<div class="hstat"><span>'+s.l+'</span><b'+(s.c?' style="color:'+s.c+'"':'')+'>'+s.v+'</b>'+(s.d?'<i'+(s.c?' style="color:'+s.c+'"':'')+'>'+s.d+'</i>':'')+'</div>'; });
+        o.stats.forEach(function(s){ h+='<div class="hstat"><span>'+s.l+'</span><b'+(s.c?' style="color:'+s.c+'"':'')+'>'+s.v+'</b></div>'; });   // deux lignes seulement (titre + valeur) : plus de place pour le graphique
         h+='</div>';
       }
       return h+'</section>';
@@ -4977,7 +4977,7 @@
         var cm0=data[data.length-1]||{ total:0, fx:0 };
         hero={ label:"Dépensé en "+esc(monthLabelOf(curM))+(sel?" · "+esc(selLabel):""), big:cm0.total, color:"var(--ink)",
                sub:(fxIn && cm0.fx>0 ? "dont frais fixes "+fmtK(cm0.fx) : (avg>0 ? (cm0.total>avg?"au-dessus":"en dessous")+" de la moyenne de "+fmtK(avg) : "")),
-               stats:[ {l:"Moyenne / mois", v:fmtS(avg)}, {l:"Mois record", v:(best&&best.total>0?esc(best.short):"—"), d:(best&&best.total>0?fmtS(best.total):"")}, {l:"Sur "+shown.length+" mois", v:fmtS(grand)} ] };
+               stats:[ {l:"Moyenne / mois", v:fmtS(avg)}, {l:"Record"+(best&&best.total>0?" · "+esc(best.short):""), v:(best&&best.total>0?fmtS(best.total):"—")}, {l:"Sur "+shown.length+" mois", v:fmtS(grand)} ] };
       } else if(mode==="rec"){
         // ---- Dépenses qui reviennent : 12 derniers mois (depuis le premier ticket au plus), tout est listé, du plus fréquent au moins fréquent
         // coût par mois = total ÷ nombre de mois couverts (un plein tous les deux mois compte pour moitié)
