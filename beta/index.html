@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 12:12" />
+  <meta name="build" content="22/10 12:27" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -523,7 +523,17 @@
     .dash-split.h3 span b{ margin:0; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .dash-split.h3.h4 span b{ font-size:12.5px; letter-spacing:-.01em; }
     .hgrid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .hmini{ min-width:0; overflow:hidden; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:12px 13px 10px; cursor:pointer; }
+    .hmini{ min-width:0; overflow:hidden; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:12px 13px 10px; cursor:pointer; display:flex; flex-direction:column; }
+    .hmini .hm-st{ margin-top:auto; }   /* chiffres en bas : les deux cartes d'une ligne s'alignent */
+    .hmini .hm-ch{ margin-bottom:8px; }
+    /* listes (produits, magasins, récurrentes…) : 4 lignes d'une ligne chacune, montant sans retour à la ligne */
+    .hmini:not(.wide) .hm-ch .bar-row{ margin:0 0 6px !important; }
+    .hmini:not(.wide) .hm-ch .bar-row:nth-of-type(n+5){ display:none; }
+    .hmini:not(.wide) .hm-ch .bar-top{ font-size:11.5px; gap:6px; flex-wrap:nowrap; }
+    .hmini:not(.wide) .hm-ch .bar-top .bl{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .hmini:not(.wide) .hm-ch .bar-top .bl small{ display:none; }
+    .hmini:not(.wide) .hm-ch .bar-top .bv{ flex:0 0 auto; white-space:nowrap; }
+    .hmini:not(.wide) .hm-ch .bar-track{ height:4px; margin-top:3px; }
     .hgrid .hmini:last-child:nth-child(odd):not(:first-child){ grid-column:1 / -1; }   /* seule sur sa page : reste en demi-largeur */
     .hmini:not(.wide) .hm-ch svg.dn{ width:86px !important; height:86px !important; display:block; margin:0 auto; flex:0 0 86px; }
     .hmini:not(.wide) .lgd, .hmini:not(.wide) .cdon-l{ display:none !important; }
@@ -1949,7 +1959,7 @@
          '<path d="'+area+'" fill="url(#bchG)"/>'+zero+
          '<path d="'+line+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>'+
          '<span class="bch-yl" style="top:2px">'+(mode==="pl"?signS(vmax-pad):fmtS(vmax-pad))+'</span><span class="bch-yl" style="bottom:2px">'+(mode==="pl"?signS(vmin+pad):fmtS(vmin+pad))+'</span>'+
-         '<div class="bch-end" style="left:'+(X(lp.t)/W*100).toFixed(2)+'%;top:'+Y(lp.v).toFixed(1)+'px;background:'+col+'"></div>'+
+         '<div class="bch-end" style="left:'+(X(lp.t)/W*100).toFixed(2)+'%;top:'+(Y(lp.v)/H*100).toFixed(2)+'%;background:'+col+'"></div>'+
          '<div class="bch-cross" id="bchCross"></div><div class="bch-dot" id="bchDot" style="background:'+col+'"></div></div>';
       function xl(t){ if(R[1]!==1) return bDateLabel(t); var d=new Date(t), hm=d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}); return (d.toDateString()===new Date().toDateString()?"":"hier ")+hm; }
       h+='<div class="bch-x"><span>'+esc(xl(t0))+'</span><span>'+esc(xl(t1))+'</span></div>';
