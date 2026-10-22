@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 10:35" />
+  <meta name="build" content="22/10 10:40" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2676,7 +2676,7 @@
     // Commun, Articles, Analyse, Bourse (page principale) : la carte du haut remplit l'écran ; CHB = hauteur ajoutée aux graphiques
     var CHB=0, fitMemo={}, fitting=0;
     function fitView(){ var v=state.view;
-      if(v==="communes") return !state.comSub; if(v==="articles") return !state.artSub; if(v==="analyse") return !state.anSub; if(v==="bourse") return !state.bSub; return false; }
+      if(v==="communes") return !state.comSub; if(v==="articles") return !state.artSub; if(v==="analyse") return !state.anSub; if(v==="bourse") return !state.bSub; if(v==="compte") return true; return false; }
     function fitHero(){
       var hero=document.querySelector(".thero"); if(!fitView() || !hero){ CHB=0; app.style.paddingBottom=""; return; }
       var nav=document.getElementById("nav"), navH=(nav && nav.offsetHeight)||0;
@@ -4101,7 +4101,7 @@
         store.write(sp.getAttribute("data-def"), sp.getAttribute("data-v")); uiToast("« "+sp.getAttribute("data-l")+" » s'affichera à l'ouverture"); render(); }; });
     }
     function compteWaterfallSVG(steps){
-      var W=340, H=178, top=20, bot=24, ph=H-top-bot, run=0, pts=[0];
+      var W=340, H=178+CHB, top=20, bot=24, ph=H-top-bot, run=0, pts=[0];
       steps.forEach(function(st){ if(st.t==="base"||st.t==="end"){ st.a=0; st.b=st.v; run=st.v; } else { st.a=run; st.b=run+st.v; run=st.b; } pts.push(st.a, st.b); });
       var lo=Math.min.apply(null,pts), hi=Math.max.apply(null,pts); if(hi-lo<1){ hi=lo+1; }
       function y(v){ return top+(hi-v)/(hi-lo)*ph; }
@@ -4120,7 +4120,7 @@
     }
     // 6 mois : entrées et sorties de chaque mois, avec le solde de fin de mois
     function compteSixMonthsSVG(rows, sel){
-      var W=340, H=178, top=20, bot=24, ph=H-top-bot, vals=[0];
+      var W=340, H=178+CHB, top=20, bot=24, ph=H-top-bot, vals=[0];
       rows.forEach(function(r){ vals.push(r.inn, r.out); });
       var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals); if(hi-lo<1) hi=lo+1;
       function y(v){ return top+(hi-v)/(hi-lo)*ph; }
