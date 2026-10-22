@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 11:29" />
+  <meta name="build" content="22/10 11:53" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -283,7 +283,7 @@
     .thero.fit > .cch, .thero.fit > .bsl{ flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; display:flex; flex-direction:column; justify-content:center; justify-content:safe center; }
     .thero.fit > .cch.cch-top{ justify-content:flex-start; }
     .thero.fit .hstats{ margin-top:auto; padding-top:14px; }
-    .thero.fit .cdon-big svg{ flex-basis:calc(128px + min(var(--chb,0px)*.1, 14px)); width:calc(128px + min(var(--chb,0px)*.1, 14px)); height:calc(128px + min(var(--chb,0px)*.1, 14px)); }
+    .thero.fit .cdon-big svg{ flex-basis:calc(128px + clamp(-28px, var(--chb,0px)*.4, 14px)); width:calc(128px + clamp(-28px, var(--chb,0px)*.4, 14px)); height:calc(128px + clamp(-28px, var(--chb,0px)*.4, 14px)); }
     .thero.fit .crep-b{ height:calc(14px + min(var(--chb,0px)*.04, 12px)); }
     .thero.fit .crep-r{ margin-top:calc(10px + min(var(--chb,0px)*.05, 14px)); }
     .thero .dash-big{ font-size:38px; }
@@ -407,6 +407,7 @@
     .cdon{ display:flex; align-items:center; gap:14px; margin:2px 0 10px; }
     .cdon svg{ flex:0 0 112px; width:112px; height:112px; }
     .cdon-big{ margin:6px 0 4px; } .cdon-big svg{ flex:0 0 128px; width:128px; height:128px; }
+    .cdon-big.tight{ margin:2px 0; } .cdon-big.tight .cdon-r{ padding:1px 0; font-size:12px; }
     .cdon-l{ flex:1; min-width:0; }
     .cdon-r{ display:flex; align-items:center; gap:7px; font-size:12.5px; padding:3px 0; }
     .cdon-r .n{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -2711,17 +2712,35 @@
       var top=hr.top+(window.scrollY||0), target=Math.floor(window.innerHeight-navH-top-after-12);
       if(target<200) target=200;
       // mesure faite avec la mise en page finale (colonne flexible : les marges ne se chevauchent plus), sinon il manque quelques pixels
-      hero.classList.add("fit"); hero.style.setProperty("--chb", Math.max(0,CHB)+"px");
+      hero.classList.add("fit"); hero.style.setProperty("--chb", CHB+"px");
       var diff=target-hero.offsetHeight, nb=Math.max(-70, Math.min(420, CHB+diff));
-      if(fitting<3 && Math.abs(nb-CHB)>1){ fitting++; CHB=nb; fitMemo[v0key()]=nb; try{ render(); }finally{ fitting--; } return; }
-      hero=document.querySelector(".thero"); if(hero){ hero.classList.add("fit"); hero.style.setProperty("--chb", Math.max(0,CHB)+"px"); hero.style.height=target+"px";
+      if(fitting<5 && Math.abs(nb-CHB)>1){ fitting++; CHB=nb; fitMemo[v0key()]=nb; try{ render(); }finally{ fitting--; } return; }
+      hero=document.querySelector(".thero"); if(hero){ hero.classList.add("fit"); hero.style.setProperty("--chb", CHB+"px"); hero.style.height=target+"px";
         // 1 à 3 px de trop (arrondis) : on bloque le défilement interne, sinon le graphique « bouge » au toucher
+        [].forEach.call(hero.children, function(x){ if(x.classList.contains("cch")) fitDonut(x); });
         [].forEach.call(hero.children, function(x){ if((x.classList.contains("cch") || x.classList.contains("bsl")) && x.scrollHeight-x.clientHeight<=3) x.style.overflowY="hidden"; });
         fitMore(hero); }
       // polices chargées après coup : les textes changent un peu de taille, on refait le calcul une fois
       if(!fitFontsHooked && document.fonts && document.fonts.ready){ fitFontsHooked=true; document.fonts.ready.then(function(){ if(fitView() && !document.querySelector(".sheet-overlay")){ fitMemo={}; render(); } }); }
     }
     var fitFontsHooked=false;
+    // Camembert qui dépasse : légende resserrée puis anneau plus petit, pour qu'il tienne entièrement dans la carte
+    function fitDonut(c){
+      function ov(){ return c.scrollHeight-c.clientHeight; }
+      var cd=c.querySelector(".cdon-big"); if(!cd || ov()<=3) return;
+      cd.classList.add("tight"); if(ov()<=3) return;
+      var sv=cd.querySelector("svg"), lg=cd.querySelector(".cdon-l"); if(!sv) return;
+      function size(n){ sv.style.flexBasis=n+"px"; sv.style.width=n+"px"; sv.style.height=n+"px"; }
+      var sH=sv.getBoundingClientRect().height;
+      size(Math.max(100, sH-ov())); if(ov()<=3 || !lg) return;   // 1) anneau un peu plus petit
+      // 2) les plus petites lignes de la légende regroupées en « + N autres »
+      var rows=[].slice.call(lg.querySelectorAll(".cdon-r")), hid=0, more=document.createElement("div");
+      more.className="cdon-r cdon-more"; more.style.color="var(--muted)"; lg.appendChild(more);
+      while(ov()>3 && rows.length-hid>3){ hid++; rows[rows.length-hid].style.display="none"; more.textContent="+ "+hid+" autre"+(hid>1?"s":"")+" · touche l'anneau"; }
+      if(!hid) lg.removeChild(more);
+      // 3) en dernier recours, anneau encore plus petit
+      if(ov()>3) size(Math.max(64, sv.getBoundingClientRect().height-ov()));
+    }
     // Graphique trop long pour la carte : fondu en bas + « ⌄ Voir la suite » tant qu'il reste quelque chose plus bas
     function fitMore(hero){
       var c=null; [].forEach.call(hero.children, function(x){ if(x.classList.contains("cch")) c=x; }); if(!c) return;
@@ -2739,7 +2758,7 @@
         if(fitView() && !document.querySelector(".sheet-overlay")){ fitMemo={}; render(); } }, 200); });
     })();
     function v0key(){ var on=document.querySelector(".thero .cch-tabs button.on"); return state.view+"|"+(on?on.getAttribute("data-m"):""); }
-    function render(){ pvMemo=null; fsMemo={}; if(!fitting) CHB=fitView()?(fitMemo[state.view+"|"+(state.view==="communes"?(state.comChart||store.read("comChartDef","rep")):state.view==="articles"?(state.artChart||store.read("artChartDef","prod")):state.view==="analyse"?(state.anChart||store.read("anChartDef","mois")):"")]||0):0; fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); wirePV(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); try{ fitHero(); }catch(err){ console.warn(err); } }
+    function render(){ pvMemo=null; fsMemo={}; if(!fitting) CHB=fitView()?(fitMemo[state.view+"|"+(state.view==="communes"?(state.comChart||store.read("comChartDef","rep")):state.view==="articles"?(state.artChart||store.read("artChartDef","prod")):state.view==="analyse"?(state.anChart||store.read("anChartDef","mois")):state.view==="compte"?(function(){ var c=state.cptChart||store.read("cptChartDef","mois"); return c==="6m"?"es":c; })():"")]||0):0; fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); wirePV(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); try{ fitHero(); }catch(err){ console.warn(err); } }
     function renderView(){
       armBack();
       fyViewGuard();
@@ -4402,7 +4421,7 @@
       var dParts=[], byCat={};
       paid.forEach(function(e){ var c=(e.categorie||"Autre"); byCat[c]=(byCat[c]||0)+(Number(e.montant)||0); });
       Object.keys(byCat).sort(function(x,y){ return byCat[y]-byCat[x]; }).forEach(function(c){ dParts.push({ l:c, v:byCat[c] }); });
-      if(dParts.length>5){ var rest=dParts.slice(4).reduce(function(t,x){ return t+x.v; },0); dParts=dParts.slice(0,4).concat([{ l:"Autres tickets", v:rest }]); }
+      if(dParts.length>4){ var rest=dParts.slice(3).reduce(function(t,x){ return t+x.v; },0); dParts=dParts.slice(0,3).concat([{ l:"Autres tickets", v:rest }]); }
       if(fraisPerso>0) dParts.push({ l:"Frais fixes perso", v:fraisPerso });
       if(fraisCommun>0) dParts.push({ l:"Frais fixes communs", v:fraisCommun });
       dParts.forEach(function(x){ x.k="dep"; });   // une part touchée → page Dépenses
@@ -4426,7 +4445,11 @@
         return a;
       }
       function cRangeNote(ms){ return crange==="6"?"sur 6 mois":(crange==="12"?"sur 12 mois":"depuis "+monthLabelOf(ms[0])); }
-      function cRangeSeg(){ return '<div class="dmode crange">'+[["6","6 mois"],["12","12 mois"],["all","Tout"]].map(function(x){ return '<button type="button" data-r="'+x[0]+'"'+(crange===x[0]?' class="on"':'')+'>'+x[1]+'</button>'; }).join("")+'</div>'; }
+      // 6 mois / 12 mois / Tout : petit bouton en haut à droite de la carte (il tient toujours dans l'écran) ; chaque appui passe au suivant
+      var cRangeUsed=false;
+      function cRangeSeg(){ cRangeUsed=true; return ''; }
+      function cRangeBtn(){ var nx={ "6":"12", "12":"all", "all":"6" }[crange], lb={ "6":"6 mois", "12":"12 mois", "all":"Tout" }[crange];
+        return '<button type="button" class="anfx anfx-corner crange-c" data-r="'+nx+'" aria-label="Période : '+lb+' (toucher pour changer)">'+lb+' ⇄</button>'; }
       function inOut(m){ var inn=0, out=computeDepensesMonth(person,m); virementsOf(person,m).forEach(function(v){ var x=Number(v.montant)||0; if(x>=0) inn+=x; else out+=-x; }); return { inn:inn, out:out }; }
       var chart=chartTabsHTML(CMODES, cmode, "cptChartDef", "mois").replace('<div class="cch-tabs">','<div class="cch-tabs wrap2">')+'<div class="cch">';   // 6 choix : sur deux lignes
 
@@ -4452,7 +4475,7 @@
       } else if(cmode==="es"){
         var rows=six.map(function(m){ var x=inOut(m); return { m:m, lbl:mShort(m), inn:x.inn, out:x.out }; }), cur=rows[rows.length-1], net=cur.inn-cur.out;
         hero={ label:"Entrées − sorties du mois", big:net, color:(net<0?"var(--coral)":"var(--accent)"), sub:"Entrées "+fmtK(cur.inn)+" · Sorties "+fmtK(cur.out) };
-        chart+=compteSixMonthsSVG(rows, month)+'<div class="cch-leg"><span><i style="background:var(--accent)"></i>Entrées (virements reçus)</span><span><i style="background:var(--coral)"></i>Sorties (dépenses + virements envoyés)</span></div>';
+        chart+=compteSixMonthsSVG(rows, month)+'<div class="cch-leg"><span><i style="background:var(--accent)"></i>Entrées · virements reçus</span><span><i style="background:var(--coral)"></i>Sorties · dépenses</span></div>';
       } else if(cmode==="ep"){
         var eFirst=month; epargne.forEach(function(c){ Object.keys(c.vals||{}).forEach(function(k){ if(k<eFirst) eFirst=k; }); });
         var epRows=cRangeMonths(eFirst).map(function(m){ return { m:m, lbl:mShort(m), v:epTotAt(m) }; }), e0=epRows[epRows.length-2].v, e1=epRows[epRows.length-1].v;
@@ -4464,6 +4487,7 @@
         chart+=compteBarsSVG(pRows, month, "#c78bd6")+'<div class="cch-note">Total mis de côté dans tes provisions, sur 6 mois</div>';
       }
       chart+='</div>';
+      if(cRangeUsed) chart=cRangeBtn()+chart;
       if(preStart && cmode!=="ep" && cmode!=="prov") hero.sub="Compte suivi à partir de "+esc(monthLabelOf(aStart))+" : rien avant";
       hero.extra=chart;
       // Petites cases sous le graphique (comme Provisions)
@@ -4642,7 +4666,7 @@
       [].forEach.call(document.querySelectorAll(".dmode button"), function(bt){ bt.onclick=function(){ state.depByShop=bt.getAttribute("data-v")==="1"; render(); }; });
       wireChartDefaults();
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.cptChart=bt.getAttribute("data-m"); store.write("cptChart", state.cptChart); render(); }; });
-      [].forEach.call(document.querySelectorAll(".crange button"), function(b){ b.onclick=function(){ state.cptRange=b.getAttribute("data-r"); store.write("cptRange", state.cptRange); render(); }; });
+      [].forEach.call(document.querySelectorAll(".crange button, .crange-c"), function(b){ b.onclick=function(){ state.cptRange=b.getAttribute("data-r"); store.write("cptRange", state.cptRange); render(); }; });
       if(!page && document.querySelector(".cch-tabs")) wireCptSwipe(cmode, CMODES.map(function(x){ return x[0]; }));
       var lr=document.getElementById("liqrow"); if(lr) lr.onclick=function(){
         var o=liquideMois[person]||{};
