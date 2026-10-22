@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 22:53" />
+  <meta name="build" content="22/10 23:02" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -848,7 +848,8 @@
     .psel-b{ flex:1 0 auto; min-height:40px; border:0; border-radius:10px; background:transparent; color:var(--ink-soft); font-family:var(--sans); font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:7px; padding:0 12px; white-space:nowrap; cursor:pointer; }
     .psel-b i{ width:9px; height:9px; border-radius:50%; flex:0 0 9px; }
     .psel-b.on{ background:#2b303b; color:var(--ink); }
-    .psel-c{ font-size:12px; color:var(--ink-soft); margin:0 4px 12px; }
+    .psel-c{ display:inline-flex; align-items:center; gap:6px; max-width:100%; font-family:var(--sans); font-size:12.5px; font-weight:600; color:var(--ink-soft); background:var(--card2); border:1px solid var(--line); border-radius:999px; padding:7px 13px; margin:0 0 12px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .psel-c b{ color:var(--muted); font-weight:400; }
     .dgb .pvrow{ width:100%; background:none; border-left:0; border-right:0; border-bottom:0; color:inherit; font-family:inherit; text-align:left; cursor:pointer; }
     .dgb .pvrow.on{ background:rgba(255,255,255,.045); border-radius:8px; }
     .cb-oth{ color:var(--ink-soft); }
@@ -2957,7 +2958,7 @@
     function pvBarHTML(cap){
       if(!pvActive()) return "";
       pvWanted=true;
-      return cap?'<div class="psel-c">'+esc(cap)+'</div>':'';
+      return cap?'<button type="button" class="psel-c" id="pvCap">🧾 '+esc(cap)+' <b>›</b></button>':'';   // touche = la liste des tickets du mois
     }
     function pvCapTxt(n, total){ var v=pvCur(); return (v==="moi"?"Tes tickets":(v==="all"?"Tout le foyer":"Tickets de "+v))+" · "+n+" ticket"+(n>1?"s":"")+" · "+fmt(total); }
     function wirePV(){
@@ -2969,6 +2970,7 @@
         hd.querySelector(".hpv").onclick=function(ev){ ev.stopPropagation(); var c0=pvCur();
           uiChoice("Dépenses de", "", pvItems().map(function(x){ return { l:(x.v===c0?"✓ ":"")+x.l, primary:(x.v===c0), fn:function(){ state.personView=x.v; store.write("personView", x.v); render(); window.scrollTo(0,0); } }; })); };
       }
+      var pc=document.getElementById("pvCap"); if(pc) pc.onclick=function(){ state.ticketsOpen=true; render(); var tb=document.getElementById("ticketsToggle"); if(tb && tb.scrollIntoView) tb.scrollIntoView({behavior:"smooth", block:"start"}); };
       [].forEach.call(app.querySelectorAll(".psel"), function(sc){
         var on=sc.querySelector(".psel-b.on");
         if(on){ var l=on.offsetLeft-sc.offsetLeft, r=l+on.offsetWidth; if(r>sc.clientWidth-8) sc.scrollLeft=Math.max(0, l-(sc.clientWidth-on.offsetWidth)/2); }
