@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 23:49" />
+  <meta name="build" content="22/10 23:53" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -3849,7 +3849,7 @@
         var mode=state.artChart||store.read("artChartDef","prod"); if(!TABS.some(function(x){ return x[0]===mode; })) mode="prod";
         var apOn=artProdOn(), apAny=state.entries.some(function(e){ return (e.articles||[]).some(function(a){ return a.commun; }); });
         var AH=artHistory(month);
-        var chart=(apAny?'<button type="button" class="anfx anfx-corner'+(apOn?' on':'')+'" id="artProdBtn" aria-pressed="'+apOn+'">'+(apOn?'✓':'＋')+' Produits partagés</button>':'')+chartTabsHTML(TABS, mode, "artChartDef", "prod")+'<div class="cch cch-top">';
+        var chart=(apAny?'<button type="button" class="anfx anfx-corner'+(apOn?' on':'')+'" id="artProdBtn" aria-pressed="'+apOn+'">'+(apOn?'✓':'＋')+' Produits partagés</button>':'')+chartTabsHTML(TABS, mode, "artChartDef", "prod").replace('<div class="cch-tabs">','<div class="cch-tabs wrap2">')+'<div class="cch cch-top">';
         function evoTxt(x){ return Math.abs(x)>=0.5 ? ' <small style="color:'+(x>0?'var(--coral)':'var(--accent)')+';font-weight:700">'+(x>0?'▲ +':'▼ ')+String(Math.round(x*10)/10).replace(".",",")+' %</small>' : ''; }
         function line(P, sub, right, rightCol){ return '<div class="bar-row artclk" data-fam="'+esc(P.fam)+'" data-name="'+esc(P.name)+'" style="margin:10px 2px;cursor:pointer"><div class="bar-top"><span class="bl">'+esc(P.name)+' <small class="muted">'+sub+'</small></span><span class="bv"'+(rightCol?' style="color:'+rightCol+'"':'')+'>'+right+'</span></div></div>'; }
         var heroO;
