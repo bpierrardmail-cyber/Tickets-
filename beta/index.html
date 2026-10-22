@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 06:33" />
+  <meta name="build" content="22/10 07:02" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -3523,10 +3523,13 @@
     }
     // ---------- Articles : même présentation que Compte, Commun et Analyse ----------
     var ARTPAL=["#7c9cf4","#e0a458","#4fd6a0","#c78bd6","#5bc0d4","#e88fb0","#9bd35e","#d4a05b","#8a92e0","#6fcaa8","#d98c5f","#b0b6c2","#f4796b"];
+    function artProdOn(){ var v=state.artProd; if(v==null) v=store.read("artProd", true); return !!v; }
     function artMonthData(m){
       var fams={}, grand=0, nArt=0, top=null, most=null, prods={};
+      var pOn=artProdOn();
       vEntries().filter(function(e){ return monthKey(e.date)===m; }).forEach(function(e){   // filtre par personne
         (e.articles||[]).forEach(function(a){
+          if(a.commun && !pOn) return;   // bouton « Produits partagés » désactivé
           var c=classifyArticle(a);
           if(!fams[c.fam]) fams[c.fam]={ total:0, n:0, items:{} };
           var F=fams[c.fam]; F.total+=c.amt; F.n++; grand+=c.amt; nArt++;
@@ -3558,11 +3561,12 @@
       var h=header(!!aSub, aSub?"Par famille":"")+pvBarHTML()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabelOf(month))), month, curM)+'</div>';
       if(!D.famKeys.length) h+=tabTools([["artprod","⚙︎ Produits & catégories"]]);
       if(!D.famKeys.length){
-        h+='<section class="paper cacc" style="padding:18px 16px"><div class="center muted" style="font-size:12.5px;line-height:1.5">Aucun article rangé ce mois-ci.<br>Scanne un ticket et classe ses lignes par produit.</div></section>';
+        h+='<section class="paper cacc" style="padding:18px 16px"><div class="center muted" style="font-size:12.5px;line-height:1.5">Aucun article rangé ce mois-ci.<br>Scanne un ticket et classe ses lignes par produit.</div>'+(!artProdOn()?'<div class="center" style="margin-top:12px"><button type="button" class="anfx" id="artProdBtn">＋ Produits partagés</button><div class="muted" style="font-size:11px;margin-top:6px">Les produits partagés sont masqués</div></div>':'')+'</section>';
       } else {
         var TABS=[["fam","Familles"],["top","Top produits"],["6m","6 mois"]];
         var mode=state.artChart||store.read("artChartDef","fam"); if(!TABS.some(function(x){ return x[0]===mode; })) mode="fam";
-        var chart=chartTabsHTML(TABS, mode, "artChartDef", "fam")+'<div class="cch">';
+        var apOn=artProdOn(), apAny=state.entries.some(function(e){ return (e.articles||[]).some(function(a){ return a.commun; }); });
+        var chart=(apAny?'<button type="button" class="anfx anfx-corner'+(apOn?' on':'')+'" id="artProdBtn" aria-pressed="'+apOn+'">'+(apOn?'✓':'＋')+' Produits partagés</button>':'')+chartTabsHTML(TABS, mode, "artChartDef", "fam")+'<div class="cch">';
         if(mode==="fam"){
           var pos=D.famKeys.filter(function(f){ return D.fams[f].total>0; }), pt=pos.reduce(function(t,f){ return t+D.fams[f].total; },0);
           chart+='<div class="cdon cdon-big">'+compteDonutSVG(pos.map(function(f){ return { v:D.fams[f].total, col:col[f] }; }), pt).replace("dépensés","d'articles")+'<div class="cdon-l">'+
@@ -3594,6 +3598,7 @@
 
       app.innerHTML=h;
       if(aSub) bindBack(function(){ state.artSub=null; render(); window.scrollTo(0,0); });
+      var apb=document.getElementById("artProdBtn"); if(apb) apb.onclick=function(ev){ ev.stopPropagation(); state.artProd=!artProdOn(); store.write("artProd", state.artProd); render(); };
       var afm=document.getElementById("artfam"); if(afm) afm.onclick=function(){ state.artSub="fam"; render(); window.scrollTo(0,0); };
       [].forEach.call(document.querySelectorAll(".dgrp .dgh"), function(hd){ hd.onclick=function(){ var g=hd.parentNode, k=g.getAttribute("data-g"); state.artOpen[k]=!state.artOpen[k]; g.classList.toggle("open", !!state.artOpen[k]); }; });
       [].forEach.call(document.querySelectorAll(".artclk"), function(row){ row.onclick=function(){ state.artSel={ fam:row.getAttribute("data-fam"), name:row.getAttribute("data-name") }; state.view="artDetail"; render(); window.scrollTo(0,0); }; });
