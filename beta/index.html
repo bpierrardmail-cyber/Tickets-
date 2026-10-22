@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 10:57" />
+  <meta name="build" content="22/10 11:06" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -1326,11 +1326,31 @@
       }, {ok:"Supprimer", danger:true});
     }
     function computeDepensesMonth(person, month){
+      var st0=acctStart(person); if(st0 && month<st0) return 0;
       var me=state.entries.filter(function(e){ return monthKey(e.date)===month; });
       var paid=0; me.forEach(function(e){ if(ticketInAcct(e, person)) paid+=Number(e.montant)||0; });
       var fr=fraisCommuns.filter(function(f){ return fraisActif(f, month); });
       var fx=0; fr.forEach(function(f){ if(fraisKind(f, person)) fx+=fraisAcctAmt(f, person, month); });
       return paid+fx;
+    }
+    // Début du suivi d'un compte : son mois de création, sinon son premier solde de départ, sinon le début d'utilisation de l'appli
+    // (date de création la plus ancienne : les identifiants sont des horodatages). Avant ce mois, le compte ne bouge pas.
+    var useStartMemo=null;
+    function useStart(){
+      var sig=state.entries.length+"|"+fraisCommuns.length+"|"+virements.length+"|"+comptes.length;
+      if(useStartMemo && useStartMemo.sig===sig) return useStartMemo.v;
+      var lo=Infinity, now=Date.now()+86400000;
+      function t(n){ n=Number(n); if(n>1e12 && n<now && n<lo) lo=n; }
+      state.entries.forEach(function(e){ t(e.id); }); fraisCommuns.forEach(function(f){ t(f.id); }); virements.forEach(function(v){ t(v.id); });
+      (provisions||[]).forEach(function(x){ t(x.id); }); (epargne||[]).forEach(function(x){ t(x.id); });
+      comptes.forEach(function(a){ t(String(a.key||"").replace(/^acc/,"")); });
+      var v=null; if(lo<Infinity){ var d=new Date(lo); v=d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2); }
+      useStartMemo={ sig:sig, v:v }; return v;
+    }
+    function acctStart(person){
+      var ac=acctByKey(person); if(ac && ac.since) return ac.since;
+      var si=soldeInit[person], ks=si?Object.keys(si).sort():[]; if(ks.length) return ks[0];
+      return useStart();
     }
     function compteMonths(person, upto){
       var set={};
@@ -1339,9 +1359,11 @@
       if(soldeInit[person]) Object.keys(soldeInit[person]).forEach(function(m){ if(m<=upto) set[m]=true; });
       set[upto]=true;
       var ac=acctByKey(person);
-      return Object.keys(set).filter(function(m){ return !(ac && ac.since) || m>=ac.since || m===upto; }).sort();
+      var st=acctStart(person);
+      return Object.keys(set).filter(function(m){ return !st || m>=st || m===upto; }).sort();
     }
     function soldeFlow(person, upto){
+      var st0=acctStart(person); if(st0 && upto<st0) return { opening:0, closing:0 };   // compte pas encore suivi
       var ms=compteMonths(person, upto), closing=0, oOut=0, cOut=0;
       for(var i=0;i<ms.length;i++){
         var m=ms[i], ov=getSoldeInit(person,m);
@@ -1354,6 +1376,7 @@
     }
     function virementsSumDone(p,m){ return virementsOf(p,m).reduce(function(t,v){ return t+(v.done?(Number(v.montant)||0):0); },0); }
     function computeDepensesMonthDone(person, month){
+      var st0=acctStart(person); if(st0 && month<st0) return 0;
       var me=state.entries.filter(function(e){ return monthKey(e.date)===month; });
       var paid=0; me.forEach(function(e){ if(ticketInAcct(e, person)) paid+=Number(e.montant)||0; });
       var fr=fraisCommuns.filter(function(f){ return fraisActif(f, month) && fraisDone(f, month); });
@@ -1361,6 +1384,7 @@
       return paid+fx;
     }
     function soldeFlowDone(person, upto){
+      var st0=acctStart(person); if(st0 && upto<st0) return { opening:0, closing:0 };   // compte pas encore suivi
       var ms=compteMonths(person, upto), closing=0, oOut=0, cOut=0;
       for(var i=0;i<ms.length;i++){
         var m=ms[i], ov=getSoldeInit(person,m);
@@ -4339,13 +4363,15 @@
       var reporte=fl.opening;
       var virs=virementsOf(person,month);
       var virTotal=virementsSum(person,month);
-      var monthEntries=state.entries.filter(function(e){ return monthKey(e.date)===month; });
+      var aStart=acctStart(person), preStart=!!(aStart && month<aStart);   // mois avant le début du suivi du compte
+      var monthEntries=preStart ? [] : state.entries.filter(function(e){ return monthKey(e.date)===month; });
+      if(preStart) virs=[], virTotal=0;
 
       var paid=[], paidTotal=0;
       monthEntries.forEach(function(e){ if(ticketInAcct(e, person)){ paid.push(e); paidTotal+=Number(e.montant)||0; } });
       paid.sort(function(a,b){ return String(b.date||"").localeCompare(String(a.date||"")); });
 
-      var fraisThis=fraisCommuns.filter(function(f){ return fraisActif(f, month) && fraisKind(f, person); });
+      var fraisThis=preStart ? [] : fraisCommuns.filter(function(f){ return fraisActif(f, month) && fraisKind(f, person); });
       var fraisPerso=0, fraisCommun=0;
       fraisThis.forEach(function(f){ var m=fraisAcctAmt(f, person, month); if(fraisKind(f, person)==="perso") fraisPerso+=m; else fraisCommun+=m; });
       var fraisTotal=fraisPerso + fraisCommun;
@@ -4432,6 +4458,7 @@
         chart+=compteBarsSVG(pRows, month, "#c78bd6")+'<div class="cch-note">Total mis de côté dans tes provisions, sur 6 mois</div>';
       }
       chart+='</div>';
+      if(preStart && cmode!=="ep" && cmode!=="prov") hero.sub="Compte suivi à partir de "+esc(monthLabelOf(aStart))+" : rien avant";
       hero.extra=chart;
       // Petites cases sous le graphique (comme Provisions)
       var vTodo=virs.filter(function(v){ return !v.done; }), vTodoSum=vTodo.reduce(function(t,v){ return t+(Number(v.montant)||0); },0);
