@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 23:28" />
+  <meta name="build" content="22/10 23:29" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -3198,7 +3198,7 @@
     function homeCarouselHTML(x){
       var cards=homeChartCards(); x=x||{}; cards.forEach(function(k){ if(k.tab==='analyse' && k.mode==='mois' && x.an) k.c.sub=x.an; });
       if(!cards.length && !hcAvail().length) return "";
-      var h='<div class="hcar-h">Mes graphiques'+(cards.length>2?'<small>glisse pour la suite</small>':'')+'</div>', pages=[];   // « ⚙ Choisir » est en haut, en face des tickets
+      var h='<div style="height:14px"></div>', pages=[];   // pas de titre : « ⚙ Choisir » est en haut, en face des tickets
       if(!cards.length) return h+'<div class="hc-empty">Aucun graphique choisi.</div>';
       // Pages de 2 petites cartes côte à côte : on glisse pour les suivantes
       cards.forEach(function(k,i){
