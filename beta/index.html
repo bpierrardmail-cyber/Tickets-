@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 10:49" />
+  <meta name="build" content="22/10 10:57" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -5632,6 +5632,7 @@
     function persistProvisions(){ store.write("provisions", provisions); }
     function monthsBetween(a,b){ var pa=a.split("-"), pb=b.split("-"); return (parseInt(pb[0],10)*12+parseInt(pb[1],10)) - (parseInt(pa[0],10)*12+parseInt(pa[1],10)); }
     function mensuelAt(p, mk){
+      if(p.startMonth && mk<p.startMonth) return 0;   // pas encore créée ce mois-là
       var v=Number(p.mensuel)||0;
       if(p.mensuelChanges){ var best=null; for(var k in p.mensuelChanges){ if(k<=mk && (best===null||k>best)) best=k; } if(best!==null) v=Number(p.mensuelChanges[best])||0; }
       return v;
@@ -5640,6 +5641,7 @@
     function provState(p, month, excludePrId){
       var m=month||monthKey(todayISO());
       var start=p.startMonth||m;
+      if(m<start) return { bal:0, over:{} };   // avant sa création : rien de côté
       var sk=p.skips||[], prs=p.prelevements||[];
       function outOf(fn){ var o=0; prs.forEach(function(pr){ if(excludePrId!=null && String(pr.id)===String(excludePrId)) return; if(fn(pr.month||"")) o+=Number(pr.montant)||0; }); return o; }
       var acc=Number(p.soldeInitial)||0, over={};
@@ -5908,11 +5910,12 @@
       var month=(state.months&&state.months.provisions)||curM;
       var h=header("list")+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabelOf(month))), month, curM)+'</div>%%HERO%%<div>';
       if(!provisions.length){ h+='<div class="empty">Aucune provision.<br>Crée une enveloppe pour tes frais annuels (taxe foncière, assurance, eau…) : tu mets un montant de côté chaque mois, le solde monte tout seul.</div>'; }
-      var total=0, overTot=0;
+      var total=0, overTot=0, provLater=0;
       var prG=byOwner(provisions);
       prG.forEach(function(g){
         if(prG.length>1){ var gs=0; g.items.forEach(function(p){ gs+=provBalance(p, month); }); h+='<div class="own-h"><span>'+esc(g.label)+'</span><span>'+fmtK(gs)+'</span></div>'; }
         g.items.forEach(function(p){
+        if(p.startMonth && month<p.startMonth){ provLater++; return; }   // enveloppe créée après ce mois
         var pst=provState(p, month), bal=pst.bal; total+=bal;
         for(var ok in pst.over){ if(ok<=month) overTot+=pst.over[ok]; }
         h+='<div class="pcard">';
@@ -5956,6 +5959,7 @@
         h+='<button class="btn ghost addprl" type="button" data-id="'+esc(p.id)+'" style="margin-top:8px;font-size:12px">+ Prélèvement (facture payée)</button>';
         h+='</div>';
       }); });
+      if(provLater) h+='<div class="muted" style="font-size:12px;margin:10px 4px">'+(provLater===provisions.length?'Aucune provision en '+esc(monthLabelOf(month))+' : ':'')+provLater+' enveloppe'+(provLater>1?'s créées':' créée')+' après ce mois.</div>';
       h+='<button class="btn ghost" id="addprov" type="button" style="margin-top:8px">+ Ajouter une provision</button>';
       total-=overTot;
       (function(){
