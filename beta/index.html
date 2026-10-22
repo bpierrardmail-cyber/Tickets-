@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 23:19" />
+  <meta name="build" content="22/10 23:28" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2955,9 +2955,10 @@
     var pvWanted=false;
     function pvItems(){ var me=mePerson(); return [{ v:"moi", l:"Moi", c:"var(--accent)" }].concat(viewPersons().filter(function(p){ return p!==me; }).map(function(p){ return { v:p, l:p, c:personColor(p) }; })).concat([{ v:"all", l:"Tout le foyer", c:"var(--ink)" }]); }
     function pvBarHTML(cap){
-      if(!pvActive()) return "";
-      pvWanted=true;
-      return cap?'<div class="com-tools" style="margin:0 0 12px"><button type="button" class="ap-tool com-add psel-c" id="pvCap">🧾 '+esc(cap)+'</button></div>':'';   // touche = la page des tickets du mois
+      if(pvActive()) pvWanted=true;
+      else if(!cap) return "";
+      return cap?'<div class="com-tools" style="margin:0 0 12px;flex-wrap:nowrap"><button type="button" class="ap-tool com-add psel-c" id="pvCap">🧾 '+esc(cap)+'</button>'+
+        (state.view==="list" && hcAvail().length?'<button type="button" class="ap-tool com-add" id="hcPick" style="margin-left:auto;flex:0 0 auto">⚙︎ Choisir</button>':'')+'</div>':'';   // touche = la page des tickets du mois
     }
     function pvCapTxt(n, total){ var v=pvCur(); return (v==="moi"?"Tes tickets":(v==="all"?"Tout le foyer":"Tickets de "+v))+" · "+n+" ticket"+(n>1?"s":"")+" · "+fmt(total); }
     function wirePV(){
@@ -3197,7 +3198,7 @@
     function homeCarouselHTML(x){
       var cards=homeChartCards(); x=x||{}; cards.forEach(function(k){ if(k.tab==='analyse' && k.mode==='mois' && x.an) k.c.sub=x.an; });
       if(!cards.length && !hcAvail().length) return "";
-      var h='<div class="hcar-h">Mes graphiques<button type="button" class="hc-pick" id="hcPick">⚙ Choisir</button></div>', pages=[];
+      var h='<div class="hcar-h">Mes graphiques'+(cards.length>2?'<small>glisse pour la suite</small>':'')+'</div>', pages=[];   // « ⚙ Choisir » est en haut, en face des tickets
       if(!cards.length) return h+'<div class="hc-empty">Aucun graphique choisi.</div>';
       // Pages de 2 petites cartes côte à côte : on glisse pour les suivantes
       cards.forEach(function(k,i){
