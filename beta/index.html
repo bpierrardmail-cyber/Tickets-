@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 23:29" />
+  <meta name="build" content="22/10 23:39" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -478,6 +478,10 @@
     .arow .c{ color:var(--muted); font-size:12px; }
     .hcar-h{ display:flex; align-items:baseline; justify-content:space-between; font-size:17px; font-weight:700; margin:22px 4px 10px; }
     .hcar-h small{ font-size:11.5px; font-weight:500; color:var(--muted); }
+    .htop-sw{ flex:0 0 auto; font-family:var(--sans); font-size:12px; font-weight:600; color:var(--accent); background:none; border:1px dashed var(--line2); border-radius:9px; padding:5px 10px; cursor:pointer; }
+    .dash-top .dash-date{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .hm-ch.htop-ch{ margin-top:10px; cursor:pointer; pointer-events:auto; } .htop-ch *{ pointer-events:none; }
+    .htop-ch .cch-note{ display:none; }
     .hc-pick{ font-family:var(--sans); font-size:12.5px; font-weight:600; color:var(--accent); background:none; border:1px dashed rgba(79,214,160,.45); border-radius:999px; padding:6px 12px; cursor:pointer; }
     .hc-empty{ font-size:12.5px; color:var(--muted); margin:0 4px 6px; }
     .hcp-g{ margin:12px 2px 6px; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
@@ -3094,6 +3098,23 @@
       }
       paint();
     }
+    // Graphique du haut de l'accueil : le bilan du mois (par défaut) ou n'importe quel graphique
+    function homeTopId(){ var t=store.read("homeTop", null); return (t && hcAvail().indexOf(t)>=0) ? t : null; }
+    function openHomeTopPicker(){
+      var cur=homeTopId(), av=hcAvail(), s=uiSheet('<div class="hcp"></div>'), box=s.q(".hcp");
+      function pill(id, txt){ var on=(id===cur); return '<button type="button" class="hcp-p'+(on?' on':'')+'" data-id="'+esc(id)+'">'+(on?'✓ ':'')+esc(txt)+'</button>'; }
+      var h='<div class="sheet-title">Graphique du haut</div><div class="ui-intro" style="text-align:center">Ce que montre la grande carte en haut de l\'accueil</div><div class="hcp-list">';
+      h+='<div class="hcp-pills" style="margin-top:6px">'+pill("", "Bilan du mois (solde prévu)")+'</div>';
+      ["compte","analyse","communes","articles"].forEach(function(t){ var T=HC_TABS[t], ms=T.modes.filter(function(m){ return av.indexOf(t+":"+m[0])>=0; }); if(!ms.length) return;
+        h+='<div class="hcp-g">'+esc(T.name)+'</div><div class="hcp-pills">'+ms.map(function(m){ return pill(t+":"+m[0], m[1]); }).join("")+'</div>'; });
+      var solo=["bourse","epargne","provisions"].filter(function(id){ return av.indexOf(id)>=0; });
+      if(solo.length) h+='<div class="hcp-g">Autres</div><div class="hcp-pills">'+solo.map(function(id){ return pill(id, HC_SOLO[id]); }).join("")+'</div>';
+      h+='</div><div class="ui-stack" style="margin-top:12px"><button type="button" class="btn ghost" id="htNo">Annuler</button></div>';
+      if(cur===null) h=h.replace('class="hcp-p" data-id=""','class="hcp-p on" data-id=""').replace('data-id="">Bilan','data-id="">✓ Bilan');
+      box.innerHTML=h;
+      [].forEach.call(box.querySelectorAll(".hcp-p"), function(b){ b.onclick=function(){ var id=b.getAttribute("data-id")||null; s.close(); store.write("homeTop", id); render(); }; });
+      box.querySelector("#htNo").onclick=s.close;
+    }
     // Appui long sur une petite carte : changer de graphique, avancer, reculer, masquer
     function homeCardMenu(id){
       var l=hcList(), i=l.indexOf(id); if(i<0) return;
@@ -3107,7 +3128,7 @@
       uiChoice(hcLabel(id), "", ch);
     }
     // Accueil : les graphiques choisis (rendus hors écran, sans leurs commandes), deux par page
-    function homeChartCards(){
+    function homeChartCards(only){
       var out=[], saveApp=app, saveView=state.view, box=document.createElement("div");
       var subKeep={ anSub:state.anSub, comSub:state.comSub, artSub:state.artSub, cptPage:state.cptPage };
       var hm=(state.months&&state.months.list)||null, curH=monthKey(todayISO());   // mois choisi sur l'accueil : les cartes le suivent
@@ -3153,7 +3174,7 @@
         solo.provisions=({ tab:"provisions", name:"Provisions", c:{ label:"Provisions", big:moneyBig(pTot), sub:provisions.length+" enveloppe"+(provisions.length>1?"s":""), chart:mlist(pRows, "#c78bd6"), stats:[], mode:"" } });
       }
       // dans l'ordre choisi (hcList ne garde que les onglets permis dans un foyer partagé)
-      hcList().forEach(function(id){ var t=id.split(":"), T=HC_TABS[t[0]];
+      (only||hcList()).forEach(function(id){ var t=id.split(":"), T=HC_TABS[t[0]];
         if(!T){ if(solo[id]){ solo[id].id=id; out.push(solo[id]); } return; }
         var cs0=state.compteSel; if(t[0]==="compte" && (state.compteSel||store.read("compteSel", null))==="__all") state.compteSel=myAcct().key;   // « Tous les comptes » : la carte montre ton compte
         var r=grab(t[0], T.key, FN[t[0]], t[1]); state.compteSel=cs0; if(!r) return;
@@ -3267,9 +3288,18 @@
           h += '<div class="bk-banner"><span style="font-size:20px">💾</span><div>'+(bkAge===null?'<b>Aucune sauvegarde</b> de tes données pour l\'instant.':'<b>Dernière sauvegarde il y a '+bkAge+' jours.</b>')+'<br><span style="color:var(--ink-soft);font-size:11px">'+(capNative()?"Si l\'appli est désinstallée, tout serait perdu.":"Si le navigateur se vide, tout serait perdu.")+'</span></div><button class="btn primary" id="bkNow" type="button">Sauvegarder</button></div>';
         }
 
-        // --- Bloc principal
+        // --- Bloc principal : le bilan du mois, ou le graphique choisi (⇄)
+        var topId=homeTopId(), topC=topId ? homeChartCards([topId])[0] : null;
+        if(topC){
+          h += '<section class="dash-hero"><div class="dash-top"><div class="dash-date"><b>'+esc(topC.name)+(topC.c.mode?' · '+esc(topC.c.mode):'')+'</b></div><button type="button" class="htop-sw" id="htopSw">⇄ Changer</button></div>';
+          h += '<div style="margin-top:10px">'+monthNavHTML(esc(monthLabel), month, curM)+'</div>';
+          h += '<div class="dash-big">'+topC.c.big+'</div>'+((topC.c.sub||topC.c.label)?'<div class="dash-cap">'+esc(topC.c.sub||topC.c.label)+'</div>':'');
+          h += '<div class="hm-ch htop-ch" id="htopGo" data-go="'+esc(topC.tab)+'"'+(topC.mode?' data-m="'+esc(topC.mode)+'"':'')+'>'+topC.c.chart+'</div>';
+          var tst=(topC.c.stats||[]).slice(0,3); if(tst.length) h += '<div class="dash-split h3">'+tst.map(function(x){ return '<span>'+esc(x.l)+'<b style="'+esc(x.c||"")+'">'+esc(x.v)+'</b></span>'; }).join("")+'</div>';
+          h += '</section>';
+        } else {
         h += '<section class="dash-hero">';
-        h += '<div class="dash-top"><div class="dash-date">'+(isCur?'<b>'+esc(_now.toLocaleDateString("fr-FR",{weekday:"long", day:"numeric", month:"long"}))+'</b>':'<b>Bilan</b>')+'</div>';
+        h += '<div class="dash-top"><div class="dash-date">'+(isCur?'<b>'+esc(_now.toLocaleDateString("fr-FR",{weekday:"long", day:"numeric", month:"long"}))+'</b>':'<b>Bilan</b>')+'</div><button type="button" class="htop-sw" id="htopSw" aria-label="Changer le graphique du haut">⇄</button>';
         if(multiA) h += '<div class="hscope" role="group" aria-label="Solde affiché"><button type="button" data-s="moi"'+(scope==="moi"?' class="on" aria-pressed="true"':' aria-pressed="false"')+'>Moi</button><button type="button" data-s="foyer"'+(scope==="foyer"?' class="on" aria-pressed="true"':' aria-pressed="false"')+'>Foyer</button></div>';
         h += '</div>';
         h += '<div style="margin-top:10px">'+monthNavHTML(esc(monthLabel), month, curM)+'</div>';
@@ -3291,6 +3321,7 @@
         h += '<div class="dash-track"><i style="width:'+(fut?0:pctM)+'%"></i></div>';
         h += '<div class="dash-trackcap"><span>'+(isCur?'Jour '+day+' sur '+dim:(fut?'Mois à venir':'Mois terminé'))+'</span><span>'+(isCur?(dim-day)+' j restants':'')+'</span></div>';
         h += '</section>';
+        }
 
         // --- Graphiques ★ des onglets (en premier : l'essentiel d'un coup d'œil)
         h += homeCarouselHTML({ an:fk(parJour)+' / jour'+(prevTot?' · '+(totalMois>=prevTot?'▲ +':'▼ ')+Math.round((totalMois-prevTot)/prevTot*100)+' %':'') });
@@ -3470,14 +3501,15 @@
         state.view="compte"; render(); window.scrollTo(0,0); };
       [].forEach.call(document.querySelectorAll(".hscope button"), function(b){ b.onclick=function(ev){ ev.stopPropagation(); state.homeScope=b.getAttribute("data-s"); store.write("homeScope", state.homeScope); render(); }; });
       var hcp=document.getElementById("hcPick"); if(hcp) hcp.onclick=function(ev){ ev.stopPropagation(); openHomeChartsPicker(); };
-      [].forEach.call(document.querySelectorAll(".hmini"), function(c){
+      var hts=document.getElementById("htopSw"); if(hts) hts.onclick=function(ev){ ev.stopPropagation(); openHomeTopPicker(); };
+      [].forEach.call(document.querySelectorAll(".hmini, #htopGo"), function(c){
         var lpT=null, lpDone=false, x0=0, y0=0;
         function lpStop(){ if(lpT){ clearTimeout(lpT); lpT=null; } }
-        function lpStart(x,y){ lpStop(); lpDone=false; x0=x; y0=y; lpT=setTimeout(function(){ lpT=null; lpDone=true; try{ if(navigator.vibrate) navigator.vibrate(15); }catch(e){} homeCardMenu(c.getAttribute("data-id")); }, 520); }
+        function lpStart(x,y){ lpStop(); lpDone=false; x0=x; y0=y; lpT=setTimeout(function(){ lpT=null; lpDone=true; try{ if(navigator.vibrate) navigator.vibrate(15); }catch(e){} if(c.id==="htopGo") openHomeTopPicker(); else homeCardMenu(c.getAttribute("data-id")); }, 520); }
         c.addEventListener("touchstart", function(e){ var t=e.touches[0]; lpStart(t.clientX, t.clientY); }, { passive:true });
         c.addEventListener("touchmove", function(e){ var t=e.touches[0]; if(Math.abs(t.clientX-x0)>10 || Math.abs(t.clientY-y0)>10) lpStop(); }, { passive:true });
         c.addEventListener("touchend", lpStop); c.addEventListener("touchcancel", lpStop);
-        c.addEventListener("contextmenu", function(e){ e.preventDefault(); lpStop(); if(!lpDone){ lpDone=true; homeCardMenu(c.getAttribute("data-id")); } });
+        c.addEventListener("contextmenu", function(e){ e.preventDefault(); lpStop(); if(!lpDone){ lpDone=true; if(c.id==="htopGo") openHomeTopPicker(); else homeCardMenu(c.getAttribute("data-id")); } });
         c.onclick=function(){ if(lpDone){ lpDone=false; return; } var g=c.getAttribute("data-go"), m=c.getAttribute("data-m");
           if(m && HC_TABS[g]){ state[HC_TABS[g].key]=m; if(g==="analyse") store.write("anChart", m); if(g==="compte"){ state.cptPage=null; } }
           var lm=(state.months&&state.months.list)||null; if(!state.months) state.months={}; if(g==="compte"||g==="communes"||g==="articles"||g==="provisions") state.months[g]=lm; if(g==="analyse" && lm) state.graphPeriod="m:"+lm;
