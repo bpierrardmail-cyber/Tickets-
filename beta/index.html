@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 12:53" />
+  <meta name="build" content="22/10 19:46" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -1372,7 +1372,10 @@
       set[upto]=true;
       var ac=acctByKey(person);
       var st=acctStart(person);
-      return Object.keys(set).filter(function(m){ return !st || m>=st || m===upto; }).sort();
+      var ks=Object.keys(set).filter(function(m){ return !st || m>=st || m===upto; }).sort();
+      // tous les mois entre le premier et le mois affiché : un mois sans ticket compte quand même ses frais fixes
+      if(ks.length>1){ var all=[], m=ks[0], g=0; while(m<=upto && g<600){ all.push(m); m=nextMonthKey(m); g++; } return all; }
+      return ks;
     }
     function soldeFlow(person, upto){
       var st0=acctStart(person); if(st0 && upto<st0) return { opening:0, closing:0 };   // compte pas encore suivi
@@ -4268,6 +4271,7 @@
     function acctFigures(key, month){
       var fl=soldeFlow(key, month), lq=liquideAt(key, month), lqV=lq?lq.val:0;
       var banque=soldeFlowDone(key, month).opening + virementsSumDone(key, month) - computeDepensesMonthDone(key, month);
+      if(month>monthKey(todayISO())) banque=fl.closing;   // mois à venir : ce qui restera en banque à la fin du mois (tout ce qui est prévu)
       return { banque:banque, fin:fl.closing+lqV, liq:lqV };
     }
     function epTotalAtM(m){ var t=0; epargne.forEach(function(c){ var ms=Object.keys(c.vals||{}).filter(function(mm){ return mm<=m; }).sort(); if(ms.length) t+=Number(c.vals[ms[ms.length-1]])||0; }); return t; }
@@ -4423,7 +4427,8 @@
       var fraisDoneFull=0;
       fraisThis.forEach(function(f){ if(fraisDone(f, month)) fraisDoneFull+=fraisAcctAmt(f, person, month); });
       var reporteReel=soldeFlowDone(person, month).opening;
-      var soldeBanque=reporteReel + virDone - paidTotal - fraisDoneFull;
+      var soldeBanque=reporteReel + virDone - paidTotal - fraisDoneFull, futur=(month>curM);
+      if(futur) soldeBanque=fl.closing;   // mois à venir : solde prévu en fin de mois
 
       var cptOpen = state.cptOpen || (state.cptOpen={});
       var virIn=0, virOut=0; virs.forEach(function(v){ var x=Number(v.montant)||0; if(x>=0) virIn+=x; else virOut+=x; });
@@ -4464,7 +4469,7 @@
       function inOut(m){ var inn=0, out=computeDepensesMonth(person,m); virementsOf(person,m).forEach(function(v){ var x=Number(v.montant)||0; if(x>=0) inn+=x; else out+=-x; }); return { inn:inn, out:out }; }
       var chart=chartTabsHTML(CMODES, cmode, "cptChartDef", "mois").replace('<div class="cch-tabs">','<div class="cch-tabs wrap2">')+'<div class="cch">';   // 6 choix : sur deux lignes
 
-      var hero={ label:(multi?esc(acct.nom):"Solde du compte")+" (banque estimée)", big:soldeBanque, color:(soldeBanque<0?"var(--coral)":"var(--ink)"), sub:"Estimé, sans le liquide" };
+      var hero={ label:(multi?esc(acct.nom):"Solde du compte")+(futur?" · fin "+esc(monthLabelOf(month))+" prévue":" (banque estimée)"), big:soldeBanque, color:(soldeBanque<0?"var(--coral)":"var(--ink)"), sub:(futur?"Prévu, tout ce qui est planifié compris, sans le liquide":"Estimé, sans le liquide") };
       if(cmode==="mois"){
         var steps=[{l:"Report", v:reporte, t:"base", k:"report"}];
         if(virIn) steps.push({l:"Reçu", v:virIn, k:"es"});
