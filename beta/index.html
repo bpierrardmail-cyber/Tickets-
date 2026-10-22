@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 23:05" />
+  <meta name="build" content="22/10 23:08" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -848,8 +848,7 @@
     .psel-b{ flex:1 0 auto; min-height:40px; border:0; border-radius:10px; background:transparent; color:var(--ink-soft); font-family:var(--sans); font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:7px; padding:0 12px; white-space:nowrap; cursor:pointer; }
     .psel-b i{ width:9px; height:9px; border-radius:50%; flex:0 0 9px; }
     .psel-b.on{ background:#2b303b; color:var(--ink); }
-    .psel-c{ display:inline-flex; align-items:center; gap:6px; max-width:100%; font-family:var(--sans); font-size:12.5px; font-weight:600; color:var(--ink-soft); background:var(--card2); border:1px solid var(--line); border-radius:999px; padding:7px 13px; margin:0 0 12px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .psel-c b{ color:var(--muted); font-weight:400; }
+    .ap-tool.psel-c{ max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .dgb .pvrow{ width:100%; background:none; border-left:0; border-right:0; border-bottom:0; color:inherit; font-family:inherit; text-align:left; cursor:pointer; }
     .dgb .pvrow.on{ background:rgba(255,255,255,.045); border-radius:8px; }
     .cb-oth{ color:var(--ink-soft); }
@@ -2697,7 +2696,7 @@
       '</div>';
     document.body.appendChild(navEl);
     [].forEach.call(navEl.querySelectorAll(".navi"), function(b){
-      b.onclick=function(){ var v=b.getAttribute("data-view"); if(v==="analyse") state.histMonth=null; state.artFrom=null; if(v==="articles"){ state.artSel=null; state.artSub=null; } if(v==="analyse") state.anSub=null; if(v==="communes") state.comSub=null; if(v==="bourse") state.bSub=null; state.view=v; render(); window.scrollTo(0,0); };
+      b.onclick=function(){ var v=b.getAttribute("data-view"); if(v==="list"){ state.listSub=null; state.catFilter=null; } if(v==="analyse") state.histMonth=null; state.artFrom=null; if(v==="articles"){ state.artSel=null; state.artSub=null; } if(v==="analyse") state.anSub=null; if(v==="communes") state.comSub=null; if(v==="bourse") state.bSub=null; state.view=v; render(); window.scrollTo(0,0); };
     });
     document.getElementById("navscan").onclick=function(){ openScanChooser(); };
     function setNav(active, show){
@@ -2958,7 +2957,7 @@
     function pvBarHTML(cap){
       if(!pvActive()) return "";
       pvWanted=true;
-      return cap?'<button type="button" class="psel-c" id="pvCap">🧾 '+esc(cap)+' <b>›</b></button>':'';   // touche = la liste des tickets du mois
+      return cap?'<div class="com-tools" style="margin:0 0 12px"><button type="button" class="ap-tool com-add psel-c" id="pvCap">🧾 '+esc(cap)+'</button></div>':'';   // touche = la page des tickets du mois
     }
     function pvCapTxt(n, total){ var v=pvCur(); return (v==="moi"?"Tes tickets":(v==="all"?"Tout le foyer":"Tickets de "+v))+" · "+n+" ticket"+(n>1?"s":"")+" · "+fmt(total); }
     function wirePV(){
@@ -2970,7 +2969,7 @@
         hd.querySelector(".hpv").onclick=function(ev){ ev.stopPropagation(); var c0=pvCur();
           uiChoice("Dépenses de", "", pvItems().map(function(x){ return { l:(x.v===c0?"✓ ":"")+x.l, primary:(x.v===c0), fn:function(){ state.personView=x.v; store.write("personView", x.v); render(); window.scrollTo(0,0); } }; })); };
       }
-      var pc=document.getElementById("pvCap"); if(pc) pc.onclick=function(){ state.ticketsOpen=true; render(); var tb=document.getElementById("ticketsToggle"); if(tb && tb.scrollIntoView) tb.scrollIntoView({behavior:"smooth", block:"start"}); };
+      var pc=document.getElementById("pvCap"); if(pc) pc.onclick=function(){ state.listSub="tickets"; render(); window.scrollTo(0,0); };
       [].forEach.call(app.querySelectorAll(".psel"), function(sc){
         var on=sc.querySelector(".psel-b.on");
         if(on){ var l=on.offsetLeft-sc.offsetLeft, r=l+on.offsetWidth; if(r>sc.clientWidth-8) sc.scrollLeft=Math.max(0, l-(sc.clientWidth-on.offsetWidth)/2); }
@@ -3398,6 +3397,11 @@
           gaps.forEach(function(g){ tB += '<div class="gapfix" data-id="'+esc(g.e.id)+'"><span class="n">'+esc(g.e.marchand||"Ticket")+'<small>'+esc((g.e.date||"").split("-").reverse().join("/"))+' · ticket '+fmtK(g.e.montant)+' · articles '+fmtK(g.as)+'</small></span><span class="a">'+fmtK((Number(g.e.montant)||0)-g.as)+'</span></div>'; });
         }
       }
+      // Page « Tickets » : la liste du mois (recherche, filtres) sur une page à part
+      var tkPage=(state.listSub==="tickets"), tkH='';
+      if(tkPage) tkH=header(true, "Tickets")+pvBarHTML()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>'+
+        '<section class="paper cacc" style="padding:4px 14px 10px"><div class="dtot" style="padding:12px 2px 6px"><span>'+mois.length+' ticket'+(mois.length>1?'s':'')+'</span><span class="v" style="color:var(--ink)">'+fmtK(totalMois)+'</span></div>'+
+        (tSub?'<div class="dgs" style="margin:0 2px 8px">'+tSub+'</div>':'')+tB+'</section>';
       var hOpen=state.homeOpen||{};
       function hGrp(key, open, title, n, v, sub, body, id){
         return '<div class="dgrp'+(open?' open':'')+'" data-g="'+key+'"><div class="dgh"'+(id?' id="'+id+'"':'')+'><span class="t">'+title+(n?'<small>'+n+'</small>':'')+'</span><span class="v">'+v+'</span><span class="chev">›</span></div>'+
@@ -3407,8 +3411,10 @@
       h += hGrp("t", !!state.ticketsOpen && mois.length>0, "Tickets", mois.length, fmtK(totalMois), tSub, tB, "ticketsToggle");
       if(homeG.pay) h += hGrp("pay", !!hOpen.pay, "Qui a payé", homeG.pay.n, homeG.pay.v, homeG.pay.sub, homeG.pay.body);
       h += '</section>';
+      if(tkPage) h=tkH;
 
       app.innerHTML = h;
+      if(tkPage) bindBack(function(){ state.listSub=null; state.catFilter=null; render(); window.scrollTo(0,0); });
 
       var manual2=document.getElementById("manual2"); if(manual2) manual2.onclick=newDraft;
       var gogallery=document.getElementById("gogallery"); if(gogallery) gogallery.onclick=function(){ state.view="gallery"; render(); };
@@ -3435,7 +3441,7 @@
       });
       var ct=document.getElementById("catsToggle"); if(ct) ct.onclick=function(){ state.catsOpen=!state.catsOpen; render(); };
       [].forEach.call(document.querySelectorAll(".tile"), function(t){ t.onclick=function(){ var g=t.getAttribute("data-go");
-        if(g==="tickets"){ state.ticketsOpen=true; render(); var tb=document.getElementById("ticketsToggle"); if(tb && tb.scrollIntoView) tb.scrollIntoView({behavior:"smooth", block:"start"}); }
+        if(g==="tickets"){ state.listSub="tickets"; render(); window.scrollTo(0,0); }
         else { state.view=g; render(); window.scrollTo(0,0); } }; });
       var be=document.getElementById("budEdit"); if(be) be.onclick=function(ev){ ev.stopPropagation(); editBudgets(month); };
       var bkn=document.getElementById("bkNow"); if(bkn) bkn.onclick=backupData;
@@ -3450,7 +3456,7 @@
       var eht=document.getElementById("epHomeToggle"); if(eht) eht.onclick=function(){ state.epOpenHome=!state.epOpenHome; render(); };
       var pt=document.getElementById("payToggle"); if(pt) pt.onclick=function(){ state.payOpen=!state.payOpen; render(); };
       [].forEach.call(document.querySelectorAll(".dgrp .dgh"), function(hd){ hd.onclick=function(){ var g=hd.parentNode, k=g.getAttribute("data-g"), op=!g.classList.contains("open");
-        if(k==="t"){ if(!mois.length) return; state.ticketsOpen=op; } else { if(!state.homeOpen) state.homeOpen={}; state.homeOpen[k]=op; }
+        if(k==="t"){ state.listSub="tickets"; render(); window.scrollTo(0,0); return; } else { if(!state.homeOpen) state.homeOpen={}; state.homeOpen[k]=op; }
         g.classList.toggle("open", op); }; });
       var hcpt=document.getElementById("heroCpt"); if(hcpt) hcpt.onclick=function(){
         var sc=state.homeScope||store.read("homeScope","moi");
@@ -3471,7 +3477,7 @@
           if(g==="epargne"){ state.compteSel=myAcct().key; state.cptPage="ep"; state.view="comptedet"; } else state.view=g;
           render(); window.scrollTo(0,0); }; });
       enrichMiniCharts();
-      [].forEach.call(document.querySelectorAll(".catrow"), function(row){ row.onclick=function(){ var c=row.getAttribute("data-cat"); state.catFilter=(state.catFilter===c?null:c); state.ticketsOpen=true; render(); var se=document.getElementById("search"); if(se && se.scrollIntoView) se.scrollIntoView({behavior:"smooth", block:"start"}); }; });
+      [].forEach.call(document.querySelectorAll(".catrow"), function(row){ row.onclick=function(){ state.catFilter=row.getAttribute("data-cat"); state.listSub="tickets"; render(); window.scrollTo(0,0); }; });   // une catégorie → ses tickets du mois
       var cc=document.getElementById("catclear"); if(cc) cc.onclick=function(){ state.catFilter=null; render(); };
       wireMonthNav(month, curM, "list");
       setNav("list", true);
