@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 23:39" />
+  <meta name="build" content="22/10 23:46" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -963,6 +963,7 @@
       var plist=uniquePersons(); if(plist.indexOf(mePerson())<0) plist.unshift(mePerson());
       if(fyFull) h+='<div class="dr-sec">Personnes</div>'+it("persons","👥","Personnes",esc(plist.join(", ")+" · ajouter, renommer, supprimer"));
       if(fyFull) h+='<div class="dr-sec">Devise</div>'+it("devise","💱","Devise principale",esc(curSym()+" · "+CURS[BASE].l));
+      h+='<div class="dr-sec">Tickets</div>'+it("gallery","🖼️","Galerie",esc("Les photos de tes tickets"));
       h+='<div class="dr-sec">Export</div>'+it("pdf","📄","Exporter en PDF",esc("Bilan sur la période de ton choix"));
       h+='<div class="dr-foot"><span class="beta-tag">Version β · '+esc((document.querySelector('meta[name=build]')||{}).content||'')+(capNative()?(EDITION==="store"?' · appli Store':' · appli Perso'):' · navigateur'+(EDITION==="store"?' (Store)':''))+'</span></div>';
       h+='</div>';
@@ -972,7 +973,7 @@
       function closeAnim(){ ov.classList.remove("open"); setTimeout(closeMenu, 200); }
       ov.onclick=function(e){ if(e.target===ov) closeAnim(); };
       ov.querySelector(".dr-x").onclick=closeAnim;
-      var acts={ foyer:function(){ state.view="foyer"; render(); window.scrollTo(0,0); }, backup:backupData, restore:function(){ restorein.click(); }, lockSetup:lockSetup, lockBio:lockEnableBio, lockOff:lockDisable, devise:chooseCurrency, pdf:choosePdfPeriod, persons:managePersons };
+      var acts={ gallery:function(){ state.view="gallery"; render(); window.scrollTo(0,0); }, foyer:function(){ state.view="foyer"; render(); window.scrollTo(0,0); }, backup:backupData, restore:function(){ restorein.click(); }, lockSetup:lockSetup, lockBio:lockEnableBio, lockOff:lockDisable, devise:chooseCurrency, pdf:choosePdfPeriod, persons:managePersons };
       [].forEach.call(ov.querySelectorAll(".dr-item"), function(b){ b.onclick=function(){ var fn=acts[b.getAttribute("data-k")]; closeMenu(); if(fn) fn(); }; });
     }
     function personCounts(n){
@@ -2961,10 +2962,10 @@
     function pvBarHTML(cap){
       if(pvActive()) pvWanted=true;
       else if(!cap) return "";
-      return cap?'<div class="com-tools" style="margin:0 0 12px;flex-wrap:nowrap"><button type="button" class="ap-tool com-add psel-c" id="pvCap">🧾 '+esc(cap)+'</button>'+
+      return cap?'<div class="com-tools" style="margin:0 0 12px;flex-wrap:nowrap">'+(state.view==="list"?'<button type="button" class="ap-tool com-add" id="manual2" style="flex:0 0 auto">✍️ Saisie</button>':'')+'<button type="button" class="ap-tool com-add psel-c" id="pvCap">🧾 '+esc(cap)+'</button>'+
         (state.view==="list" && hcAvail().length?'<button type="button" class="ap-tool com-add" id="hcPick" style="margin-left:auto;flex:0 0 auto">⚙︎ Choisir</button>':'')+'</div>':'';   // touche = la page des tickets du mois
     }
-    function pvCapTxt(n, total){ var v=pvCur(); return (v==="moi"?"Tes tickets":(v==="all"?"Tout le foyer":"Tickets de "+v))+" · "+n+" ticket"+(n>1?"s":"")+" · "+fmt(total); }
+    function pvCapTxt(n, total){ return n+" ticket"+(n>1?"s":"")+" · "+fmtK(total); }   // la personne est sur le bouton en haut à droite
     function wirePV(){
       var hd=app.querySelector("header.head");
       if(pvWanted && hd && !hd.querySelector(".hpv")){
@@ -3242,7 +3243,7 @@
       var cats = Object.keys(parCat).sort(function(a,b){ return parCat[b]-parCat[a]; });
       var monthLabel = monthLabelOf(month);
 
-      var h = header(), homeG={};
+      var h = header(), homeG={}, hCut=-1;   // hCut : l'accueil s'arrête après les graphiques
       h += pvBarHTML(pvCapTxt(mois.length, totalMois));
       if(storageFull){ h += '<div style="background:var(--coral-dim);color:var(--coral);border:1px solid var(--coral);border-radius:12px;padding:10px 12px;font-size:12px;margin-bottom:12px">⚠ Stockage plein. Exporte une sauvegarde et libère de la place (vieilles photos de la galerie).</div>'; }
       (function(){
@@ -3325,6 +3326,7 @@
 
         // --- Graphiques ★ des onglets (en premier : l'essentiel d'un coup d'œil)
         h += homeCarouselHTML({ an:fk(parJour)+' / jour'+(prevTot?' · '+(totalMois>=prevTot?'▲ +':'▼ ')+Math.round((totalMois-prevTot)/prevTot*100)+' %':'') });
+        hCut=h.length;
 
         // --- Catégories
         // Budgets : ceux du foyer en vue « Tout le foyer », ceux de la personne sinon ; l'autre niveau en petit sous chaque catégorie
@@ -3389,6 +3391,7 @@
         // « Dépenses qui reviennent » retiré de l'Accueil : le Compte montre le solde prévu des mois à venir, et Analyse › Récurrentes le détail
       })();
 
+      if(hCut<0) hCut=h.length;
       // --- Raccourcis
       h += '<div class="hshort">'+
         '<button type="button" id="manual2"><span>✍️</span>Saisie</button>'+
@@ -3448,7 +3451,7 @@
       h += hGrp("t", !!state.ticketsOpen && mois.length>0, "Tickets", mois.length, fmtK(totalMois), tSub, tB, "ticketsToggle");
       if(homeG.pay) h += hGrp("pay", !!hOpen.pay, "Qui a payé", homeG.pay.n, homeG.pay.v, homeG.pay.sub, homeG.pay.body);
       h += '</section>';
-      if(tkPage) h=tkH;
+      if(tkPage) h=tkH; else h=h.slice(0, hCut);   // sous les graphiques : plus rien (Saisie est en haut, Galerie dans le menu)
 
       app.innerHTML = h;
       if(tkPage) bindBack(function(){ state.listSub=null; state.catFilter=null; render(); window.scrollTo(0,0); });
