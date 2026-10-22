@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 09:50" />
+  <meta name="build" content="22/10 09:58" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -3472,7 +3472,7 @@
       state.draft={id:e.id,montant:e.montant,date:e.date,marchand:e.marchand,categorie:e.categorie,payePar:e.payePar||"",compte:e.compte||"",photo:photoOf(e),
         articles:(e.articles||[]).map(function(a){ return {label:a.label,prix:a.prix,produit:a.produit,commun:!!a.commun}; })};
       state.draftRO=!fyCanEdit(e);
-      state.formFrom=(state.view==="analyse" || state.view==="month" || state.view==="artDetail") ? state.view : null;
+      state.formFrom=(state.view==="analyse" || state.view==="month" || state.view==="artDetail" || state.view==="articles") ? state.view : null;
       state.view="form"; render();
     }
     function formBackView(){ var v=state.formFrom||"list"; state.formFrom=null; return v; }
@@ -3592,8 +3592,10 @@
       var month = (state.months&&state.months.articles)||curM;
       var D=artMonthData(month), col={};
       D.famKeys.forEach(function(f,i){ col[f]=(f==="Remise")?"#8a92a6":ARTPAL[i%ARTPAL.length]; });
-      var aSub=(state.artSub==="fam" && D.famKeys.length)?"fam":null;   // sous-page « Par famille »
-      var h=header(!!aSub, aSub?"Par famille":"")+pvBarHTML()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabelOf(month))), month, curM)+'</div>';
+      // sous-pages (la bulle du bas suit le graphique) : Par famille, Produits du mois, Prix suivis, Par magasin
+      var ASUB={ fam:"Par famille", prods:"Produits du mois", prix:"Prix suivis", mags:"Par magasin" };
+      var aSub=(ASUB[state.artSub] && D.famKeys.length) ? state.artSub : null;
+      var h=header(!!aSub, aSub?ASUB[aSub]:"")+pvBarHTML()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabelOf(month))), month, curM)+'</div>';
       if(!D.famKeys.length) h+=tabTools([["artprod","⚙︎ Produits & catégories"]]);
       if(!D.famKeys.length){
         h+='<section class="paper cacc" style="padding:18px 16px"><div class="center muted" style="font-size:12.5px;line-height:1.5">Aucun article rangé ce mois-ci.<br>Scanne un ticket et classe ses lignes par produit.</div>'+(!artProdOn()?'<div class="center" style="margin-top:12px"><button type="button" class="anfx" id="artProdBtn">＋ Produits partagés</button><div class="muted" style="font-size:11px;margin-top:6px">Les produits partagés sont masqués</div></div>':'')+'</section>';
@@ -3654,16 +3656,38 @@
           famH+='<div class="dgrp'+(open[f]?' open':'')+'" data-g="'+esc(f)+'"><div class="dgh"><i class="cdot" style="background:'+col[f]+';margin:0"></i><span class="t">'+esc(f)+'<em class="ds">'+names.length+' produit'+(names.length>1?'s':'')+' · '+F.n+' article'+(F.n>1?'s':'')+(f!=="Remise"?' · '+pc+' %':'')+'</em></span><span class="v">'+fmtK(F.total)+'</span><span class="chev">›</span></div><div class="dgb">'+body+'</div></div>';
         });
         famH+='</section>';
-        if(aSub) h+='<div class="muted" style="font-size:12px;margin:12px 4px 0">Touche une famille pour la déplier, puis un produit pour son détail.</div>'+famH;
+        if(aSub==="fam") h+='<div class="muted" style="font-size:12px;margin:12px 4px 0">Touche une famille pour la déplier, puis un produit pour son détail.</div>'+famH;
+        // ---- autres sous-pages
+        function prow(P, sub, right){ return '<div class="arow artclk" data-fam="'+esc(P.fam)+'" data-name="'+esc(P.name)+'"><span class="n">'+esc(P.name)+'<small style="display:block;font-size:10.5px;color:var(--muted);font-weight:500">'+sub+'</small></span><span class="a">'+right+'</span><span class="c">›</span></div>'; }
+        if(aSub==="prods"){ var mp2=AH.list.filter(function(P){ return P.nMonth>0; }).sort(function(a,b){ return b.totMonth-a.totMonth; });
+          h+='<div class="muted" style="font-size:12px;margin:12px 4px 0">'+mp2.length+' produit'+(mp2.length>1?'s':'')+' ce mois · touche un produit pour sa fiche</div><section class="paper cacc" style="padding:4px 14px">'+
+            mp2.map(function(P){ return prow(P, esc(P.fam)+' · ×'+P.nMonth+(P.lastStore?' · '+esc(P.lastStore):'')+' · dernier '+esc(fmtK(P.lastPrice)), fmtK(P.totMonth)); }).join("")+'</section>'; }
+        if(aSub==="prix"){ var ps2=AH.list.filter(function(P){ return P.nBuy>=2; }).sort(function(a,b){ return b.evo-a.evo; });
+          h+='<div class="muted" style="font-size:12px;margin:12px 4px 0">'+ps2.length+' produit'+(ps2.length>1?'s':'')+' achetés au moins 2 fois (12 mois) · touche un produit pour sa fiche</div><section class="paper cacc" style="padding:4px 14px">'+
+            ps2.map(function(P){ var ev=Math.abs(P.evo)>=0.5 ? '<span style="color:'+(P.evo>0?'var(--coral)':'var(--accent)')+'">'+(P.evo>0?'▲ +':'▼ ')+String(Math.round(P.evo*10)/10).replace(".",",")+' %</span>' : '<span class="muted">=</span>';
+              return prow(P, esc(fmtK(P.firstPrice))+' → '+esc(fmtK(P.lastPrice))+' · '+P.nBuy+' achats', ev); }).join("")+'</section>'; }
+        if(aSub==="mags"){ var byId={}; state.entries.forEach(function(e){ byId[e.id]=e; }); var mo2=state.magOpen||(state.magOpen={});
+          var SMl=Object.keys(AH.storesMonth).map(function(k){ return AH.storesMonth[k]; }).sort(function(a,b){ return b.sum-a.sum; });
+          h+='<div class="muted" style="font-size:12px;margin:12px 4px 0">Touche un magasin pour voir ses passages du mois, puis un passage pour ouvrir le ticket.</div><section class="paper cacc">';
+          SMl.forEach(function(x, ix){ var tk=Object.keys(x.t).map(function(id){ return byId[id]; }).filter(Boolean).sort(function(a,b){ return String(b.date||"").localeCompare(String(a.date||"")); });
+            var body=tk.map(function(e){ var dd=(e.date||"").split("-"), na=(e.articles||[]).length; return '<div class="entry ecomp" data-id="'+esc(e.id)+'"><span class="n">'+esc(dd.length===3?dd[2]+"/"+dd[1]:"")+' · '+esc(e.marchand||"")+'<small>'+na+' article'+(na>1?'s':'')+'</small></span><span class="a">'+fmtK(e.montant)+'</span></div>'; }).join("");
+            h+='<div class="dgrp'+(mo2[x.name]?' open':'')+'" data-g="'+esc(x.name)+'" data-k="mag"><div class="dgh"><i class="cdot" style="background:'+["#7c9cf4","#e0a458","#4fd6a0","#c78bd6","#5bc0d4","#e88fb0","#9bd35e","#d4a05b"][ix%8]+';margin:0"></i><span class="t">'+esc(x.name)+'<em class="ds">'+x.nT+' passage'+(x.nT>1?'s':'')+' · '+x.nA+' article'+(x.nA>1?'s':'')+'</em></span><span class="v">'+fmtK(x.sum)+'</span><span class="chev">›</span></div><div class="dgb">'+body+'</div></div>'; });
+          h+='</section>'; }
       }
-      if(!aSub && D.famKeys.length) h+='<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="artfam"><span class="t"><span class="tic">🛒</span> Par famille · '+D.famKeys.length+'</span><span class="v">'+fmtK(D.grand)+'</span><span class="ch">›</span></div></div></section>';
+      if(!aSub && D.famKeys.length){ var bm=state.artChart||store.read("artChartDef","prod"), bb;
+        if(bm==="prod"){ var np=AH.list.filter(function(P){ return P.nMonth>0; }).length; bb=["prods","🛒","Produits du mois · "+np, fmtK(D.grand)]; }
+        else if(bm==="hausse"){ bb=["prix","📈","Prix suivis · "+AH.list.filter(function(P){ return P.nBuy>=2; }).length, ""]; }
+        else if(bm==="mag"){ bb=["mags","🏪","Par magasin · "+Object.keys(AH.storesMonth).length, fmtK(D.grand)]; }
+        else bb=["fam","🛒","Par famille · "+D.famKeys.length, fmtK(D.grand)];
+        h+='<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="artfam" data-sub="'+bb[0]+'"><span class="t"><span class="tic">'+bb[1]+'</span> '+esc(bb[2])+'</span><span class="v">'+bb[3]+'</span><span class="ch">›</span></div></div></section>'; }
 
       app.innerHTML=h;
       if(aSub) bindBack(function(){ state.artSub=null; render(); window.scrollTo(0,0); });
       var arOn=document.querySelector(".thero .cch-tabs button.on"); if(arOn && arOn.parentNode){ var artb=arOn.parentNode; artb.scrollLeft=Math.max(0, arOn.offsetLeft-(artb.clientWidth-arOn.offsetWidth)/2); }
       var apb=document.getElementById("artProdBtn"); if(apb) apb.onclick=function(ev){ ev.stopPropagation(); state.artProd=!artProdOn(); store.write("artProd", state.artProd); render(); };
-      var afm=document.getElementById("artfam"); if(afm) afm.onclick=function(){ state.artSub="fam"; render(); window.scrollTo(0,0); };
-      [].forEach.call(document.querySelectorAll(".dgrp .dgh"), function(hd){ hd.onclick=function(){ var g=hd.parentNode, k=g.getAttribute("data-g"); state.artOpen[k]=!state.artOpen[k]; g.classList.toggle("open", !!state.artOpen[k]); }; });
+      var afm=document.getElementById("artfam"); if(afm) afm.onclick=function(){ state.artSub=afm.getAttribute("data-sub"); render(); window.scrollTo(0,0); };
+      [].forEach.call(document.querySelectorAll(".entry[data-id]"), function(n){ n.onclick=function(){ editEntry(n.getAttribute("data-id")); }; });
+      [].forEach.call(document.querySelectorAll(".dgrp .dgh"), function(hd){ hd.onclick=function(){ var g=hd.parentNode, k=g.getAttribute("data-g"), O=(g.getAttribute("data-k")==="mag") ? (state.magOpen||(state.magOpen={})) : (state.artOpen||(state.artOpen={})); O[k]=!O[k]; g.classList.toggle("open", !!O[k]); }; });
       [].forEach.call(document.querySelectorAll(".artclk"), function(row){ row.onclick=function(){ state.artSel={ fam:row.getAttribute("data-fam"), name:row.getAttribute("data-name") }; state.artDetM=null; state.view="artDetail"; render(); window.scrollTo(0,0); }; });
       wireChartDefaults();
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.artChart=bt.getAttribute("data-m"); render(); }; });
