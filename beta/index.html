@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 10:29" />
+  <meta name="build" content="22/10 10:35" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4363,7 +4363,7 @@
       dParts.sort(function(x,y){ return y.v-x.v; }).forEach(function(x,i){ x.col=DCOL[i%DCOL.length]; });
       var cmode=state.cptChart||store.read("cptChartDef","mois"); if(cmode==="6m") cmode="es";
       if(!CMODES.some(function(x){ return x[0]===cmode; })) cmode="mois";
-      var page=(state.view==="comptedet")?state.cptPage:null, PAGE_T={ es:"Virements", dep:"Dépenses", res:"Solde bancaire", ep:"Épargne" };
+      var page=(state.view==="comptedet")?state.cptPage:null, PAGE_T={ es:"Virements", dep:"Dépenses", res:"Solde bancaire", ep:"Épargne", cfg:"Configuration" };
       if(page && !PAGE_T[page]) page=null;
       var h=header(page?"compte":null, page?PAGE_T[page]:null)+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM).replace(/id="mn-/g,'id="cm-')+'</div>';
       // 6 derniers mois (jusqu'au mois affiché)
@@ -4447,7 +4447,7 @@
       });
       if(!virs.length) bIn+='<div class="muted" style="font-size:11px;margin:4px 0">Aucun virement ce mois-ci.</div>';
       bIn+='<div class="clink" id="addvir"><span>+ Ajouter un virement</span><span></span></div>';
-      acc+=sec("es", "var(--accent)", "Virements", signS(virTotal), (virTotal<0?"var(--coral)":"var(--accent)"), nb(virs.length, "virement", "virements"));
+      var accEs; acc+=(accEs=sec("es", "var(--accent)", "Virements", signS(virTotal), (virTotal<0?"var(--coral)":"var(--accent)"), nb(virs.length, "virement", "virements")));
 
       // ---- Dépenses ----
       var bOut='';
@@ -4481,7 +4481,7 @@
       if(!fraisThis.length) fB='<div class="muted" style="font-size:11px;margin:4px 2px">Aucun frais fixe ce mois-ci.</div>';
       bOut+=dGrp("f", "Frais fixes", fraisThis.length, fraisTotal, (fraisPerso&&fraisCommun?'Communs '+fmtK(fraisCommun)+' · Perso '+fmtK(fraisPerso):''), fB);
       bOut+='<div class="dtot"><span>Total</span><span class="v">'+fmtK(depenses)+'</span></div>';
-      acc+=sec("dep", "var(--coral)", "Dépenses", "−"+fmtS(depenses), "var(--coral)", nb(paid.length, "ticket", "tickets")+" · "+nb(fraisThis.length, "frais fixe", "frais fixes"));
+      var accDep; acc+=(accDep=sec("dep", "var(--coral)", "Dépenses", "−"+fmtS(depenses), "var(--coral)", nb(paid.length, "ticket", "tickets")+" · "+nb(fraisThis.length, "frais fixe", "frais fixes")));
 
       // ---- Résultat ----
       var bRes='<div class="leader"><span class="lbl">Solde de fin de mois</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+(soldeFin<0?"var(--coral)":"var(--accent)")+'">'+fmt(soldeFin)+'</span></div>';
@@ -4521,14 +4521,18 @@
       var provT=0; try{ provT=provTotalAt(month); }catch(e){}
       // Groupes : 1. Virements + Dépenses · 2. Provisions + Épargne (compte principal) · 3. Solde bancaire estimé
       acc+='</section>';
-      if(acct.main) acc+='<section class="paper cacc">'+'<div class="cacc-sec"><div class="cacc-h" id="goprov"><span class="t"><span class="tic">📦</span> Provisions<small>'+provisions.length+' enveloppe'+(provisions.length>1?'s':'')+'</small></span><span class="v">'+fmtS(provT)+'</span><span class="ch">›</span></div></div>'+accEp+'</section>';
+      var accProv=acct.main ? '<div class="cacc-sec"><div class="cacc-h" id="goprov"><span class="t"><span class="tic">📦</span> Provisions<small>'+provisions.length+' enveloppe'+(provisions.length>1?'s':'')+'</small></span><span class="v">'+fmtS(provT)+'</span><span class="ch">›</span></div></div>' : '';
+      if(acct.main) acc+='<section class="paper cacc">'+accProv+accEp+'</section>';
       acc+='<section class="paper cacc">'+accRes+'</section>';
       if(!page){
         if(multi) h+=acctPagerHTML(person, month);
         else h+='<div class="acc-chips"><div class="acc-scroll">'+comptes.map(function(a){ return '<button type="button" data-acct="'+esc(a.key)+'" class="on">'+esc(a.nom)+'</button>'; }).join("")+
            '</div><div class="acc-fixed"><button type="button" data-acct="__add" class="add" aria-label="Ajouter un compte">＋ Compte</button></div></div>';
-        h+=tabHero(heroMain)+acc;
+        var bub={ mois:'<div class="cacc-sec"><div class="cacc-h cptGo" data-page="cfg"><span class="t"><span class="tic">⚙︎</span> Configuration<small>virements, dépenses, provisions, épargne, solde</small></span><span class="ch">›</span></div></div>',
+                  dep:accDep, solde:accRes, es:accEs, ep:(accEp||''), prov:(accProv||'') }[cmode];
+        h+=tabHero(heroMain)+(bub?'<section class="paper cacc">'+bub+'</section>':'');
       }
+      else if(page==="cfg"){ h+='<div class="muted" style="font-size:12px;margin:12px 4px 0">Tout le compte du mois : touche une ligne pour l\'ouvrir.</div>'+acc; }
       else {
         var ph, pb;
         if(page==="es"){
@@ -4576,8 +4580,8 @@
       var cOn=document.querySelector(".cch-tabs button.on"); if(cOn && cOn.parentNode){ var tb=cOn.parentNode; tb.scrollLeft=Math.max(0, cOn.offsetLeft-(tb.clientWidth-cOn.offsetWidth)/2); }
       if(!page) [].forEach.call(document.querySelectorAll(".thero .hstat"), function(t,i){ var g=(heroMain.stats[i]||{}).go; if(!g) return; t.style.cursor="pointer"; t.onclick=function(){ state.cptPage=g; state.view="comptedet"; render(); window.scrollTo(0,0); }; });
       accScrollFix(); wireAcctPick();
-      [].forEach.call(document.querySelectorAll(".cptGo"), function(r){ r.onclick=function(){ state.cptPage=r.getAttribute("data-page"); state.view="comptedet"; render(); window.scrollTo(0,0); }; });
-      if(page) bindBack(function(){ if(state.cptFromAll){ state.cptFromAll=false; state.compteSel="__all"; store.write("compteSel", "__all"); } state.view="compte"; render(); window.scrollTo(0,0); });
+      [].forEach.call(document.querySelectorAll(".cptGo"), function(r){ r.onclick=function(){ state.cptFromCfg=(page==="cfg"); state.cptPage=r.getAttribute("data-page"); state.view="comptedet"; render(); window.scrollTo(0,0); }; });
+      if(page) bindBack(function(){ if(state.cptFromCfg && page!=="cfg"){ state.cptFromCfg=false; state.cptPage="cfg"; render(); window.scrollTo(0,0); return; } state.cptFromCfg=false; if(state.cptFromAll){ state.cptFromAll=false; state.compteSel="__all"; store.write("compteSel", "__all"); } state.view="compte"; render(); window.scrollTo(0,0); });
       [].forEach.call(document.querySelectorAll(".dgrp .dgh"), function(hd){ hd.onclick=function(){ var g=hd.parentNode, k=g.getAttribute("data-g"); if(!state.depOpen) state.depOpen={}; state.depOpen[k]=!state.depOpen[k]; g.classList.toggle("open", !!state.depOpen[k]); }; });
       [].forEach.call(document.querySelectorAll(".dmode button"), function(bt){ bt.onclick=function(){ state.depByShop=bt.getAttribute("data-v")==="1"; render(); }; });
       wireChartDefaults();
