@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 12:07" />
+  <meta name="build" content="22/10 12:12" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2816,7 +2816,7 @@
       if(o.extra) h+=o.extra;
       if(o.stats && o.stats.length){
         h+='<div class="hstats">';
-        o.stats.forEach(function(s){ h+='<div class="hstat"><span>'+s.l+'</span><b'+(s.c?' style="color:'+s.c+'"':'')+'>'+s.v+'</b></div>'; });   // deux lignes seulement (titre + valeur) : plus de place pour le graphique
+        o.stats.forEach(function(s){ h+='<div class="hstat"><span>'+s.l+'</span><b'+(s.c?' style="color:'+s.c+'"':'')+'>'+s.v+'</b>'+(s.keep && s.d?'<i'+(s.c?' style="color:'+s.c+'"':'')+'>'+s.d+'</i>':'')+'</div>'; });   // deux lignes seulement (titre + valeur) : plus de place pour le graphique
         h+='</div>';
       }
       return h+'</section>';
@@ -3659,14 +3659,14 @@
                            : '<div class="cch-note" style="margin:24px 0">Aucun produit ce mois-ci.</div>';
           var hz=AH.list.filter(function(P){ return P.nMonth>0 && P.evo>0.5; }).sort(function(a,b){ return b.evo-a.evo; })[0];
           heroO={ label:"Achats du mois", big:D.grand, sub:D.nArt+" article"+(D.nArt>1?"s":"")+" · "+mp.length+" produit"+(mp.length>1?"s":""),
-            stats:[ {l:"Plus forte hausse", v:(hz?esc(hz.name):"—"), d:(hz?"+"+String(Math.round(hz.evo*10)/10).replace(".",",")+" %":"")}, {l:"Le plus acheté", v:(D.most?esc(D.most.name):"—"), d:(D.most?"×"+D.most.n:"")}, {l:"Magasins", v:String(Object.keys(AH.storesMonth).length), d:"ce mois"} ] };
+            stats:[ {l:"Plus forte hausse", keep:1, v:(hz?esc(hz.name):"—"), d:(hz?"+"+String(Math.round(hz.evo*10)/10).replace(".",",")+" %":"")}, {l:"Le plus acheté", keep:1, v:(D.most?esc(D.most.name):"—"), d:(D.most?"×"+D.most.n:"")}, {l:"Magasins", v:String(Object.keys(AH.storesMonth).length), d:"ce mois"} ] };
         } else if(mode==="hausse"){
           var hs=AH.list.filter(function(P){ return P.nBuy>=2 && Math.abs(P.evo)>=0.5; }).sort(function(a,b){ return b.evo-a.evo; });
           chart+=hs.length ? hs.map(function(P){ return line(P, esc(fmtK(P.firstPrice))+' → '+esc(fmtK(P.lastPrice)), (P.evo>0?'▲ +':'▼ ')+String(Math.round(P.evo*10)/10).replace(".",",")+' %', (P.evo>0?'var(--coral)':'var(--accent)')); }).join("")+'<div class="cch-note">Prix d\'une ligne, premier achat → dernier, sur 12 mois · les hausses en premier</div>'
                            : '<div class="cch-note" style="margin:24px 0">Pas encore d\'évolution : il faut avoir acheté un produit au moins deux fois.</div>';
           var nUp=hs.filter(function(P){ return P.evo>0; }).length, nDn=hs.length-nUp;
           heroO={ label:"Évolution des prix · 12 mois", big:null, bigTxt:(hs.length?(nUp+" en hausse"):"—"), sub:nDn+" en baisse · "+AH.list.filter(function(P){ return P.nBuy>=2; }).length+" produits suivis",
-            stats:[ {l:"Plus forte hausse", v:(hs[0]&&hs[0].evo>0?esc(hs[0].name):"—"), d:(hs[0]&&hs[0].evo>0?"+"+String(Math.round(hs[0].evo*10)/10).replace(".",",")+" %":"")}, {l:"Plus forte baisse", v:(nDn?esc(hs[hs.length-1].name):"—"), d:(nDn?String(Math.round(hs[hs.length-1].evo*10)/10).replace(".",",")+" %":"")}, {l:"Hausse moyenne", v:(hs.length?(function(){ var t=0; hs.forEach(function(P){ t+=P.evo; }); var m=t/hs.length; return (m>=0?"+":"")+String(Math.round(m*10)/10).replace(".",",")+" %"; })():"—"), d:"des produits suivis"} ] };
+            stats:[ {l:"Plus forte hausse", keep:1, v:(hs[0]&&hs[0].evo>0?esc(hs[0].name):"—"), d:(hs[0]&&hs[0].evo>0?"+"+String(Math.round(hs[0].evo*10)/10).replace(".",",")+" %":"")}, {l:"Plus forte baisse", keep:1, v:(nDn?esc(hs[hs.length-1].name):"—"), d:(nDn?String(Math.round(hs[hs.length-1].evo*10)/10).replace(".",",")+" %":"")}, {l:"Hausse moyenne", v:(hs.length?(function(){ var t=0; hs.forEach(function(P){ t+=P.evo; }); var m=t/hs.length; return (m>=0?"+":"")+String(Math.round(m*10)/10).replace(".",",")+" %"; })():"—"), d:"des produits suivis"} ] };
         } else if(mode==="fam"){
           // Familles : camembert du mois
           var pos=D.famKeys.filter(function(f){ return D.fams[f].total>0; }), pt=pos.reduce(function(t,f){ return t+D.fams[f].total; },0);
@@ -3674,7 +3674,7 @@
             pos.map(function(f){ return '<div class="cdon-r" data-k="'+esc(f)+'" style="cursor:pointer"><i class="cdot" style="background:'+col[f]+';margin:0"></i><span class="n">'+esc(f)+'</span><span class="p">'+Math.round(D.fams[f].total/(pt||1)*100)+' %</span><span class="a">'+cptK(D.fams[f].total)+'</span></div>'; }).join("")+'</div></div>';
           chart+='<div class="cch-note">Répartition des articles du mois par famille · touche une famille pour son détail</div>';
           heroO={ label:"Familles du mois", big:D.grand, sub:D.nArt+" article"+(D.nArt>1?"s":"")+" · "+pos.length+" famille"+(pos.length>1?"s":""),
-            stats:[ {l:"Le plus acheté", v:(D.most?esc(D.most.name):"—"), d:(D.most?"×"+D.most.n:"")}, {l:"Le plus cher", v:(D.top?esc(D.top.name):"—"), d:(D.top?fmtS(D.top.amt):"")}, {l:"Prix moyen", v:fmtS(D.nArt?D.grand/D.nArt:0), d:"par article"} ] };
+            stats:[ {l:"Le plus acheté", keep:1, v:(D.most?esc(D.most.name):"—"), d:(D.most?"×"+D.most.n:"")}, {l:"Le plus cher", v:(D.top?esc(D.top.name):"—"), d:(D.top?fmtS(D.top.amt):"")}, {l:"Prix moyen", v:fmtS(D.nArt?D.grand/D.nArt:0), d:"par article"} ] };
         } else {
           // Magasins : où partent les achats d'articles du mois (noms de magasin regroupés)
           var SM=AH.storesMonth, sl2=Object.keys(SM).map(function(k){ return SM[k]; }).sort(function(a,b){ return b.sum-a.sum; }), smT=0, smN=0, smMax=sl2.length?sl2[0].sum:1;
@@ -4822,7 +4822,7 @@
       }
       (function(){
         var st=[{l:"Capital investi", v:fmtS(totCap)}];
-        if(totCap>0){ var pv=totVal-totCap; st.push({l:"Plus-value", v:signS(pv), d:(bPct(totCap,totVal)||""), c:heroCol(pv)}); }
+        if(totCap>0){ var pv=totVal-totCap; st.push({l:"Plus-value", keep:1, v:signS(pv), d:(bPct(totCap,totVal)||""), c:heroCol(pv)}); }
         // Total du mois précédent tel qu'affiché ce mois-là (tous les comptes ouverts alors, y compris ceux clôturés depuis)
         var prevTot=null; bourse.forEach(function(c){ var sp=bAt(c,pm); if(!sp || bClosedAt(c,pm)) return; prevTot=(prevTot||0)+(Number(sp.valeur)||0)+bCash(sp); });
         if(prevTot!==null){ var curTot=totVal+totCash, dp=curTot-prevTot; st.push({l:"vs mois préc.", v:signS(dp), d:(bPct(prevTot,curTot)||""), c:heroCol(dp)}); }
@@ -6024,7 +6024,7 @@
         var mensTot=0, next=null;
         provisions.forEach(function(p){ if((p.skips||[]).indexOf(month)<0) mensTot+=mensuelAt(p, month); var ec=provEcheance(p, month); if(ec && (!next || ec.due<next.due)) next={due:ec.due, nom:p.nom}; });
         h=h.replace("%%HERO%%", provisions.length?tabHero({ label:"Total mis de côté", big:total, color:(total<0?"var(--coral)":"var(--ink)"), sub:(overTot>0?"Dépassements déduits : −"+fmtK(overTot):""), extra:provChartHTML(month, curM),
-          stats:[ {l:"Enveloppes", v:String(provisions.length)}, {l:"Ce mois-ci", v:"+"+fmtS(mensTot)}, {l:"Échéance", v:(next?esc(next.nom):"—"), d:(next?esc(monthLabelOf(next.due)):"")} ] })+provListHTML(month, curM)+'<div class="bsec-h">Enveloppes</div><div style="height:10px"></div>':"");
+          stats:[ {l:"Enveloppes", v:String(provisions.length)}, {l:"Ce mois-ci", v:"+"+fmtS(mensTot)}, {l:"Échéance", keep:1, v:(next?esc(next.nom):"—"), d:(next?esc(monthLabelOf(next.due)):"")} ] })+provListHTML(month, curM)+'<div class="bsec-h">Enveloppes</div><div style="height:10px"></div>':"");
       })();
       h+='<hr class="rule" style="display:none"><div class="leader total" style="display:none"><span class="lbl">Total provisionné</span><span class="fill"></span><span class="val" style="color:'+(total<0?"#f4796b":"#4fd6a0")+'">'+fmt(total)+'</span></div>';
       h+='<div class="muted" style="font-size:11px;margin:10px 4px 0;line-height:1.5">Le solde monte tout seul du montant mensuel. Enregistre un prélèvement quand la facture est payée.</div>';
