@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 23:46" />
+  <meta name="build" content="22/10 23:49" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -544,6 +544,7 @@
     .hmini .hm-ch{ margin-bottom:8px; }
     /* listes (produits, magasins, récurrentes…) : 4 lignes d'une ligne chacune, montant sans retour à la ligne */
     .hmini:not(.wide) .hm-ch .bar-row{ margin:0 0 6px !important; }
+    .hmini:not(.wide) .hm-ch .cb-sub{ display:none; } .hmini:not(.wide) .hm-ch .cb-top{ font-size:11px; gap:5px; } .hmini:not(.wide) .hm-ch .cb-top .v{ font-size:11px; } .hmini:not(.wide) .hm-ch .cb-top .p{ display:none; }
     .hmini:not(.wide) .hm-ch .bar-row:nth-of-type(n+5){ display:none; }
     .hmini:not(.wide) .hm-ch .bar-top{ font-size:11.5px; gap:6px; flex-wrap:nowrap; }
     .hmini:not(.wide) .hm-ch .bar-top .bl{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -3055,7 +3056,7 @@
       compte:{ name:"Compte", key:"cptChart", defKey:"cptChartDef", fb:"mois", modes:[["mois","Ce mois"],["dep","Dépenses"],["solde","Solde"],["es","Entrées-sorties"],["ep","Épargne"],["prov","Provisions"]] },
       analyse:{ name:"Analyse", key:"anChart", defKey:"anChartDef", fb:"mois", modes:[["mois","Mois"],["rep","Répartition"],["rec","Récurrentes"],["pay","Qui a payé"]] },
       communes:{ name:"Commun", key:"comChart", defKey:"comChartDef", fb:"rep", modes:[["rep","Répartition"],["postes","Postes"],["6m","6 mois"]] },
-      articles:{ name:"Articles", key:"artChart", defKey:"artChartDef", fb:"prod", modes:[["prod","Mes produits"],["hausse","Hausses"],["mag","Magasins"],["fam","Familles"]] }
+      articles:{ name:"Articles", key:"artChart", defKey:"artChartDef", fb:"prod", modes:[["prod","Mes produits"],["hausse","Hausses"],["mag","Magasins"],["fam","Familles"],["bud","Budgets"]] }
     };
     var HC_SOLO={ bourse:"Bourse", epargne:"Épargne", provisions:"Provisions" };
     function hcStar(tab){ var T=HC_TABS[tab], d=store.read(T.defKey, T.fb); if(tab==="compte" && d==="6m") d="es"; return T.modes.some(function(x){ return x[0]===d; }) ? d : T.fb; }
@@ -3795,6 +3796,41 @@
     function firstDataMonth(){ if(fsMemo.fdm===undefined){ var f0=null; state.entries.forEach(function(e){ var k=e.date && monthKey(e.date); if(k && (!f0 || k<f0)) f0=k; }); fsMemo.fdm=f0; } return fsMemo.fdm; }
     function trimLead(rows, val){ var f0=firstDataMonth(), r=rows.filter(function(x,i){ return i===rows.length-1 || !f0 || x.m>=f0; }); while(r.length>1 && !(val(r[0])>0)) r.shift(); return r; }
     function artMShort(m){ var pm=m.split("-"); return new Date(+pm[0], +pm[1]-1, 1).toLocaleDateString("fr-FR",{month:"short"}).replace(".",""); }
+    // Budgets par catégorie de tickets (ex-« Où part l'argent » de l'accueil) : barres, % du budget, dépassements
+    function budgetsChart(month){
+      var allMois=state.entries.filter(function(e){ return monthKey(e.date)===month; }), mois=allMois.filter(inView);
+      var parCat={}, totalMois=0; mois.forEach(function(e){ var v=Number(e.montant)||0; parCat[e.categorie]=(parCat[e.categorie]||0)+v; totalMois+=v; });
+      var cats=Object.keys(parCat).sort(function(a,b){ return parCat[b]-parCat[a]; });
+      var pvv=pvCur(), pvn=pvName(pvv), PB=(pvv==="all") ? budgets : (budgetsP[pvn]||{});
+      var parCatAll={}, parCatP={};
+      allMois.forEach(function(e){ var v=Number(e.montant)||0, p=payerOf(e); parCatAll[e.categorie]=(parCatAll[e.categorie]||0)+v; if(!parCatP[p]) parCatP[p]={}; parCatP[p][e.categorie]=(parCatP[p][e.categorie]||0)+v; });
+      var budCats=Object.keys(PB).filter(function(c){ return PB[c]>0; });
+      var allCats=budCats.slice().sort(function(a,b){ return ((parCat[b]||0)/PB[b])-((parCat[a]||0)/PB[a]); });   // catégories avec budget d'abord (les plus entamées en haut)
+      cats.forEach(function(c){ if(allCats.indexOf(c)<0) allCats.push(c); });
+      var bSpent=0, bTot=0, nOver=0; budCats.forEach(function(c){ bTot+=PB[c]; bSpent+=(parCat[c]||0); if((parCat[c]||0)>PB[c]) nOver++; });
+      var maxC=cats.length?parCat[cats[0]]:1, h='';
+      if(!allCats.length) h+='<div class="cch-note" style="margin:24px 0">Aucune dépense ce mois-ci.</div>';
+      allCats.forEach(function(c){
+        var ic=catIcon(c), sp=parCat[c]||0, bud=PB[c]||0, top, w, col, sub="";
+        if(bud>0){
+          var r=sp/bud; w=Math.min(100, Math.round(r*100)); col=budgetColor(r, "var(--accent)");
+          top='<span class="v">'+fmtK(sp)+' <span style="color:var(--muted)">/ '+Math.round(bud)+' '+curSym()+'</span></span><span class="p" style="color:'+(r>=0.8?col:"var(--muted)")+'">'+Math.round(r*100)+' %</span>';
+          sub = r>1 ? '<div class="cb-sub" style="color:var(--coral)">Dépassé de '+fmtK(sp-bud)+'</div>' : (r>=0.8 ? '<div class="cb-sub" style="color:#e6b450">Plus que '+fmtK(bud-sp)+'</div>' : '');
+        } else {
+          var pc=totalMois?Math.round(sp/totalMois*100):0; w=Math.max(2,Math.round(sp/maxC*100)); col=ic.col;
+          top='<span class="v">'+fmtK(sp)+'</span><span class="p">'+pc+' %</span>';
+        }
+        var other=[];
+        if(pvv!=="all"){ if(budgets[c]>0){ var rf=(parCatAll[c]||0)/budgets[c]; other.push('<span style="color:'+budgetColor(rf,"var(--ink-soft)")+'">Foyer '+fmtK(parCatAll[c]||0)+' / '+Math.round(budgets[c])+' '+curSym()+'</span>'); } }
+        else Object.keys(budgetsP).forEach(function(p){ var b=(budgetsP[p]||{})[c]; if(b>0){ var s2=(parCatP[p]||{})[c]||0, rp=s2/b; other.push('<span style="color:'+budgetColor(rp,"var(--ink-soft)")+'">'+esc(p===mePerson()?"Moi":p)+' '+fmtK(s2)+' / '+Math.round(b)+' '+curSym()+'</span>'); } });
+        if(other.length) sub+='<div class="cb-sub cb-oth">'+other.join(" · ")+'</div>';
+        h+='<div class="bar-row cbar catrow" data-cat="'+esc(c)+'" style="cursor:pointer;margin:4px 2px"><div class="cb-top"><span>'+ic.e+'</span><span class="n">'+esc(c)+'</span>'+top+'</div><div class="cb-bar"><i style="width:'+Math.max(2,w)+'%;background:'+col+'"></i></div>'+sub+'</div>';
+      });
+      if(allCats.length) h+='<div class="cch-note">'+(budCats.length?'Catégories de tickets · budget du mois en % · touche une catégorie pour ses tickets':'Aucun budget fixé : touche « ＋ Fixer des budgets » · touche une catégorie pour ses tickets')+'</div>';
+      var who=(pvv==="all"?"du foyer":(pvv==="moi"?"":"de "+pvn));
+      return { html:h, spent:(budCats.length?bSpent:totalMois), tot:bTot, nBud:budCats.length, nOver:nOver, total:totalMois, label:(budCats.length?"Budgets "+(who||"du mois"):"Dépenses par catégorie"+(who?" "+who:"")),
+        sub:(budCats.length?"sur "+fmtK(bTot)+" de budget · "+Math.round(bTot?bSpent/bTot*100:0)+" %":cats.length+" catégorie"+(cats.length>1?"s":"")+" · aucun budget fixé") };
+    }
     function renderArticles(){
       var curM = monthKey(todayISO());
       var month = (state.months&&state.months.articles)||curM;
@@ -3809,7 +3845,7 @@
         h+='<section class="paper cacc" style="padding:18px 16px"><div class="center muted" style="font-size:12.5px;line-height:1.5">Aucun article rangé ce mois-ci.<br>Scanne un ticket et classe ses lignes par produit.</div>'+(!artProdOn()?'<div class="center" style="margin-top:12px"><button type="button" class="anfx" id="artProdBtn">＋ Produits partagés</button><div class="muted" style="font-size:11px;margin-top:6px">Les produits partagés sont masqués</div></div>':'')+'</section>';
       } else {
         // Articles = ce que j'achète et à quel prix : Mes produits (du mois), Hausses, Moins cher (12 derniers mois)
-        var TABS=[["prod","Mes produits"],["hausse","Hausses"],["mag","Magasins"],["fam","Familles"]];
+        var TABS=[["prod","Mes produits"],["hausse","Hausses"],["mag","Magasins"],["fam","Familles"],["bud","Budgets"]];
         var mode=state.artChart||store.read("artChartDef","prod"); if(!TABS.some(function(x){ return x[0]===mode; })) mode="prod";
         var apOn=artProdOn(), apAny=state.entries.some(function(e){ return (e.articles||[]).some(function(a){ return a.commun; }); });
         var AH=artHistory(month);
@@ -3831,6 +3867,12 @@
           var nUp=hs.filter(function(P){ return P.evo>0; }).length, nDn=hs.length-nUp;
           heroO={ label:"Évolution des prix · 12 mois", big:null, bigTxt:(hs.length?(nUp+" en hausse"):"—"), sub:nDn+" en baisse · "+AH.list.filter(function(P){ return P.nBuy>=2; }).length+" produits suivis",
             stats:[ {l:"Plus forte hausse", keep:1, v:(hs[0]&&hs[0].evo>0?esc(hs[0].name):"—"), d:(hs[0]&&hs[0].evo>0?"+"+String(Math.round(hs[0].evo*10)/10).replace(".",",")+" %":"")}, {l:"Plus forte baisse", keep:1, v:(nDn?esc(hs[hs.length-1].name):"—"), d:(nDn?String(Math.round(hs[hs.length-1].evo*10)/10).replace(".",",")+" %":"")}, {l:"Hausse moyenne", v:(hs.length?(function(){ var t=0; hs.forEach(function(P){ t+=P.evo; }); var m=t/hs.length; return (m>=0?"+":"")+String(Math.round(m*10)/10).replace(".",",")+" %"; })():"—"), d:"des produits suivis"} ] };
+        } else if(mode==="bud"){
+          // Budgets : catégories de tickets du mois, avec leur budget
+          var BG=budgetsChart(month);
+          chart+=BG.html;
+          heroO={ label:BG.label, big:BG.spent, sub:BG.sub,
+            stats:[ {l:"Budgets", v:String(BG.nBud)}, {l:"Dépassés", v:String(BG.nOver), c:(BG.nOver?"var(--coral)":"")}, {l:"Reste", v:(BG.nBud?fmtS(Math.max(0,BG.tot-BG.spent)):"—")} ] };
         } else if(mode==="fam"){
           // Familles : camembert du mois
           var pos=D.famKeys.filter(function(f){ return D.fams[f].total>0; }), pt=pos.reduce(function(t,f){ return t+D.fams[f].total; },0);
@@ -3902,6 +3944,7 @@
       [].forEach.call(document.querySelectorAll(".artclk"), function(row){ row.onclick=function(){ state.artSel={ fam:row.getAttribute("data-fam"), name:row.getAttribute("data-name") }; state.artDetM=null; state.view="artDetail"; render(); window.scrollTo(0,0); }; });
       wireChartDefaults();
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.artChart=bt.getAttribute("data-m"); render(); }; });
+      [].forEach.call(document.querySelectorAll(".thero .catrow"), function(r){ r.onclick=function(){ if(!state.months) state.months={}; state.months.list=(month===curM?null:month); state.catFilter=r.getAttribute("data-cat"); state.listSub="tickets"; state.view="list"; render(); window.scrollTo(0,0); }; });
       var abe=document.getElementById("budEdit"); if(abe) abe.onclick=function(ev){ ev.stopPropagation(); editBudgets(month); };
       var ap=document.getElementById("artprod"); if(ap) ap.onclick=function(){ state.prodFrom="articles"; state.view="produits"; render(); window.scrollTo(0,0); };
       if(D.famKeys.length && !aSub) wireHeroSwipe(state.artChart||store.read("artChartDef","prod"), ["prod","hausse","mag","fam"], function(k){ state.artChart=k; });
