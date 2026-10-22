@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 07:18" />
+  <meta name="build" content="22/10 07:31" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -3528,7 +3528,14 @@
       var mk=month, ms={}; for(var i=0;i<12;i++){ ms[mk]=1; mk=prevMonthKey(mk); }
       var pOn=artProdOn(), by={};
       function sk(x){ x=String(x||"").toLowerCase(); try{ x=x.normalize("NFD").replace(/[\u0300-\u036f]/g,""); }catch(e){} return x.replace(/[^a-z ]+/g," ").replace(/\b(sas|sarl|sa|magasin|store|super|hyper|market)\b/g," ").replace(/\s+/g," ").trim(); }
-      vEntries().forEach(function(e){ var m=monthKey(e.date); if(!ms[m]) return; var st=(e.marchand||"").trim(), k=sk(st);
+      // magasins presque identiques regroupés : même premier mot à une lettre près (« INTERMACHE » = « Intermarché La Rotonde »)
+      function lev(a,b){ if(Math.abs(a.length-b.length)>2) return 9; var d=[], i, j; for(i=0;i<=a.length;i++) d[i]=[i]; for(j=1;j<=b.length;j++) d[0][j]=j;
+        for(i=1;i<=a.length;i++) for(j=1;j<=b.length;j++) d[i][j]=Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1]+(a.charAt(i-1)===b.charAt(j-1)?0:1)); return d[a.length][b.length]; }
+      var cnt={}; vEntries().forEach(function(e){ if(!ms[monthKey(e.date)]) return; var k=sk(e.marchand); if(k) cnt[k]=(cnt[k]||0)+1; });
+      var heads=[], ali={}; Object.keys(cnt).sort(function(a,b){ return cnt[b]-cnt[a]; }).forEach(function(k){ var f=k.split(" ")[0], hit=null;
+        for(var q=0;q<heads.length;q++){ var g=heads[q].split(" ")[0], m0=Math.min(f.length,g.length); if((m0>=5 && lev(f,g)<=(m0>=9?2:1)) || k===heads[q]){ hit=heads[q]; break; } }
+        if(hit) ali[k]=hit; else heads.push(k); });
+      vEntries().forEach(function(e){ var m=monthKey(e.date); if(!ms[m]) return; var st=(e.marchand||"").trim(), k=sk(st); k=ali[k]||k;
         (e.articles||[]).forEach(function(a){ if(a.commun && !pOn) return; var c=classifyArticle(a); if(c.fam==="Remise" || !(c.amt>0)) return;
           var key=c.fam+"|"+c.name; if(!by[key]) by[key]={ fam:c.fam, name:c.name, lines:[] }; by[key].lines.push({ d:e.date||"", m:m, p:c.amt, sk:k, st:st }); }); });
       var list=[], saveMonth=0, saveYear=0;
@@ -3539,7 +3546,9 @@
         // évolution : dans le magasin du dernier achat si on y a acheté avant (sinon tous magasins confondus)
         var same=L.filter(function(l){ return l.sk===last.sk; }), f0=(same.length>1 ? same[0] : first);
         // comparaison utile seulement si l'écart entre magasins dépasse 2 % (sinon c'est l'évolution du prix, pas le magasin)
-        var cheap=(sl.length>=2 && sl[sl.length-1].avg-sl[0].avg>=Math.max(0.01, sl[0].avg*0.02)) ? sl[0].avg : null; if(cheap==null && sl.length>=2) sl=[];
+        // comparable si l'écart est réel (≥ 2 %) mais pas énorme (≤ 50 %) : au-delà, ce n'est pas le même produit ou pas la même quantité (gasoil, matériaux…)
+        var lo0=sl.length?sl[0].avg:0, hi0=sl.length?sl[sl.length-1].avg:0;
+        var cheap=(sl.length>=2 && hi0-lo0>=Math.max(0.01, lo0*0.02) && hi0<=lo0*1.5) ? lo0 : null; if(cheap==null) sl=[];
         if(cheap!=null) L.forEach(function(l){ var d=l.p-cheap; if(d>0.004){ saveYear+=d; if(l.m===month) saveMonth+=d; } });
         list.push({ fam:P.fam, name:P.name, nBuy:L.length, nMonth:inM.length, totMonth:inM.reduce(function(t,l){ return t+l.p; },0),
           firstPrice:f0.p, lastPrice:(inM.length?inM[inM.length-1].p:last.p), lastStore:(inM.length?inM[inM.length-1].st:last.st), evo:(L.length>1 && f0!==last && f0.p>0 ? (last.p-f0.p)/f0.p*100 : 0), stores:sl });
@@ -3612,7 +3621,7 @@
         } else {
           var cp=AH.list.filter(function(P){ return P.stores.length>=2; }).sort(function(a,b){ return (b.stores[b.stores.length-1].avg-b.stores[0].avg)-(a.stores[a.stores.length-1].avg-a.stores[0].avg); });
           chart+=cp.length ? cp.map(function(P){ var lo=P.stores[0], hi=P.stores[P.stores.length-1];
-              return line(P, '<span style="display:block">'+esc(lo.name)+' '+esc(fmtK(lo.avg))+' · '+esc(hi.name)+' '+esc(fmtK(hi.avg))+'</span>', '−'+fmtK(hi.avg-lo.avg)+'<small class="muted">/u</small>', 'var(--accent)'); }).join("")+'<div class="cch-note">Produits achetés dans au moins 2 magasins (12 mois) · prix moyen d\'une ligne · le plus gros écart en premier</div>'
+              return line(P, '<span style="display:block">moins cher chez <b style="color:var(--accent)">'+esc(lo.name)+'</b> '+esc(fmtK(lo.avg))+' · '+esc(hi.name)+' '+esc(fmtK(hi.avg))+'</span>', '+'+fmtK(hi.avg-lo.avg)+'<small class="muted" style="display:block;font-weight:500;text-align:right">par achat</small>', 'var(--coral)'); }).join("")+'<div class="cch-note">Même produit dans au moins 2 magasins (12 mois) · prix moyen payé par achat · écarts de plus de 50 % ignorés (quantités différentes)</div>'
                            : '<div class="cch-note" style="margin:24px 0">Rien à comparer : il faut un même produit acheté dans au moins deux magasins.</div>';
           var wins={}; cp.forEach(function(P){ wins[P.stores[0].name]=(wins[P.stores[0].name]||0)+1; }); var bestS=Object.keys(wins).sort(function(a,b){ return wins[b]-wins[a]; })[0];
           heroO={ label:"Moins cher ailleurs", big:AH.saveMonth, sub:"d'économie possible ce mois",
