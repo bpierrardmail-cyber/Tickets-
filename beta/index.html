@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 12:42" />
+  <meta name="build" content="22/10 12:53" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -3090,14 +3090,14 @@
     }
     function homeCarouselHTML(x){
       var cards=homeChartCards(); if(!cards.length) return ""; x=x||{}; cards.forEach(function(k){ if(k.tab==='analyse' && x.an) k.c.sub=x.an; });
-      var h='<div class="hcar-h">Mes graphiques<small>'+(cards.length>4?'glisse pour la suite':'touche pour ouvrir')+'</small></div>', pages=[];
-      // Pages de 4 petites cartes, comme les pages d'icônes du téléphone
+      var h='<div class="hcar-h">Mes graphiques<small>'+(cards.length>2?'glisse pour la suite':'touche pour ouvrir')+'</small></div>', pages=[];
+      // Pages de 2 petites cartes côte à côte : on glisse pour les suivantes
       cards.forEach(function(k,i){
         var wide=false;
         var t='<div class="hmini'+(wide?' wide':'')+' t-'+k.tab+'" data-go="'+k.tab+'"><div class="hm-t"><span>'+esc(k.name)+(k.c.mode?' · '+esc(k.c.mode)+(k.tab!=="bourse"?' <i>★</i>':''):'')+'</span><span class="o">›</span></div>'+
            (wide?'<div class="hm-s">'+esc(k.c.label)+'</div>':'<div class="hm-v">'+k.c.big+'</div><div class="hm-s">'+esc(k.c.sub||k.c.label)+'</div>')+'<div class="hm-ch">'+k.c.chart+'</div>'+
            ((k.c.stats||[]).length?'<div class="hm-st">'+k.c.stats.map(function(st){ return '<div><span>'+esc(st.l)+'</span><b style="'+esc(st.c||"")+'">'+esc(st.v)+(st.d?' <i>'+esc(st.d)+'</i>':'')+'</b></div>'; }).join("")+'</div>':'')+'</div>';
-        if(i%4===0) pages.push("");
+        if(i%2===0) pages.push("");
         pages[pages.length-1]+=t;
       });
       return h+pagerHTML("home", pages.map(function(p){ return '<div class="hgrid">'+p+'</div>'; }), { cls:"bleed14" });
