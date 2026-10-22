@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 07:12" />
+  <meta name="build" content="22/10 07:18" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -3472,7 +3472,7 @@
       state.draft={id:e.id,montant:e.montant,date:e.date,marchand:e.marchand,categorie:e.categorie,payePar:e.payePar||"",compte:e.compte||"",photo:photoOf(e),
         articles:(e.articles||[]).map(function(a){ return {label:a.label,prix:a.prix,produit:a.produit,commun:!!a.commun}; })};
       state.draftRO=!fyCanEdit(e);
-      state.formFrom=(state.view==="analyse" || state.view==="month") ? state.view : null;
+      state.formFrom=(state.view==="analyse" || state.view==="month" || state.view==="artDetail") ? state.view : null;
       state.view="form"; render();
     }
     function formBackView(){ var v=state.formFrom||"list"; state.formFrom=null; return v; }
@@ -3641,7 +3641,7 @@
       var apb=document.getElementById("artProdBtn"); if(apb) apb.onclick=function(ev){ ev.stopPropagation(); state.artProd=!artProdOn(); store.write("artProd", state.artProd); render(); };
       var afm=document.getElementById("artfam"); if(afm) afm.onclick=function(){ state.artSub="fam"; render(); window.scrollTo(0,0); };
       [].forEach.call(document.querySelectorAll(".dgrp .dgh"), function(hd){ hd.onclick=function(){ var g=hd.parentNode, k=g.getAttribute("data-g"); state.artOpen[k]=!state.artOpen[k]; g.classList.toggle("open", !!state.artOpen[k]); }; });
-      [].forEach.call(document.querySelectorAll(".artclk"), function(row){ row.onclick=function(){ state.artSel={ fam:row.getAttribute("data-fam"), name:row.getAttribute("data-name") }; state.view="artDetail"; render(); window.scrollTo(0,0); }; });
+      [].forEach.call(document.querySelectorAll(".artclk"), function(row){ row.onclick=function(){ state.artSel={ fam:row.getAttribute("data-fam"), name:row.getAttribute("data-name") }; state.artDetM=null; state.view="artDetail"; render(); window.scrollTo(0,0); }; });
       wireChartDefaults();
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.artChart=bt.getAttribute("data-m"); render(); }; });
       var ap=document.getElementById("artprod"); if(ap) ap.onclick=function(){ state.prodFrom="articles"; state.view="produits"; render(); window.scrollTo(0,0); };
@@ -3651,28 +3651,33 @@
     }
 
     function renderArtDetail(){
+      // Fiche produit : tous ses achats (anciens compris), regroupés par mois ; toucher une barre filtre sur ce mois
       var curM = monthKey(todayISO());
-      var month = (state.months&&state.months.articles)||curM;
       var sel = state.artSel || {};
-      function linesOf(m){
-        var rows=[], total=0;
-        vEntries().filter(function(e){ return monthKey(e.date)===m; }).forEach(function(e){
-          (e.articles||[]).forEach(function(a){ var c=classifyArticle(a); if(c.fam===sel.fam && c.name===sel.name){ rows.push({ id:e.id, marchand:e.marchand, date:e.date, label:(a.label||"").trim(), prix:c.amt }); total+=c.amt; } });
-        });
-        return { rows:rows, total:total };
-      }
-      var L=linesOf(month); L.rows.sort(function(a,b){ return String(b.date||"").localeCompare(String(a.date||"")); });
-      var ms=[], mk=month; for(var i=0;i<6;i++){ ms.unshift(mk); mk=prevMonthKey(mk); }
+      var rows=[]; vEntries().forEach(function(e){ (e.articles||[]).forEach(function(a){ var c=classifyArticle(a); if(c.fam===sel.fam && c.name===sel.name) rows.push({ id:e.id, marchand:e.marchand, date:e.date||"", m:monthKey(e.date), label:(a.label||"").trim(), prix:c.amt }); }); });
+      rows.sort(function(a,b){ return String(b.date).localeCompare(String(a.date)); });
+      var byM={}; rows.forEach(function(r){ byM[r.m]=(byM[r.m]||0)+r.prix; });
+      var ms=[], mk=curM; for(var i=0;i<12;i++){ ms.unshift(mk); mk=prevMonthKey(mk); }
+      var fm=state.artDetM && byM[state.artDetM]!=null ? state.artDetM : null;
+      var shown=fm ? rows.filter(function(r){ return r.m===fm; }) : rows;
+      var tot=0; shown.forEach(function(r){ tot+=r.prix; });
+      var last=rows[0];
       var h=header("articles");
-      h+=tabHero({ label:esc(sel.name||"")+' · '+esc(sel.fam||"")+' · '+esc(monthLabelOf(month)), big:L.total, sub:L.rows.length+" achat"+(L.rows.length>1?"s":"")+(L.rows.length?" · "+fmtK(L.total/L.rows.length)+" en moyenne":""),
-        extra:'<div class="cch" style="margin-top:12px">'+artAvgBars(trimLead(ms.map(function(m){ return { m:m, lbl:artMShort(m), v:linesOf(m).total }; }), function(r){ return r.v; }), month)+'<div class="cch-note">Ce que ce produit t\'a coûté, sur 6 mois au plus</div></div>' });
-      h+='<div class="bsec-h">Achats du mois<small>touche pour ouvrir le ticket</small></div><section class="paper cacc" style="padding:2px 14px 6px">';
-      if(!L.rows.length) h+='<div class="muted" style="font-size:12px;margin:12px 2px">Aucun achat de ce produit ce mois-ci.</div>';
-      L.rows.forEach(function(r){ var dd=(r.date||"").split("-"); h+='<div class="entry ecomp" data-id="'+esc(r.id)+'"><span class="n">'+esc(r.label||sel.name||"—")+'<small>'+esc(r.marchand||"")+'</small></span><span class="d">'+esc(dd.length===3?dd[2]+"/"+dd[1]:"")+'</span><span class="a">'+fmtK(r.prix)+'</span></div>'; });
+      h+=tabHero({ label:esc(sel.name||"")+' · '+esc(sel.fam||"")+(fm?' · '+esc(monthLabelOf(fm)):' · tous les achats'), big:tot,
+        sub:shown.length+" achat"+(shown.length>1?"s":"")+(shown.length?" · "+fmtK(tot/shown.length)+" en moyenne":"")+(last&&!fm?" · dernier "+fmtK(last.prix)+" chez "+esc(last.marchand||"?"):""),
+        extra:'<div class="cch" style="margin-top:12px">'+artAvgBars(trimLead(ms.map(function(m){ return { m:m, lbl:artMShort(m), v:byM[m]||0 }; }), function(r){ return r.v; }), fm||curM)+'<div class="cch-note">Ce que ce produit t\'a coûté par mois, sur 12 mois au plus · touche une barre pour ce mois</div></div>' });
+      h+='<div class="bsec-h">'+(fm?'Achats de '+esc(monthLabelOf(fm)):'Tous les achats')+'<small>'+(fm?'<a href="#" id="artDetAll" style="color:var(--accent)">tout afficher</a>':'touche pour ouvrir le ticket')+'</small></div><section class="paper cacc" style="padding:2px 14px 6px">';
+      if(!shown.length) h+='<div class="muted" style="font-size:12px;margin:12px 2px">Aucun achat de ce produit.</div>';
+      var curMo="";
+      shown.forEach(function(r){ var dd=r.date.split("-");
+        if(!fm && r.m!==curMo){ curMo=r.m; h+='<div class="dsub" style="display:flex;justify-content:space-between;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:12px 2px 4px"><span>'+esc(monthLabelOf(r.m))+'</span><span>'+fmtK(byM[r.m])+'</span></div>'; }
+        h+='<div class="entry ecomp" data-id="'+esc(r.id)+'"><span class="n">'+esc(r.label||sel.name||"—")+'<small>'+esc(r.marchand||"")+'</small></span><span class="d">'+esc(dd.length===3?dd[2]+"/"+dd[1]+"/"+dd[0].slice(2):"")+'</span><span class="a">'+fmtK(r.prix)+'</span></div>'; });
       h+='</section>';
       app.innerHTML=h;
-      bindBack(function(){ state.view=state.artFrom||"articles"; state.artFrom=null; render(); window.scrollTo(0,0); });
-      [].forEach.call(document.querySelectorAll(".entry"), function(node){ node.onclick=function(){ editEntry(node.getAttribute("data-id")); }; });
+      bindBack(function(){ state.artDetM=null; state.view=state.artFrom||"articles"; state.artFrom=null; render(); window.scrollTo(0,0); });
+      [].forEach.call(document.querySelectorAll(".entry[data-id]"), function(node){ node.onclick=function(){ editEntry(node.getAttribute("data-id")); }; });
+      [].forEach.call(document.querySelectorAll(".barhit"), function(b){ b.style.cursor="pointer"; b.addEventListener("click", function(){ var m=b.getAttribute("data-m"); state.artDetM=(state.artDetM===m?null:m); render(); }); });
+      var ada=document.getElementById("artDetAll"); if(ada) ada.onclick=function(ev){ ev.preventDefault(); state.artDetM=null; render(); };
       setNav("articles", true);
     }
 
