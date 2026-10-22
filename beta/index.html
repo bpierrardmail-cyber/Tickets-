@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 12:27" />
+  <meta name="build" content="22/10 12:42" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -577,7 +577,8 @@
     .hmini:not(.wide) .bch-read .bch-badge{ font-size:10px; padding:2px 7px; }
     .hmini:not(.wide) .bch-read .bch-cap{ display:none; }
 
-    .hmini:not(.wide) .bch-plot{ height:62px; margin:0; }
+    .hmini:not(.wide) .bch-plot{ height:72px !important; margin:0; }   /* la hauteur écrite dans la page Bourse ne s'applique pas ici */
+    .hmini:not(.wide) .bch-plot svg{ height:100% !important; }
     .hmini:not(.wide) .crep{ margin:0; } .hmini:not(.wide) .crep-r{ margin:0 0 7px; } .hmini:not(.wide) .crep-h{ font-size:10.5px; margin-bottom:3px; } .hmini:not(.wide) .crep-h small{ display:none; } .hmini:not(.wide) .crep-b{ height:9px; }
     .hmini:not(.wide) .atop-r{ margin:0 0 5px; } .hmini:not(.wide) .atop-r:nth-of-type(n+4){ display:none; } .hmini:not(.wide) .atop-h{ font-size:10.5px; margin-bottom:2px; } .hmini:not(.wide) .atop-h small{ display:none; } .hmini:not(.wide) .atop-b{ height:4px; }
     /* Pages à glisser (comme les bureaux du téléphone) : puces jusqu'à 6 pages, « 2 / 11 » au-delà */
