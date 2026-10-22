@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 11:08" />
+  <meta name="build" content="22/10 11:29" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4265,7 +4265,7 @@
       function row(key, nom, amt, col, main){ return '<button type="button" class="ap-row'+(key===sel?' on':'')+'" data-acct="'+esc(key)+'"><i style="background:'+col+'"></i><span>'+esc(nom)+(main?' <em>★</em>':'')+'</span><b'+(amt<0?' class="neg"':'')+'>'+fmtS(amt)+'</b></button>'; }
       var pages=[], start=0, nPers=order.filter(function(o){ return o!=="__shared"; }).length, epBy={}, prBy={}, epAll=0, prAll=0;
       epargne.forEach(function(c){ var o=ownerOf(c), v=epAt(c, month); epBy[o]=(epBy[o]||0)+v; epAll+=v; });
-      provisions.forEach(function(p){ var o=ownerOf(p), v=0; try{ v=provBalance(p, month); }catch(e){} prBy[o]=(prBy[o]||0)+v; prAll+=v; });
+      provisions.forEach(function(p){ var o=ownerOf(p), v=0; try{ v=provTotalAt(month, function(x){ return x===p; }); }catch(e){} prBy[o]=(prBy[o]||0)+v; prAll+=v; });
       function extra(ep, pr){ return (ep?' · épargne '+cptK(ep)+' '+curSym():'')+(pr?' · provisions '+cptK(pr)+' '+curSym():''); }
       order.forEach(function(o, idx){ var L=groups[o], tot=0; L.forEach(function(a){ tot+=figs[a.key]; if(a.key===sel) start=idx; });
         pages.push('<div class="ap-h"><span>'+(o==="__shared"?"Comptes partagés":esc(o)+(o===me?'<small>toi</small>':''))+'</span><b>'+fmtS(tot)+'</b></div><div class="ap-sub">'+L.length+' compte'+(L.length>1?'s':'')+extra(epBy[o==="__shared"?"Commun":o], prBy[o==="__shared"?"Commun":o])+'</div>'+
@@ -4306,7 +4306,7 @@
       [].forEach.call(document.querySelectorAll(".allGo"), function(r){ r.onclick=function(){ var k=r.getAttribute("data-acct"), pg=r.getAttribute("data-page");
         state.compteSel=k; store.write("compteSel", k);
         if(pg){ state.cptPage=pg; state.view="comptedet"; state.cptFromAll=true; } render(); window.scrollTo(0,0); }; });
-      var gp=document.getElementById("goprov"); if(gp) gp.onclick=function(){ state.view="provisions"; render(); window.scrollTo(0,0); };
+      var gp=document.getElementById("goprov"); if(gp) gp.onclick=function(){ if(!state.months) state.months={}; state.months.provisions=(month===curM?null:month); state.view="provisions"; render(); window.scrollTo(0,0); };
       if(!state.months) state.months={};
       var cmp=document.getElementById("cm-prev"); if(cmp) cmp.onclick=function(){ state.months.compte=prevMonthKey(month); render(); };
       var cmn=document.getElementById("cm-next"); if(cmn) cmn.onclick=function(){ var nx=nextMonthKey(month); state.months.compte=(nx===curM?null:nx); render(); };
@@ -4610,7 +4610,8 @@
       if(!page){
         [].forEach.call(document.querySelectorAll(".thero .wfhit"), function(b){ b.addEventListener("click", function(){ var k=b.getAttribute("data-k"); if(k==="report"){ openReport(); return; } state.cptFromCfg=false; state.cptPage=k; state.view="comptedet"; render(); window.scrollTo(0,0); }); });
         [].forEach.call(document.querySelectorAll(".thero .dseg, .thero .cdon-r"), function(b){ b.style.cursor="pointer"; b.addEventListener("click", function(){ state.cptFromCfg=false; state.cptPage="dep"; state.view="comptedet"; render(); window.scrollTo(0,0); }); });
-        [].forEach.call(document.querySelectorAll(".thero .barhit"), function(b){ b.style.cursor="pointer"; b.addEventListener("click", function(){ var m=b.getAttribute("data-m"); if(!state.months) state.months={}; state.months.compte=(m===curM?null:m); render(); }); });
+        [].forEach.call(document.querySelectorAll(".thero .barhit"), function(b){ b.style.cursor="pointer"; b.addEventListener("click", function(){ var m=b.getAttribute("data-m"); if(!state.months) state.months={}; if(cmode==="prov"){ state.months.provisions=(m===curM?null:m); state.view="provisions"; render(); window.scrollTo(0,0); return; }   // provisions : ouvre la page du mois touché
+          state.months.compte=(m===curM?null:m); render(); }); });
       }
       function openReport(){
         var auto=soldeFlow(person, prevMonthKey(month)).closing;
@@ -4630,7 +4631,7 @@
       [].forEach.call(document.querySelectorAll(".eplink"), function(b){ b.onclick=function(){ toggleEpargneLink(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".epedit"), function(b){ b.onclick=function(){ editEpargne(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".epdel"), function(b){ b.onclick=function(){ delEpargne(b.getAttribute("data-id")); }; });
-      var gprov=document.getElementById("goprov"); if(gprov) gprov.onclick=function(){ state.view="provisions"; render(); window.scrollTo(0,0); };
+      var gprov=document.getElementById("goprov"); if(gprov) gprov.onclick=function(){ if(!state.months) state.months={}; state.months.provisions=(month===curM?null:month); state.view="provisions"; render(); window.scrollTo(0,0); };
       var cfr=document.getElementById("cptFrais"); if(cfr) cfr.onclick=function(){ state.view="communes"; render(); window.scrollTo(0,0); };
       var cOn=document.querySelector(".cch-tabs button.on"); if(cOn && cOn.parentNode){ var tb=cOn.parentNode; tb.scrollLeft=Math.max(0, cOn.offsetLeft-(tb.clientWidth-cOn.offsetWidth)/2); }
       if(!page) [].forEach.call(document.querySelectorAll(".thero .hstat"), function(t,i){ var g=(heroMain.stats[i]||{}).go; if(!g) return; t.style.cursor="pointer"; t.onclick=function(){ state.cptPage=g; state.view="comptedet"; render(); window.scrollTo(0,0); }; });
