@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 10:40" />
+  <meta name="build" content="22/10 10:49" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -3627,9 +3627,9 @@
         } else if(mode==="fam"){
           // Familles : camembert du mois
           var pos=D.famKeys.filter(function(f){ return D.fams[f].total>0; }), pt=pos.reduce(function(t,f){ return t+D.fams[f].total; },0);
-          chart+='<div class="cdon cdon-big">'+compteDonutSVG(pos.map(function(f){ return { v:D.fams[f].total, col:col[f] }; }), pt).replace("dépensés","d'articles")+'<div class="cdon-l">'+
-            pos.map(function(f){ return '<div class="cdon-r"><i class="cdot" style="background:'+col[f]+';margin:0"></i><span class="n">'+esc(f)+'</span><span class="p">'+Math.round(D.fams[f].total/(pt||1)*100)+' %</span><span class="a">'+cptK(D.fams[f].total)+'</span></div>'; }).join("")+'</div></div>';
-          chart+='<div class="cch-note">Répartition des articles du mois par famille · le détail est dans « Par famille »</div>';
+          chart+='<div class="cdon cdon-big">'+compteDonutSVG(pos.map(function(f){ return { v:D.fams[f].total, col:col[f], k:f }; }), pt).replace("dépensés","d'articles")+'<div class="cdon-l">'+
+            pos.map(function(f){ return '<div class="cdon-r" data-k="'+esc(f)+'" style="cursor:pointer"><i class="cdot" style="background:'+col[f]+';margin:0"></i><span class="n">'+esc(f)+'</span><span class="p">'+Math.round(D.fams[f].total/(pt||1)*100)+' %</span><span class="a">'+cptK(D.fams[f].total)+'</span></div>'; }).join("")+'</div></div>';
+          chart+='<div class="cch-note">Répartition des articles du mois par famille · touche une famille pour son détail</div>';
           heroO={ label:"Familles du mois", big:D.grand, sub:D.nArt+" article"+(D.nArt>1?"s":"")+" · "+pos.length+" famille"+(pos.length>1?"s":""),
             stats:[ {l:"Le plus acheté", v:(D.most?esc(D.most.name):"—"), d:(D.most?"×"+D.most.n:"")}, {l:"Le plus cher", v:(D.top?esc(D.top.name):"—"), d:(D.top?fmtS(D.top.amt):"")}, {l:"Prix moyen", v:fmtS(D.nArt?D.grand/D.nArt:0), d:"par article"} ] };
         } else {
@@ -3637,7 +3637,7 @@
           var SM=AH.storesMonth, sl2=Object.keys(SM).map(function(k){ return SM[k]; }).sort(function(a,b){ return b.sum-a.sum; }), smT=0, smN=0, smMax=sl2.length?sl2[0].sum:1;
           sl2.forEach(function(x){ smT+=x.sum; smN+=x.nT; });
           chart+=sl2.length ? sl2.map(function(x, ix){ var pc=Math.max(2, Math.round(x.sum/smMax*100));
-              return '<div class="bar-row" style="margin:10px 2px"><div class="bar-top"><span class="bl">'+esc(x.name)+' <small class="muted">'+x.nT+' passage'+(x.nT>1?'s':'')+' · '+x.nA+' article'+(x.nA>1?'s':'')+'</small></span><span class="bv">'+fmtK(x.sum)+' <small class="muted">'+Math.round(x.sum/(smT||1)*100)+' %</small></span></div><div class="bar-track"><i style="width:'+pc+'%;background:'+["#7c9cf4","#e0a458","#4fd6a0","#c78bd6","#5bc0d4","#e88fb0","#9bd35e","#d4a05b"][ix%8]+'"></i></div></div>'; }).join("")+'<div class="cch-note">Montant des articles achetés dans chaque magasin ce mois-ci</div>'
+              return '<div class="bar-row magrow" data-s="'+esc(x.name)+'" style="margin:10px 2px;cursor:pointer"><div class="bar-top"><span class="bl">'+esc(x.name)+' <small class="muted">'+x.nT+' passage'+(x.nT>1?'s':'')+' · '+x.nA+' article'+(x.nA>1?'s':'')+'</small></span><span class="bv">'+fmtK(x.sum)+' <small class="muted">'+Math.round(x.sum/(smT||1)*100)+' %</small></span></div><div class="bar-track"><i style="width:'+pc+'%;background:'+["#7c9cf4","#e0a458","#4fd6a0","#c78bd6","#5bc0d4","#e88fb0","#9bd35e","#d4a05b"][ix%8]+'"></i></div></div>'; }).join("")+'<div class="cch-note">Montant des articles achetés dans chaque magasin ce mois-ci · touche un magasin pour ses passages</div>'
                             : '<div class="cch-note" style="margin:24px 0">Aucun article ce mois-ci.</div>';
           var top2=sl2.slice().sort(function(a,b){ return b.nT-a.nT; })[0];
           heroO={ label:"Magasins du mois", big:smT, sub:sl2.length+" magasin"+(sl2.length>1?"s":"")+" · "+smN+" passage"+(smN>1?"s":""),
@@ -3687,6 +3687,9 @@
       var arOn=document.querySelector(".thero .cch-tabs button.on"); if(arOn && arOn.parentNode){ var artb=arOn.parentNode; artb.scrollLeft=Math.max(0, arOn.offsetLeft-(artb.clientWidth-arOn.offsetWidth)/2); }
       var apb=document.getElementById("artProdBtn"); if(apb) apb.onclick=function(ev){ ev.stopPropagation(); state.artProd=!artProdOn(); store.write("artProd", state.artProd); render(); };
       var afm=document.getElementById("artfam"); if(afm) afm.onclick=function(){ state.artSub=afm.getAttribute("data-sub"); render(); window.scrollTo(0,0); };
+      // graphiques touchables : un magasin → Par magasin (déplié) ; une famille → Par famille (dépliée)
+      [].forEach.call(document.querySelectorAll(".thero .magrow"), function(r){ r.onclick=function(){ state.magOpen={}; state.magOpen[r.getAttribute("data-s")]=true; state.artSub="mags"; render(); window.scrollTo(0,0); }; });
+      [].forEach.call(document.querySelectorAll(".thero .dseg, .thero .cdon-r[data-k]"), function(b){ b.style.cursor="pointer"; b.addEventListener("click", function(){ state.artOpen={}; state.artOpen[b.getAttribute("data-k")]=true; state.artSub="fam"; render(); window.scrollTo(0,0); }); });
       [].forEach.call(document.querySelectorAll(".entry[data-id]"), function(n){ n.onclick=function(){ editEntry(n.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".dgrp .dgh"), function(hd){ hd.onclick=function(){ var g=hd.parentNode, k=g.getAttribute("data-g"), O=(g.getAttribute("data-k")==="mag") ? (state.magOpen||(state.magOpen={})) : (state.artOpen||(state.artOpen={})); O[k]=!O[k]; g.classList.toggle("open", !!O[k]); }; });
       [].forEach.call(document.querySelectorAll(".artclk"), function(row){ row.onclick=function(){ state.artSel={ fam:row.getAttribute("data-fam"), name:row.getAttribute("data-name") }; state.artDetM=null; state.view="artDetail"; render(); window.scrollTo(0,0); }; });
@@ -3930,7 +3933,7 @@
         function repVals(p){ var a=[[persoOf(p),COLP],[communShareOf(p),COLC],[prodV*pctOf(p)/100,COLR]].filter(function(x){ return x[0]>0.004; });
           return a.length?'<div class="crep-v">'+a.map(function(x){ return '<span><i style="background:'+x[1]+'"></i>'+fmtK(x[0])+'</span>'; }).join("")+'</div>':''; }
         function repRow(p){ var pc=effPct(p);
-          return '<div class="crep-r"'+(cw && p!==cw?' style="opacity:.5"':'')+'><div class="crep-h"><span>'+esc(p)+(p===me?' <small>toi</small>':'')+'<small class="pc">'+pctTxt(pc)+'</small></span>'+(p===me?'':'<b>'+fmtK(partOf(p))+'</b>')+'</div><div class="crep-b">'+seg(persoOf(p),COLP)+seg(communShareOf(p),COLC)+seg(prodV*pctOf(p)/100,COLR)+'</div>'+repVals(p)+'</div>'; }
+          return '<div class="crep-r" data-p="'+esc(p)+'" style="cursor:pointer;'+(cw && p!==cw?'opacity:.5':'')+'"><div class="crep-h"><span>'+esc(p)+(p===me?' <small>toi</small>':'')+'<small class="pc">'+pctTxt(pc)+'</small></span>'+(p===me?'':'<b>'+fmtK(partOf(p))+'</b>')+'</div><div class="crep-b">'+seg(persoOf(p),COLP)+seg(communShareOf(p),COLC)+seg(prodV*pctOf(p)/100,COLR)+'</div>'+repVals(p)+'</div>'; }
         var rPages=[]; for(var rk=0; rk<rp.length; rk+=5) rPages.push('<div class="crep">'+rp.slice(rk, rk+5).map(repRow).join("")+'</div>');
         chart+='<div class="crep-full">'+(rp.length>5?'<div class="crep-tot">'+rp.length+' personnes · total '+fmtK(D.fraisTot+prodV)+'</div>':'')+pagerHTML("comRep", rPages, { cls:"bleed18" })+'</div>';
         // Petite carte de l'Accueil : toi, les 2 plus grosses parts, puis « + N autres »
@@ -3939,11 +3942,11 @@
         chart+='<div class="cch-leg leg1"><span><i style="background:'+COLP+'"></i>Frais perso</span><span><i style="background:'+COLC+'"></i>Frais communs</span><span><i style="background:'+COLR+'"></i>Produits partagés</span></div>';
       } else if(cm==="postes"){
         var DCOL=["#7c9cf4","#5bc0d4","#c78bd6","#e88fb0","#9bd35e","#4fd6a0"], parts=[];
-        (D.byP.Commun?D.byP.Commun.items:[]).forEach(function(f){ parts.push({ l:f.label, v:fraisMontant(f, month) }); });
+        (D.byP.Commun?D.byP.Commun.items:[]).forEach(function(f){ parts.push({ l:f.label, v:fraisMontant(f, month), k:"frais" }); });
         parts.sort(function(a,b){ return b.v-a.v; }).forEach(function(x,i){ x.col=DCOL[i%DCOL.length]; });
-        if(prodV>0) parts.push({ l:"Produits partagés", v:prodV, col:COLR });
+        if(prodV>0) parts.push({ l:"Produits partagés", v:prodV, col:COLR, k:"prod" });
         var tot=D.commun+prodV;
-        if(tot>0) chart+='<div class="cdon cdon-big">'+compteDonutSVG(parts, tot).replace("dépensés","en commun")+'<div class="cdon-l">'+parts.map(function(x){ return '<div class="cdon-r"><i class="cdot" style="background:'+x.col+';margin:0"></i><span class="n">'+esc(x.l)+'</span><span class="p">'+Math.round(x.v/tot*100)+' %</span><span class="a">'+cptK(x.v)+'</span></div>'; }).join("")+'</div></div>';
+        if(tot>0) chart+='<div class="cdon cdon-big">'+compteDonutSVG(parts, tot).replace("dépensés","en commun")+'<div class="cdon-l">'+parts.map(function(x){ return '<div class="cdon-r" data-k="'+x.k+'"><i class="cdot" style="background:'+x.col+';margin:0"></i><span class="n">'+esc(x.l)+'</span><span class="p">'+Math.round(x.v/tot*100)+' %</span><span class="a">'+cptK(x.v)+'</span></div>'; }).join("")+'</div></div>';
         else chart+='<div class="cch-note" style="margin:30px 0">Rien en commun ce mois-ci.</div>';
       } else {
         var six=[], mk=month; for(var i=0;i<6;i++){ six.unshift(mk); mk=prevMonthKey(mk); }
@@ -3953,6 +3956,7 @@
           if(hc>0) g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(y0-hc).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hc.toFixed(1)+'" rx="3" style="fill:'+COLC+';opacity:'+op+'"/>';
           if(hp>0) g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(y0-hc-hp-(hc>0?2:0)).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hp.toFixed(1)+'" rx="3" style="fill:'+COLR+';opacity:'+op+'"/>';
           if(r.c+r.p>0) g+='<text x="'+cx.toFixed(1)+'" y="'+(y0-hc-hp-(hc>0&&hp>0?2:0)-5).toFixed(1)+'" text-anchor="middle" style="fill:var(--ink-soft);font-size:10.5px;font-weight:600;font-family:var(--sans)">'+cptK(r.c+r.p)+'</text>';
+          g+='<rect class="barhit" data-m="'+esc(r.m)+'" x="'+(slot*i).toFixed(1)+'" y="0" width="'+slot.toFixed(1)+'" height="'+H+'" style="fill:transparent;cursor:pointer"/>';
           g+='<text x="'+cx.toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" style="fill:'+(on?'var(--ink)':'var(--muted)')+';font-size:10px;font-weight:'+(on?700:400)+';font-family:var(--sans)">'+esc(mShort(r.m))+'</text>'; });
         chart+='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Dépenses communes sur 6 mois">'+g+'</svg>';
         chart+='<div class="cch-leg"><span><i style="background:'+COLC+'"></i>Frais communs</span><span><i style="background:'+COLR+'"></i>Produits partagés</span></div>';
@@ -4030,6 +4034,12 @@
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.comChart=bt.getAttribute("data-m"); store.write("comChart", state.comChart); render(); }; });
       var cOn=document.querySelector(".cch-tabs button.on"); if(cOn && cOn.parentNode){ var tb=cOn.parentNode; tb.scrollLeft=Math.max(0, cOn.offsetLeft-(tb.clientWidth-cOn.offsetWidth)/2); }
       var af=document.getElementById("addfrais"); if(af) af.onclick=addFraisCommun;
+      // graphiques touchables : une personne → la choisir en haut ; un poste → sa page ; une colonne → ce mois
+      if(!cSub){
+        [].forEach.call(document.querySelectorAll(".thero .crep-full .crep-r[data-p]"), function(r){ r.addEventListener("click", function(){ var p=r.getAttribute("data-p"); state.personView=(p===me?"moi":p); store.write("personView", state.personView); render(); }); });
+        [].forEach.call(document.querySelectorAll(".thero .dseg, .thero .cdon-r[data-k]"), function(b){ b.style.cursor="pointer"; b.addEventListener("click", function(){ state.comSub=b.getAttribute("data-k")==="prod"?"prod":"frais"; render(); window.scrollTo(0,0); }); });
+        [].forEach.call(document.querySelectorAll(".thero .barhit"), function(b){ b.addEventListener("click", function(){ var m=b.getAttribute("data-m"); if(!state.months) state.months={}; state.months.communes=(m===curM?null:m); render(); }); });
+      }
       var cpbt=document.getElementById("comProdBtn"); if(cpbt) cpbt.onclick=function(ev){ ev.stopPropagation(); state.comProd=!prodOn; store.write("comProd", state.comProd); render(); };
       var cpb=document.getElementById("comParts"); if(cpb) cpb.onclick=function(){ openCommunParts({ ppl:ppl, me:me, pct:pctOf, perso:persoOf, pot:D.commun+D.prod }); };
       [].forEach.call(document.querySelectorAll(".fxdone"), function(b){ b.onclick=function(){ toggleFraisDone(b.getAttribute("data-id"), month); }; });
@@ -4107,10 +4117,12 @@
       function y(v){ return top+(hi-v)/(hi-lo)*ph; }
       var n=steps.length, slot=W/n, bw=Math.min(34, slot*0.62), g='';
       if(lo<0) g+='<line x1="0" x2="'+W+'" y1="'+y(0).toFixed(1)+'" y2="'+y(0).toFixed(1)+'" style="stroke:var(--line2);stroke-width:1"/>';
+      var slotW=W/Math.max(1,steps.length);
       steps.forEach(function(st,i){
         var cx=slot*i+slot/2, y1=y(Math.max(st.a,st.b)), y2=y(Math.min(st.a,st.b)), hgt=Math.max(2,y2-y1);
         var col = st.t==="base" ? "#8a92a6" : (st.t==="end" ? (st.v<0?"var(--coral)":"var(--accent)") : (st.v<0?"var(--coral)":"var(--accent)"));
         g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+y1.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hgt.toFixed(1)+'" rx="4" style="fill:'+col+';opacity:'+(st.t==="end"?1:0.88)+'"/>';
+        if(st.k) g+='<rect class="wfhit" data-k="'+esc(st.k)+'" x="'+(cx-slotW/2).toFixed(1)+'" y="0" width="'+slotW.toFixed(1)+'" height="'+H+'" style="fill:transparent;cursor:pointer"/>';
         if(i<n-1){ var nx=slot*(i+1)+slot/2-bw/2, yy=y(st.b).toFixed(1); g+='<line x1="'+(cx+bw/2).toFixed(1)+'" x2="'+nx.toFixed(1)+'" y1="'+yy+'" y2="'+yy+'" style="stroke:var(--muted);stroke-width:1;stroke-dasharray:2 3"/>'; }
         var lbl=(st.t||st.v<0?"":"+")+cptK(st.v), ly=y1-5;
         g+='<text x="'+cx.toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="middle" style="fill:'+(st.t==="end"?"var(--ink)":"var(--ink-soft)")+';font-size:10.5px;font-weight:'+(st.t==="end"?700:600)+';font-family:var(--sans)">'+lbl+'</text>';
@@ -4130,6 +4142,7 @@
         var cx=slot*i+slot/2, z=y(0);
         g+='<rect x="'+(cx-bw-1.5).toFixed(1)+'" y="'+y(r.inn).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(1,z-y(r.inn)).toFixed(1)+'" rx="3" style="fill:var(--accent);opacity:.85"/>';
         g+='<rect x="'+(cx+1.5).toFixed(1)+'" y="'+y(r.out).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(1,z-y(r.out)).toFixed(1)+'" rx="3" style="fill:var(--coral);opacity:.85"/>';
+        if(r.m) g+='<rect class="barhit" data-m="'+esc(r.m)+'" x="'+(cx-slot/2).toFixed(1)+'" y="0" width="'+slot.toFixed(1)+'" height="'+H+'" style="fill:transparent"/>';
         line.push(cx.toFixed(1)+','+y(r.sol).toFixed(1));
         g+='<text x="'+cx.toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" style="fill:'+(r.m===sel?"var(--ink)":"var(--muted)")+';font-size:10px;font-weight:'+(r.m===sel?700:400)+';font-family:var(--sans)">'+esc(r.lbl)+'</text>';
       });
@@ -4140,7 +4153,7 @@
       var R=46, C=2*Math.PI*R, off=0, g='', gap=parts.length>1?1.5:0;
       g+='<circle cx="60" cy="60" r="'+R+'" style="fill:none;stroke:var(--card2);stroke-width:18"/>';
       parts.forEach(function(p){ var L=total>0?p.v/total*C:0, seg=Math.max(0,L-gap);
-        g+='<circle cx="60" cy="60" r="'+R+'" transform="rotate(-90 60 60)" style="fill:none;stroke:'+p.col+';stroke-width:18;stroke-dasharray:'+seg.toFixed(2)+' '+(C-seg).toFixed(2)+';stroke-dashoffset:'+(-off).toFixed(2)+'"/>';
+        g+='<circle cx="60" cy="60" r="'+R+'" transform="rotate(-90 60 60)" style="fill:none;stroke:'+p.col+';stroke-width:18;stroke-dasharray:'+seg.toFixed(2)+' '+(C-seg).toFixed(2)+';stroke-dashoffset:'+(-off).toFixed(2)+(p.k!=null?';cursor:pointer':'')+'"'+(p.k!=null?' class="dseg" data-k="'+esc(p.k)+'"':'')+'/>';
         off+=L; });
       g+='<text x="60" y="58" text-anchor="middle" style="fill:var(--ink);font-size:16px;font-weight:700;font-family:var(--sans)">'+cptK(total)+'</text>';
       g+='<text x="60" y="74" text-anchor="middle" style="fill:var(--muted);font-size:10px;font-family:var(--sans)">'+esc(curSym())+' dépensés</text>';
@@ -4186,6 +4199,7 @@
       g+='<polyline points="'+line+'" style="fill:none;stroke:'+color+';stroke-width:2.2;stroke-linejoin:round"/>';
       rows.forEach(function(r,i){ var on=(r.m===sel), cx=pts[i][0], cy=pts[i][1];
         g+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+(on?4.5:(n>8?2:3))+'" style="fill:'+(on?color:"var(--card)")+';stroke:'+color+';stroke-width:2"/>';
+        if(r.m) g+='<rect class="barhit" data-m="'+esc(r.m)+'" x="'+(cx-step/2).toFixed(1)+'" y="0" width="'+step.toFixed(1)+'" height="'+H+'" style="fill:transparent"/>';
         if(th.val(i)) g+='<text x="'+cx.toFixed(1)+'" y="'+(cy-9).toFixed(1)+'" text-anchor="middle" style="fill:'+(on?"var(--ink)":"var(--ink-soft)")+';font-size:10px;font-weight:'+(on?700:500)+';font-family:var(--sans)">'+cptK(r.v)+'</text>';
         g+='<text x="'+cx.toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" style="fill:'+(on?"var(--ink)":"var(--muted)")+';font-size:10px;font-weight:'+(on?700:400)+';font-family:var(--sans)">'+esc(th.lbl(i))+'</text>';
       });
@@ -4359,6 +4373,7 @@
       if(dParts.length>5){ var rest=dParts.slice(4).reduce(function(t,x){ return t+x.v; },0); dParts=dParts.slice(0,4).concat([{ l:"Autres tickets", v:rest }]); }
       if(fraisPerso>0) dParts.push({ l:"Frais fixes perso", v:fraisPerso });
       if(fraisCommun>0) dParts.push({ l:"Frais fixes communs", v:fraisCommun });
+      dParts.forEach(function(x){ x.k="dep"; });   // une part touchée → page Dépenses
       var DCOL=["#7c9cf4","#e0a458","#4fd6a0","#c78bd6","#5bc0d4","#e88fb0","#9bd35e","#f4796b"];
       dParts.sort(function(x,y){ return y.v-x.v; }).forEach(function(x,i){ x.col=DCOL[i%DCOL.length]; });
       var cmode=state.cptChart||store.read("cptChartDef","mois"); if(cmode==="6m") cmode="es";
@@ -4385,14 +4400,14 @@
 
       var hero={ label:(multi?esc(acct.nom):"Solde du compte")+" (banque estimée)", big:soldeBanque, color:(soldeBanque<0?"var(--coral)":"var(--ink)"), sub:"Estimé, sans le liquide" };
       if(cmode==="mois"){
-        var steps=[{l:"Report", v:reporte, t:"base"}];
-        if(virIn) steps.push({l:"Reçu", v:virIn});
-        if(virOut) steps.push({l:"Envoyé", v:virOut});
-        if(paidTotal) steps.push({l:"Tickets", v:-paidTotal});
-        if(fraisTotal) steps.push({l:"Frais fixes", v:-fraisTotal});
-        if(liqV) steps.push({l:"Liquide", v:liqV});
-        steps.push({l:"Solde", v:soldeFin, t:"end"});
-        chart+=compteWaterfallSVG(steps);
+        var steps=[{l:"Report", v:reporte, t:"base", k:"report"}];
+        if(virIn) steps.push({l:"Reçu", v:virIn, k:"es"});
+        if(virOut) steps.push({l:"Envoyé", v:virOut, k:"es"});
+        if(paidTotal) steps.push({l:"Tickets", v:-paidTotal, k:"dep"});
+        if(fraisTotal) steps.push({l:"Frais fixes", v:-fraisTotal, k:"dep"});
+        if(liqV) steps.push({l:"Liquide", v:liqV, k:"res"});
+        steps.push({l:"Solde", v:soldeFin, t:"end", k:"res"});
+        chart+=compteWaterfallSVG(steps)+'<div class="cch-note">Touche une barre pour son détail</div>';
       } else if(cmode==="dep"){
         hero={ label:"Dépenses du mois", big:depenses, color:"var(--coral)", sub:"Tickets "+fmtK(paidTotal)+" · Frais fixes "+fmtK(fraisTotal) };
         if(depenses>0) chart+='<div class="cdon cdon-big">'+compteDonutSVG(dParts, depenses)+'<div class="cdon-l">'+dParts.map(function(x){ return '<div class="cdon-r"><i class="cdot" style="background:'+x.col+';margin:0"></i><span class="n">'+esc(x.l)+'</span><span class="p">'+Math.round(x.v/depenses*100)+' %</span><span class="a">'+cptK(x.v)+' '+esc(curSym())+'</span></div>'; }).join("")+'</div></div>';
@@ -4558,13 +4573,20 @@
         h+=tabHero(ph)+'<section class="paper cacc cpage"><div class="cacc-b">'+pb+'</div></section>';
       }
       app.innerHTML=h;
-      var rr=document.getElementById("reporterow"); if(rr) rr.onclick=function(){
+      // graphiques touchables : cascade → page concernée (Report → solde reporté), camembert → Dépenses, colonnes / points → ce mois
+      if(!page){
+        [].forEach.call(document.querySelectorAll(".thero .wfhit"), function(b){ b.addEventListener("click", function(){ var k=b.getAttribute("data-k"); if(k==="report"){ openReport(); return; } state.cptFromCfg=false; state.cptPage=k; state.view="comptedet"; render(); window.scrollTo(0,0); }); });
+        [].forEach.call(document.querySelectorAll(".thero .dseg, .thero .cdon-r"), function(b){ b.style.cursor="pointer"; b.addEventListener("click", function(){ state.cptFromCfg=false; state.cptPage="dep"; state.view="comptedet"; render(); window.scrollTo(0,0); }); });
+        [].forEach.call(document.querySelectorAll(".thero .barhit"), function(b){ b.style.cursor="pointer"; b.addEventListener("click", function(){ var m=b.getAttribute("data-m"); if(!state.months) state.months={}; state.months.compte=(m===curM?null:m); render(); }); });
+      }
+      function openReport(){
         var auto=soldeFlow(person, prevMonthKey(month)).closing;
         var ovv=getSoldeInit(person,month);
         uiForm({ title:"Solde reporté", intro:"Laisse vide pour reprendre automatiquement le mois précédent ("+fmt(auto)+").", fields:[
           {key:"v", label:monthLabel, type:"money", value:(ovv!==null?ovv:"")}
         ]}, function(r){ if(r.v===null) clearSoldeInit(person,month); else setSoldeInit(person,month,r.v); render(); });
-      };
+      }
+      var rr=document.getElementById("reporterow"); if(rr) rr.onclick=openReport;
       [].forEach.call(document.querySelectorAll(".cptToggle"), function(t){ t.onclick=function(){ var k=t.getAttribute("data-key"); cptOpen[k]=!cptOpen[k]; render(); }; });
       var av=document.getElementById("addvir"); if(av) av.onclick=addVirement;
       [].forEach.call(document.querySelectorAll(".virdone"), function(b){ b.onclick=function(){ toggleVirementDone(b.getAttribute("data-id")); }; });
@@ -5027,22 +5049,35 @@
         if(!all.length) chart+='<div class="cch-note" style="margin:24px 0">Aucune dépense sur cette période.</div>';
         else {
           if(visTotal<=0) chart+='<div class="cch-note" style="margin:18px 0">Tout est masqué : touche une ligne pour l\'afficher.</div>';
-          else if(typ==="donut") chart+='<div class="cdon cdon-big" style="justify-content:center">'+compteDonutSVG(vis.map(function(it){ return { v:it.value, col:it.color }; }), visTotal)+'</div>';
-          else { chart+='<div style="margin-top:4px">'; vis.forEach(function(it){ var pc=Math.max(2, Math.round(it.value/mv*100)); chart+='<div class="bar-row" style="margin:10px 2px"><div class="bar-top"><span class="bl">'+esc(it.name)+'</span><span class="bv">'+fmtK(it.value)+'</span></div><div class="bar-track" style="height:10px"><i style="width:'+pc+'%;background:'+it.color+'"></i></div></div>'; }); chart+='</div>'; }
+          else if(typ==="donut") chart+='<div class="cdon cdon-big" style="justify-content:center">'+compteDonutSVG(vis.map(function(it){ return { v:it.value, col:it.color, k:(it.name==="Frais fixes"||it.name==="Autres")?null:it.name }; }), visTotal)+'</div>';
+          else { chart+='<div style="margin-top:4px">'; vis.forEach(function(it){ var pc=Math.max(2, Math.round(it.value/mv*100)); var rk=(it.name!=="Frais fixes" && it.name!=="Autres"); chart+='<div class="bar-row'+(rk?' repbar':'')+'"'+(rk?' data-k="'+esc(it.name)+'"':'')+' style="margin:10px 2px'+(rk?';cursor:pointer':'')+'"><div class="bar-top"><span class="bl">'+esc(it.name)+'</span><span class="bv">'+fmtK(it.value)+'</span></div><div class="bar-track" style="height:10px"><i style="width:'+pc+'%;background:'+it.color+'"></i></div></div>'; }); chart+='</div>'; }
           chart+='<div style="margin-top:6px">';
           all.forEach(function(it){ var hidden=!!hide[dim+"|"+it.name], share=(!hidden && visTotal>0)?(Math.round(it.value/visTotal*100)+" %"):"—";
             chart+='<button class="lgd'+(hidden?" off":"")+'" type="button" data-name="'+esc(it.name)+'"><span class="sw" style="background:'+it.color+'"></span><span class="ln">'+esc(it.name)+'</span><span class="lv">'+fmtK(it.value)+'</span><span class="lp">'+share+'</span></button>'; });
-          chart+='</div><div class="cch-note">Touche une ligne pour la masquer ou l\'afficher</div>';
+          chart+='</div><div class="cch-note">Touche '+(typ==="donut"?'une part de l\'anneau':'une barre')+' pour ses achats · une ligne pour la masquer ou l\'afficher</div>';
         }
+        // page d'un poste touché dans le graphique : ses achats de la période
+        if(state.anSub==="repi" && state.repSel && state.repSel.dim===dim && map[state.repSel.name]!=null){ var rsN=state.repSel.name, rH=[], rT=0;
+          gPeriodEntries().forEach(function(e){
+            if(dim==="cat"){ if(e.categorie===rsN && Number(e.montant)>0) rH.push({ e:e, amt:Number(e.montant) }); }
+            else if(dim==="pers"){ if(payerOf(e)===rsN && Number(e.montant)>0) rH.push({ e:e, amt:Number(e.montant) }); }
+            else (e.articles||[]).forEach(function(a){ if((a.produit||"")==="Remise") return; var c=classifyArticle(a); if(c.amt<=0) return; if((dim==="fam"?c.fam:c.name)===rsN) rH.push({ e:e, amt:c.amt, lbl:((a.label||"").trim()||c.name) }); }); });
+          rH.sort(function(a,b){ return String(b.e.date||"").localeCompare(String(a.e.date||"")); }); rH.forEach(function(x){ rT+=x.amt; });
+          var rpg='<div class="muted" style="font-size:12px;margin:12px 4px 0">'+esc(perLabel)+' · '+rH.length+' achat'+(rH.length>1?'s':'')+' · touche un ticket pour l\'ouvrir</div><section class="paper cacc" style="padding:4px 14px 8px"><div class="dtot" style="padding:12px 2px 6px"><span>Total</span><span class="v" style="color:var(--ink)">'+fmtK(rT)+'</span></div>', rMo="";
+          rH.forEach(function(x){ var mo=monthKey(x.e.date), dd=(x.e.date||"").split("-");
+            if(mo!==rMo){ rMo=mo; rpg+='<div class="dsub" style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:12px 2px 4px">'+esc(monthLabelOf(mo))+'</div>'; }
+            rpg+='<div class="entry ecomp" data-id="'+esc(x.e.id)+'" style="display:flex;align-items:center;gap:10px;background:none;border:0;border-top:1px solid var(--line);border-radius:0;margin:0;padding:10px 2px;box-shadow:none;cursor:pointer"><span class="n" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(x.lbl||x.e.marchand||"—")+'<small style="display:block;font-size:10.5px;color:var(--muted)">'+esc(x.lbl?(x.e.marchand||""):(x.e.categorie||""))+'</small></span><span class="d" style="color:var(--muted);font-size:12px">'+esc(dd.length===3?dd[2]+"/"+dd[1]:"")+'</span><span class="a" style="font-weight:700;font-variant-numeric:tabular-nums">'+fmtK(x.amt)+'</span></div>'; });
+          if(!rH.length) rpg+='<div class="muted" style="font-size:12px;margin:12px 2px">Aucun achat sur la période.</div>';
+          recPage=rpg+'</section>'; recPageTitle=rsN; }
         hero={ label:"Répartition · "+esc(perLabel), big:visTotal, color:"var(--ink)", sub:(nHid?nHid+" poste"+(nHid>1?"s":"")+" masqué"+(nHid>1?"s":""):"") };
       }
       chart+='</div>'; chart=fxBtn+chart; hero.extra=chart;
       var nSub=(state.anSub==="mois");   // sous-page « Par mois »
-      if((state.anSub==="rec" || state.anSub==="pay") && recPage===null) state.anSub=null;
+      if((state.anSub==="rec" || state.anSub==="pay" || state.anSub==="repi") && recPage===null) state.anSub=null;
       var h=header(nSub || recPage!==null, nSub?"Par mois":recPageTitle)+pvBarHTML()+(nSub || recPage!==null?'':tabHero(hero));
       if(recPage!==null){
         app.innerHTML=h+recPage;
-        bindBack(function(){ state.anSub=null; state.recSel=null; state.paySel=null; render(); window.scrollTo(0,0); });
+        bindBack(function(){ state.anSub=null; state.recSel=null; state.paySel=null; state.repSel=null; render(); window.scrollTo(0,0); });
         [].forEach.call(document.querySelectorAll(".dgrp .dgh"), function(hd){ hd.onclick=function(){ var g=hd.parentNode, k=g.getAttribute("data-g"), o=state.payOpen||(state.payOpen={}); o[k]=!o[k]; g.classList.toggle("open", !!o[k]); }; });
         [].forEach.call(document.querySelectorAll(".entry[data-id]"), function(n){ n.onclick=function(){ editEntry(n.getAttribute("data-id")); }; });
         setNav("analyse", true); return;
@@ -5063,6 +5098,7 @@
       var hc=document.getElementById("histcat"); if(hc) hc.onchange=function(){ state.histCat=hc.value; render(); };
       [].forEach.call(document.querySelectorAll(".payrow"), function(r){ r.onclick=function(){ state.paySel=r.getAttribute("data-name"); state.payOpen={}; state.anSub="pay"; render(); window.scrollTo(0,0); }; });
       [].forEach.call(document.querySelectorAll(".recrow"), function(r){ r.onclick=function(){ state.recSel={ by:recByPeek(), key:r.getAttribute("data-key"), name:r.getAttribute("data-name") }; state.anSub="rec"; render(); window.scrollTo(0,0); }; });
+      if(mode==="rep") [].forEach.call(document.querySelectorAll(".thero .dseg, .thero .repbar"), function(b){ b.style.cursor="pointer"; b.addEventListener("click", function(){ state.repSel={ dim:state.graphDim||"fam", name:b.getAttribute("data-k") }; state.anSub="repi"; render(); window.scrollTo(0,0); }); });
       [].forEach.call(document.querySelectorAll("#recBy button"), function(b){ b.onclick=function(){ state.recBy=b.getAttribute("data-v"); store.write("recBy", state.recBy); render(); }; });
       var afx=document.getElementById("anFx"); if(afx) afx.onclick=function(){ state.anFrais=!anFraisOn(); store.write("anFrais", state.anFrais); render(); };
       var gp=document.getElementById("gper"); if(gp) gp.onchange=function(){ state.graphPeriod=gp.value; render(); };
