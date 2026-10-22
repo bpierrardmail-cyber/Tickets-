@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 09:58" />
+  <meta name="build" content="22/10 10:29" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -357,6 +357,7 @@
     .cch-leg{ display:flex; flex-wrap:wrap; gap:6px 14px; justify-content:center; font-size:11px; color:var(--ink-soft); margin-top:8px; }
     .cch-leg i{ display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
     .cch-tabs{ display:flex; flex-wrap:nowrap; gap:6px; margin:14px -18px 0; padding:0 18px 2px; overflow-x:auto; scrollbar-width:none; -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 22px),transparent 100%); mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 22px),transparent 100%); }
+    .cch-tabs.wrap2{ flex-wrap:wrap; overflow:visible; margin:14px 0 0; padding:0; -webkit-mask-image:none; mask-image:none; }
     .cch-tabs::-webkit-scrollbar{ display:none; }
     .cch-tabs button{ flex:0 0 auto; white-space:nowrap; font-family:var(--sans); font-size:12px; padding:6px 11px; border-radius:999px; border:1px solid var(--line); background:rgba(255,255,255,.04); color:var(--ink-soft); cursor:pointer; }
     .cch-tabs button.on{ background:var(--accent); border-color:var(--accent); color:#0a130f; font-weight:700; }
@@ -4380,7 +4381,8 @@
       function cRangeNote(ms){ return crange==="6"?"sur 6 mois":(crange==="12"?"sur 12 mois":"depuis "+monthLabelOf(ms[0])); }
       function cRangeSeg(){ return '<div class="dmode crange">'+[["6","6 mois"],["12","12 mois"],["all","Tout"]].map(function(x){ return '<button type="button" data-r="'+x[0]+'"'+(crange===x[0]?' class="on"':'')+'>'+x[1]+'</button>'; }).join("")+'</div>'; }
       function inOut(m){ var inn=0, out=computeDepensesMonth(person,m); virementsOf(person,m).forEach(function(v){ var x=Number(v.montant)||0; if(x>=0) inn+=x; else out+=-x; }); return { inn:inn, out:out }; }
-      var chart=chartTabsHTML(CMODES, cmode, "cptChartDef", "mois")+'<div class="cch">';
+      var chart=chartTabsHTML(CMODES, cmode, "cptChartDef", "mois").replace('<div class="cch-tabs">','<div class="cch-tabs wrap2">')+'<div class="cch">';   // 6 choix : sur deux lignes
+
       var hero={ label:(multi?esc(acct.nom):"Solde du compte")+" (banque estimée)", big:soldeBanque, color:(soldeBanque<0?"var(--coral)":"var(--ink)"), sub:"Estimé, sans le liquide" };
       if(cmode==="mois"){
         var steps=[{l:"Report", v:reporte, t:"base"}];
