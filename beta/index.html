@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 20:46" />
+  <meta name="build" content="22/10 22:36" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -478,6 +478,18 @@
     .arow .c{ color:var(--muted); font-size:12px; }
     .hcar-h{ display:flex; align-items:baseline; justify-content:space-between; font-size:17px; font-weight:700; margin:22px 4px 10px; }
     .hcar-h small{ font-size:11.5px; font-weight:500; color:var(--muted); }
+    .hc-pick{ font-family:var(--sans); font-size:12.5px; font-weight:600; color:var(--accent); background:none; border:1px dashed rgba(79,214,160,.45); border-radius:999px; padding:6px 12px; cursor:pointer; }
+    .hc-empty{ font-size:12.5px; color:var(--muted); margin:0 4px 6px; }
+    .hcp-g{ margin:12px 2px 6px; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+    .hcp-pills{ display:flex; flex-wrap:wrap; gap:6px; }
+    .hcp-p{ font-family:var(--sans); font-size:12.5px; padding:7px 11px; border-radius:999px; border:1px solid var(--line); color:var(--ink-soft); background:var(--card2); cursor:pointer; }
+    .hcp-p.on{ background:var(--accent); color:#0b1a14; border-color:var(--accent); font-weight:700; }
+    .hcp-or{ display:flex; align-items:center; gap:8px; padding:6px 2px; border-top:1px solid var(--line); font-size:13px; }
+    .hcp-or .n{ flex:0 0 22px; height:22px; border-radius:6px; background:var(--card2); font-size:11px; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); }
+    .hcp-or .l{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .hcp-or button{ flex:0 0 auto; width:38px; height:34px; border:0; border-radius:9px; background:none; color:var(--ink-soft); font-size:16px; cursor:pointer; }
+    .hcp-or button:disabled{ opacity:.25; cursor:default; }
+    .hcp-list{ max-height:42vh; overflow-y:auto; margin:0 -4px; padding:0 4px; }
     .hcats{ padding:12px 16px 10px; }
     .hcats .bud-line{ margin:0 0 6px; }
     .hshort{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:14px; }
@@ -3013,26 +3025,89 @@
     function backupAgeDays(){ var lb=store.read("lastBackup", null); return lb ? Math.floor((Date.now()-new Date(lb).getTime())/86400000) : null; }
     try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
 
-    // Accueil : reprend le graphique ★ de chaque onglet (rendu hors écran, sans ses commandes), en grille
+    // ---------- Graphiques de l'accueil : choix ----------
+    // « homeCharts » : liste ordonnée d'identifiants (« analyse:mois », « compte:solde », « bourse »…) ; absente = le graphique ★ de chaque onglet
+    var HC_TABS={
+      compte:{ name:"Compte", key:"cptChart", defKey:"cptChartDef", fb:"mois", modes:[["mois","Ce mois"],["dep","Dépenses"],["solde","Solde"],["es","Entrées-sorties"],["ep","Épargne"],["prov","Provisions"]] },
+      analyse:{ name:"Analyse", key:"anChart", defKey:"anChartDef", fb:"mois", modes:[["mois","Mois"],["rep","Répartition"],["rec","Récurrentes"],["pay","Qui a payé"]] },
+      communes:{ name:"Commun", key:"comChart", defKey:"comChartDef", fb:"rep", modes:[["rep","Répartition"],["postes","Postes"],["6m","6 mois"]] },
+      articles:{ name:"Articles", key:"artChart", defKey:"artChartDef", fb:"prod", modes:[["prod","Mes produits"],["hausse","Hausses"],["mag","Magasins"],["fam","Familles"]] }
+    };
+    var HC_SOLO={ bourse:"Bourse", epargne:"Épargne", provisions:"Provisions" };
+    function hcStar(tab){ var T=HC_TABS[tab], d=store.read(T.defKey, T.fb); if(tab==="compte" && d==="6m") d="es"; return T.modes.some(function(x){ return x[0]===d; }) ? d : T.fb; }
+    function hcAvail(){   // ce qui peut s'afficher sur ce téléphone, dans l'ordre de la fenêtre de choix
+      var a=[];
+      ["compte","analyse","communes","articles"].forEach(function(t){ if(fyMember() && !fyTabOn(fyCfg, t)) return; HC_TABS[t].modes.forEach(function(m){ a.push(t+":"+m[0]); }); });
+      if(FEAT.bourse && bourse.length) a.push("bourse");
+      if(epargne.length && canUse("epargne") && (!fyMember() || fyTabOn(fyCfg, FY_SUB.epargne||"compte"))) a.push("epargne");
+      if(provisions.length && canUse("provisions") && (!fyMember() || fyTabOn(fyCfg, FY_SUB.provisions||"compte"))) a.push("provisions");
+      return a;
+    }
+    function hcList(){   // liste effective (identifiants concrets), sans ce qui n'est plus disponible
+      var l=store.read("homeCharts", null), av=hcAvail(), seen={};
+      if(!Array.isArray(l)) l=["bourse","analyse:*","communes:*","articles:*","epargne","provisions"];
+      return l.map(function(id){ var t=id.split(":"); return (t[1]==="*" && HC_TABS[t[0]]) ? t[0]+":"+hcStar(t[0]) : id; })
+              .filter(function(id){ if(seen[id] || av.indexOf(id)<0) return false; seen[id]=1; return true; });
+    }
+    function hcLabel(id){ var t=id.split(":"), T=HC_TABS[t[0]]; if(!T) return HC_SOLO[id]||id; var m=T.modes.filter(function(x){ return x[0]===t[1]; })[0]; return T.name+" · "+(m?m[1]:t[1]); }
+    function hcSave(l){ store.write("homeCharts", l); render(); }
+    function openHomeChartsPicker(){
+      var sel=hcList(), av=hcAvail(), s=uiSheet('<div class="hcp"></div>'), box=s.q(".hcp");
+      function pill(id, txt){ return '<button type="button" class="hcp-p'+(sel.indexOf(id)>=0?' on':'')+'" data-id="'+esc(id)+'">'+(sel.indexOf(id)>=0?'✓ ':'')+esc(txt)+'</button>'; }
+      function paint(){
+        var h='<div class="sheet-title">Mes graphiques à l\'accueil</div><div class="ui-intro" style="text-align:center">Coche ceux à afficher · deux par page, on glisse pour la suite</div><div class="hcp-list">';
+        ["compte","analyse","communes","articles"].forEach(function(t){ var T=HC_TABS[t], ids=T.modes.map(function(m){ return t+":"+m[0]; }).filter(function(id){ return av.indexOf(id)>=0; }); if(!ids.length) return;
+          var st=hcStar(t); h+='<div class="hcp-g">'+esc(T.name)+'</div><div class="hcp-pills">'+T.modes.map(function(m){ return pill(t+":"+m[0], m[1]+(m[0]===st?" ★":"")); }).join("")+'</div>'; });
+        var solo=["bourse","epargne","provisions"].filter(function(id){ return av.indexOf(id)>=0; });
+        if(solo.length) h+='<div class="hcp-g">Autres</div><div class="hcp-pills">'+solo.map(function(id){ return pill(id, HC_SOLO[id]); }).join("")+'</div>';
+        h+='<div class="hcp-g">Ordre</div>';
+        if(!sel.length) h+='<div class="muted" style="font-size:12px;margin:4px 2px">Aucun graphique : l\'accueil n\'en affichera pas.</div>';
+        sel.forEach(function(id,i){ h+='<div class="hcp-or"><span class="n">'+(i+1)+'</span><span class="l">'+esc(hcLabel(id))+'</span><button type="button" data-up="'+i+'"'+(i?'':' disabled')+' aria-label="Monter">↑</button><button type="button" data-dn="'+i+'"'+(i<sel.length-1?'':' disabled')+' aria-label="Descendre">↓</button></div>'; });
+        h+='</div><div class="ui-stack" style="margin-top:12px"><button type="button" class="btn primary" id="hcOk">Valider</button><button type="button" class="btn" id="hcDef">Par défaut (★ de chaque onglet)</button><button type="button" class="btn ghost" id="hcNo">Annuler</button></div>';
+        var sc=box.querySelector(".hcp-list"), top=sc?sc.scrollTop:0;
+        box.innerHTML=h; sc=box.querySelector(".hcp-list"); if(sc) sc.scrollTop=top;
+        [].forEach.call(box.querySelectorAll(".hcp-p"), function(b){ b.onclick=function(){ var id=b.getAttribute("data-id"), k=sel.indexOf(id); if(k>=0) sel.splice(k,1); else sel.push(id); paint(); }; });
+        [].forEach.call(box.querySelectorAll("[data-up]"), function(b){ b.onclick=function(){ var i=+b.getAttribute("data-up"); if(i>0){ var x=sel[i]; sel[i]=sel[i-1]; sel[i-1]=x; paint(); } }; });
+        [].forEach.call(box.querySelectorAll("[data-dn]"), function(b){ b.onclick=function(){ var i=+b.getAttribute("data-dn"); if(i<sel.length-1){ var x=sel[i]; sel[i]=sel[i+1]; sel[i+1]=x; paint(); } }; });
+        box.querySelector("#hcOk").onclick=function(){ s.close(); hcSave(sel.slice()); };
+        box.querySelector("#hcDef").onclick=function(){ s.close(); store.write("homeCharts", null); render(); uiToast("Graphiques par défaut"); };
+        box.querySelector("#hcNo").onclick=s.close;
+      }
+      paint();
+    }
+    // Appui long sur une petite carte : changer de graphique, avancer, reculer, masquer
+    function homeCardMenu(id){
+      var l=hcList(), i=l.indexOf(id); if(i<0) return;
+      var t=id.split(":"), T=HC_TABS[t[0]], ch=[];
+      if(T) ch.push({ l:"↔ Changer de graphique", fn:function(){ var st=hcStar(t[0]);
+        uiChoice(T.name, "", T.modes.map(function(m){ return { l:(t[0]+":"+m[0]===id?"✓ ":"")+m[1]+(m[0]===st?" ★":""), fn:function(){ var nid=t[0]+":"+m[0], L=hcList(), k=L.indexOf(id); if(k<0 || nid===id) return; var dup=L.indexOf(nid); if(dup>=0) L.splice(dup,1); k=L.indexOf(id); L[k]=nid; hcSave(L); } }; })); } });
+      if(i>0) ch.push({ l:"← Avancer", fn:function(){ var L=hcList(), k=L.indexOf(id); if(k>0){ L[k]=L[k-1]; L[k-1]=id; hcSave(L); } } });
+      if(i<l.length-1) ch.push({ l:"→ Reculer", fn:function(){ var L=hcList(), k=L.indexOf(id); if(k>=0 && k<L.length-1){ L[k]=L[k+1]; L[k+1]=id; hcSave(L); } } });
+      ch.push({ l:"Masquer", danger:true, fn:function(){ var L=hcList(); L.splice(L.indexOf(id),1); hcSave(L); uiToast("« "+hcLabel(id)+" » masqué · ⚙ Choisir pour le remettre"); } });
+      ch.push({ l:"⚙ Choisir les graphiques…", fn:openHomeChartsPicker });
+      uiChoice(hcLabel(id), "", ch);
+    }
+    // Accueil : les graphiques choisis (rendus hors écran, sans leurs commandes), deux par page
     function homeChartCards(){
       var out=[], saveApp=app, saveView=state.view, box=document.createElement("div");
-      function grab(view, key, fn){
-        var keep=state[key], r=null; state[key]=undefined; app=box; state.view=view;
+      var subKeep={ anSub:state.anSub, comSub:state.comSub, artSub:state.artSub, cptPage:state.cptPage };
+      function grab(view, key, fn, mode){
+        var keep=state[key], r=null; state[key]=mode; app=box; state.view=view; state.anSub=null; state.comSub=null; state.artSub=null;
         try{ fn(); var hero=box.querySelector(".thero"), ch=hero && hero.querySelector(".cch"), on=box.querySelector(".cch-tabs button.on"), caps=hero?hero.querySelectorAll(".dash-cap"):[];
           if(ch) [].forEach.call(ch.querySelectorAll(".crep-full"), function(x){ x.parentNode.removeChild(x); });   // la petite carte n'a que la version courte
           if(hero && ch) r={ label:(caps[0]||{}).textContent||"", sub:(caps[1]||{}).textContent||"", big:(hero.querySelector(".dash-big")||{}).innerHTML||"", chart:ch.innerHTML, mode:on?on.textContent.replace(/[★☆]/g,"").trim():"",
             stats:[].slice.call(hero.querySelectorAll(".hstat"),0,3).map(function(x){ var b=x.querySelector("b"), i=x.querySelector("i"); return { l:(x.querySelector("span")||{}).textContent||"", v:b?b.textContent:"", d:i?i.textContent:"", c:b?(b.getAttribute("style")||""):"" }; }) }; }
         catch(e){ try{ console.warn(e); }catch(_){} }
         state[key]=keep; app=saveApp; state.view=saveView; box.innerHTML="";
+        state.anSub=subKeep.anSub; state.comSub=subKeep.comSub; state.artSub=subKeep.artSub; state.cptPage=subKeep.cptPage;
         return r;
       }
+      var solo={};
       if(FEAT.bourse && bourse.length){ var bc=""; try{ bc=(state.bView==="bars")?bourseBarsHTML(monthKey(todayISO()), monthKey(todayISO())):bourseChartHTML(); }catch(e){}
         var bT=bourseTotalLive(), bC=bourseCapNow(), bPV=bT-bC, bSt=[];
         if(bC>0){ bSt.push({ l:"Plus-value", v:(bPV>=0?"+":"")+fmtK(bPV), d:(bPV>=0?"+":"")+(bPV/bC*100).toFixed(1).replace(".",",")+" %", c:"color:"+(bPV>=0?"var(--accent)":"var(--coral)") }); bSt.push({ l:"Capital investi", v:fmtK(bC), d:"", c:"" }); }
-        if(bc) out.push({ tab:"bourse", name:"Bourse", c:{ label:"Total portefeuille", big:moneyBig(bT), chart:bc, stats:bSt, mode:(state.bView==="bars"?"Mois par mois":"Courbe "+(state.bRange||"1J")) } }); }
-      var A=grab("analyse","anChart",renderAnalyse); if(A) out.push({ tab:"analyse", name:"Analyse", c:A });
-      var M=grab("communes","comChart",renderCommunes); if(M) out.push({ tab:"communes", name:"Commun", c:M });
-      var R=grab("articles","artChart",renderArticles); if(R) out.push({ tab:"articles", name:"Articles", c:R });
+        if(bc) solo.bourse=({ tab:"bourse", name:"Bourse", c:{ label:"Total portefeuille", big:moneyBig(bT), chart:bc, stats:bSt, mode:(state.bView==="bars"?"Mois par mois":"Courbe "+(state.bRange||"1J")) } }); }
+      var FN={ compte:renderCompte, analyse:renderAnalyse, communes:renderCommunes, articles:renderArticles };
       // Épargne et Provisions : les 3 plus gros montants, puis « + N autres »
       var m0=monthKey(todayISO());
       function mlist(rows, col){
@@ -3046,15 +3121,21 @@
         eRows.forEach(function(r){ r.t=cptK(r.v)+" "+curSym(); });
         var eTot=0, ePrev=0; epargne.forEach(function(c){ eTot+=epAt(c, m0); var pv=epPrevAt(c, m0); ePrev+=(pv===null?epAt(c, m0):pv); });
         var eD=eTot-ePrev;
-        out.push({ tab:"epargne", name:"Épargne", c:{ label:"Épargne", big:moneyBig(eTot), sub:epargne.length+" compte"+(epargne.length>1?"s":"")+(Math.abs(eD)>=0.5?" · "+(eD>=0?"▲ +":"▼ −")+cptK(Math.abs(eD))+" "+curSym()+" ce mois":" épargne"), chart:mlist(eRows, "#7c9cf4"), stats:[], mode:"" } });
+        solo.epargne=({ tab:"epargne", name:"Épargne", c:{ label:"Épargne", big:moneyBig(eTot), sub:epargne.length+" compte"+(epargne.length>1?"s":"")+(Math.abs(eD)>=0.5?" · "+(eD>=0?"▲ +":"▼ −")+cptK(Math.abs(eD))+" "+curSym()+" ce mois":" épargne"), chart:mlist(eRows, "#7c9cf4"), stats:[], mode:"" } });
       }
       if(provisions.length && canUse("provisions")){
         var pMulti=byOwner(provisions).length>1, pRows=provisions.map(function(p){ var b=0; try{ b=provBalance(p, m0); }catch(e){} var pv=Number(p.prevu)||0;
           return { n:(p.nom||"Provision")+(pMulti?" · "+ownerOf(p):""), v:b, w:(pv>0?b/pv*100:null), t:(pv>0?cptK(b)+" / "+cptK(pv)+" "+curSym():cptK(b)+" "+curSym()) }; }).sort(function(a,b){ return b.v-a.v; });
         var pTot=0; try{ pTot=provTotalAt(m0); }catch(e){}
-        out.push({ tab:"provisions", name:"Provisions", c:{ label:"Provisions", big:moneyBig(pTot), sub:provisions.length+" enveloppe"+(provisions.length>1?"s":""), chart:mlist(pRows, "#c78bd6"), stats:[], mode:"" } });
+        solo.provisions=({ tab:"provisions", name:"Provisions", c:{ label:"Provisions", big:moneyBig(pTot), sub:provisions.length+" enveloppe"+(provisions.length>1?"s":""), chart:mlist(pRows, "#c78bd6"), stats:[], mode:"" } });
       }
-      if(fyMember()) out=out.filter(function(c){ return fyTabOn(fyCfg, FY_SUB[c.tab]||c.tab); });   // foyer partagé : seulement les onglets permis
+      // dans l'ordre choisi (hcList ne garde que les onglets permis dans un foyer partagé)
+      hcList().forEach(function(id){ var t=id.split(":"), T=HC_TABS[t[0]];
+        if(!T){ if(solo[id]){ solo[id].id=id; out.push(solo[id]); } return; }
+        var cs0=state.compteSel; if(t[0]==="compte" && (state.compteSel||store.read("compteSel", null))==="__all") state.compteSel=myAcct().key;   // « Tous les comptes » : la carte montre ton compte
+        var r=grab(t[0], T.key, FN[t[0]], t[1]); state.compteSel=cs0; if(!r) return;
+        var m=T.modes.filter(function(x){ return x[0]===t[1]; })[0]; r.mode=m?m[1]:r.mode; r.star=(t[1]===hcStar(t[0]));
+        out.push({ tab:t[0], mode:t[1], id:id, name:T.name, c:r }); });
       return out;
     }
     // Petites cartes de l'Accueil : rend lisibles les graphiques réduits
@@ -3092,12 +3173,14 @@
       });
     }
     function homeCarouselHTML(x){
-      var cards=homeChartCards(); if(!cards.length) return ""; x=x||{}; cards.forEach(function(k){ if(k.tab==='analyse' && x.an) k.c.sub=x.an; });
-      var h='<div class="hcar-h">Mes graphiques<small>'+(cards.length>2?'glisse pour la suite':'touche pour ouvrir')+'</small></div>', pages=[];
+      var cards=homeChartCards(); x=x||{}; cards.forEach(function(k){ if(k.tab==='analyse' && k.mode==='mois' && x.an) k.c.sub=x.an; });
+      if(!cards.length && !hcAvail().length) return "";
+      var h='<div class="hcar-h">Mes graphiques<button type="button" class="hc-pick" id="hcPick">⚙ Choisir</button></div>', pages=[];
+      if(!cards.length) return h+'<div class="hc-empty">Aucun graphique choisi.</div>';
       // Pages de 2 petites cartes côte à côte : on glisse pour les suivantes
       cards.forEach(function(k,i){
         var wide=false;
-        var t='<div class="hmini'+(wide?' wide':'')+' t-'+k.tab+'" data-go="'+k.tab+'"><div class="hm-t"><span>'+esc(k.name)+(k.c.mode?' · '+esc(k.c.mode)+(k.tab!=="bourse"?' <i>★</i>':''):'')+'</span><span class="o">›</span></div>'+
+        var t='<div class="hmini'+(wide?' wide':'')+' t-'+k.tab+'" data-go="'+k.tab+'" data-id="'+esc(k.id)+'"'+(k.mode?' data-m="'+esc(k.mode)+'"':'')+'><div class="hm-t"><span>'+esc(k.name)+(k.c.mode?' · '+esc(k.c.mode)+(k.c.star?' <i>★</i>':''):'')+'</span><span class="o">›</span></div>'+
            (wide?'<div class="hm-s">'+esc(k.c.label)+'</div>':'<div class="hm-v">'+k.c.big+'</div><div class="hm-s">'+esc(k.c.sub||k.c.label)+'</div>')+'<div class="hm-ch">'+k.c.chart+'</div>'+
            ((k.c.stats||[]).length?'<div class="hm-st">'+k.c.stats.map(function(st){ return '<div><span>'+esc(st.l)+'</span><b style="'+esc(st.c||"")+'">'+esc(st.v)+(st.d?' <i>'+esc(st.d)+'</i>':'')+'</b></div>'; }).join("")+'</div>':'')+'</div>';
         if(i%2===0) pages.push("");
@@ -3355,9 +3438,19 @@
         if(comptes.length>1){ state.compteSel=(sc==="foyer")?"__all":myAcct().key; store.write("compteSel", state.compteSel); }
         state.view="compte"; render(); window.scrollTo(0,0); };
       [].forEach.call(document.querySelectorAll(".hscope button"), function(b){ b.onclick=function(ev){ ev.stopPropagation(); state.homeScope=b.getAttribute("data-s"); store.write("homeScope", state.homeScope); render(); }; });
-      [].forEach.call(document.querySelectorAll(".hmini"), function(c){ c.onclick=function(){ var g=c.getAttribute("data-go");
-        if(g==="epargne"){ state.compteSel=myAcct().key; state.cptPage="ep"; state.view="comptedet"; } else state.view=g;
-        render(); window.scrollTo(0,0); }; });
+      var hcp=document.getElementById("hcPick"); if(hcp) hcp.onclick=function(ev){ ev.stopPropagation(); openHomeChartsPicker(); };
+      [].forEach.call(document.querySelectorAll(".hmini"), function(c){
+        var lpT=null, lpDone=false, x0=0, y0=0;
+        function lpStop(){ if(lpT){ clearTimeout(lpT); lpT=null; } }
+        function lpStart(x,y){ lpStop(); lpDone=false; x0=x; y0=y; lpT=setTimeout(function(){ lpT=null; lpDone=true; try{ if(navigator.vibrate) navigator.vibrate(15); }catch(e){} homeCardMenu(c.getAttribute("data-id")); }, 520); }
+        c.addEventListener("touchstart", function(e){ var t=e.touches[0]; lpStart(t.clientX, t.clientY); }, { passive:true });
+        c.addEventListener("touchmove", function(e){ var t=e.touches[0]; if(Math.abs(t.clientX-x0)>10 || Math.abs(t.clientY-y0)>10) lpStop(); }, { passive:true });
+        c.addEventListener("touchend", lpStop); c.addEventListener("touchcancel", lpStop);
+        c.addEventListener("contextmenu", function(e){ e.preventDefault(); lpStop(); if(!lpDone){ lpDone=true; homeCardMenu(c.getAttribute("data-id")); } });
+        c.onclick=function(){ if(lpDone){ lpDone=false; return; } var g=c.getAttribute("data-go"), m=c.getAttribute("data-m");
+          if(m && HC_TABS[g]){ state[HC_TABS[g].key]=m; if(g==="analyse") store.write("anChart", m); if(g==="compte"){ state.cptPage=null; } }
+          if(g==="epargne"){ state.compteSel=myAcct().key; state.cptPage="ep"; state.view="comptedet"; } else state.view=g;
+          render(); window.scrollTo(0,0); }; });
       enrichMiniCharts();
       [].forEach.call(document.querySelectorAll(".catrow"), function(row){ row.onclick=function(){ var c=row.getAttribute("data-cat"); state.catFilter=(state.catFilter===c?null:c); state.ticketsOpen=true; render(); var se=document.getElementById("search"); if(se && se.scrollIntoView) se.scrollIntoView({behavior:"smooth", block:"start"}); }; });
       var cc=document.getElementById("catclear"); if(cc) cc.onclick=function(){ state.catFilter=null; render(); };
