@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 07:02" />
+  <meta name="build" content="22/10 07:12" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2714,7 +2714,7 @@
         if(fitView() && !document.querySelector(".sheet-overlay")){ fitMemo={}; render(); } }, 200); });
     })();
     function v0key(){ var on=document.querySelector(".thero .cch-tabs button.on"); return state.view+"|"+(on?on.getAttribute("data-m"):""); }
-    function render(){ pvMemo=null; fsMemo={}; if(!fitting) CHB=fitView()?(fitMemo[state.view+"|"+(state.view==="communes"?(state.comChart||store.read("comChartDef","rep")):state.view==="articles"?(state.artChart||store.read("artChartDef","fam")):state.view==="analyse"?(state.anChart||store.read("anChartDef","mois")):"")]||0):0; fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); wirePV(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); try{ fitHero(); }catch(err){ console.warn(err); } }
+    function render(){ pvMemo=null; fsMemo={}; if(!fitting) CHB=fitView()?(fitMemo[state.view+"|"+(state.view==="communes"?(state.comChart||store.read("comChartDef","rep")):state.view==="articles"?(state.artChart||store.read("artChartDef","prod")):state.view==="analyse"?(state.anChart||store.read("anChartDef","mois")):"")]||0):0; fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); wirePV(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); try{ fitHero(); }catch(err){ console.warn(err); } }
     function renderView(){
       armBack();
       fyViewGuard();
@@ -3523,6 +3523,29 @@
     }
     // ---------- Articles : même présentation que Compte, Commun et Analyse ----------
     var ARTPAL=["#7c9cf4","#e0a458","#4fd6a0","#c78bd6","#5bc0d4","#e88fb0","#9bd35e","#d4a05b","#8a92e0","#6fcaa8","#d98c5f","#b0b6c2","#f4796b"];
+    // Historique des articles (12 derniers mois jusqu'au mois affiché) : prix d'une ligne, magasins, évolution, économies possibles
+    function artHistory(month){
+      var mk=month, ms={}; for(var i=0;i<12;i++){ ms[mk]=1; mk=prevMonthKey(mk); }
+      var pOn=artProdOn(), by={};
+      function sk(x){ x=String(x||"").toLowerCase(); try{ x=x.normalize("NFD").replace(/[\u0300-\u036f]/g,""); }catch(e){} return x.replace(/[^a-z ]+/g," ").replace(/\b(sas|sarl|sa|magasin|store|super|hyper|market)\b/g," ").replace(/\s+/g," ").trim(); }
+      vEntries().forEach(function(e){ var m=monthKey(e.date); if(!ms[m]) return; var st=(e.marchand||"").trim(), k=sk(st);
+        (e.articles||[]).forEach(function(a){ if(a.commun && !pOn) return; var c=classifyArticle(a); if(c.fam==="Remise" || !(c.amt>0)) return;
+          var key=c.fam+"|"+c.name; if(!by[key]) by[key]={ fam:c.fam, name:c.name, lines:[] }; by[key].lines.push({ d:e.date||"", m:m, p:c.amt, sk:k, st:st }); }); });
+      var list=[], saveMonth=0, saveYear=0;
+      Object.keys(by).forEach(function(key){ var P=by[key], L=P.lines.sort(function(a,b){ return a.d<b.d?-1:(a.d>b.d?1:0); });
+        var stores={}; L.forEach(function(l){ if(!l.sk) return; var o=stores[l.sk]||(stores[l.sk]={ name:l.st, sum:0, n:0, names:{} }); o.sum+=l.p; o.n++; o.names[l.st]=(o.names[l.st]||0)+1; });
+        var sl=Object.keys(stores).map(function(k){ var o=stores[k]; o.avg=o.sum/o.n; o.name=Object.keys(o.names).sort(function(a,b){ return o.names[b]-o.names[a]; })[0]; return o; }).sort(function(a,b){ return a.avg-b.avg; });
+        var inM=L.filter(function(l){ return l.m===month; }), last=L[L.length-1], first=L[0];
+        // évolution : dans le magasin du dernier achat si on y a acheté avant (sinon tous magasins confondus)
+        var same=L.filter(function(l){ return l.sk===last.sk; }), f0=(same.length>1 ? same[0] : first);
+        // comparaison utile seulement si l'écart entre magasins dépasse 2 % (sinon c'est l'évolution du prix, pas le magasin)
+        var cheap=(sl.length>=2 && sl[sl.length-1].avg-sl[0].avg>=Math.max(0.01, sl[0].avg*0.02)) ? sl[0].avg : null; if(cheap==null && sl.length>=2) sl=[];
+        if(cheap!=null) L.forEach(function(l){ var d=l.p-cheap; if(d>0.004){ saveYear+=d; if(l.m===month) saveMonth+=d; } });
+        list.push({ fam:P.fam, name:P.name, nBuy:L.length, nMonth:inM.length, totMonth:inM.reduce(function(t,l){ return t+l.p; },0),
+          firstPrice:f0.p, lastPrice:(inM.length?inM[inM.length-1].p:last.p), lastStore:(inM.length?inM[inM.length-1].st:last.st), evo:(L.length>1 && f0!==last && f0.p>0 ? (last.p-f0.p)/f0.p*100 : 0), stores:sl });
+      });
+      return { list:list, saveMonth:saveMonth, saveYear:saveYear };
+    }
     function artProdOn(){ var v=state.artProd; if(v==null) v=store.read("artProd", true); return !!v; }
     function artMonthData(m){
       var fams={}, grand=0, nArt=0, top=null, most=null, prods={};
@@ -3563,26 +3586,43 @@
       if(!D.famKeys.length){
         h+='<section class="paper cacc" style="padding:18px 16px"><div class="center muted" style="font-size:12.5px;line-height:1.5">Aucun article rangé ce mois-ci.<br>Scanne un ticket et classe ses lignes par produit.</div>'+(!artProdOn()?'<div class="center" style="margin-top:12px"><button type="button" class="anfx" id="artProdBtn">＋ Produits partagés</button><div class="muted" style="font-size:11px;margin-top:6px">Les produits partagés sont masqués</div></div>':'')+'</section>';
       } else {
-        var TABS=[["fam","Familles"],["top","Top produits"],["6m","6 mois"]];
-        var mode=state.artChart||store.read("artChartDef","fam"); if(!TABS.some(function(x){ return x[0]===mode; })) mode="fam";
+        // Articles = ce que j'achète et à quel prix : Mes produits (du mois), Hausses, Moins cher (12 derniers mois)
+        var TABS=[["prod","Mes produits"],["hausse","Hausses"],["cher","Moins cher"]];
+        var mode=state.artChart||store.read("artChartDef","prod"); if(!TABS.some(function(x){ return x[0]===mode; })) mode="prod";
         var apOn=artProdOn(), apAny=state.entries.some(function(e){ return (e.articles||[]).some(function(a){ return a.commun; }); });
-        var chart=(apAny?'<button type="button" class="anfx anfx-corner'+(apOn?' on':'')+'" id="artProdBtn" aria-pressed="'+apOn+'">'+(apOn?'✓':'＋')+' Produits partagés</button>':'')+chartTabsHTML(TABS, mode, "artChartDef", "fam")+'<div class="cch">';
-        if(mode==="fam"){
-          var pos=D.famKeys.filter(function(f){ return D.fams[f].total>0; }), pt=pos.reduce(function(t,f){ return t+D.fams[f].total; },0);
-          chart+='<div class="cdon cdon-big">'+compteDonutSVG(pos.map(function(f){ return { v:D.fams[f].total, col:col[f] }; }), pt).replace("dépensés","d'articles")+'<div class="cdon-l">'+
-            pos.map(function(f){ return '<div class="cdon-r"><i class="cdot" style="background:'+col[f]+';margin:0"></i><span class="n">'+esc(f)+'</span><span class="p">'+Math.round(D.fams[f].total/(pt||1)*100)+' %</span><span class="a">'+cptK(D.fams[f].total)+'</span></div>'; }).join("")+'</div></div>';
-        } else if(mode==="top"){
-          var tp=D.prods.filter(function(p){ return p.total>0 && p.fam!=="Remise"; }).sort(function(a,b){ return b.total-a.total; }).slice(0,8), tm=tp.length?tp[0].total:1;
-          chart+='<div class="atop">'+tp.map(function(p){ return '<div class="atop-r artclk" data-fam="'+esc(p.fam)+'" data-name="'+esc(p.name)+'"><div class="atop-h"><span class="n">'+esc(p.name)+' <small>×'+p.n+'</small></span><b>'+fmtK(p.total)+'</b></div><div class="atop-b"><i style="width:'+Math.max(3,Math.round(p.total/tm*100))+'%;background:'+col[p.fam]+'"></i></div></div>'; }).join("")+'</div>';
-          chart+='<div class="cch-note">Les 8 produits qui t\'ont coûté le plus ce mois-ci · touche pour le détail</div>';
+        var AH=artHistory(month);
+        var chart=(apAny?'<button type="button" class="anfx anfx-corner'+(apOn?' on':'')+'" id="artProdBtn" aria-pressed="'+apOn+'">'+(apOn?'✓':'＋')+' Produits partagés</button>':'')+chartTabsHTML(TABS, mode, "artChartDef", "prod")+'<div class="cch cch-top">';
+        function evoTxt(x){ return Math.abs(x)>=0.5 ? ' <small style="color:'+(x>0?'var(--coral)':'var(--accent)')+';font-weight:700">'+(x>0?'▲ +':'▼ ')+String(Math.round(x*10)/10).replace(".",",")+' %</small>' : ''; }
+        function line(P, sub, right, rightCol){ return '<div class="bar-row artclk" data-fam="'+esc(P.fam)+'" data-name="'+esc(P.name)+'" style="margin:10px 2px;cursor:pointer"><div class="bar-top"><span class="bl">'+esc(P.name)+' <small class="muted">'+sub+'</small></span><span class="bv"'+(rightCol?' style="color:'+rightCol+'"':'')+'>'+right+'</span></div></div>'; }
+        var heroO;
+        if(mode==="prod"){
+          var mp=AH.list.filter(function(P){ return P.nMonth>0; }).sort(function(a,b){ return b.totMonth-a.totMonth; });
+          chart+=mp.length ? mp.map(function(P){ return line(P, '×'+P.nMonth+(P.lastStore?' · '+esc(P.lastStore):'')+evoTxt(P.evo), fmtK(P.lastPrice)); }).join("")+'<div class="cch-note">Dernier prix payé · ▲▼ depuis le premier achat (12 mois) · touche un produit pour sa fiche</div>'
+                           : '<div class="cch-note" style="margin:24px 0">Aucun produit ce mois-ci.</div>';
+          var hz=AH.list.filter(function(P){ return P.nMonth>0 && P.evo>0.5; }).sort(function(a,b){ return b.evo-a.evo; })[0];
+          heroO={ label:"Achats du mois", big:D.grand, sub:D.nArt+" article"+(D.nArt>1?"s":"")+" · "+mp.length+" produit"+(mp.length>1?"s":""),
+            stats:[ {l:"Plus forte hausse", v:(hz?esc(hz.name):"—"), d:(hz?"+"+String(Math.round(hz.evo*10)/10).replace(".",",")+" %":"")}, {l:"Le plus acheté", v:(D.most?esc(D.most.name):"—"), d:(D.most?"×"+D.most.n:"")}, {l:"À économiser", v:fmtS(AH.saveMonth), d:"ce mois"} ] };
+        } else if(mode==="hausse"){
+          var hs=AH.list.filter(function(P){ return P.nBuy>=2 && Math.abs(P.evo)>=0.5; }).sort(function(a,b){ return b.evo-a.evo; });
+          chart+=hs.length ? hs.map(function(P){ return line(P, esc(fmtK(P.firstPrice))+' → '+esc(fmtK(P.lastPrice)), (P.evo>0?'▲ +':'▼ ')+String(Math.round(P.evo*10)/10).replace(".",",")+' %', (P.evo>0?'var(--coral)':'var(--accent)')); }).join("")+'<div class="cch-note">Prix d\'une ligne, premier achat → dernier, sur 12 mois · les hausses en premier</div>'
+                           : '<div class="cch-note" style="margin:24px 0">Pas encore d\'évolution : il faut avoir acheté un produit au moins deux fois.</div>';
+          var nUp=hs.filter(function(P){ return P.evo>0; }).length, nDn=hs.length-nUp;
+          heroO={ label:"Évolution des prix · 12 mois", big:null, bigTxt:(hs.length?(nUp+" en hausse"):"—"), sub:nDn+" en baisse · "+AH.list.filter(function(P){ return P.nBuy>=2; }).length+" produits suivis",
+            stats:[ {l:"Plus forte hausse", v:(hs[0]&&hs[0].evo>0?esc(hs[0].name):"—"), d:(hs[0]&&hs[0].evo>0?"+"+String(Math.round(hs[0].evo*10)/10).replace(".",",")+" %":"")}, {l:"Plus forte baisse", v:(nDn?esc(hs[hs.length-1].name):"—"), d:(nDn?String(Math.round(hs[hs.length-1].evo*10)/10).replace(".",",")+" %":"")}, {l:"Hausse moyenne", v:(hs.length?(function(){ var t=0; hs.forEach(function(P){ t+=P.evo; }); var m=t/hs.length; return (m>=0?"+":"")+String(Math.round(m*10)/10).replace(".",",")+" %"; })():"—"), d:"des produits suivis"} ] };
         } else {
-          var ms=[], mk=month; for(var i=0;i<6;i++){ ms.unshift(mk); mk=prevMonthKey(mk); }
-          chart+=artAvgBars(trimLead(ms.map(function(m){ return { m:m, lbl:artMShort(m), v:artMonthData(m).grand }; }), function(r){ return r.v; }), month);
+          var cp=AH.list.filter(function(P){ return P.stores.length>=2; }).sort(function(a,b){ return (b.stores[b.stores.length-1].avg-b.stores[0].avg)-(a.stores[a.stores.length-1].avg-a.stores[0].avg); });
+          chart+=cp.length ? cp.map(function(P){ var lo=P.stores[0], hi=P.stores[P.stores.length-1];
+              return line(P, '<span style="display:block">'+esc(lo.name)+' '+esc(fmtK(lo.avg))+' · '+esc(hi.name)+' '+esc(fmtK(hi.avg))+'</span>', '−'+fmtK(hi.avg-lo.avg)+'<small class="muted">/u</small>', 'var(--accent)'); }).join("")+'<div class="cch-note">Produits achetés dans au moins 2 magasins (12 mois) · prix moyen d\'une ligne · le plus gros écart en premier</div>'
+                           : '<div class="cch-note" style="margin:24px 0">Rien à comparer : il faut un même produit acheté dans au moins deux magasins.</div>';
+          var wins={}; cp.forEach(function(P){ wins[P.stores[0].name]=(wins[P.stores[0].name]||0)+1; }); var bestS=Object.keys(wins).sort(function(a,b){ return wins[b]-wins[a]; })[0];
+          heroO={ label:"Moins cher ailleurs", big:AH.saveMonth, sub:"d'économie possible ce mois",
+            stats:[ {l:"Comparés", v:String(cp.length), d:"produits"}, {l:"Le moins cher", v:(bestS?esc(bestS):"—"), d:(bestS?wins[bestS]+" fois sur "+cp.length:"")}, {l:"Sur 12 mois", v:fmtS(AH.saveYear), d:"à économiser"} ] };
         }
         chart+='</div>';
         if(!aSub) h+=tabTools([["artprod","⚙︎ Produits & catégories"]]);
-        if(!aSub) h+=tabHero({ label:"Articles achetés", big:D.grand, sub:D.nArt+" article"+(D.nArt>1?"s":"")+" · "+D.famKeys.length+" famille"+(D.famKeys.length>1?"s":""), extra:chart,
-          stats:[ {l:"Le plus acheté", v:(D.most?esc(D.most.name):"—"), d:(D.most?"×"+D.most.n:"")}, {l:"Le plus cher", v:(D.top?esc(D.top.name):"—"), d:(D.top?fmtS(D.top.amt):"")}, {l:"Prix moyen", v:fmtS(D.nArt?D.grand/D.nArt:0), d:"par article"} ] });
+        if(!aSub){ var ho={ label:heroO.label, big:(heroO.big==null?0:heroO.big), sub:heroO.sub, extra:chart, stats:heroO.stats }, hh=tabHero(ho);
+          if(heroO.big==null) hh=hh.replace(/<div class="dash-big"[^>]*>[\s\S]*?<\/div>/, '<div class="dash-big" style="margin-top:6px;color:var(--ink)">'+esc(heroO.bigTxt)+'</div>');
+          h+=hh; }
         // ---- familles repliables
         var open=state.artOpen||(state.artOpen={});
         var famH='<section class="paper cacc">';
@@ -3605,7 +3645,7 @@
       wireChartDefaults();
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.artChart=bt.getAttribute("data-m"); render(); }; });
       var ap=document.getElementById("artprod"); if(ap) ap.onclick=function(){ state.prodFrom="articles"; state.view="produits"; render(); window.scrollTo(0,0); };
-      if(D.famKeys.length && !aSub) wireHeroSwipe(state.artChart||store.read("artChartDef","fam"), ["fam","top","6m"], function(k){ state.artChart=k; });
+      if(D.famKeys.length && !aSub) wireHeroSwipe(state.artChart||store.read("artChartDef","prod"), ["prod","hausse","cher"], function(k){ state.artChart=k; });
       wireMonthNav(month, curM, "articles");
       setNav("articles", true);
     }
