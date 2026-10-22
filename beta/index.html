@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 07:58" />
+  <meta name="build" content="22/10 08:17" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -3526,7 +3526,7 @@
     // Historique des articles (12 derniers mois jusqu'au mois affiché) : prix d'une ligne, magasins, évolution, économies possibles
     function artHistory(month){
       var mk=month, ms={}; for(var i=0;i<12;i++){ ms[mk]=1; mk=prevMonthKey(mk); }
-      var pOn=artProdOn(), by={}, unr={};
+      var pOn=artProdOn(), by={}, sm={};
       function sk(x){ x=String(x||"").toLowerCase(); try{ x=x.normalize("NFD").replace(/[\u0300-\u036f]/g,""); }catch(e){} return x.replace(/[^a-z ]+/g," ").replace(/\b(sas|sarl|sa|magasin|store|super|hyper|market)\b/g," ").replace(/\s+/g," ").trim(); }
       // magasins presque identiques regroupés : même premier mot à une lettre près (« INTERMACHE » = « Intermarché La Rotonde »)
       function lev(a,b){ if(Math.abs(a.length-b.length)>2) return 9; var d=[], i, j; for(i=0;i<=a.length;i++) d[i]=[i]; for(j=1;j<=b.length;j++) d[0][j]=j;
@@ -3537,14 +3537,10 @@
         if(hit) ali[k]=hit; else heads.push(k); });
       vEntries().forEach(function(e){ var m=monthKey(e.date); if(!ms[m]) return; var st=(e.marchand||"").trim(), k=sk(st); k=ali[k]||k;
         (e.articles||[]).forEach(function(a){ if(a.commun && !pOn) return; var c=classifyArticle(a); if(c.fam==="Remise" || !(c.amt>0)) return;
-          if(!a.produit || FAMILLES.indexOf(a.produit)>=0){ var w=regroupWord(a.label); if(w){ var U=unr[w]||(unr[w]={ word:w, labels:{}, stores:{}, fams:{} }); U.labels[(a.label||"").trim()]=st; U.stores[k]=1; U.fams[c.fam]=(U.fams[c.fam]||0)+1; } }
-          var key=c.fam+"|"+c.name; if(!by[key]) by[key]={ fam:c.fam, name:c.name, lines:[], words:{} };
-          if(a.produit && FAMILLES.indexOf(a.produit)<0){ var w2=cutKey(a.label, a.produit); if(w2){ var G=by[key].words[w2]||(by[key].words[w2]={ word:w2, n:0, sum:0, labels:{} }); G.n++; G.sum+=c.amt; G.labels[(a.label||"").trim()]=1; } } by[key].lines.push({ d:e.date||"", m:m, p:c.amt, sk:k, st:st }); }); });
+          if(m===month){ var S0=sm[k||"?"]||(sm[k||"?"]={ name:st||"?", names:{}, sum:0, nA:0, t:{} }); S0.sum+=c.amt; S0.nA++; S0.t[e.id]=1; S0.names[st||"?"]=(S0.names[st||"?"]||0)+1; }
+          var key=c.fam+"|"+c.name; if(!by[key]) by[key]={ fam:c.fam, name:c.name, lines:[] };
+          by[key].lines.push({ d:e.date||"", m:m, p:c.amt, sk:k, st:st }); }); });
       var list=[], saveMonth=0, saveYear=0;
-      // suggestions « À regrouper ? » : même premier mot, au moins 2 magasins et 2 libellés différents, pas ignorées
-      var ign=store.read("regroupIgnore", []) || [], sugg=[];
-      Object.keys(unr).forEach(function(w){ var U=unr[w]; if(ign.indexOf(w)>=0 || Object.keys(U.stores).length<2 || Object.keys(U.labels).length<2) return;
-        U.fam=Object.keys(U.fams).sort(function(a,b){ return U.fams[b]-U.fams[a]; })[0]; sugg.push(U); });
       Object.keys(by).forEach(function(key){ var P=by[key], L=P.lines.sort(function(a,b){ return a.d<b.d?-1:(a.d>b.d?1:0); });
         var stores={}; L.forEach(function(l){ if(!l.sk) return; var o=stores[l.sk]||(stores[l.sk]={ name:l.st, sum:0, n:0, names:{} }); o.sum+=l.p; o.n++; o.names[l.st]=(o.names[l.st]||0)+1; });
         var sl=Object.keys(stores).map(function(k){ var o=stores[k]; o.avg=o.sum/o.n; o.name=Object.keys(o.names).sort(function(a,b){ return o.names[b]-o.names[a]; })[0]; return o; }).sort(function(a,b){ return a.avg-b.avg; });
@@ -3559,41 +3555,8 @@
         list.push({ fam:P.fam, name:P.name, nBuy:L.length, nMonth:inM.length, totMonth:inM.reduce(function(t,l){ return t+l.p; },0),
           firstPrice:f0.p, lastPrice:(inM.length?inM[inM.length-1].p:last.p), lastStore:(inM.length?inM[inM.length-1].st:last.st), evo:(L.length>1 && f0!==last && f0.p>0 ? (last.p-f0.p)/f0.p*100 : 0), stores:sl });
       });
-      // suggestions « À découper ? » : un produit qui mélange des articles différents (BAGUETTE, PAIN DE MIE…) aux prix très écartés
-      var cut=[], cign=store.read("decoupeIgnore", []) || [];
-      Object.keys(by).forEach(function(key){ var P=by[key]; if(cign.indexOf(P.name)>=0) return; var ws=Object.keys(P.words).map(function(w){ var G=P.words[w]; G.avg=G.sum/G.n; return G; });
-        if(ws.length<2) return; var ps=P.lines.map(function(l){ return l.p; }).sort(function(a,b){ return a-b; }); if(!(ps[ps.length-1] > ps[0]*1.5)) return;
-        ws=ws.sort(function(a,b){ return b.n-a.n; });
-        if(ws.length) cut.push({ fam:P.fam, name:P.name, groups:ws, n:P.lines.length }); });
-      return { list:list, saveMonth:saveMonth, saveYear:saveYear, sugg:sugg, cut:cut };
-    }
-    // premier mot significatif d'un libellé de ticket (sans chiffres, poids ni petits mots) : « SAVON DOVE 250ML » → « savon »
-    var REGROUP_STOP=["les","des","une","pour","avec","sans","lot","pack","bte","boite","sachet","paquet","bouteille","pot","promo","prix","offre","demarque","remise","reduc","reduction","x"];
-    // clé de découpe d'une ligne dans un produit : son premier mot, ou le début du libellé quand ce mot est le nom du produit
-    // (« PAIN DE MIE AVEC GLU EUR A » dans « Pain » → « pain de mie ») ; "" = la ligne reste dans le produit
-    function cutKey(label, prod){
-      var w=regroupWord(label), own=norm(prod); if(!w) return "";
-      if(w!==own && own.indexOf(w)<0 && w.indexOf(own)<0) return w;
-      var t=String(label||"").trim().split(/\s+/), out=[];
-      for(var i=0;i<t.length && out.length<3;i++){ var x=t[i]; if(/[0-9€]/.test(x) || /^(eur|x|a)$/i.test(x)) break; out.push(x.toLowerCase()); }
-      var k=out.join(" "); return (norm(k)===own || out.length<2) ? "" : k;
-    }
-    function regroupWord(label){ var t=norm(label).split(" "); for(var i=0;i<t.length;i++){ if(t[i].length>=4 && REGROUP_STOP.indexOf(t[i])<0) return t[i]; } return ""; }
-    // ranger sous un même produit toutes les lignes non rangées qui commencent par ce mot (et l'apprendre pour les prochains tickets)
-    // sortir d'un produit les lignes qui commencent par ce mot, vers un produit plus précis (même famille), et l'apprendre
-    function splitLines(prod, word, name){
-      name=(name||"").trim(); if(!name || name===prod) return;
-      if(takenAs(name)==="grande catégorie"){ uiToast("« "+name+" » est une famille : choisis un autre nom"); return; }
-      if(PRODUITS.indexOf(name)<0){ PRODUITS.push(name); FAMILLE_DE[name]=familleOf(prod); }
-      var n=0; state.entries.forEach(function(e){ (e.articles||[]).forEach(function(a){ if(a.produit===prod && cutKey(a.label, prod)===word){ a.produit=name; if(a.label) APPRIS[norm(a.label)]=name; n++; } }); });
-      persist(); persistProd(); persistFamille(); persistAppris(); uiToast(n+" ligne"+(n>1?"s":"")+" déplacée"+(n>1?"s":"")+" vers « "+name+" » ✓"); render();
-    }
-    function regroupLines(word, name, fam){
-      name=(name||"").trim(); if(!name) return;
-      var w=takenAs(name); if(w==="grande catégorie"){ uiToast("« "+name+" » est une famille : choisis un autre nom"); return; }
-      if(PRODUITS.indexOf(name)<0){ PRODUITS.push(name); FAMILLE_DE[name]=(fam && fam!=="Divers" && FAMILLES.indexOf(fam)>=0) ? fam : (FAMILLE_DE[name]||"Divers"); }
-      var n=0; state.entries.forEach(function(e){ (e.articles||[]).forEach(function(a){ if((!a.produit || FAMILLES.indexOf(a.produit)>=0) && regroupWord(a.label)===word){ a.produit=name; if(a.label) APPRIS[norm(a.label)]=name; n++; } }); });
-      persist(); persistProd(); persistFamille(); persistAppris(); uiToast(n+" ligne"+(n>1?"s":"")+" rangée"+(n>1?"s":"")+" sous « "+name+" » ✓"); render();
+      Object.keys(sm).forEach(function(k){ var o=sm[k]; o.nT=Object.keys(o.t).length; o.name=Object.keys(o.names).sort(function(a,b){ return o.names[b]-o.names[a]; })[0]; });
+      return { list:list, saveMonth:saveMonth, saveYear:saveYear, storesMonth:sm };
     }
     function artProdOn(){ var v=state.artProd; if(v==null) v=store.read("artProd", true); return !!v; }
     function artMonthData(m){
@@ -3636,7 +3599,7 @@
         h+='<section class="paper cacc" style="padding:18px 16px"><div class="center muted" style="font-size:12.5px;line-height:1.5">Aucun article rangé ce mois-ci.<br>Scanne un ticket et classe ses lignes par produit.</div>'+(!artProdOn()?'<div class="center" style="margin-top:12px"><button type="button" class="anfx" id="artProdBtn">＋ Produits partagés</button><div class="muted" style="font-size:11px;margin-top:6px">Les produits partagés sont masqués</div></div>':'')+'</section>';
       } else {
         // Articles = ce que j'achète et à quel prix : Mes produits (du mois), Hausses, Moins cher (12 derniers mois)
-        var TABS=[["prod","Mes produits"],["hausse","Hausses"],["cher","Moins cher"]];
+        var TABS=[["prod","Mes produits"],["hausse","Hausses"],["mag","Magasins"]];
         var mode=state.artChart||store.read("artChartDef","prod"); if(!TABS.some(function(x){ return x[0]===mode; })) mode="prod";
         var apOn=artProdOn(), apAny=state.entries.some(function(e){ return (e.articles||[]).some(function(a){ return a.commun; }); });
         var AH=artHistory(month);
@@ -3650,7 +3613,7 @@
                            : '<div class="cch-note" style="margin:24px 0">Aucun produit ce mois-ci.</div>';
           var hz=AH.list.filter(function(P){ return P.nMonth>0 && P.evo>0.5; }).sort(function(a,b){ return b.evo-a.evo; })[0];
           heroO={ label:"Achats du mois", big:D.grand, sub:D.nArt+" article"+(D.nArt>1?"s":"")+" · "+mp.length+" produit"+(mp.length>1?"s":""),
-            stats:[ {l:"Plus forte hausse", v:(hz?esc(hz.name):"—"), d:(hz?"+"+String(Math.round(hz.evo*10)/10).replace(".",",")+" %":"")}, {l:"Le plus acheté", v:(D.most?esc(D.most.name):"—"), d:(D.most?"×"+D.most.n:"")}, {l:"À économiser", v:fmtS(AH.saveMonth), d:"ce mois"} ] };
+            stats:[ {l:"Plus forte hausse", v:(hz?esc(hz.name):"—"), d:(hz?"+"+String(Math.round(hz.evo*10)/10).replace(".",",")+" %":"")}, {l:"Le plus acheté", v:(D.most?esc(D.most.name):"—"), d:(D.most?"×"+D.most.n:"")}, {l:"Magasins", v:String(Object.keys(AH.storesMonth).length), d:"ce mois"} ] };
         } else if(mode==="hausse"){
           var hs=AH.list.filter(function(P){ return P.nBuy>=2 && Math.abs(P.evo)>=0.5; }).sort(function(a,b){ return b.evo-a.evo; });
           chart+=hs.length ? hs.map(function(P){ return line(P, esc(fmtK(P.firstPrice))+' → '+esc(fmtK(P.lastPrice)), (P.evo>0?'▲ +':'▼ ')+String(Math.round(P.evo*10)/10).replace(".",",")+' %', (P.evo>0?'var(--coral)':'var(--accent)')); }).join("")+'<div class="cch-note">Prix d\'une ligne, premier achat → dernier, sur 12 mois · les hausses en premier</div>'
@@ -3659,23 +3622,15 @@
           heroO={ label:"Évolution des prix · 12 mois", big:null, bigTxt:(hs.length?(nUp+" en hausse"):"—"), sub:nDn+" en baisse · "+AH.list.filter(function(P){ return P.nBuy>=2; }).length+" produits suivis",
             stats:[ {l:"Plus forte hausse", v:(hs[0]&&hs[0].evo>0?esc(hs[0].name):"—"), d:(hs[0]&&hs[0].evo>0?"+"+String(Math.round(hs[0].evo*10)/10).replace(".",",")+" %":"")}, {l:"Plus forte baisse", v:(nDn?esc(hs[hs.length-1].name):"—"), d:(nDn?String(Math.round(hs[hs.length-1].evo*10)/10).replace(".",",")+" %":"")}, {l:"Hausse moyenne", v:(hs.length?(function(){ var t=0; hs.forEach(function(P){ t+=P.evo; }); var m=t/hs.length; return (m>=0?"+":"")+String(Math.round(m*10)/10).replace(".",",")+" %"; })():"—"), d:"des produits suivis"} ] };
         } else {
-          var cp=AH.list.filter(function(P){ return P.stores.length>=2; }).sort(function(a,b){ return (b.stores[b.stores.length-1].avg-b.stores[0].avg)-(a.stores[a.stores.length-1].avg-a.stores[0].avg); });
-          chart+=cp.length ? cp.map(function(P){ var lo=P.stores[0], hi=P.stores[P.stores.length-1];
-              return line(P, '<span style="display:block">moins cher chez <b style="color:var(--accent)">'+esc(lo.name)+'</b> '+esc(fmtK(lo.avg))+' · '+esc(hi.name)+' '+esc(fmtK(hi.avg))+'</span>', '+'+fmtK(hi.avg-lo.avg)+'<small class="muted" style="display:block;font-weight:500;text-align:right">par achat</small>', 'var(--coral)'); }).join("")+'<div class="cch-note">Même produit dans au moins 2 magasins (12 mois) · prix moyen payé par achat · écarts de plus de 50 % ignorés (quantités différentes)</div>'
-                           : '<div style="margin:18px 4px;font-size:12.5px;line-height:1.55;color:var(--ink-soft)"><b style="color:var(--ink)">Rien à comparer pour l\'instant.</b><br>Pour savoir où un produit est moins cher, il faut <b>le même article précis</b> acheté dans au moins deux magasins : « Lait demi-écrémé 1 L », « Café moulu 250 g »…<br><br>Les produits rangés par type (« Légumes », « Dessert », « Matériaux »…) ne se comparent pas : leur prix dépend de ce qu\'il y a dedans.<br><br>Astuce : sur un ticket, range chaque article sous son nom précis ; l\'appli s\'en souviendra pour les suivants.'+(pvCur()!=="all"?' Essaie aussi « Tout le foyer » en haut.':'')+'</div>';
-          if(AH.sugg.length){ chart+='<div class="bsec-h" style="font-size:14px;margin:16px 2px 4px">À regrouper ?<small>même produit, noms différents</small></div>';
-            AH.sugg.slice(0,8).forEach(function(U){ var labs=Object.keys(U.labels), nm=capFirst(U.word);
-              chart+='<div class="rg-s" style="border-top:1px solid var(--line);padding:9px 2px"><div style="font-size:12px;color:var(--ink-soft);line-height:1.45">'+labs.slice(0,3).map(function(l){ return '« '+esc(l)+' » <small class="muted">'+esc(U.labels[l])+'</small>'; }).join(" · ")+(labs.length>3?' · +'+(labs.length-3):'')+'</div>'+
-                '<div style="display:flex;gap:6px;margin-top:6px;align-items:center"><button type="button" class="ap-tool com-add rg-go" data-w="'+esc(U.word)+'" data-n="'+esc(nm)+'" data-f="'+esc(U.fam||"")+'">Regrouper sous « '+esc(nm)+' »</button><button type="button" class="ap-tool rg-ren" data-w="'+esc(U.word)+'" data-n="'+esc(nm)+'" data-f="'+esc(U.fam||"")+'" aria-label="Autre nom">✎</button><button type="button" class="ap-tool rg-ign" data-w="'+esc(U.word)+'" aria-label="Ignorer" style="color:var(--muted)">✕</button></div></div>'; }); }
-          if(AH.cut.length){ chart+='<div class="bsec-h" style="font-size:14px;margin:16px 2px 4px">À découper ?<small>produits qui mélangent plusieurs articles</small></div>';
-            AH.cut.slice(0,6).forEach(function(C){
-              chart+='<div class="rg-s" style="border-top:1px solid var(--line);padding:9px 2px"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:13px">'+esc(C.name)+' <small class="muted" style="font-weight:500">'+C.n+' achats · prix de '+esc(fmtK(Math.min.apply(null,C.groups.map(function(G){ return G.avg; }))))+' à '+esc(fmtK(Math.max.apply(null,C.groups.map(function(G){ return G.avg; }))))+'</small></b><button type="button" class="ap-tool cut-ign" data-p="'+esc(C.name)+'" aria-label="Ignorer" style="color:var(--muted)">✕</button></div>';
-              C.groups.slice(0,5).forEach(function(G){ var nm=capFirst(G.word), lb=Object.keys(G.labels);
-                chart+='<div style="display:flex;gap:6px;align-items:center;margin-top:6px"><span style="flex:1;min-width:0;font-size:12px;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">« '+esc(lb[0])+' »'+(lb.length>1?' +'+(lb.length-1):'')+' <small class="muted">×'+G.n+' · '+esc(fmtK(G.avg))+'</small></span><button type="button" class="ap-tool com-add cut-go" data-p="'+esc(C.name)+'" data-w="'+esc(G.word)+'" data-n="'+esc(nm)+'">→ « '+esc(nm)+' »</button><button type="button" class="ap-tool cut-ren" data-p="'+esc(C.name)+'" data-w="'+esc(G.word)+'" data-n="'+esc(nm)+'" aria-label="Autre nom">✎</button></div>'; });
-              chart+='</div>'; }); }
-          var wins={}; cp.forEach(function(P){ wins[P.stores[0].name]=(wins[P.stores[0].name]||0)+1; }); var bestS=Object.keys(wins).sort(function(a,b){ return wins[b]-wins[a]; })[0];
-          heroO={ label:"Moins cher ailleurs", big:AH.saveMonth, sub:"d'économie possible ce mois",
-            stats:[ {l:"Comparés", v:String(cp.length), d:"produits"}, {l:"Le moins cher", v:(bestS?esc(bestS):"—"), d:(bestS?wins[bestS]+" fois sur "+cp.length:"")}, {l:"Sur 12 mois", v:fmtS(AH.saveYear), d:"à économiser"} ] };
+          // Magasins : où partent les achats d'articles du mois (noms de magasin regroupés)
+          var SM=AH.storesMonth, sl2=Object.keys(SM).map(function(k){ return SM[k]; }).sort(function(a,b){ return b.sum-a.sum; }), smT=0, smN=0, smMax=sl2.length?sl2[0].sum:1;
+          sl2.forEach(function(x){ smT+=x.sum; smN+=x.nT; });
+          chart+=sl2.length ? sl2.map(function(x, ix){ var pc=Math.max(2, Math.round(x.sum/smMax*100));
+              return '<div class="bar-row" style="margin:10px 2px"><div class="bar-top"><span class="bl">'+esc(x.name)+' <small class="muted">'+x.nT+' passage'+(x.nT>1?'s':'')+' · '+x.nA+' article'+(x.nA>1?'s':'')+'</small></span><span class="bv">'+fmtK(x.sum)+' <small class="muted">'+Math.round(x.sum/(smT||1)*100)+' %</small></span></div><div class="bar-track"><i style="width:'+pc+'%;background:'+["#7c9cf4","#e0a458","#4fd6a0","#c78bd6","#5bc0d4","#e88fb0","#9bd35e","#d4a05b"][ix%8]+'"></i></div></div>'; }).join("")+'<div class="cch-note">Montant des articles achetés dans chaque magasin ce mois-ci</div>'
+                            : '<div class="cch-note" style="margin:24px 0">Aucun article ce mois-ci.</div>';
+          var top2=sl2.slice().sort(function(a,b){ return b.nT-a.nT; })[0];
+          heroO={ label:"Magasins du mois", big:smT, sub:sl2.length+" magasin"+(sl2.length>1?"s":"")+" · "+smN+" passage"+(smN>1?"s":""),
+            stats:[ {l:"Magasin principal", v:(sl2[0]?esc(sl2[0].name):"—"), d:(sl2[0]?Math.round(sl2[0].sum/(smT||1)*100)+" % des achats":"")}, {l:"Le plus fréquenté", v:(top2?esc(top2.name):"—"), d:(top2?top2.nT+" passage"+(top2.nT>1?"s":""):"")}, {l:"Panier moyen", v:fmtS(smN?smT/smN:0), d:"par passage"} ] };
         }
         chart+='</div>';
         if(!aSub) h+=tabTools([["artprod","⚙︎ Produits & catégories"]]);
@@ -3697,14 +3652,6 @@
 
       app.innerHTML=h;
       if(aSub) bindBack(function(){ state.artSub=null; render(); window.scrollTo(0,0); });
-      [].forEach.call(document.querySelectorAll(".rg-go"), function(b){ b.onclick=function(ev){ ev.stopPropagation(); regroupLines(b.getAttribute("data-w"), b.getAttribute("data-n"), b.getAttribute("data-f")); }; });
-      [].forEach.call(document.querySelectorAll(".rg-ren"), function(b){ b.onclick=function(ev){ ev.stopPropagation(); var w=b.getAttribute("data-w"), f=b.getAttribute("data-f");
-        uiForm({ title:"Nom du produit", fields:[{ key:"n", label:"Ranger ces lignes sous", value:b.getAttribute("data-n"), required:true }] }, function(r){ setTimeout(function(){ regroupLines(w, r.n, f); }, 0); }); }; });
-      [].forEach.call(document.querySelectorAll(".cut-go"), function(b){ b.onclick=function(ev){ ev.stopPropagation(); splitLines(b.getAttribute("data-p"), b.getAttribute("data-w"), b.getAttribute("data-n")); }; });
-      [].forEach.call(document.querySelectorAll(".cut-ren"), function(b){ b.onclick=function(ev){ ev.stopPropagation(); var pr=b.getAttribute("data-p"), w=b.getAttribute("data-w");
-        uiForm({ title:"Nouveau produit", fields:[{ key:"n", label:"Déplacer ces lignes vers", value:b.getAttribute("data-n"), required:true, help:"Un produit existant ou un nouveau nom (famille de « "+esc(pr)+" »)." }] }, function(r){ setTimeout(function(){ splitLines(pr, w, r.n); }, 0); }); }; });
-      [].forEach.call(document.querySelectorAll(".cut-ign"), function(b){ b.onclick=function(ev){ ev.stopPropagation(); var l=store.read("decoupeIgnore", [])||[]; l.push(b.getAttribute("data-p")); store.write("decoupeIgnore", l); render(); }; });
-      [].forEach.call(document.querySelectorAll(".rg-ign"), function(b){ b.onclick=function(ev){ ev.stopPropagation(); var l=store.read("regroupIgnore", [])||[]; l.push(b.getAttribute("data-w")); store.write("regroupIgnore", l); render(); }; });
       var apb=document.getElementById("artProdBtn"); if(apb) apb.onclick=function(ev){ ev.stopPropagation(); state.artProd=!artProdOn(); store.write("artProd", state.artProd); render(); };
       var afm=document.getElementById("artfam"); if(afm) afm.onclick=function(){ state.artSub="fam"; render(); window.scrollTo(0,0); };
       [].forEach.call(document.querySelectorAll(".dgrp .dgh"), function(hd){ hd.onclick=function(){ var g=hd.parentNode, k=g.getAttribute("data-g"); state.artOpen[k]=!state.artOpen[k]; g.classList.toggle("open", !!state.artOpen[k]); }; });
@@ -3712,7 +3659,7 @@
       wireChartDefaults();
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.artChart=bt.getAttribute("data-m"); render(); }; });
       var ap=document.getElementById("artprod"); if(ap) ap.onclick=function(){ state.prodFrom="articles"; state.view="produits"; render(); window.scrollTo(0,0); };
-      if(D.famKeys.length && !aSub) wireHeroSwipe(state.artChart||store.read("artChartDef","prod"), ["prod","hausse","cher"], function(k){ state.artChart=k; });
+      if(D.famKeys.length && !aSub) wireHeroSwipe(state.artChart||store.read("artChartDef","prod"), ["prod","hausse","mag"], function(k){ state.artChart=k; });
       wireMonthNav(month, curM, "articles");
       setNav("articles", true);
     }
