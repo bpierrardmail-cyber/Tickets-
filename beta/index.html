@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 23:08" />
+  <meta name="build" content="22/10 23:19" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -3109,7 +3109,10 @@
     function homeChartCards(){
       var out=[], saveApp=app, saveView=state.view, box=document.createElement("div");
       var subKeep={ anSub:state.anSub, comSub:state.comSub, artSub:state.artSub, cptPage:state.cptPage };
+      var hm=(state.months&&state.months.list)||null, curH=monthKey(todayISO());   // mois choisi sur l'accueil : les cartes le suivent
       function grab(view, key, fn, mode){
+        if(!state.months) state.months={};
+        var keepM=state.months[view], keepGP=state.graphPeriod; state.months[view]=hm; if(view==="analyse" && hm && hm!==curH){ state.graphPeriod="m:"+hm; state.anRef=hm; }
         var keep=state[key], r=null; state[key]=mode; app=box; state.view=view; state.anSub=null; state.comSub=null; state.artSub=null;
         try{ fn(); var hero=box.querySelector(".thero"), ch=hero && hero.querySelector(".cch"), on=box.querySelector(".cch-tabs button.on"), caps=hero?hero.querySelectorAll(".dash-cap"):[];
           if(ch) [].forEach.call(ch.querySelectorAll(".crep-full"), function(x){ x.parentNode.removeChild(x); });   // la petite carte n'a que la version courte
@@ -3118,6 +3121,7 @@
         catch(e){ try{ console.warn(e); }catch(_){} }
         state[key]=keep; app=saveApp; state.view=saveView; box.innerHTML="";
         state.anSub=subKeep.anSub; state.comSub=subKeep.comSub; state.artSub=subKeep.artSub; state.cptPage=subKeep.cptPage;
+        state.months[view]=keepM; state.graphPeriod=keepGP; state.anRef=null;
         return r;
       }
       var solo={};
@@ -3127,7 +3131,7 @@
         if(bc) solo.bourse=({ tab:"bourse", name:"Bourse", c:{ label:"Total portefeuille", big:moneyBig(bT), chart:bc, stats:bSt, mode:(state.bView==="bars"?"Mois par mois":"Courbe "+(state.bRange||"1J")) } }); }
       var FN={ compte:renderCompte, analyse:renderAnalyse, communes:renderCommunes, articles:renderArticles };
       // Épargne et Provisions : les 3 plus gros montants, puis « + N autres »
-      var m0=monthKey(todayISO());
+      var m0=hm||monthKey(todayISO());
       function mlist(rows, col){
         var top=rows.slice(0,3), oth=rows.slice(3), mx=0; rows.forEach(function(r){ mx=Math.max(mx, r.v); });
         return '<div class="mlist">'+top.map(function(r){ var w=(r.w!=null)?r.w:(mx>0?r.v/mx*100:0);
@@ -3282,8 +3286,9 @@
           })();
           h += '<div class="dash-split h3'+(lq?' h4':'')+'" id="heroCpt"><span>Banque<b>'+fk(cb.solde)+'</b></span>'+(lq?'<span>Liquide<b>'+fk(lqV)+'</b></span>':'')+'<span>Épargne<b style="color:var(--accent)">'+fk(epTot)+'</b></span><span>Provisions<b>'+fk(prTot)+'</b></span><em>›</em></div>';
         }
-        h += '<div class="dash-track"><i style="width:'+pctM+'%"></i></div>';
-        h += '<div class="dash-trackcap"><span>'+(isCur?'Jour '+day+' sur '+dim:'Mois terminé')+'</span><span>'+(isCur?(dim-day)+' j restants':'')+'</span></div>';
+        var fut=(month>curM);
+        h += '<div class="dash-track"><i style="width:'+(fut?0:pctM)+'%"></i></div>';
+        h += '<div class="dash-trackcap"><span>'+(isCur?'Jour '+day+' sur '+dim:(fut?'Mois à venir':'Mois terminé'))+'</span><span>'+(isCur?(dim-day)+' j restants':'')+'</span></div>';
         h += '</section>';
 
         // --- Graphiques ★ des onglets (en premier : l'essentiel d'un coup d'œil)
@@ -3474,6 +3479,7 @@
         c.addEventListener("contextmenu", function(e){ e.preventDefault(); lpStop(); if(!lpDone){ lpDone=true; homeCardMenu(c.getAttribute("data-id")); } });
         c.onclick=function(){ if(lpDone){ lpDone=false; return; } var g=c.getAttribute("data-go"), m=c.getAttribute("data-m");
           if(m && HC_TABS[g]){ state[HC_TABS[g].key]=m; if(g==="analyse") store.write("anChart", m); if(g==="compte"){ state.cptPage=null; } }
+          var lm=(state.months&&state.months.list)||null; if(!state.months) state.months={}; if(g==="compte"||g==="communes"||g==="articles"||g==="provisions") state.months[g]=lm; if(g==="analyse" && lm) state.graphPeriod="m:"+lm;
           if(g==="epargne"){ state.compteSel=myAcct().key; state.cptPage="ep"; state.view="comptedet"; } else state.view=g;
           render(); window.scrollTo(0,0); }; });
       enrichMiniCharts();
@@ -5099,8 +5105,8 @@
         chart+='<div class="cch-leg"><span><i style="background:#7c9cf4"></i>Sous la moyenne</span><span><i style="background:#e0a458"></i>Au-dessus</span>'+(fxIn?'<span><i style="background:#c78bd6"></i>Frais fixes</span>':'')+'</div>';
         chart+='<div class="cch-note">'+(sel?'« '+esc(selLabel)+' » par mois'+(fxOn?' · frais fixes seulement avec « Toutes les dépenses »':''):(fxIn?'Tickets + frais fixes par mois':'Total des tickets par mois'))+' · touche une barre pour le détail du mois</div>';
         // en grand : le mois en cours ; le total de la période passe dans les encadrés
-        var cm0=data[data.length-1]||{ total:0, fx:0 };
-        hero={ label:"Dépensé en "+esc(monthLabelOf(curM))+(sel?" · "+esc(selLabel):""), big:cm0.total, color:"var(--ink)",
+        var refM=state.anRef||curM, cm0=data.filter(function(d){ return d.key===refM; })[0]||(refM>curM?{ total:0, fx:0, key:refM }:null)||data[data.length-1]||{ total:0, fx:0, key:curM };   // l'accueil peut demander un autre mois
+        hero={ label:"Dépensé en "+esc(monthLabelOf(cm0.key||curM))+(sel?" · "+esc(selLabel):""), big:cm0.total, color:"var(--ink)",
                sub:(fxIn && cm0.fx>0 ? "dont frais fixes "+fmtK(cm0.fx) : (avg>0 ? (cm0.total>avg?"au-dessus":"en dessous")+" de la moyenne de "+fmtK(avg) : "")),
                stats:[ {l:"Moyenne / mois", v:fmtS(avg)}, {l:"Record"+(best&&best.total>0?" · "+esc(best.short):""), v:(best&&best.total>0?fmtS(best.total):"—")}, {l:"Sur "+shown.length+" mois", v:fmtS(grand)} ] };
       } else if(mode==="rec"){
