@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/10 23:02" />
+  <meta name="build" content="22/10 23:05" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2988,6 +2988,7 @@
       others.forEach(function(p){ out.push({ v:p, l:p }); });
       return out;
     }
+    function artBudLbl(){ var any=Object.keys(budgets).some(function(c){ return budgets[c]>0; }) || Object.keys(budgetsP).some(function(p){ return Object.keys(budgetsP[p]||{}).length>0; }); return any?"Budgets ✎":"＋ Fixer des budgets"; }
     function editBudgets(month){
       var me=state.entries.filter(function(x){ return monthKey(x.date)===month; });
       var list=CATS.slice(); me.forEach(function(x){ if(x.categorie && list.indexOf(x.categorie)<0) list.push(x.categorie); });
@@ -3297,7 +3298,7 @@
         var budCats=Object.keys(PB).filter(function(c){ return PB[c]>0; });
         var anyBud=Object.keys(budgets).some(function(c){ return budgets[c]>0; }) || Object.keys(budgetsP).some(function(p){ return Object.keys(budgetsP[p]||{}).length>0; });
         var allCats=cats.slice(); budCats.forEach(function(c){ if(allCats.indexOf(c)<0) allCats.push(c); });
-        h += '<div class="bsec-h">Où part l\'argent<button class="linkbtn" id="budEdit" type="button">'+(anyBud?'Budgets ✎':'+ Fixer des budgets')+'</button></div><section class="paper cacc hcats">';
+        h += '<div class="bsec-h">Où part l\'argent</div><section class="paper cacc hcats">';
         if(budCats.length){
           var bSpent=0, bTot=0; budCats.forEach(function(c){ bTot+=PB[c]; bSpent+=(parCat[c]||0); });
           var bR=bTot?bSpent/bTot:0;
@@ -3755,7 +3756,7 @@
       var ASUB={ fam:"Par famille", prods:"Produits du mois", prix:"Prix suivis", mags:"Par magasin" };
       var aSub=(ASUB[state.artSub] && D.famKeys.length) ? state.artSub : null;
       var h=header(!!aSub, aSub?ASUB[aSub]:"")+pvBarHTML()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabelOf(month))), month, curM)+'</div>';
-      if(!D.famKeys.length) h+=tabTools([["artprod","⚙︎ Produits & catégories"]]);
+      if(!D.famKeys.length) h+=tabTools([["artprod","⚙︎ Produits & catégories"],["budEdit",artBudLbl()]]);
       if(!D.famKeys.length){
         h+='<section class="paper cacc" style="padding:18px 16px"><div class="center muted" style="font-size:12.5px;line-height:1.5">Aucun article rangé ce mois-ci.<br>Scanne un ticket et classe ses lignes par produit.</div>'+(!artProdOn()?'<div class="center" style="margin-top:12px"><button type="button" class="anfx" id="artProdBtn">＋ Produits partagés</button><div class="muted" style="font-size:11px;margin-top:6px">Les produits partagés sont masqués</div></div>':'')+'</section>';
       } else {
@@ -3802,7 +3803,7 @@
             stats:[ {l:"Magasin principal", v:(sl2[0]?esc(sl2[0].name):"—"), d:(sl2[0]?Math.round(sl2[0].sum/(smT||1)*100)+" % des achats":"")}, {l:"Le plus fréquenté", v:(top2?esc(top2.name):"—"), d:(top2?top2.nT+" passage"+(top2.nT>1?"s":""):"")}, {l:"Panier moyen", v:fmtS(smN?smT/smN:0), d:"par passage"} ] };
         }
         chart+='</div>';
-        if(!aSub) h+=tabTools([["artprod","⚙︎ Produits & catégories"]]);
+        if(!aSub) h+=tabTools([["artprod","⚙︎ Produits & catégories"],["budEdit",artBudLbl()]]);
         if(!aSub){ var ho={ label:heroO.label, big:(heroO.big==null?0:heroO.big), sub:heroO.sub, extra:chart, stats:heroO.stats }, hh=tabHero(ho);
           if(heroO.big==null) hh=hh.replace(/<div class="dash-big"[^>]*>[\s\S]*?<\/div>/, '<div class="dash-big" style="margin-top:6px;color:var(--ink)">'+esc(heroO.bigTxt)+'</div>');
           h+=hh; }
@@ -3853,6 +3854,7 @@
       [].forEach.call(document.querySelectorAll(".artclk"), function(row){ row.onclick=function(){ state.artSel={ fam:row.getAttribute("data-fam"), name:row.getAttribute("data-name") }; state.artDetM=null; state.view="artDetail"; render(); window.scrollTo(0,0); }; });
       wireChartDefaults();
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.artChart=bt.getAttribute("data-m"); render(); }; });
+      var abe=document.getElementById("budEdit"); if(abe) abe.onclick=function(ev){ ev.stopPropagation(); editBudgets(month); };
       var ap=document.getElementById("artprod"); if(ap) ap.onclick=function(){ state.prodFrom="articles"; state.view="produits"; render(); window.scrollTo(0,0); };
       if(D.famKeys.length && !aSub) wireHeroSwipe(state.artChart||store.read("artChartDef","prod"), ["prod","hausse","mag","fam"], function(k){ state.artChart=k; });
       wireMonthNav(month, curM, "articles");
