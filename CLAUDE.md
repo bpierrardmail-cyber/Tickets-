@@ -104,6 +104,7 @@ Le réseau étant souvent restreint dans les environnements de Claude, bloquer t
 - Répartition gratuit / Plus et prix de Plus.
 - Nom définitif de l'appli et identifiant Store.
 - Type de compte Google Play.
+- Lien avec la banque (mis de côté le 22/10/2026) : pistes dans l'ordre — bouton « Ouvrir ma banque », import de relevé CSV/OFX sur le téléphone, synchro DSP2 via un agrégateur payant (seulement Plus, à décider).
 - Avant la sortie Store :
   - QR code lisible par l'appareil photo (lien Play Store + install referrer) ;
   - offre Workers Paid ;
