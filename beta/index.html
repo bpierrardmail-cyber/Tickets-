@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="23/10 09:36" />
+  <meta name="build" content="23/10 09:45" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4448,6 +4448,10 @@
         var cx=slot*i+slot/2, z=y(0);
         g+='<rect x="'+(cx-bw-1.5).toFixed(1)+'" y="'+y(r.inn).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(1,z-y(r.inn)).toFixed(1)+'" rx="3" style="fill:var(--accent);opacity:.85"/>';
         g+='<rect x="'+(cx+1.5).toFixed(1)+'" y="'+y(r.out).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(1,z-y(r.out)).toFixed(1)+'" rx="3" style="fill:var(--coral);opacity:.85"/>';
+        // montant au-dessus de chaque barre (4 chiffres au plus, sans espace)
+        var fw=(r.m===sel?700:600);
+        if(r.inn>0.5) g+='<text x="'+(cx-bw/2-1.5).toFixed(1)+'" y="'+(y(r.inn)-4).toFixed(1)+'" text-anchor="middle" style="fill:var(--accent);font-size:8.5px;font-weight:'+fw+';letter-spacing:-.03em;font-family:var(--sans)">'+Math.round(r.inn)+'</text>';
+        if(r.out>0.5) g+='<text x="'+(cx+bw/2+1.5).toFixed(1)+'" y="'+(y(r.out)-4).toFixed(1)+'" text-anchor="middle" style="fill:var(--coral);font-size:8.5px;font-weight:'+fw+';letter-spacing:-.03em;font-family:var(--sans)">'+Math.round(r.out)+'</text>';
         if(r.m) g+='<rect class="barhit" data-m="'+esc(r.m)+'" x="'+(cx-slot/2).toFixed(1)+'" y="0" width="'+slot.toFixed(1)+'" height="'+H+'" style="fill:transparent"/>';
         line.push(cx.toFixed(1)+','+y(r.sol).toFixed(1));
         g+='<text x="'+cx.toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" style="fill:'+(r.m===sel?"var(--ink)":"var(--muted)")+';font-size:10px;font-weight:'+(r.m===sel?700:400)+';font-family:var(--sans)">'+esc(r.lbl)+'</text>';
@@ -4757,6 +4761,20 @@
         { l:"Fin de mois", v:fmtS(soldeFin), c:(soldeFin<0?"var(--coral)":""), d:"prévu", go:"res" },
         vTodo.length ? { l:"À faire", v:signS(vTodoSum), d:vTodo.length+" virement"+(vTodo.length>1?"s":""), go:"es" } : { l:"À faire", v:"Rien", d:"virements faits", go:"es" }
       ];
+      // les trois encadrés reprennent le graphique affiché
+      try{
+        var pmK=prevMonthKey(month), red=function(v){ return v<0?"var(--coral)":""; };
+        if(cmode==="dep"){ var dPrev=computeDepensesMonth(person, pmK), dd=depenses-dPrev;
+          hero.stats=[ { l:"Tickets", v:fmtS(paidTotal) }, { l:"Frais fixes", v:fmtS(fraisTotal) }, { l:"vs "+monthLabelOf(pmK).split(" ")[0], v:(dd>0?"+":(dd<0?"−":""))+fmtS(Math.abs(dd)), c:(dd>0.004?"var(--coral)":(dd<-0.004?"var(--accent)":"")) } ]; }
+        else if(cmode==="solde"){ var lqP=liquideAt(person,pmK), sPrev=soldeFlow(person,pmK).closing+(lqP?lqP.val:0), ds=soldeFin-sPrev, sV=sMs.map(function(m){ var lq=liquideAt(person,m); return soldeFlow(person,m).closing+(lq?lq.val:0); }), sMin=Math.min.apply(null,sV), sAvg=sV.reduce(function(t,x){ return t+x; },0)/sV.length;
+          hero.stats=[ { l:"vs fin "+monthLabelOf(pmK).split(" ")[0], v:(ds>0?"+":(ds<0?"−":""))+fmtS(Math.abs(ds)), c:(ds<-0.004?"var(--coral)":(ds>0.004?"var(--accent)":"")) }, { l:"Plus bas", v:fmtS(sMin), c:red(sMin) }, { l:"Moyenne", v:fmtS(sAvg), c:red(sAvg) } ]; }
+        else if(cmode==="es"){ var nets=rows.map(function(r){ return r.inn-r.out; }), nAvg=nets.reduce(function(t,x){ return t+x; },0)/Math.max(1,nets.length);
+          hero.stats=[ { l:"Entrées", v:fmtS(cur.inn), c:"var(--accent)" }, { l:"Sorties", v:fmtS(cur.out), c:"var(--coral)" }, { l:"Moyenne / mois", v:(nAvg>=0?"+":"−")+fmtS(Math.abs(nAvg)), c:(nAvg<0?"var(--coral)":"var(--accent)") } ]; }
+        else if(cmode==="ep"){ var epP=provSumWhere(month, function(w){ return w.indexOf("ep:")===0; }), eGain=e1-epRows[0].v;
+          hero.stats=[ { l:"Sur la période", v:(eGain>=0?"+":"−")+fmtS(Math.abs(eGain)), c:(eGain<0?"var(--coral)":"var(--accent)") }, { l:"Dont provisions", v:fmtS(epP) }, { l:"Disponible", v:fmtS(e1-epP) } ]; }
+        else if(cmode==="prov"){ var pMens=0, pNext=null; provisions.forEach(function(p){ if((p.skips||[]).indexOf(month)<0) pMens+=mensuelAt(p, month); var ec=provEcheance(p, month); if(ec && (!pNext || ec.due<pNext.due)) pNext={ due:ec.due, nom:p.nom }; });
+          hero.stats=[ { l:"Enveloppes", v:String(provisions.length) }, { l:"Ce mois-ci", v:"+"+fmtS(pMens) }, { l:"Échéance", v:(pNext?esc(pNext.nom):"—"), d:(pNext?esc(monthLabelOf(pNext.due)):""), keep:1 } ]; }
+      }catch(e){ try{ console.warn(e); }catch(_){} }
       var heroMain=hero;
       // Corps : une seule carte, une ligne par catégorie qui se déplie au toucher
       var C_T="#e0a458", C_P="#c78bd6", C_C="#7c9cf4";
