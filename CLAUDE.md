@@ -74,6 +74,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 - Un membre en **modification** envoie ses changements dans `/inbox`. Le propriétaire les fusionne fiche par fiche (le plus récent l'emporte), les contrôle avec `fyAllowed` et les remet en forme avec `fyFromMember`, puis republie.
 - `FY_KEYS` liste les données synchronisées. Chaque fiche a pour chemin `clé + "\u001f" + id`.
 - Droits par onglet : `m.ed` = onglets en modification (Masqué / Lecture / Modif. dans « Droits de … »). `role` vaut `edit` dès qu'un onglet est en modification. Chaque donnée est rattachée à un onglet (`FY_KEY_TAB` : tickets → Accueil, taxonomie et budgets → Articles, frais et parts → Commun, comptes / virements / épargne / provisions → Compte) ; `fyAllowed` refuse un changement dont l'onglet n'est pas en modification. Côté membre : `fyTabEd(t)`, et `fyRO()` dépend de l'onglet affiché. Ancien membre sans `ed` : tous ses onglets visibles en modification s'il est `edit`.
+- Accueil d'un membre : toujours visible (`fyTabOn(m,"list")` vrai), personnel (`pvLockMe` force « moi », pas de Moi/Foyer) ; encadrés Banque · Ma part du commun · Mes tickets.
 - Membre (`fyCfg` : `{role: owner|view|edit, fid, tok, km, me, tabs, ed, accts, tk}`) :
   - `accts: null` = tous les comptes ; `[]` = « Aucun · ses tickets » (compte fictif `__tickets`) ;
   - Commun et Bourse ne dépendent pas des comptes choisis : avec Commun visible, il reçoit les frais communs, les parts et ses frais perso (pas ceux des autres) ; les produits partagés des autres seulement avec `tk: "all"` ;

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="23/10 19:15" />
+  <meta name="build" content="23/10 19:19" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2843,7 +2843,7 @@
         if(fitView() && !document.querySelector(".sheet-overlay")){ fitMemo={}; render(); } }, 200); });
     })();
     function v0key(){ var on=document.querySelector(".thero .cch-tabs button.on"); return state.view+"|"+(on?on.getAttribute("data-m"):""); }
-    function render(){ pvMemo=null; fsMemo={}; pvWanted=false; avMemo=null; if(!fitting) CHB=fitView()?(fitMemo[state.view+"|"+(state.view==="communes"?(state.comChart||store.read("comChartDef","rep")):state.view==="articles"?(state.artChart||store.read("artChartDef","prod")):state.view==="analyse"?(state.anChart||store.read("anChartDef","mois")):state.view==="compte"?(function(){ var c=state.cptChart||store.read("cptChartDef","mois"); return c==="6m"?"es":c; })():"")]||0):0; fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); wirePV(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); try{ fitHero(); }catch(err){ console.warn(err); } }
+    function render(){ pvMemo=null; fsMemo={}; pvWanted=false; avMemo=null; pvLockMe=false; if(!fitting) CHB=fitView()?(fitMemo[state.view+"|"+(state.view==="communes"?(state.comChart||store.read("comChartDef","rep")):state.view==="articles"?(state.artChart||store.read("artChartDef","prod")):state.view==="analyse"?(state.anChart||store.read("anChartDef","mois")):state.view==="compte"?(function(){ var c=state.cptChart||store.read("cptChartDef","mois"); return c==="6m"?"es":c; })():"")]||0):0; fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); wirePV(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); try{ fitHero(); }catch(err){ console.warn(err); } }
     function renderView(){
       armBack();
       fyViewGuard();
@@ -2994,7 +2994,9 @@
       pvMemo=list; return list;
     }
     function pvActive(){ var ps=viewPersons(); return ps.length>1 || (ps.length===1 && ps[0]!==mePerson()); }
+    var pvLockMe=false;   // Accueil d'un membre du foyer : ses chiffres à lui, sans choix de personne
     function pvCur(){
+      if(pvLockMe) return "moi";
       if(!pvActive()) return fyMember() ? "moi" : "all";
       var v=state.personView || store.read("personView", null) || (fyCfg ? "moi" : "all");
       if(v===mePerson()) v="moi";
@@ -3009,7 +3011,7 @@
     var pvWanted=false;
     function pvItems(){ var me=mePerson(); return [{ v:"moi", l:"Moi", c:"var(--accent)" }].concat(viewPersons().filter(function(p){ return p!==me; }).map(function(p){ return { v:p, l:p, c:personColor(p) }; })).concat([{ v:"all", l:"Tout le foyer", c:"var(--ink)" }]); }
     function pvBarHTML(cap){
-      if(pvActive()) pvWanted=true;
+      if(pvActive() || pvLockMe) pvWanted=true;
       else if(!cap) return "";
       return cap?'<div class="com-tools" style="margin:0 0 12px;flex-wrap:nowrap">'+(state.view==="list"?'<button type="button" class="ap-tool com-add" id="manual2" style="flex:0 0 auto">✍️ Saisie</button>':'')+'<button type="button" class="ap-tool com-add psel-c" id="pvCap">🧾 '+esc(cap)+'</button>'+
         (state.view==="list" && hcAvail().length?'<button type="button" class="ap-tool com-add" id="hcPick" style="margin-left:auto;flex:0 0 auto">⚙︎ Choisir</button>':'')+'</div>':'';   // touche = la page des tickets du mois
@@ -3020,9 +3022,10 @@
       if(pvWanted && hd && !hd.querySelector(".hpv")){
         var cur=pvCur(), it=pvItems().filter(function(x){ return x.v===cur; })[0]||pvItems()[0];
         hd.classList.add("haspv");
-        hd.insertAdjacentHTML("beforeend", '<button type="button" class="hpv" id="hpv" aria-label="Dépenses de : '+esc(it.l)+'"><i style="background:'+it.c+'"></i><span>'+esc(it.v==="all"?"Foyer":it.l)+'</span><b>▾</b></button>');
+        if(pvLockMe){ hd.insertAdjacentHTML("beforeend", '<span class="hpv" style="cursor:default"><i style="background:'+personColor(mePerson())+'"></i><span>'+esc(mePerson())+'</span></span>'); }
+        else { hd.insertAdjacentHTML("beforeend", '<button type="button" class="hpv" id="hpv" aria-label="Dépenses de : '+esc(it.l)+'"><i style="background:'+it.c+'"></i><span>'+esc(it.v==="all"?"Foyer":it.l)+'</span><b>▾</b></button>');
         hd.querySelector(".hpv").onclick=function(ev){ ev.stopPropagation(); var c0=pvCur();
-          uiChoice("Dépenses de", "", pvItems().map(function(x){ return { l:(x.v===c0?"✓ ":"")+x.l, primary:(x.v===c0), fn:function(){ state.personView=x.v; store.write("personView", x.v); render(); window.scrollTo(0,0); } }; })); };
+          uiChoice("Dépenses de", "", pvItems().map(function(x){ return { l:(x.v===c0?"✓ ":"")+x.l, primary:(x.v===c0), fn:function(){ state.personView=x.v; store.write("personView", x.v); render(); window.scrollTo(0,0); } }; })); }; }
       }
       var pc=document.getElementById("pvCap"); if(pc) pc.onclick=function(){ state.listSub="tickets"; render(); window.scrollTo(0,0); };
       [].forEach.call(app.querySelectorAll(".psel"), function(sc){
@@ -3111,7 +3114,7 @@
     function hcAvail(){   // ce qui peut s'afficher sur ce téléphone, dans l'ordre de la fenêtre de choix
       var a=[];
       ["compte","analyse","communes","articles"].forEach(function(t){ if(fyMember() && !fyTabOn(fyCfg, t)) return; HC_TABS[t].modes.forEach(function(m){ a.push(t+":"+m[0]); }); });
-      if(FEAT.bourse && bourse.length) a.push("bourse");
+      if(FEAT.bourse && bourse.length && (!fyMember() || fyTabOn(fyCfg, "bourse"))) a.push("bourse");
       if(epargne.length && canUse("epargne") && (!fyMember() || fyTabOn(fyCfg, FY_SUB.epargne||"compte"))) a.push("epargne");
       if(provisions.length && canUse("provisions") && (!fyMember() || fyTabOn(fyCfg, FY_SUB.provisions||"compte"))) a.push("provisions");
       return a;
@@ -3284,6 +3287,7 @@
       return h+pagerHTML("home", pages.map(function(p){ return '<div class="hgrid">'+p+'</div>'; }), { cls:"bleed14" });
     }
     function renderList(){
+      pvLockMe=fyMember(); pvMemo=null;
       var curM = monthKey(todayISO());
       var month = (state.months&&state.months.list)||curM;
       var allMois = state.entries.filter(function(e){ return monthKey(e.date)===month; }), mois = allMois.filter(inView);   // filtre par personne
@@ -3304,7 +3308,7 @@
         var day=isCur?_now.getDate():dim;
         var pctM=Math.round(day/dim*100);
         // « Moi » : ton compte principal ; « Foyer » : tous les comptes (choix gardé, proposé dès 2 comptes)
-        var multiA=comptes.length>1, scope=multiA ? (state.homeScope||store.read("homeScope","moi")) : "moi"; if(scope!=="foyer") scope="moi";
+        var multiA=comptes.length>1 && !fyMember(), scope=multiA ? (state.homeScope||store.read("homeScope","moi")) : "moi"; if(scope!=="foyer") scope="moi";
         function heroFig(m){
           var keys=(scope==="foyer") ? comptes.map(function(a){ return a.key; }) : [myAcct().key], b=0, l=0, has=false;
           keys.forEach(function(k){ b+=computeCompteMonth(k, m).solde; var q=liquideAt(k, m); if(q){ has=true; l+=q.val; } });
@@ -3365,6 +3369,10 @@
             var pl=monthLabelOf(pm).split(" ")[0];
             if(Math.abs(dS)>=0.005) h += '<div class="dash-trend" style="color:'+(dS>=0?"var(--accent)":"var(--coral)")+'">'+(dS>=0?'▲ +':'▼ −')+fk(Math.abs(dS))+' <span>vs fin '+esc(pl)+'</span></div>';
           })();
+          if(fyMember()){   // membre du foyer : sa banque, sa part du commun, ses tickets
+            var myCom=null; if(fyTabOn(fyCfg,"communes")){ try{ myCom=communModel(month).partOf(mePerson()); }catch(e){} }
+            h += '<div class="dash-split h3'+(lq?' h4':'')+'" id="heroCpt"><span>Banque<b>'+fk(cb.solde)+'</b></span>'+(lq?'<span>Liquide<b>'+fk(lqV)+'</b></span>':'')+(myCom!=null?'<span>Ma part du commun<b>'+fk(myCom)+'</b></span>':'<span>Épargne<b style="color:var(--accent)">'+fk(epTot)+'</b></span>')+'<span>Mes tickets<b>'+fk(totalMois)+'</b></span><em>›</em></div>';
+          } else
           h += '<div class="dash-split h3'+(lq?' h4':'')+'" id="heroCpt"><span>Banque<b>'+fk(cb.solde)+'</b></span>'+(lq?'<span>Liquide<b>'+fk(lqV)+'</b></span>':'')+'<span>Épargne<b style="color:var(--accent)">'+fk(epTot)+'</b></span><span>Provisions<b>'+fk(prTot)+'</b></span><em>›</em></div>';
         }
         var fut=(month>curM);
@@ -6810,7 +6818,7 @@
     function fyCurTab(){ var v=state.view; return FY_SUB[v]||v; }
     // lecture seule : membre en consultation, ou onglet affiché en lecture
     function fyRO(){ if(!fyCfg || !fyMember()) return false; if(fyCfg.role==="view") return true; var t=fyCurTab(); if(t==="foyer" || t==="bilan") return false; return !fyTabEd(t==="form"?"list":t); }
-    function fyTabOn(m, t){ return !m || !m.tabs || m.tabs.indexOf(t)>=0; }
+    function fyTabOn(m, t){ return !m || !m.tabs || t==="list" || m.tabs.indexOf(t)>=0; }   // l'Accueil (personnel) est toujours là
     function fyFirstTab(){ var t=(fyCfg && fyCfg.tabs && fyCfg.tabs[0]) || "list"; return t; }
     function fyRoleLabel(r){ return r==="edit"?"Modification":(r==="view"?"Consultation":"Propriétaire"); }
     function fyRightsLabel(m){ if(!m || m.role==="owner") return "Propriétaire"; var vis=FY_TABS.filter(function(t){ return fyTabOn(m, t.v); }), ed=fyEdTabs(m);
@@ -7480,11 +7488,11 @@
           if(names.length) h+='<div class="fy-chips">'+names.map(function(n){ return '<button type="button" class="chip'+(n===st.name?' on':'')+'" data-n="'+esc(n)+'">'+esc(n)+'</button>'; }).join("")+'</div>';
         }
         var noTab=function(v){ return st.accts!=null && !st.accts.length && v==="compte"; };   // aucun compte : pas d'onglet Compte (Commun et Bourse ne sont pas des comptes)
-        var TAB_SUB={ list:"tickets, saisie, scan", articles:"produits, catégories, budgets", communes:"frais fixes, parts", compte:"comptes, virements, épargne, provisions", bourse:"modifiée sur ton téléphone", analyse:"toujours en lecture" };
+        var TAB_SUB={ list:"toujours visible · ses chiffres · saisie, scan", articles:"produits, catégories, budgets", communes:"frais fixes, parts", compte:"comptes, virements, épargne, provisions", bourse:"modifiée sur ton téléphone", analyse:"toujours en lecture" };
         h+='<label class="ui-l">Droits par onglet</label><div class="fy-quick"><button type="button" data-q="r">Tout en lecture</button><button type="button" data-q="w">Tout en modification</button></div>';
         h+='<div class="fy-rights">'+FY_TABS.map(function(t){ var off=noTab(t.v), md=off?"off":st.mode[t.v], noW=(t.v==="analyse" || t.v==="bourse");
           return '<div class="fy-rr'+(off?' dis':'')+'"><span class="n">'+esc(t.l)+'<small>'+esc(off?(st.accts && !st.accts.length && t.v==="compte"?"aucun compte choisi":"pas avec des comptes choisis"):TAB_SUB[t.v])+'</small></span><span class="fy-seg3">'+
-            [["off","Masqué"],["r","Lecture"],["w","Modif."]].map(function(o){ var dis=off || (o[0]==="w" && noW); return '<button type="button" data-tm="'+t.v+'" data-v="'+o[0]+'"'+(md===o[0]?' class="on"':'')+(dis?' disabled':'')+'>'+o[1]+'</button>'; }).join("")+'</span></div>'; }).join("")+'</div>';
+            [["off","Masqué"],["r","Lecture"],["w","Modif."]].map(function(o){ var dis=off || (o[0]==="w" && noW) || (o[0]==="off" && t.v==="list"); return '<button type="button" data-tm="'+t.v+'" data-v="'+o[0]+'"'+(md===o[0]?' class="on"':'')+(dis?' disabled':'')+'>'+o[1]+'</button>'; }).join("")+'</span></div>'; }).join("")+'</div>';
         h+='<div class="ui-help">Les tickets se modifient avec l\'Accueil ; le contrôle se fait sur ton téléphone : un changement venant d\'un onglet en lecture est refusé.</div>';
         if(comptes.length){   // même avec un seul compte : « Aucun · ses tickets » doit rester possible
           h+='<label class="ui-l">Comptes visibles</label><div class="fy-chips"><button type="button" class="chip'+(st.accts==null?' on':'')+'" data-a="__all">Tous</button><button type="button" class="chip'+(st.accts && !st.accts.length?' on':'')+'" data-a="__none">Aucun · ses tickets</button>'+comptes.map(function(a){ var on=st.accts!=null && st.accts.indexOf(a.key)>=0; return '<button type="button" class="chip'+(on?' on':'')+'" data-a="'+esc(a.key)+'">'+esc(a.nom)+(acctOwner(a)?' · '+esc(acctOwner(a)):'')+'</button>'; }).join("")+'</div>';
