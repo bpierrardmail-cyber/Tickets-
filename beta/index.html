@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="23/10 09:45" />
+  <meta name="build" content="23/10 10:03" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4438,7 +4438,7 @@
     }
     // 6 mois : entrées et sorties de chaque mois, avec le solde de fin de mois
     function compteSixMonthsSVG(rows, sel){
-      var W=340, H=178+CHB, top=20, bot=24, ph=H-top-bot, vals=[0];
+      var W=340, H=178+CHB, top=32, bot=24, ph=H-top-bot, vals=[0];   // place pour deux montants empilés
       rows.forEach(function(r){ vals.push(r.inn, r.out); });
       var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals); if(hi-lo<1) hi=lo+1;
       function y(v){ return top+(hi-v)/(hi-lo)*ph; }
@@ -4448,10 +4448,11 @@
         var cx=slot*i+slot/2, z=y(0);
         g+='<rect x="'+(cx-bw-1.5).toFixed(1)+'" y="'+y(r.inn).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(1,z-y(r.inn)).toFixed(1)+'" rx="3" style="fill:var(--accent);opacity:.85"/>';
         g+='<rect x="'+(cx+1.5).toFixed(1)+'" y="'+y(r.out).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(1,z-y(r.out)).toFixed(1)+'" rx="3" style="fill:var(--coral);opacity:.85"/>';
-        // montant au-dessus de chaque barre (4 chiffres au plus, sans espace)
-        var fw=(r.m===sel?700:600);
-        if(r.inn>0.5) g+='<text x="'+(cx-bw/2-1.5).toFixed(1)+'" y="'+(y(r.inn)-4).toFixed(1)+'" text-anchor="middle" style="fill:var(--accent);font-size:8.5px;font-weight:'+fw+';letter-spacing:-.03em;font-family:var(--sans)">'+Math.round(r.inn)+'</text>';
-        if(r.out>0.5) g+='<text x="'+(cx+bw/2+1.5).toFixed(1)+'" y="'+(y(r.out)-4).toFixed(1)+'" text-anchor="middle" style="fill:var(--coral);font-size:8.5px;font-weight:'+fw+';letter-spacing:-.03em;font-family:var(--sans)">'+Math.round(r.out)+'</text>';
+        // montants empilés au-dessus de la paire de barres (entrée en vert, sortie en rouge dessous) : jamais côte à côte
+        var fw=(r.m===sel?700:600), tp=Math.min(y(r.inn), y(r.out));
+        function kv(v){ v=Math.round(v); return v>=10000 ? String(Math.round(v/100)/10).replace(".",",")+"k" : String(v); }
+        if(r.out>0.5) g+='<text x="'+cx.toFixed(1)+'" y="'+(tp-4).toFixed(1)+'" text-anchor="middle" style="fill:var(--coral);font-size:9px;font-weight:'+fw+';letter-spacing:-.02em;font-family:var(--sans)">'+kv(r.out)+'</text>';
+        if(r.inn>0.5) g+='<text x="'+cx.toFixed(1)+'" y="'+(tp-(r.out>0.5?15:4)).toFixed(1)+'" text-anchor="middle" style="fill:var(--accent);font-size:9px;font-weight:'+fw+';letter-spacing:-.02em;font-family:var(--sans)">'+kv(r.inn)+'</text>';
         if(r.m) g+='<rect class="barhit" data-m="'+esc(r.m)+'" x="'+(cx-slot/2).toFixed(1)+'" y="0" width="'+slot.toFixed(1)+'" height="'+H+'" style="fill:transparent"/>';
         line.push(cx.toFixed(1)+','+y(r.sol).toFixed(1));
         g+='<text x="'+cx.toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" style="fill:'+(r.m===sel?"var(--ink)":"var(--muted)")+';font-size:10px;font-weight:'+(r.m===sel?700:400)+';font-family:var(--sans)">'+esc(r.lbl)+'</text>';
