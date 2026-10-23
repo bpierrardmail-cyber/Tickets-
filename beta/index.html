@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="23/10 10:11" />
+  <meta name="build" content="23/10 11:51" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -490,7 +490,7 @@
     .htop-ch .bar-top{ font-size:12.5px; flex-wrap:nowrap; gap:8px; } .htop-ch .bar-top .bl{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .htop-ch .bar-top .bl small{ display:none; } .htop-ch .bar-top .bv{ flex:0 0 auto; white-space:nowrap; }
     .htop-ch .bar-track{ height:6px; margin-top:4px; } .htop-ch .cb-sub{ display:none; }
     .htop-ch .cdon{ justify-content:center; margin:0; } .htop-ch .cdon-big svg{ width:112px; height:112px; flex-basis:112px; } .htop-ch .cdon-r:nth-child(n+5){ display:none; }
-    .htop-ch .lgd{ display:none; } .htop-ch .crep-r{ margin:0 0 8px; } .htop-ch .crep-v, .htop-ch .crep-tot, .htop-ch .crep-more{ display:none; } .htop-ch .crep-h small{ display:none; }
+    .htop-ch .lgd{ display:none; } .htop-ch text.vlab{ display:none; } .htop-ch .crep-r{ margin:0 0 8px; } .htop-ch .crep-v, .htop-ch .crep-tot, .htop-ch .crep-more{ display:none; } .htop-ch .crep-h small{ display:none; }
     .htop-ch .cch-note{ display:none; }
     /* Analyse avancée */
     .avseg{ display:flex; gap:6px; margin:0 0 12px; overflow-x:auto; scrollbar-width:none; }
@@ -3242,6 +3242,7 @@
         }
         svg.setAttribute("preserveAspectRatio","none");
         var vb=(svg.getAttribute("viewBox")||"").split(/[\s,]+/).map(Number), W=vb[2], H=vb[3];
+        [].forEach.call(svg.querySelectorAll("text.vlab"), function(t){ t.parentNode.removeChild(t); });   // montants empilés : illisibles en petit
         var texts=[].slice.call(svg.querySelectorAll("text"));
         if(!(W>0 && H>0) || !texts.length) return;
         var wrap=document.createElement("div"); wrap.className="mbar"; svg.parentNode.insertBefore(wrap, svg); wrap.appendChild(svg);
@@ -4456,8 +4457,8 @@
         // montants empilés au-dessus de la paire de barres (entrée en vert, sortie en rouge dessous) : jamais côte à côte
         var fw=(r.m===sel?700:600), tp=Math.min(y(r.inn), y(r.out));
         function kv(v){ v=Math.round(v); return v>=10000 ? String(Math.round(v/100)/10).replace(".",",")+"k" : String(v); }
-        if(r.out>0.5) g+='<text x="'+cx.toFixed(1)+'" y="'+(tp-4).toFixed(1)+'" text-anchor="middle" style="fill:var(--coral);font-size:9px;font-weight:'+fw+';letter-spacing:-.02em;font-family:var(--sans)">'+kv(r.out)+'</text>';
-        if(r.inn>0.5) g+='<text x="'+cx.toFixed(1)+'" y="'+(tp-(r.out>0.5?15:4)).toFixed(1)+'" text-anchor="middle" style="fill:var(--accent);font-size:9px;font-weight:'+fw+';letter-spacing:-.02em;font-family:var(--sans)">'+kv(r.inn)+'</text>';
+        if(r.out>0.5) g+='<text class="vlab" x="'+cx.toFixed(1)+'" y="'+(tp-4).toFixed(1)+'" text-anchor="middle" style="fill:var(--coral);font-size:9px;font-weight:'+fw+';letter-spacing:-.02em;font-family:var(--sans)">'+kv(r.out)+'</text>';
+        if(r.inn>0.5) g+='<text class="vlab" x="'+cx.toFixed(1)+'" y="'+(tp-(r.out>0.5?15:4)).toFixed(1)+'" text-anchor="middle" style="fill:var(--accent);font-size:9px;font-weight:'+fw+';letter-spacing:-.02em;font-family:var(--sans)">'+kv(r.inn)+'</text>';
         if(r.m) g+='<rect class="barhit" data-m="'+esc(r.m)+'" x="'+(cx-slot/2).toFixed(1)+'" y="0" width="'+slot.toFixed(1)+'" height="'+H+'" style="fill:transparent"/>';
         line.push(cx.toFixed(1)+','+y(r.sol).toFixed(1));
         g+='<text x="'+cx.toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" style="fill:'+(r.m===sel?"var(--ink)":"var(--muted)")+';font-size:10px;font-weight:'+(r.m===sel?700:400)+';font-family:var(--sans)">'+esc(r.lbl)+'</text>';
