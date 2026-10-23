@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="23/10 09:28" />
+  <meta name="build" content="23/10 09:31" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4255,7 +4255,7 @@
           g+='<rect class="barhit" data-m="'+esc(r.m)+'" x="'+(slot*i).toFixed(1)+'" y="0" width="'+slot.toFixed(1)+'" height="'+H+'" style="fill:transparent;cursor:pointer"/>';
           if(on || (i%stepL===0 && Math.abs(i-onI)>=Math.min(stepL,2)) || !many) g+='<text x="'+cx.toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" style="fill:'+(on?'var(--ink)':'var(--muted)')+';font-size:'+(many?9:10)+'px;font-weight:'+(on?700:400)+';font-family:var(--sans)">'+esc(many?["jan","fév","mar","avr","mai","juin","juil","aoû","sep","oct","nov","déc"][+r.m.slice(5,7)-1]:mShort(r.m))+'</text>'; });
         chart+='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Dépenses communes par mois">'+g+'</svg>';
-        chart+='<div class="cch-leg"><span><i style="background:'+COLC+'"></i>Frais communs</span><span><i style="background:'+COLR+'"></i>Produits partagés</span></div>';
+        chart+='<div class="cch-leg"><span><i style="background:'+COLC+'"></i>Frais communs</span><span><i style="background:'+COLR+'"></i>Produits partagés</span></div><div class="cch-note">'+(cr!=="next" && S.length<(cr==="all"?2:+cr)?'Depuis '+esc(monthLabelOf(S[0].m))+', début du suivi · ':'')+'Touche une barre pour les frais fixes du mois</div>';
         chart+='<div class="dmode comrange" style="justify-content:center;margin:8px 0 0">'+[["6","6 mois"],["12","12 mois"],["next","12 à venir"],["all","Tout"]].map(function(x){ return '<button type="button" data-r="'+x[0]+'"'+(cr===x[0]?' class="on"':'')+'>'+x[1]+'</button>'; }).join("")+'</div>';
       }
       chart+='</div>';
@@ -4340,7 +4340,7 @@
       if(!cSub){
         [].forEach.call(document.querySelectorAll(".thero .crep-full .crep-r[data-p]"), function(r){ r.addEventListener("click", function(){ var p=r.getAttribute("data-p"); state.personView=(p===me?"moi":p); store.write("personView", state.personView); render(); }); });
         [].forEach.call(document.querySelectorAll(".thero .dseg, .thero .cdon-r[data-k]"), function(b){ b.style.cursor="pointer"; b.addEventListener("click", function(){ state.comSub=b.getAttribute("data-k")==="prod"?"prod":"frais"; render(); window.scrollTo(0,0); }); });
-        [].forEach.call(document.querySelectorAll(".thero .barhit"), function(b){ b.addEventListener("click", function(){ var m=b.getAttribute("data-m"); if(!state.months) state.months={}; state.months.communes=(m===curM?null:m); render(); }); });
+        [].forEach.call(document.querySelectorAll(".thero .barhit"), function(b){ b.addEventListener("click", function(){ var m=b.getAttribute("data-m"); if(!state.months) state.months={}; state.months.communes=(m===curM?null:m); state.comSub="frais"; render(); window.scrollTo(0,0); }); });   // une barre → les frais fixes de ce mois (passés ou à venir)
       }
       [].forEach.call(document.querySelectorAll(".comrange button"), function(b){ b.onclick=function(ev){ ev.stopPropagation(); state.comRange=b.getAttribute("data-r"); store.write("comRange", state.comRange); render(); }; });
       var cpbt=document.getElementById("comProdBtn"); if(cpbt) cpbt.onclick=function(ev){ ev.stopPropagation(); state.comProd=!prodOn; store.write("comProd", state.comProd); render(); };
