@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="23/10 07:23" />
+  <meta name="build" content="23/10 07:35" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -5440,16 +5440,17 @@
       // --- 1. Inflation personnelle : prix d'une ligne, premier mois d'achat → dernier, pondéré par ce qu'on y dépense
       var P={};
       ms12.forEach(function(mk){ (byM[mk]||[]).forEach(function(e){ (e.articles||[]).forEach(function(a){ var c=classifyArticle(a); if(c.fam==="Remise" || !(c.amt>0)) return;
-        var k=c.fam+"|"+c.name, o=P[k]||(P[k]={ name:c.name, fam:c.fam, spend:0, m:{}, st:{} }); o.spend+=c.amt;
+        var lb=avNorm(a.label||""), k=c.fam+"|"+c.name+"|"+(lb||"-")+"|"+(avNorm(e.marchand).split(" ")[0]||"?"),   /* même article dans le même magasin */ o=P[k]||(P[k]={ name:c.name, lbl:(a.label||"").trim(), fam:c.fam, spend:0, m:{}, st:{} }); o.spend+=c.amt;   // même article (même libellé), pas seulement le même produit
         var x=o.m[mk]||(o.m[mk]={ s:0, n:0 }); x.s+=c.amt; x.n++; if(e.marchand) o.st[mk]=e.marchand; }); }); });
       var items=[], sw=0, se=0;
       Object.keys(P).forEach(function(k){ var o=P[k], mm=Object.keys(o.m).sort(); if(mm.length<2) return;
         var p0=o.m[mm[0]].s/o.m[mm[0]].n, p1=o.m[mm[mm.length-1]].s/o.m[mm[mm.length-1]].n; if(!(p0>0)) return;
-        var evo=Math.max(-0.6, Math.min(0.6, p1/p0-1));   // au-delà : sans doute une autre quantité, on borne
-        o.p0=p0; o.p1=p1; o.evo=evo; o.base=p0; o.first=mm[0]; o.st1=o.st[mm[mm.length-1]]||""; items.push(o); sw+=o.spend; se+=o.spend*evo; });
+        var r=p1/p0; if(r<0.67 || r>1.5) return;   // écart trop grand : autre quantité ou autre article, pas une hausse de prix
+        var evo=r-1;
+        o.p0=p0; o.p1=p1; o.evo=evo; o.base=p0; o.first=mm[0]; o.lastM=mm[mm.length-1]; o.st1=o.st[mm[mm.length-1]]||""; items.push(o); sw+=o.spend; se+=o.spend*evo; });
       D.infl={ n:items.length, rate:(sw>0?se/sw:null) };
       var ups=items.filter(function(o){ return o.evo>0.005; }).sort(function(a,b){ return b.evo-a.evo; }), dns=items.filter(function(o){ return o.evo<-0.005; }).sort(function(a,b){ return a.evo-b.evo; });
-      D.infl.top=ups.slice(0,2).concat(dns.slice(0,1));
+      D.infl.top=ups.slice(0,2).concat(dns.slice(0,1)); D.infl.all=items.slice().sort(function(a,b){ return b.evo-a.evo; });
       // indice mois par mois (base 100 au premier mois)
       var idx=[], lastI=100;
       ms12.forEach(function(mk, j){ var w=0, s=0; items.forEach(function(o){ if(o.first<mk && o.m[mk]){ var p=o.m[mk].s/o.m[mk].n; w+=o.spend; s+=o.spend*Math.max(0.4, Math.min(1.6, p/o.base)); } });
@@ -5527,10 +5528,10 @@
     // Inflation officielle (INSEE) : demandée au relais une fois par jour, gardée sur le téléphone
     var avInseeAsk=false;
     function avInsee(){
-      var c=store.read("inseeIpc", null);
-      if((!c || Date.now()-(c.t||0)>86400000) && !avInseeAsk && coursApi()){ avInseeAsk=true;
+      var c=store.read("inseeIpc", null), cm=monthKey(todayISO()), old=!!(c && c.last && monthsBetween(c.last, cm)>4);   // chiffre trop ancien : on redemande
+      if((!c || old || Date.now()-(c.t||0)>86400000) && !avInseeAsk && coursApi()){ avInseeAsk=true;
         fetch(coursApi()+"/inflation").then(function(r){ return r.json(); }).then(function(j){ if(j && j.ok && isFinite(j.yoy)){ store.write("inseeIpc", { t:Date.now(), yoy:j.yoy, last:j.last, series:j.series||[] }); if(state.view==="avancee") render(); } else store.write("inseeIpc", { t:Date.now()-82800000, none:1 }); }).catch(function(){}); }
-      return (c && !c.none && isFinite(c.yoy)) ? c : null;
+      return (c && !c.none && isFinite(c.yoy) && !old) ? c : null;   // pas de comparaison avec un chiffre de plus de 4 mois
     }
     // petits graphiques
     function avLine(series, cols, opt){   // series : [[valeurs…], …] (null = trou) ; opt.band : [[lo,hi]…] sur la dernière série
@@ -5561,17 +5562,18 @@
       if(sub==="vue"){
         // inflation
         var I=D.infl, ins=avInsee(), ib='';
-        if(I.rate==null) ib='<div class="muted" style="font-size:12px;margin:8px 0 4px">Il faut avoir acheté les mêmes produits au moins deux mois différents (tickets scannés avec leurs lignes).</div>';
+        if(I.rate==null) ib='<div class="muted" style="font-size:12px;margin:8px 0 4px">Il faut avoir acheté le même article (même libellé sur le ticket) au moins deux mois différents.</div>';
         else {
           ib='<div class="avbig '+(I.rate>0.0005?'up':(I.rate<-0.0005?'dn':''))+'">'+avPct(I.rate)+'</div>';
           if(ins){ var gap=I.rate*100-ins.yoy; ib+='<div class="avsub">INSEE sur 12 mois : '+avPct(ins.yoy/100)+(Math.abs(gap)>=0.1?' · <span class="'+(gap>0?'up':'dn')+'">tu paies '+String(Math.abs(Math.round(gap*10)/10)).replace(".",",")+' pt'+(Math.abs(gap)>=2?'s':'')+' de '+(gap>0?'plus':'moins')+'</span>':' · comme la moyenne')+'</div>'; }
           else ib+='<div class="avsub">Hausse moyenne des prix de ce que tu achètes vraiment</div>';
-          var insS=null; if(ins && ins.series && ins.series.length>=2){ var s0=ins.series[0].v; insS=D.ms12.map(function(mk){ var o=ins.series.filter(function(x){ return x.m===mk; })[0]; return o?o.v/s0*100:null; }); if(insS.filter(function(v){ return v!=null; }).length<2) insS=null; }
+          var insS=null; if(ins && ins.series && ins.series.length>=2){ var s0=null; insS=D.ms12.map(function(mk){ var o=ins.series.filter(function(x){ return x.m===mk; })[0]; if(!o) return null; if(s0==null) s0=o.v; return o.v/s0*100; }); if(insS.filter(function(v){ return v!=null; }).length<3) insS=null; }
           ib+=avLine(insS?[D.infl.idx, insS]:[D.infl.idx], ["#f4796b","#7d8492"], { dash:[false,true], h:70 });
-          ib+='<div class="avleg"><span><i style="background:#f4796b"></i>Mes prix</span>'+(insS?'<span><i style="background:#7d8492"></i>INSEE</span>':'')+'<span>'+esc(monthLabelOf(D.ms12[0]).split(" ")[0])+' → '+esc(monthLabelOf(curM).split(" ")[0])+'</span></div>';
-          ib+=I.top.map(function(o){ return avRow(esc(o.name), (o.st1?esc(o.st1)+' · ':'')+fmtK(o.p0)+' → '+fmtK(o.p1), avPct(o.evo,0), o.evo>0?'up':'dn'); }).join("");
+          ib+='<div class="avleg"><span><i style="background:#f4796b"></i>Mes prix</span>'+(insS?'<span><i style="background:#7d8492"></i>INSEE</span>':(ins?'<span>INSEE : chiffre de '+esc(monthLabelOf(ins.last||curM))+'</span>':''))+'<span>'+esc(monthLabelOf(D.ms12[0]).split(" ")[0])+' → '+esc(monthLabelOf(curM).split(" ")[0])+'</span></div>';
+          ib+=I.top.map(function(o){ return avRow(esc(o.name), (o.lbl && avNorm(o.lbl)!==avNorm(o.name)?esc(o.lbl)+' · ':'')+(o.st1?esc(o.st1)+' · ':'')+fmtK(o.p0)+' → '+fmtK(o.p1), avPct(o.evo,0), o.evo>0?'up':'dn'); }).join("");
+          if(I.n>I.top.length) ib+='<div class="avr clk" id="avInflAll"><span class="n" style="color:var(--accent)">Voir les '+I.n+' articles suivis</span><span class="v" style="color:var(--accent)">›</span></div>';
         }
-        h+=avCard("Mon inflation · 12 mois", I.n?I.n+" produit"+(I.n>1?"s":"")+" suivi"+(I.n>1?"s":""):"", ib, "avhero");
+        h+=avCard("Mon inflation · 12 mois", I.n?I.n+" article"+(I.n>1?"s":"")+" suivi"+(I.n>1?"s":""):"", ib, "avhero");
         // cette année / l'an dernier
         var Yy=D.yoy, yb='';
         if(!Yy.has) yb='<div class="muted" style="font-size:12px;margin:8px 0 4px">Pas de tickets l\'an dernier sur la même période : la comparaison viendra l\'an prochain.</div>';
@@ -5677,6 +5679,10 @@
       var la=document.getElementById("avLater"); if(la) la.onclick=function(){ state.view="analyse"; render(); window.scrollTo(0,0); };
       var pdf=document.getElementById("avPdf"); if(pdf) pdf.onclick=function(){ var cm=monthKey(todayISO()); state.bilanFrom=cm.slice(0,4)+"-01"; state.bilanTo=cm; state.bilanMonth=cm; state.view="bilan"; render(); window.scrollTo(0,0); };
       var ia=document.getElementById("avIA"); if(ia) ia.onclick=avOpenIA;
+      var ial=document.getElementById("avInflAll"); if(ial) ial.onclick=function(){ var L=avData().infl.all;
+        var h='<div class="sheet-title">Articles suivis · 12 mois</div><div class="ui-intro">Prix d\'une ligne du ticket, premier mois d\'achat → dernier. Les écarts de plus de 50 % (autre quantité, autre article) sont écartés.</div><div style="max-height:62vh;overflow:auto">'+
+          L.map(function(o){ return avRow(esc(o.name)+(o.lbl && avNorm(o.lbl)!==avNorm(o.name)?' <small style="display:inline;color:var(--muted)">'+esc(o.lbl)+'</small>':''), (o.st1?esc(o.st1)+' · ':'')+fmtK(o.p0)+' → '+fmtK(o.p1)+' · '+esc(monthLabelOf(o.first).split(" ")[0])+' → '+esc(monthLabelOf(o.lastM).split(" ")[0]), avPct(o.evo,0), o.evo>0.005?'up':(o.evo<-0.005?'dn':'')); }).join("")+'</div><div class="ui-stack" style="margin-top:10px"><button type="button" class="btn ghost" id="avAllNo">Fermer</button></div>';
+        var sh=uiSheet('<div class="avc" style="padding:0">'+h+'</div>'); sh.q("#avAllNo").onclick=sh.close; };
       ["avTk","avCat","avFx","avEp"].forEach(function(id){ var e=document.getElementById(id); if(e) e.oninput=avSimUpdate; });
       var rs=document.getElementById("avReset"); if(rs) rs.onclick=function(){ state.avSim={ tk:0, cat:0, fx:0, ep:0 }; render(); };
     }

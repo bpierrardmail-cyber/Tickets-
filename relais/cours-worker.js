@@ -83,7 +83,7 @@ async function chart(symbol, range) {
 
 // Inflation INSEE (indice des prix à la consommation, ensemble des ménages, France) : séries BDM publiques, sans clé.
 // On essaie plusieurs identifiants (changement de base possible) et plusieurs adresses ; la plus récente gagne.
-const IPC_IDBANKS = ["001759970", "011812214"];
+const IPC_IDBANKS = ["011814630", "001759970"];   // base 2025 (depuis 2026), puis base 2015 (arrêtée)
 const BDM_HOSTS = ["https://api.insee.fr/series/BDM/data/SERIES_BDM/", "https://www.bdm.insee.fr/series/sdmx/data/SERIES_BDM/", "https://bdm.insee.fr/series/sdmx/data/SERIES_BDM/"];
 async function inflation() {
   let best = null;
