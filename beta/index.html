@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="23/10 08:54" />
+  <meta name="build" content="23/10 09:05" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -5442,13 +5442,15 @@
 
       // --- 1. Inflation personnelle : prix d'une ligne, premier mois d'achat → dernier, pondéré par ce qu'on y dépense
       var P={};
-      ms12.forEach(function(mk){ (byM[mk]||[]).forEach(function(e){ (e.articles||[]).forEach(function(a){ var c=classifyArticle(a); if(c.fam==="Remise" || !(c.amt>0)) return;
+      var FUEL=/\b(gasoil|gazole|diesel|essence|sans plomb|carburant|fioul|gpl|superethanol)\b/;   // avNorm retire les chiffres (sp95, e10 → lus par « essence » / la catégorie)
+      ms12.forEach(function(mk){ (byM[mk]||[]).forEach(function(e){ if(FUEL.test(avNorm(e.categorie))) return; (e.articles||[]).forEach(function(a){ var c=classifyArticle(a); if(c.fam==="Remise" || !(c.amt>0)) return;
+        if(FUEL.test(avNorm(c.name)+" "+avNorm(c.fam)+" "+avNorm(a.label))) return;   // carburant : on paie un volume, pas un prix unitaire
         var lb=avNorm(a.label||""), k=c.fam+"|"+c.name+"|"+(lb||"-")+"|"+(avNorm(e.marchand).split(" ")[0]||"?"),   /* même article dans le même magasin */ o=P[k]||(P[k]={ name:c.name, lbl:(a.label||"").trim(), fam:c.fam, spend:0, m:{}, st:{} }); o.spend+=c.amt;   // même article (même libellé), pas seulement le même produit
         var x=o.m[mk]||(o.m[mk]={ s:0, n:0 }); x.s+=c.amt; x.n++; if(e.marchand) o.st[mk]=e.marchand; }); }); });
       var items=[], sw=0, se=0;
       Object.keys(P).forEach(function(k){ var o=P[k], mm=Object.keys(o.m).sort(); if(mm.length<2) return;
         var p0=o.m[mm[0]].s/o.m[mm[0]].n, p1=o.m[mm[mm.length-1]].s/o.m[mm[mm.length-1]].n; if(!(p0>0)) return;
-        var r=p1/p0; if(r<0.67 || r>1.5) return;   // écart trop grand : autre quantité ou autre article, pas une hausse de prix
+        var r=p1/p0; if(r<0.77 || r>1.3) return;   // écart de plus de 30 % : autre quantité ou autre article, pas une hausse de prix
         var evo=r-1;
         o.p0=p0; o.p1=p1; o.evo=evo; o.base=p0; o.first=mm[0]; o.lastM=mm[mm.length-1]; o.st1=o.st[mm[mm.length-1]]||""; items.push(o); sw+=o.spend; se+=o.spend*evo; });
       D.infl={ n:items.length, rate:(sw>0?se/sw:null) };
@@ -5483,11 +5485,14 @@
       al.sort(function(a,b){ return b.sort-a.sort; }); D.alerts=al.slice(0,5);
 
       // --- 4. Épargne et reste à vivre (6 derniers mois terminés, comptes de la personne ou du foyer)
-      var A=avComptes(), inc=0, exp=0, fx=0, nInc=0, last6=[]; m=curM; for(i=0;i<6;i++){ m=prevMonthKey(m); last6.unshift(m); }
+      var per=state.avPer||store.read("avPer","6"); if(["1","6","12","all"].indexOf(per)<0) per="6";
+      var A=avComptes(), inc=0, exp=0, fx=0, nInc=0, last6=[], nPer=(per==="all"?120:+per), stA=null;
+      A.forEach(function(a){ var s0=acctStart(a.key); if(s0 && (!stA || s0<stA)) stA=s0; });
+      m=curM; for(i=0;i<nPer;i++){ m=prevMonthKey(m); if(stA && m<stA) break; last6.unshift(m); }   // mois terminés, depuis le début du suivi au plus
       last6.forEach(function(mk){ var mi=0; A.forEach(function(a){ virementsOf(a.key, mk).forEach(function(v){ var x=Number(v.montant)||0; if(x>0) mi+=x; }); exp+=computeDepensesMonth(a.key, mk);
           fraisCommuns.forEach(function(f){ if(fraisActif(f, mk) && fraisKind(f, a.key)) fx+=fraisAcctAmt(f, a.key, mk); }); });
         if(mi>0){ inc+=mi; nInc++; } });
-      D.save={ has:inc>0, rate:(inc>0?(inc-exp)/inc:null), rav:(nInc?(inc-fx)/nInc:null), fx:fx/6, inc:(nInc?inc/nInc:0), n:nInc };
+      D.save={ has:inc>0, rate:(inc>0?(inc-exp)/inc:null), rav:(nInc?(inc-fx)/nInc:null), fx:fx/Math.max(1,last6.length), inc:(nInc?inc/nInc:0), n:nInc, per:per, nM:last6.length, from:last6[0], to:last6[last6.length-1] };
 
       // --- 5. Pistes d'économies
       var eco=[];
@@ -5594,8 +5599,10 @@
         h+=avCard("À surveiller", "ce mois-ci", D.alerts.length ? D.alerts.map(function(a){ return '<div class="aval"><b>'+a.ic+'</b><span>'+a.t+'<small>'+esc(a.d)+'</small></span></div>'; }).join("") : '<div class="muted" style="font-size:12px;margin:8px 0 4px">Rien d\'inhabituel ce mois-ci ✓</div>');
         // épargne et reste à vivre
         var S=D.save;
-        h+=avCard("Épargne et reste à vivre", S.has?"moyenne sur "+S.n+" mois":"", S.has ? '<div class="av2"><div><small>Taux d\'épargne</small><b class="'+(S.rate>=0.1?'dn':(S.rate<0?'up':'am'))+'">'+avPct(S.rate,0).replace("+","")+'</b><small>conseillé : 10 à 20 %</small></div><div><small>Reste à vivre / mois</small><b>'+fmtK(S.rav)+'</b><small>après frais fixes ('+fmtK(S.fx)+')</small></div></div>'
-          : '<div class="muted" style="font-size:12px;margin:8px 0 4px">Ajoute tes rentrées d\'argent (salaire, virements reçus) dans Compte pour calculer ton taux d\'épargne.</div>');
+        var perSeg='<div class="avseg avper" style="margin:8px 0 2px">'+[["1","1 mois"],["6","6 mois"],["12","12 mois"],["all","Tout"]].map(function(x){ return '<button type="button" data-p="'+x[0]+'"'+(x[0]===S.per?' class="on"':'')+'>'+x[1]+'</button>'; }).join("")+'</div>';
+        var perTxt=S.nM ? (S.nM===1 ? esc(monthLabelOf(S.to)) : esc(S.from.slice(0,4)===S.to.slice(0,4)?monthLabelOf(S.from).split(" ")[0]:monthLabelOf(S.from))+" → "+esc(monthLabelOf(S.to))+(S.n<S.nM?" · "+S.n+" mois avec rentrées":"")) : "";
+        h+=avCard("Épargne et reste à vivre", S.has?(S.n>1?"moyenne par mois":"sur le mois"):"", perSeg+(perTxt?'<div class="avsub" style="margin:2px 0 0">'+perTxt+'</div>':'')+(S.has ? '<div class="av2"><div><small>Taux d\'épargne</small><b class="'+(S.rate>=0.1?'dn':(S.rate<0?'up':'am'))+'">'+avPct(S.rate,0).replace("+","")+'</b><small>conseillé : 10 à 20 %</small></div><div><small>Reste à vivre / mois</small><b>'+fmtK(S.rav)+'</b><small>après frais fixes ('+fmtK(S.fx)+')</small></div></div>'
+          : '<div class="muted" style="font-size:12px;margin:8px 0 4px">Aucune rentrée d\'argent sur cette période : ajoute tes virements reçus (salaire…) dans Compte.</div>'));
         // économies
         h+=avCard("Pistes d'économies", D.eco.length?"≈ "+fmtK(D.ecoTot)+" / mois":"", D.eco.length ? D.eco.map(function(x){ return avRow(x.t, x.d, "−"+fmtK(x.v), "dn"); }).join("") : '<div class="muted" style="font-size:12px;margin:8px 0 4px">Aucune piste nette pour l\'instant : tes prix et tes habitudes sont stables.</div>');
       } else if(sub==="proj"){
@@ -5680,13 +5687,14 @@
     }
     function wireAv(){
       bindBack(function(){ state.view="analyse"; render(); window.scrollTo(0,0); });
-      [].forEach.call(document.querySelectorAll(".avseg button"), function(b){ b.onclick=function(){ state.avSub=b.getAttribute("data-s"); render(); window.scrollTo(0,0); }; });
+      [].forEach.call(document.querySelectorAll(".avseg button[data-s]"), function(b){ b.onclick=function(){ state.avSub=b.getAttribute("data-s"); render(); window.scrollTo(0,0); }; });
+      [].forEach.call(document.querySelectorAll(".avper button"), function(b){ b.onclick=function(){ var y=window.scrollY; state.avPer=b.getAttribute("data-p"); store.write("avPer", state.avPer); render(); window.scrollTo(0,y); }; });
       var bu=document.getElementById("avBuy"); if(bu) bu.onclick=function(){ uiChoice("Tickets Plus", "L'analyse avancée fait partie de Tickets Plus. L'achat de Plus arrivera bientôt dans l'appli.", [{ l:"D'accord", fn:function(){} }]); };
       var la=document.getElementById("avLater"); if(la) la.onclick=function(){ state.view="analyse"; render(); window.scrollTo(0,0); };
       var pdf=document.getElementById("avPdf"); if(pdf) pdf.onclick=function(){ var cm=monthKey(todayISO()); state.bilanFrom=cm.slice(0,4)+"-01"; state.bilanTo=cm; state.bilanMonth=cm; state.view="bilan"; render(); window.scrollTo(0,0); };
       var ia=document.getElementById("avIA"); if(ia) ia.onclick=avOpenIA;
       var ial=document.getElementById("avInflAll"); if(ial) ial.onclick=function(){ var L=avData().infl.all;
-        var h='<div class="sheet-title">Articles suivis · 12 mois</div><div class="ui-intro">Prix d\'une ligne du ticket, premier mois d\'achat → dernier. Les écarts de plus de 50 % (autre quantité, autre article) sont écartés.</div><div style="max-height:62vh;overflow:auto">'+
+        var h='<div class="sheet-title">Articles suivis · 12 mois</div><div class="ui-intro">Prix d\'une ligne du ticket, premier mois d\'achat → dernier. Les écarts de plus de 30 % (autre quantité, autre article) et le carburant sont écartés.</div><div style="max-height:62vh;overflow:auto">'+
           L.map(function(o){ return avRow(esc(o.name)+(o.lbl && avNorm(o.lbl)!==avNorm(o.name)?' <small style="display:inline;color:var(--muted)">'+esc(o.lbl)+'</small>':''), (o.st1?esc(o.st1)+' · ':'')+fmtK(o.p0)+' → '+fmtK(o.p1)+' · '+esc(monthLabelOf(o.first).split(" ")[0])+' → '+esc(monthLabelOf(o.lastM).split(" ")[0]), avPct(o.evo,0), o.evo>0.005?'up':(o.evo<-0.005?'dn':'')); }).join("")+'</div><div class="ui-stack" style="margin-top:10px"><button type="button" class="btn ghost" id="avAllNo">Fermer</button></div>';
         var sh=uiSheet('<div class="avc" style="padding:0">'+h+'</div>'); sh.q("#avAllNo").onclick=sh.close; };
       ["avTk","avCat","avFx","avEp"].forEach(function(id){ var e=document.getElementById(id); if(e) e.oninput=avSimUpdate; });
