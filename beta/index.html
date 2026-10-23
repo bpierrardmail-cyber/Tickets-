@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="23/10 10:03" />
+  <meta name="build" content="23/10 10:11" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4243,22 +4243,27 @@
         var six=[], mk=month, i;
         if(cr==="next"){ for(i=0;i<12;i++){ six.push(mk); mk=nextMonthKey(mk); } }
         else { var nR=(cr==="all"?36:+cr); for(i=0;i<nR;i++){ six.unshift(mk); mk=prevMonthKey(mk); } }
-        var rows0=six.map(function(m){ var d=monthData(m); return { m:m, c:d.commun, p:(prodOn?d.prod:0) }; });
-        var S=(cr==="all") ? trimLead(rows0, function(r){ return r.c+r.p; }) : rows0, smx=0;   // 6 et 12 mois : toujours 6 ou 12 cases, même avant le début du suivi
-        S.forEach(function(r){ smx=Math.max(smx, r.c+r.p); }); if(!smx) smx=1;
+        // chaque mois : frais perso + frais communs + produits partagés (la part de la personne affichée, ou tout le foyer)
+        function shareAt(d, m, who){ var t=0; (d.byP.Commun?d.byP.Commun.items:[]).forEach(function(f){ var P=fraisPartsAt(f, m); t+=fraisMontant(f, m)*(P?partsPct(P, who):pctOf(who))/100; }); return t; }
+        var rows0=six.map(function(m){ var d=monthData(m);
+          if(cw) return { m:m, f:(d.byP[cw]?d.byP[cw].total:0), c:shareAt(d, m, cw), p:(prodOn?d.prod*pctOf(cw)/100:0) };
+          return { m:m, f:d.fraisTot-d.commun, c:d.commun, p:(prodOn?d.prod:0) }; });
+        var S=(cr==="all") ? trimLead(rows0, function(r){ return (r.f+r.c+r.p); }) : rows0, smx=0;   // 6 et 12 mois : toujours 6 ou 12 cases, même avant le début du suivi
+        S.forEach(function(r){ smx=Math.max(smx, (r.f+r.c+r.p)); }); if(!smx) smx=1;
         var W=340, H=170+CHB, top=20, bot=22, ph=H-top-bot, slot=W/Math.max(S.length,3), bw=Math.min(30, slot*0.5), g='', maxI=0, onI=-1;
-        S.forEach(function(r,j){ if(r.c+r.p>S[maxI].c+S[maxI].p+0.004) maxI=j; if(r.m===month) onI=j; });
-        S.forEach(function(r,i){ var cx=slot*i+slot/2, hc=r.c/smx*ph, hp=r.p/smx*ph, on=r.m===month, y0=top+ph, op=on?1:.5;
+        S.forEach(function(r,j){ if((r.f+r.c+r.p)>(S[maxI].f+S[maxI].c+S[maxI].p)+0.004) maxI=j; if(r.m===month) onI=j; });
+        S.forEach(function(r,i){ var cx=slot*i+slot/2, hc=r.c/smx*ph, hp=r.p/smx*ph, hf=r.f/smx*ph, on=r.m===month, y0=top+ph, op=on?1:.5;
+          if(hf>0){ g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(y0-hf).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hf.toFixed(1)+'" rx="3" style="fill:'+COLP+';opacity:'+op+'"/>'; if(hc>0||hp>0) y0=y0-hf-2; else y0=y0-hf; }
           if(hc>0) g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(y0-hc).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hc.toFixed(1)+'" rx="3" style="fill:'+COLC+';opacity:'+op+'"/>';
-          if(!(r.c+r.p>0)) g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(y0-2).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="2" rx="1" style="fill:var(--line2)"/>';   // mois vide
+          if(!((r.f+r.c+r.p)>0)) g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(y0-2).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="2" rx="1" style="fill:var(--line2)"/>';   // mois vide
           if(hp>0) g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(y0-hc-hp-(hc>0?2:0)).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hp.toFixed(1)+'" rx="3" style="fill:'+COLR+';opacity:'+op+'"/>';
-          var many=S.length>8, isMax=(i===maxI && !S.slice(0,i).some(function(x){ return x.c+x.p>=smx-0.004; }) && (r.c+r.p)>=smx-0.004), stepL=Math.ceil(S.length/12);
+          var many=S.length>8, isMax=(i===maxI && !S.slice(0,i).some(function(x){ return (x.f+x.c+x.p)>=smx-0.004; }) && ((r.f+r.c+r.p))>=smx-0.004), stepL=Math.ceil(S.length/12);
           var dense=S.length>12;   // jusqu'à 12 barres : un montant sur chaque barre (4 chiffres, sans espace)
-          if(r.c+r.p>0 && (!dense || on || (isMax && Math.abs(i-onI)>1))) g+='<text x="'+cx.toFixed(1)+'" y="'+(y0-hc-hp-(hc>0&&hp>0?2:0)-5).toFixed(1)+'" text-anchor="middle" style="fill:'+(on?'var(--ink)':'var(--ink-soft)')+';font-size:'+(many?9:10.5)+'px;font-weight:600;font-family:var(--sans);letter-spacing:-.02em">'+(many?String(Math.round(r.c+r.p)):cptK(r.c+r.p))+'</text>';
+          if((r.f+r.c+r.p)>0 && (!dense || on || (isMax && Math.abs(i-onI)>1))) g+='<text x="'+cx.toFixed(1)+'" y="'+(y0-hc-hp-(hc>0&&hp>0?2:0)-5).toFixed(1)+'" text-anchor="middle" style="fill:'+(on?'var(--ink)':'var(--ink-soft)')+';font-size:'+(many?9:10.5)+'px;font-weight:600;font-family:var(--sans);letter-spacing:-.02em">'+(many?String(Math.round((r.f+r.c+r.p))):cptK((r.f+r.c+r.p)))+'</text>';
           g+='<rect class="barhit" data-m="'+esc(r.m)+'" x="'+(slot*i).toFixed(1)+'" y="0" width="'+slot.toFixed(1)+'" height="'+H+'" style="fill:transparent;cursor:pointer"/>';
           if(on || (i%stepL===0 && Math.abs(i-onI)>=Math.min(stepL,2)) || !many) g+='<text x="'+cx.toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" style="fill:'+(on?'var(--ink)':'var(--muted)')+';font-size:'+(many?9:10)+'px;font-weight:'+(on?700:400)+';font-family:var(--sans)">'+esc(many?["jan","fév","mar","avr","mai","juin","juil","aoû","sep","oct","nov","déc"][+r.m.slice(5,7)-1]:mShort(r.m))+'</text>'; });
         chart+='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Dépenses communes par mois">'+g+'</svg>';
-        chart+='<div class="cch-leg"><span><i style="background:'+COLC+'"></i>Frais communs</span><span><i style="background:'+COLR+'"></i>Produits partagés</span></div><div class="cch-note">'+(cr!=="next" && rows0.length && !(rows0[0].c+rows0[0].p>0) ? 'Suivi depuis '+esc(monthLabelOf((S.filter(function(r){ return r.c+r.p>0; })[0]||S[S.length-1]).m))+' · ':'')+'Touche une barre pour les frais fixes du mois</div>';
+        chart+='<div class="cch-leg"><span><i style="background:'+COLP+'"></i>Frais perso</span><span><i style="background:'+COLC+'"></i>'+(cw?'Part du commun':'Frais communs')+'</span><span><i style="background:'+COLR+'"></i>Produits partagés</span></div><div class="cch-note">'+(cr!=="next" && rows0.length && !(rows0[0].c+rows0[0].p>0) ? 'Suivi depuis '+esc(monthLabelOf((S.filter(function(r){ return r.c+r.p>0; })[0]||S[S.length-1]).m))+' · ':'')+'Touche une barre pour les frais fixes du mois</div>';
         chart+='<div class="dmode comrange" style="justify-content:center;margin:8px 0 0">'+[["6","6 mois"],["12","12 mois"],["next","12 à venir"],["all","Tout"]].map(function(x){ return '<button type="button" data-r="'+x[0]+'"'+(cr===x[0]?' class="on"':'')+'>'+x[1]+'</button>'; }).join("")+'</div>';
       }
       chart+='</div>';
