@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="23/10 11:51" />
+  <meta name="build" content="23/10 11:54" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -519,6 +519,8 @@
     .avlock-wrap{ position:relative; } .avblur{ filter:blur(5px); opacity:.55; pointer-events:none; }
     .avlock{ position:absolute; left:8px; right:8px; top:40px; background:var(--card); border:1px solid var(--line2); border-radius:22px; padding:22px; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,.6); }
     .avlock h3{ margin:6px 0; font-size:18px; } .avlock p{ color:var(--ink-soft); font-size:13px; line-height:1.45; margin:0 0 12px; } .avlock ul{ text-align:left; font-size:12.5px; color:var(--ink-soft); padding-left:18px; margin:0 0 16px; line-height:1.7; } .avlock .btn{ width:100%; }
+    .cnr{ position:absolute; top:14px; right:14px; z-index:3; display:flex; gap:6px; } .cnr .anfx{ margin:0; min-height:0; padding:5px 11px; font-size:12px; font-weight:600; }
+    .hm-ch .cnr{ display:none; }
     .hc-pick{ font-family:var(--sans); font-size:12.5px; font-weight:600; color:var(--accent); background:none; border:1px dashed rgba(79,214,160,.45); border-radius:999px; padding:6px 12px; cursor:pointer; }
     .hc-empty{ font-size:12.5px; color:var(--muted); margin:0 4px 6px; }
     .hcp-g{ margin:12px 2px 6px; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
@@ -4675,7 +4677,11 @@
       var prodPart=prodOwed/2;
 
       var depenses=paidTotal + fraisTotal;
-      var liq=liquideAt(person, month), liqV=liq?liq.val:0;
+      var liq=liquideAt(person, month), liqAll=liq?liq.val:0;
+      // bouton « Liquide » (Ce mois, Solde) : compter ou non l'argent liquide
+      var liqOn=state.cptLiq; if(liqOn==null) liqOn=store.read("cptLiq", true); liqOn=!!liqOn;
+      var liqV=liqOn?liqAll:0, liqHas=!!liq || liquideMois && liquideMois[person] && Object.keys(liquideMois[person]).length>0;
+      function liqAt(m){ if(!liqOn) return 0; var l=liquideAt(person,m); return l?l.val:0; }
       var soldeFin=fl.closing + liqV;
       var virDone=virs.reduce(function(t,v){ return t+(v.done?(Number(v.montant)||0):0); },0);
       var fraisDoneFull=0;
@@ -4741,8 +4747,8 @@
       } else if(cmode==="solde"){
         var sFirst=month; virements.forEach(function(v){ if(v.person===person && v.month && v.month<sFirst) sFirst=v.month; }); state.entries.forEach(function(e){ var k=monthKey(e.date); if(k && k<sFirst && ticketInAcct(e, person)) sFirst=k; });
         var sMs=cRangeMonths(sFirst);
-        hero={ label:"Solde de fin de mois", big:soldeFin, color:(soldeFin<0?"var(--coral)":"var(--ink)"), sub:(liq?"Banque "+fmtK(fl.closing)+" · Liquide "+fmtK(liqV):"") };
-        chart+=compteBarsSVG(sMs.map(function(m){ var lq=liquideAt(person,m); return { m:m, lbl:mShort(m), v:soldeFlow(person,m).closing+(lq?lq.val:0) }; }), month)+'<div class="cch-note">Ce qui reste en fin de mois (banque + liquide), '+cRangeNote(sMs)+'</div>'+cRangeSeg();
+        hero={ label:"Solde de fin de mois", big:soldeFin, color:(soldeFin<0?"var(--coral)":"var(--ink)"), sub:(liq&&liqOn?"Banque "+fmtK(fl.closing)+" · Liquide "+fmtK(liqV):(liqHas&&!liqOn?"Banque seule, sans le liquide":"")) };
+        chart+=compteBarsSVG(sMs.map(function(m){ return { m:m, lbl:mShort(m), v:soldeFlow(person,m).closing+liqAt(m) }; }), month)+'<div class="cch-note">Ce qui reste en fin de mois ('+(liqOn?'banque + liquide':'banque seule')+'), '+cRangeNote(sMs)+'</div>'+cRangeSeg();
       } else if(cmode==="es"){
         var rows=six.map(function(m){ var x=inOut(m); return { m:m, lbl:mShort(m), inn:x.inn, out:x.out }; }), cur=rows[rows.length-1], net=cur.inn-cur.out;
         hero={ label:"Entrées − sorties du mois", big:net, color:(net<0?"var(--coral)":"var(--accent)"), sub:"Entrées "+fmtK(cur.inn)+" · Sorties "+fmtK(cur.out) };
@@ -4758,7 +4764,8 @@
         chart+=compteBarsSVG(pRows, month, "#c78bd6")+'<div class="cch-note">Total mis de côté dans tes provisions, sur 6 mois</div>';
       }
       chart+='</div>';
-      if(cRangeUsed) chart=cRangeBtn()+chart;
+      var liqBtn=(liqHas && (cmode==="mois" || cmode==="solde")) ? '<button type="button" class="anfx'+(liqOn?' on':'')+'" id="cptLiqBtn" aria-pressed="'+liqOn+'">'+(liqOn?'✓':'＋')+' Liquide</button>' : '';
+      if(cRangeUsed || liqBtn) chart='<div class="cnr">'+liqBtn+(cRangeUsed?cRangeBtn().replace('anfx anfx-corner','anfx'):'')+'</div>'+chart;
       if(preStart && cmode!=="ep" && cmode!=="prov") hero.sub="Compte suivi à partir de "+esc(monthLabelOf(aStart))+" : rien avant";
       hero.extra=chart;
       // Petites cases sous le graphique (comme Provisions)
@@ -4773,7 +4780,7 @@
         var pmK=prevMonthKey(month), red=function(v){ return v<0?"var(--coral)":""; };
         if(cmode==="dep"){ var dPrev=computeDepensesMonth(person, pmK), dd=depenses-dPrev;
           hero.stats=[ { l:"Tickets", v:fmtS(paidTotal) }, { l:"Frais fixes", v:fmtS(fraisTotal) }, { l:"vs "+monthLabelOf(pmK).split(" ")[0], v:(dd>0?"+":(dd<0?"−":""))+fmtS(Math.abs(dd)), c:(dd>0.004?"var(--coral)":(dd<-0.004?"var(--accent)":"")) } ]; }
-        else if(cmode==="solde"){ var lqP=liquideAt(person,pmK), sPrev=soldeFlow(person,pmK).closing+(lqP?lqP.val:0), ds=soldeFin-sPrev, sV=sMs.map(function(m){ var lq=liquideAt(person,m); return soldeFlow(person,m).closing+(lq?lq.val:0); }), sMin=Math.min.apply(null,sV), sAvg=sV.reduce(function(t,x){ return t+x; },0)/sV.length;
+        else if(cmode==="solde"){ var sPrev=soldeFlow(person,pmK).closing+liqAt(pmK), ds=soldeFin-sPrev, sV=sMs.map(function(m){ return soldeFlow(person,m).closing+liqAt(m); }), sMin=Math.min.apply(null,sV), sAvg=sV.reduce(function(t,x){ return t+x; },0)/sV.length;
           hero.stats=[ { l:"vs fin "+monthLabelOf(pmK).split(" ")[0], v:(ds>0?"+":(ds<0?"−":""))+fmtS(Math.abs(ds)), c:(ds<-0.004?"var(--coral)":(ds>0.004?"var(--accent)":"")) }, { l:"Plus bas", v:fmtS(sMin), c:red(sMin) }, { l:"Moyenne", v:fmtS(sAvg), c:red(sAvg) } ]; }
         else if(cmode==="es"){ var nets=rows.map(function(r){ return r.inn-r.out; }), nAvg=nets.reduce(function(t,x){ return t+x; },0)/Math.max(1,nets.length);
           hero.stats=[ { l:"Entrées", v:fmtS(cur.inn), c:"var(--accent)" }, { l:"Sorties", v:fmtS(cur.out), c:"var(--coral)" }, { l:"Moyenne / mois", v:(nAvg>=0?"+":"−")+fmtS(Math.abs(nAvg)), c:(nAvg<0?"var(--coral)":"var(--accent)") } ]; }
@@ -4953,6 +4960,7 @@
       [].forEach.call(document.querySelectorAll(".dmode button"), function(bt){ bt.onclick=function(){ state.depByShop=bt.getAttribute("data-v")==="1"; render(); }; });
       wireChartDefaults();
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.cptChart=bt.getAttribute("data-m"); store.write("cptChart", state.cptChart); render(); }; });
+      var clq=document.getElementById("cptLiqBtn"); if(clq) clq.onclick=function(ev){ ev.stopPropagation(); state.cptLiq=!liqOn; store.write("cptLiq", state.cptLiq); render(); };
       [].forEach.call(document.querySelectorAll(".crange button, .crange-c"), function(b){ b.onclick=function(){ state.cptRange=b.getAttribute("data-r"); store.write("cptRange", state.cptRange); render(); }; });
       if(!page && document.querySelector(".cch-tabs")) wireCptSwipe(cmode, CMODES.map(function(x){ return x[0]; }));
       var lr=document.getElementById("liqrow"); if(lr) lr.onclick=function(){
