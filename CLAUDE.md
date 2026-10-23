@@ -18,7 +18,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 |---|---|
 | `beta/index.html` | **L'appli** (≈ 6 800 lignes) : HTML + CSS + JS dans un seul fichier. Servie par GitHub Pages (`/Tickets-/beta/`). |
 | `index.html`, `sw.js`, `manifest.webmanifest` | Ancienne version stable à la racine + service worker (réseau d'abord). |
-| `relais/cours-worker.js` | Worker Cloudflare : cours Yahoo / CoinGecko (`/search`, `/quote`, `/chart`, `/crypto/*`) et routage `/foyer`. |
+| `relais/cours-worker.js` | Worker Cloudflare : cours Yahoo / CoinGecko (`/search`, `/quote`, `/chart`, `/crypto/*`), inflation INSEE (`/inflation`) et routage `/foyer`. |
 | `relais/foyer.js` | Foyer partagé : un Durable Object SQLite par foyer (classe `Foyer`). |
 | `wrangler.jsonc` | Config du Worker ; déployé par Workers Builds à chaque push sur `main`. |
 | `app-android/` | Appli Android Capacitor 7 qui charge la β en ligne (`server.url`), plus le code natif dans `native/`. |
@@ -63,7 +63,8 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 - **Analyse « + Frais fixes »** : `fraisLines(mois, qui)` donne ce qui sort réellement du compte de la personne. `anFraisLines` limite le calcul aux mois qui ont des tickets.
 - **Éditions** : `EDITION` vaut `perso` ou `store`. L'appli Android l'annonce par `TicketsApp/<édition>` dans son identifiant de navigateur ; dans un navigateur, ajouter `?edition=store`.
   - La version Store n'a pas la Bourse.
-  - `PLUS_FEATURES = ["widgets","foyer"]` sont réservées à Tickets Plus dans la version Store ; vérifier avec `canUse()`.
+  - `PLUS_FEATURES = ["widgets","foyer","avancee"]` sont réservées à Tickets Plus dans la version Store ; vérifier avec `canUse()`.
+- **Analyse avancée** (`state.view="avancee"`, `renderAvancee`, `avData`) : inflation perso, année / année précédente, alertes, épargne et reste à vivre, pistes d'économies, projection, simulateur, résumé à coller dans une IA. Tout est calculé sur le téléphone ; seule l'inflation INSEE (publique) vient du relais (`/inflation`, gardée 24 h dans `inseeIpc`).
   - Rejoindre un foyer est gratuit.
 
 ## Foyer partagé (modèle « le propriétaire est le centre »)

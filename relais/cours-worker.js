@@ -7,6 +7,7 @@
 //   GET /crypto/chart?id=solana&days=1 -> historique CoinGecko en € (1, 7, 30, 365 jours)
 //   GET /crypto/search?q=sol       -> recherche CoinGecko (secours quand l'app est limitée par CoinGecko)
 //   GET /crypto/price?ids=solana   -> cours CoinGecko en € (+ variation 24 h)
+//   GET /inflation                 -> inflation officielle INSEE (IPC, sur 12 mois), données publiques et gratuites
 // Aucune clé ni donnée personnelle : seuls des noms de titres transitent.
 //
 // /foyer/* : foyer partagé (voir foyer.js) — copies chiffrées sur les téléphones, illisibles ici.
@@ -80,12 +81,50 @@ async function chart(symbol, range) {
   };
 }
 
+// Inflation INSEE (indice des prix à la consommation, ensemble des ménages, France) : séries BDM publiques, sans clé.
+// On essaie plusieurs identifiants (changement de base possible) et plusieurs adresses ; la plus récente gagne.
+const IPC_IDBANKS = ["001759970", "011812214"];
+const BDM_HOSTS = ["https://api.insee.fr/series/BDM/data/SERIES_BDM/", "https://www.bdm.insee.fr/series/sdmx/data/SERIES_BDM/", "https://bdm.insee.fr/series/sdmx/data/SERIES_BDM/"];
+async function inflation() {
+  let best = null;
+  for (const id of IPC_IDBANKS) {
+    for (const host of BDM_HOSTS) {
+      try {
+        const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), 8000);
+        let txt;
+        try {
+          const r = await fetch(host + id + "?lastNObservations=25", { headers: { "User-Agent": UA["User-Agent"], "Accept": "application/xml" }, signal: ctrl.signal, cf: { cacheTtl: 43200, cacheEverything: true } });
+          if (!r.ok) continue; txt = await r.text();
+        } finally { clearTimeout(timer); }
+        const obs = [];
+        for (const m of txt.matchAll(/<Obs\b[^>]*>/g)) {
+          const t = /TIME_PERIOD="(\d{4}-\d{2})"/.exec(m[0]), v = /OBS_VALUE="([-\d.]+)"/.exec(m[0]);
+          if (t && v && isFinite(+v[1])) obs.push({ m: t[1], v: +v[1] });
+        }
+        obs.sort((a, b) => a.m < b.m ? -1 : 1);
+        if (obs.length < 13) continue;
+        const last = obs[obs.length - 1], prevY = obs.find(o => o.m === (+last.m.slice(0, 4) - 1) + last.m.slice(4));
+        if (!prevY) continue;
+        const title = (/TITLE_FR="([^"]*)"/.exec(txt) || [])[1] || "";
+        const cand = { yoy: Math.round((last.v / prevY.v - 1) * 1000) / 10, last: last.m, idbank: id, title, series: obs.slice(-13) };
+        if (!best || cand.last > best.last) best = cand;
+        break;
+      } catch (e) { /* adresse suivante */ }
+    }
+  }
+  return best;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === "/foyer" || url.pathname.startsWith("/foyer/")) return handleFoyer(request, env);
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
     try {
+      if (url.pathname === "/inflation") {
+        try { const r = await inflation(); return json(r ? { ok: true, ...r } : { ok: false }, r ? 43200 : 300); }
+        catch (e) { return json({ ok: false, error: String((e && e.message) || e) }, 300); }
+      }
       if (url.pathname === "/search") {
         const q = (url.searchParams.get("q") || "").trim().slice(0, 60);
         try { return json({ results: q ? await search(q) : [] }, 3600); }
