@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="23/10 11:54" />
+  <meta name="build" content="23/10 15:11" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -936,6 +936,14 @@
     .fy-code{ margin:14px 0 4px; padding:16px 12px; border-radius:14px; background:var(--bg0); border:1px solid var(--line2); font-family:var(--mono); font-size:19px; letter-spacing:.06em; text-align:center; word-break:break-all; user-select:all; }
     .fy-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
     .fy-chips .chip{ padding:7px 12px; font-size:13px; }
+    .fy-quick{ display:flex; gap:6px; margin:0 0 8px; } .fy-quick button{ flex:1; font-family:var(--sans); font-size:12px; padding:7px 8px; border-radius:9px; border:1px dashed var(--line2); background:none; color:var(--accent); cursor:pointer; }
+    .fy-rights{ display:flex; flex-direction:column; gap:6px; }
+    .fy-rr{ display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:11px; background:var(--card2); border:1px solid var(--line); } .fy-rr.dis{ opacity:.45; }
+    .fy-rr .n{ flex:1; min-width:0; font-size:13px; font-weight:600; } .fy-rr .n small{ display:block; font-size:10px; font-weight:400; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .fy-seg3{ display:flex; flex:0 0 auto; background:var(--bg); border:1px solid var(--line); border-radius:9px; padding:2px; gap:2px; }
+    .fy-seg3 button{ font-family:var(--sans); font-size:11.5px; padding:6px 7px; border:0; border-radius:7px; background:none; color:var(--ink-soft); cursor:pointer; }
+    .fy-seg3 button.on{ background:var(--accent); color:#0b1a14; font-weight:700; } .fy-seg3 button[data-v="off"].on{ background:#4a5160; color:var(--ink); } .fy-seg3 button[data-v="r"].on{ background:#7c9cf4; color:#0b1a14; }
+    .fy-seg3 button:disabled{ opacity:.3; cursor:default; }
     .fy-tabs{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
     .fy-tab{ display:flex; align-items:center; gap:9px; height:42px; padding:0 11px; border-radius:11px; border:1px solid var(--line); background:var(--card2); color:var(--ink); font-family:var(--sans); font-size:14px; font-weight:600; text-align:left; cursor:pointer; }
     .fy-tab i{ width:18px; height:18px; flex:0 0 18px; box-sizing:border-box; border-radius:5px; border:2px solid #5d626d; font-style:normal; font-size:12px; line-height:14px; text-align:center; color:#0a130f; }
@@ -991,7 +999,7 @@
       h+='<div class="dr-sec">Foyer partagé</div>';
       if(!fyCfg) h+=it("foyer","👨‍👩‍👧","Foyer partagé",esc(canUse("foyer")?"Suivre les comptes à plusieurs, chacun sur son téléphone":"Tickets Plus · suivre les comptes à plusieurs"));
       else if(!fyM) h+=it("foyer","👨‍👩‍👧","Foyer partagé",esc(Object.keys(fyCfg.members||{}).length+" membre(s) · "+fySyncLabel()));
-      else h+=it("foyer","👨‍👩‍👧","Foyer de "+(fyCfg.owner||"…"),esc(fyRoleLabel(fyCfg.role)+" · "+fySyncLabel()));
+      else h+=it("foyer","👨‍👩‍👧","Foyer de "+(fyCfg.owner||"…"),esc(fyRightsLabel(fyCfg)+" · "+fySyncLabel()));
       if(!fyM) h+='<div class="dr-sec">Sauvegarde</div>'+it("backup","💾","Sauvegarder",'<span style="color:'+bc+'">'+esc(bt)+'</span>')+it("restore","📂","Restaurer une sauvegarde",esc("Remplace les données par celles du fichier"));
       h+='<div class="dr-sec">Sécurité</div>';
       if(!lockCfg) h+=it("lockSetup","🔒","Verrouiller l'app par un code",esc("Tu pourras ajouter l'empreinte ensuite"));
@@ -2707,7 +2715,7 @@
     var SENS_OPTS=[{v:"in",l:"Entrée +"},{v:"out",l:"Sortie −"}];
 
     function openScanChooser(){
-      if(fyRO()){ uiToast("Consultation : tu ne peux pas ajouter de ticket"); return; }
+      if(fyMember() && (fyCfg.role==="view" || !fyTabEd("list"))){ uiToast("Lecture seule : tu ne peux pas ajouter de ticket"); return; }
       var manual=fyRole()==="edit" && !fyTabOn(fyCfg,"list");   // sans l'Accueil, la saisie à la main passe par ici
       var ov=document.createElement("div");
       ov.className="sheet-overlay";
@@ -6793,16 +6801,29 @@
     var FY_SEP="\u001f", FY_SKIP={};
     function fyRole(){ return fyCfg ? fyCfg.role : null; }
     function fyMember(){ return !!fyCfg && fyCfg.role!=="owner"; }
-    function fyRO(){ return !!fyCfg && fyCfg.role==="view"; }
+    // Droits par onglet : m.ed = onglets en modification (absent : tous les onglets visibles si « edit », aucun si « view »)
+    var FY_KEY_TAB={ entries:"list", cats:"articles", familles:"articles", produits:"articles", appris:"articles", familleDe:"articles", budgets:"articles", budgetsP:"articles",
+      fraisCommuns:"communes", communParts:"communes", comptes:"compte", virements:"compte", epargne:"compte", provisions:"compte", soldeInit:"compte", liquideMois:"compte", argentMois:"compte", bourse:"bourse" };
+    function fyEdTabs(m){ if(!m || m.role==="owner") return FY_TABS.map(function(t){ return t.v; }); if(m.role!=="edit") return [];
+      if(Array.isArray(m.ed)) return m.ed; return m.tabs ? m.tabs.slice() : FY_TABS.map(function(t){ return t.v; }); }
+    function fyTabEd(t){ return !fyMember() || fyEdTabs(fyCfg).indexOf(t)>=0; }   // ce téléphone peut-il modifier cet onglet ?
+    function fyCurTab(){ var v=state.view; return FY_SUB[v]||v; }
+    // lecture seule : membre en consultation, ou onglet affiché en lecture
+    function fyRO(){ if(!fyCfg || !fyMember()) return false; if(fyCfg.role==="view") return true; var t=fyCurTab(); if(t==="foyer" || t==="bilan") return false; return !fyTabEd(t==="form"?"list":t); }
     function fyTabOn(m, t){ return !m || !m.tabs || m.tabs.indexOf(t)>=0; }
     function fyFirstTab(){ var t=(fyCfg && fyCfg.tabs && fyCfg.tabs[0]) || "list"; return t; }
     function fyRoleLabel(r){ return r==="edit"?"Modification":(r==="view"?"Consultation":"Propriétaire"); }
+    function fyRightsLabel(m){ if(!m || m.role==="owner") return "Propriétaire"; var vis=FY_TABS.filter(function(t){ return fyTabOn(m, t.v); }), ed=fyEdTabs(m);
+      var w=vis.filter(function(t){ return ed.indexOf(t.v)>=0; }), r=vis.filter(function(t){ return ed.indexOf(t.v)<0; });
+      if(!w.length) return "Lecture"+(r.length===FY_TABS.length?" · tous les onglets":" : "+r.map(function(t){ return t.l; }).join(", "));
+      if(!r.length) return "Modification"+(w.length===FY_TABS.length?" · tous les onglets":" : "+w.map(function(t){ return t.l; }).join(", "));
+      return "Modif. : "+w.map(function(t){ return t.l; }).join(", ")+" · lecture : "+r.map(function(t){ return t.l; }).join(", "); }
     function fyTabsLabel(m){ if(!m.tabs) return "tous les onglets"; var l=FY_TABS.filter(function(t){ return m.tabs.indexOf(t.v)>=0; }).map(function(t){ return t.l; }); return l.length===FY_TABS.length?"tous les onglets":(l.join(", ")||"aucun onglet"); }
     function fyAcctsLabel(m){ if(m.accts==null) return "tous les comptes"; if(!m.accts.length) return m.tk==="all" ? "tickets de tout le foyer, sans les comptes" : "ses tickets seulement"; var l=comptes.filter(function(a){ return m.accts.indexOf(a.key)>=0; }).map(function(a){ return a.nom; }); return (l.join(", ")||"aucun compte")+(m.tk==="all"?" · tickets de tout le foyer":""); }
     // Sur le téléphone d'un membre limité : il ne modifie que ses tickets (et ceux de ses comptes) ; les autres en lecture seule
     function fyCanEdit(e){
       if(!fyMember()) return true;
-      if(fyRO()) return false;
+      if(fyCfg.role==="view" || !fyTabEd("list")) return false;   // les tickets se modifient avec l'onglet Accueil
       if(fyCfg.accts==null) return true;
       var p=(e.payePar||"").trim();
       if(p && p===mePerson()) return true;
@@ -6810,7 +6831,7 @@
       return !!p && comptes.some(function(a){ return a.key!=="__tickets" && (a.payer||"")===p; });
     }
     // Sur le téléphone d'un membre « tout le foyer » : les frais fixes des comptes qu'il n'a pas sont en consultation
-    function fyFraisCanEdit(f){ if(!fyMember()) return true; if(fyRO()) return false; if(fyCfg.accts==null) return true;
+    function fyFraisCanEdit(f){ if(!fyMember()) return true; if(fyCfg.role==="view" || !fyTabEd("communes")) return false; if(fyCfg.accts==null) return true;
       return comptes.some(function(a){ return a.key!=="__tickets" && !!fraisKind(f, a.key); }); }
     function fyTicketsOnly(){ return fyMember() && !!fyCfg.accts && !fyCfg.accts.length; }
     function fyDefPayer(){ return fyMember() ? mePerson() : ""; }
@@ -6946,10 +6967,10 @@
     document.addEventListener("click", function(){ fyTapAt=Date.now(); }, true);
     store.write=function(k, v){
       if(fyCfg && FY_KEYS.hasOwnProperty(k)){
-        if(fyCfg.role==="view" || (fyCfg.role==="edit" && FY_OWNER_ONLY[k])){
+        if(fyCfg.role==="view" || (fyCfg.role==="edit" && FY_OWNER_ONLY[k]) || (fyCfg.role==="edit" && FY_KEY_TAB[k] && !fyTabEd(FY_KEY_TAB[k]))){
           // geste de la personne (pas un calcul automatique) : on le dit, et on remet les vraies données
           if(!fyRendering && Date.now()-fyTapAt<2500 && Date.now()-fyRoToastAt>3000){
-            fyRoToastAt=Date.now(); uiToast(fyCfg.role==="view"?"Consultation : tu ne peux rien modifier":"La Bourse se modifie sur le téléphone de "+(fyCfg.owner||"la personne qui t'a invité"));
+            fyRoToastAt=Date.now(); uiToast(fyCfg.role==="view"?"Consultation : tu ne peux rien modifier":(FY_OWNER_ONLY[k]?"La Bourse se modifie sur le téléphone de "+(fyCfg.owner||"la personne qui t'a invité"):"Lecture seule : "+((FY_TABS.filter(function(t){ return t.v===FY_KEY_TAB[k]; })[0]||{}).l||"cet onglet")+" n'est pas en modification pour toi"));
             setTimeout(function(){ fyReloadVars(); render(); }, 0);
           }
           return;
@@ -7017,6 +7038,7 @@
     // Un changement envoyé par un membre : a-t-il le droit de le faire ?
     function fyAllowed(m, k, p, old, nw){
       if(m.role!=="edit" || FY_OWNER_ONLY[k]) return false;
+      if(!FY_KEY_TAB[k] || fyEdTabs(m).indexOf(FY_KEY_TAB[k])<0 || !fyTabOn(m, FY_KEY_TAB[k])) return false;   // onglet de la donnée en modification pour ce membre
       if(m.accts==null) return true;
       var R=fyRules(m), me=mePerson();
       function ok(x, isOld){
@@ -7096,7 +7118,7 @@
         return fyPublishAll();
       }).then(function(){ return fyBackupFull(); });
     }
-    function fySnapPayload(m){ return { v:1, owner:mePerson(), me:m.name, role:m.role, tabs:m.tabs||null, accts:m.accts==null?null:m.accts, tk:m.tk||"own", ack:m.ack||0, keys:fyFilter(m) }; }
+    function fySnapPayload(m){ return { v:1, owner:mePerson(), me:m.name, role:m.role, tabs:m.tabs||null, ed:fyEdTabs(m), accts:m.accts==null?null:m.accts, tk:m.tk||"own", ack:m.ack||0, keys:fyFilter(m) }; }
     function fyPublishAll(force){
       var C=fyCfg, chain=Promise.resolve();
       Object.keys(C.members||{}).forEach(function(id){ chain=chain.then(function(){
@@ -7115,7 +7137,7 @@
       var C=fyCfg; if(!C || C.role!=="owner" || !C.key) return Promise.resolve();
       if(!force && (fyFullVer===fyVer || Date.now()-fyFullAt<120000)) return Promise.resolve();
       var keys={}, ver=fyVer; Object.keys(FY_KEYS).forEach(function(k){ keys[k]=store.read(k, fyDefault(k)); });
-      var mem={}; Object.keys(C.members||{}).forEach(function(id){ var m=C.members[id]; mem[id]={ name:m.name, role:m.role, tabs:m.tabs, accts:m.accts, tk:m.tk||"own", km:m.km, created:m.created, ack:m.ack||0 }; });
+      var mem={}; Object.keys(C.members||{}).forEach(function(id){ var m=C.members[id]; mem[id]={ name:m.name, role:m.role, tabs:m.tabs, ed:m.ed, accts:m.accts, tk:m.tk||"own", km:m.km, created:m.created, ack:m.ack||0 }; });
       return fySeal(C.key, { v:1, me:mePerson(), members:mem, keys:keys, mt:fyMt, t:fyNow() }).then(function(v){ return fyCall("PUT","/blob/full",{ v:v }); }).then(function(r){
         if(r.status===200){ fyFullVer=ver; fyFullAt=Date.now(); C.fullT=r.j.t; fySave(); }
       });
@@ -7165,7 +7187,7 @@
         fyRawWrite(k, v);
       });
       fyResetBase(); fyRawWrite("fyPend", fyPend); fyRawWrite("askName", false);
-      C.role=snap.role; C.me=snap.me; C.owner=snap.owner; C.tabs=snap.tabs||null; C.accts=snap.accts==null?null:snap.accts; C.tk=snap.tk||"own"; C.snapT=snap.t; C.lastOk=Date.now();
+      C.role=snap.role; C.me=snap.me; C.owner=snap.owner; C.tabs=snap.tabs||null; C.ed=Array.isArray(snap.ed)?snap.ed:null; C.accts=snap.accts==null?null:snap.accts; C.tk=snap.tk||"own"; C.snapT=snap.t; C.lastOk=Date.now();
       fySave(); fyReloadVars(); fyApplyMode(); render();
       if(C.imp){ delete C.imp; fySave(); if(C.role==="edit") setTimeout(fyImport, 0); }
     }
@@ -7271,7 +7293,7 @@
     function fySyncLabel(){ if(!fyCfg) return ""; if(fyLastErr && (!fyCfg.lastOk || Date.now()-fyCfg.lastOk>120000)) return "hors ligne · à jour "+fyAgo(fyCfg.lastOk); return "à jour "+fyAgo(fyCfg.lastOk); }
     // ----- consultation / onglets -----
     function fyApplyMode(){
-      document.body.classList.toggle("fy-ro", fyRO());
+      document.body.classList.toggle("fy-ro", fyMember() && (fyCfg.role==="view" || !fyTabEd("list")));   // pas de Scan sans l'Accueil en modification
       document.body.classList.toggle("fy-mem", fyMember());
     }
     function fyNavFilter(){
@@ -7280,14 +7302,14 @@
     function fyViewGuard(){
       if(!fyMember() || !FY_SUB) return;
       var v=state.view; if(v==="foyer" || v==="bilan") return;
-      if(v==="form" || v==="photo"){ if(fyCfg.role==="edit" || state.draftRO || v==="photo") return; state.view=fyFirstTab(); state.draft=null; return; }   // modification : saisir ; consultation : voir un ticket
+      if(v==="form" || v==="photo"){ if((fyCfg.role==="edit" && fyTabEd("list")) || state.draftRO || v==="photo") return; state.view=fyFirstTab(); state.draft=null; return; }   // modification : saisir ; consultation : voir un ticket
       var tb=FY_SUB[v]||v; if(!fyTabOn(fyCfg, tb)) state.view=fyFirstTab();
     }
     function fyRoStrip(){
       if(!fyRO()) return;
       [].forEach.call(app.querySelectorAll("button, a.btn"), function(b){
         var t=(b.textContent||"").trim(), id=b.id||"", cl=" "+(b.className||"")+" ";
-        if(/^(✎|✕|🔗|▲|▼|⋯|＋|\+ )/.test(t) || /^(add|del|edit)/i.test(id) || /(edit|del|more|addprl|linkbtn) /.test(cl)) b.style.display="none";
+        if(/^(✎|✕|🔗|▲|▼|⋯|＋|\+ )/.test(t) || /^(add|del|edit|comParts$|budEdit$|manual2$)/i.test(id) || /(edit|del|more|addprl|linkbtn) /.test(cl)) b.style.display="none";
       });
     }
     // ----- code + empreinte obligatoires sur les téléphones du foyer -----
@@ -7381,7 +7403,7 @@
         if(ids.length){
           h+='<div class="fy-card fy-list">';
           ids.forEach(function(id, i){ var m=fyCfg.members[id], st=fyStatus(id);
-            h+='<button type="button" class="fy-mrow" data-m="'+esc(id)+'">'+fyAvatar(m.name, i)+'<span class="fy-grow"><b>'+esc(m.name)+'</b><small>'+esc(fyRoleLabel(m.role)+' · '+fyTabsLabel(m)+(m.accts!=null?' ('+fyAcctsLabel(m)+')':''))+'</small><small style="color:'+st.c+'">● '+esc(st.t)+'</small></span><span class="chev">›</span></button>'; });
+            h+='<button type="button" class="fy-mrow" data-m="'+esc(id)+'">'+fyAvatar(m.name, i)+'<span class="fy-grow"><b>'+esc(m.name)+'</b><small>'+esc(fyRightsLabel(m)+(m.accts!=null?' ('+fyAcctsLabel(m)+')':''))+'</small><small style="color:'+st.c+'">● '+esc(st.t)+'</small></span><span class="chev">›</span></button>'; });
           h+='</div>';
         }
         h+='<button type="button" class="btn fy-add" id="fyAdd">＋ Ajouter un membre</button>';
@@ -7391,8 +7413,8 @@
           '<button type="button" class="fy-mrow" id="fyCode"><span class="fy-ic">🔑</span><span class="fy-grow"><b>Mon code de secours</b><small>À noter et garder précieusement</small></span><span class="chev">›</span></button></div>';
         h+='<button type="button" class="btn ghost fy-stop" id="fyStop">Arrêter le partage</button>';
       } else {
-        h+='<div class="fy-card fy-own">'+fyAvatar(fyCfg.owner||"?", -1, true)+'<div class="fy-grow"><b>Foyer de '+esc(fyCfg.owner||"…")+'</b><small>Tu es '+esc(fyCfg.me||"")+' · '+esc(fyRoleLabel(fyCfg.role).toLowerCase())+'</small></div></div>';
-        h+='<div class="fy-card fy-list"><div class="fy-info"><span>'+(fyRO()?'👁️':'✏️')+'</span><span><b>'+esc(fyRoleLabel(fyCfg.role))+'</b><small>'+(fyRO()?'Tu vois les chiffres, tu ne peux rien modifier.':'Tes tickets et changements partent au foyer ; la dernière modification gagne.')+'</small></span></div>'+
+        h+='<div class="fy-card fy-own">'+fyAvatar(fyCfg.owner||"?", -1, true)+'<div class="fy-grow"><b>Foyer de '+esc(fyCfg.owner||"…")+'</b><small>Tu es '+esc(fyCfg.me||"")+' · '+esc(fyRightsLabel(fyCfg).toLowerCase())+'</small></div></div>';
+        h+='<div class="fy-card fy-list"><div class="fy-info"><span>'+(fyRO()?'👁️':'✏️')+'</span><span><b>'+esc(fyRightsLabel(fyCfg))+'</b><small>'+(fyRO()?'Tu vois les chiffres, tu ne peux rien modifier.':'Tes tickets et changements partent au foyer ; la dernière modification gagne.')+'</small></span></div>'+
           '<div class="fy-info"><span>🗂️</span><span><b>Ce que tu vois</b><small>'+esc(fyTabsLabel(fyCfg)+(fyCfg.accts!=null?' · '+fyAcctsLabel(fyCfg):''))+'</small></span></div>'+
           '<div class="fy-info"><span>☁️</span><span><b>'+esc(fySyncLabel().replace(/^./, function(c){ return c.toUpperCase(); }))+'</b><small>'+(fyRole()==="edit" && Object.keys(fyPend).length?Object.keys(fyPend).length+' changement(s) en attente du téléphone de '+esc(fyCfg.owner||"")+'.':'Copie chiffrée reçue du téléphone de '+esc(fyCfg.owner||"")+'.')+'</small></span></div></div>';
         h+='<button type="button" class="btn" id="fyNow">Mettre à jour maintenant</button><button type="button" class="btn ghost fy-stop" id="fyLeave">Quitter le foyer</button>';
@@ -7443,6 +7465,10 @@
       // par défaut : en consultation, ses propres comptes ; en modification, tous les comptes
       function defAccts(){ if(st.touched) return; var a=comptes.filter(function(c){ return st.name && acctOwner(c)===st.name; }).map(function(c){ return c.key; }); st.accts=(a.length && st.role==="view")?a:null; }
       if(!M) defAccts();
+      // droit de chaque onglet : « off » (masqué), « r » (lecture), « w » (modification)
+      st.mode={}; FY_TABS.forEach(function(t){ var vis=M ? fyTabOn(M, t.v) : (t.v==="list" || t.v==="compte"); st.mode[t.v]=!vis ? "off" : (M && fyEdTabs(M).indexOf(t.v)>=0 ? "w" : "r"); });
+      function syncMode(){ st.tabs=FY_TABS.map(function(t){ return t.v; }).filter(function(v){ return st.mode[v]!=="off"; }); st.role=FY_TABS.some(function(t){ return st.mode[t.v]==="w"; }) ? "edit" : "view"; }
+      syncMode();
       var s=uiSheet('<div class="sheet-title">'+(M?'Droits de '+esc(M.name):'Ajouter un membre')+'</div><div class="ui-intro">Son téléphone reçoit seulement ce que tu choisis ici, chiffré.</div><div id="fyF"></div>');
       function draw(){
         var h='';
@@ -7450,10 +7476,13 @@
           h+='<label class="ui-l" for="fyName">Prénom</label><input class="f" id="fyName" type="text" value="'+esc(st.name)+'" placeholder="Ex. : Léa" autocomplete="off">';
           if(names.length) h+='<div class="fy-chips">'+names.map(function(n){ return '<button type="button" class="chip'+(n===st.name?' on':'')+'" data-n="'+esc(n)+'">'+esc(n)+'</button>'; }).join("")+'</div>';
         }
-        h+='<label class="ui-l">Accès</label><div class="ui-seg" id="fyRole"><button type="button" data-v="view"'+(st.role==="view"?' class="on"':'')+'>Consultation</button><button type="button" data-v="edit"'+(st.role==="edit"?' class="on"':'')+'>Modification</button></div>';
-        h+='<div class="ui-help">'+(st.role==="edit"?'Voit et modifie : tickets, scans, frais payés… La dernière modification gagne.':'Voit les chiffres, ne peut rien modifier. Idéal pour un enfant.')+'</div>';
         var noTab=function(v){ return st.accts!=null && (v==="communes" || v==="bourse" || (!st.accts.length && v==="compte")); };   // comptes choisis : ni Commun ni Bourse ; aucun compte : pas d'onglet Compte
-        h+='<label class="ui-l">Onglets visibles</label><div class="fy-tabs">'+FY_TABS.map(function(t){ var off=noTab(t.v), on=!off && st.tabs.indexOf(t.v)>=0; return '<button type="button" class="fy-tab'+(on?' on':'')+(off?' off':'')+'" data-t="'+t.v+'"'+(off?' disabled':'')+'><i>'+(on?'✓':'')+'</i>'+esc(t.l)+'</button>'; }).join("")+'</div>';
+        var TAB_SUB={ list:"tickets, saisie, scan", articles:"produits, catégories, budgets", communes:"frais fixes, parts", compte:"comptes, virements, épargne, provisions", bourse:"modifiée sur ton téléphone", analyse:"toujours en lecture" };
+        h+='<label class="ui-l">Droits par onglet</label><div class="fy-quick"><button type="button" data-q="r">Tout en lecture</button><button type="button" data-q="w">Tout en modification</button></div>';
+        h+='<div class="fy-rights">'+FY_TABS.map(function(t){ var off=noTab(t.v), md=off?"off":st.mode[t.v], noW=(t.v==="analyse" || t.v==="bourse");
+          return '<div class="fy-rr'+(off?' dis':'')+'"><span class="n">'+esc(t.l)+'<small>'+esc(off?(st.accts && !st.accts.length && t.v==="compte"?"aucun compte choisi":"pas avec des comptes choisis"):TAB_SUB[t.v])+'</small></span><span class="fy-seg3">'+
+            [["off","Masqué"],["r","Lecture"],["w","Modif."]].map(function(o){ var dis=off || (o[0]==="w" && noW); return '<button type="button" data-tm="'+t.v+'" data-v="'+o[0]+'"'+(md===o[0]?' class="on"':'')+(dis?' disabled':'')+'>'+o[1]+'</button>'; }).join("")+'</span></div>'; }).join("")+'</div>';
+        h+='<div class="ui-help">Les tickets se modifient avec l\'Accueil ; le contrôle se fait sur ton téléphone : un changement venant d\'un onglet en lecture est refusé.</div>';
         if(comptes.length){   // même avec un seul compte : « Aucun · ses tickets » doit rester possible
           h+='<label class="ui-l">Comptes visibles</label><div class="fy-chips"><button type="button" class="chip'+(st.accts==null?' on':'')+'" data-a="__all">Tous</button><button type="button" class="chip'+(st.accts && !st.accts.length?' on':'')+'" data-a="__none">Aucun · ses tickets</button>'+comptes.map(function(a){ var on=st.accts!=null && st.accts.indexOf(a.key)>=0; return '<button type="button" class="chip'+(on?' on':'')+'" data-a="'+esc(a.key)+'">'+esc(a.nom)+(acctOwner(a)?' · '+esc(acctOwner(a)):'')+'</button>'; }).join("")+'</div>';
           if(st.accts && !st.accts.length) h+='<div class="ui-help">Ses tickets arrivent chez toi (Articles, Analyse, dépenses) sans toucher à aucun compte.</div>';
@@ -7463,15 +7492,15 @@
             h+='<div class="ui-help">'+(st.tk==="all"?'Il voit les tickets de chacun (Accueil, Articles, Analyse, par personne), sans les comptes ni les soldes. Il ne peut modifier que les siens.':'Il ne voit que ses propres tickets'+(st.accts.length?' et ceux de ses comptes':'')+'.')+'</div>';
           }
         }
-        var vis=FY_TABS.filter(function(t){ return st.tabs.indexOf(t.v)>=0 && !noTab(t.v); }).map(function(t){ return t.l; });
-        h+='<div class="fy-sum">'+esc((st.name||"Ce membre")+(st.role==="edit"?" pourra modifier : ":" pourra consulter : ")+(vis.join(", ")||"rien")+(comptes.length?" · "+(st.accts==null?"tous les comptes":(fyAcctsLabel({accts:st.accts, tk:st.tk}))):"")+". Rien d'autre ne part sur son téléphone.")+'</div>';
+        var visW=FY_TABS.filter(function(t){ return st.mode[t.v]==="w" && !noTab(t.v); }).map(function(t){ return t.l; }), visR=FY_TABS.filter(function(t){ return st.mode[t.v]==="r" && !noTab(t.v); }).map(function(t){ return t.l; });
+        h+='<div class="fy-sum">'+esc((st.name||"Ce membre")+(visW.length?" pourra modifier : "+visW.join(", ")+(visR.length?" et consulter : "+visR.join(", "):""):" pourra consulter : "+(visR.join(", ")||"rien"))+(comptes.length?" · "+(st.accts==null?"tous les comptes":(fyAcctsLabel({accts:st.accts, tk:st.tk}))):"")+". Rien d'autre ne part sur son téléphone.")+'</div>';
         h+='<div class="ui-err" style="display:none"></div><div class="ui-actions"><button type="button" class="btn ghost ui-no">Annuler</button><button type="button" class="btn primary" id="fyOk">'+(M?'Enregistrer':'Créer le QR code')+'</button></div>';
         s.q("#fyF").innerHTML=h;
         var ni=s.q("#fyName"); if(ni){ ni.oninput=function(){ st.name=ni.value.trim(); defAccts(); }; ni.onchange=function(){ draw(); }; }
         [].forEach.call(s.qa("[data-n]"), function(b){ b.onclick=function(){ st.name=b.getAttribute("data-n"); defAccts(); draw(); }; });
-        [].forEach.call(s.qa("#fyRole button"), function(b){ b.onclick=function(){ st.role=b.getAttribute("data-v"); if(!M && st.role==="edit" && st.tabs.length<=2) st.tabs=FY_TABS.map(function(t){ return t.v; }); if(!M) defAccts(); draw(); }; });
+        [].forEach.call(s.qa("[data-tm]"), function(b){ b.onclick=function(){ if(b.disabled) return; st.mode[b.getAttribute("data-tm")]=b.getAttribute("data-v"); syncMode(); if(!M) defAccts(); draw(); }; });
+        [].forEach.call(s.qa("[data-q]"), function(b){ b.onclick=function(){ var q=b.getAttribute("data-q"); FY_TABS.forEach(function(t){ st.mode[t.v]=(q==="w" && t.v!=="analyse" && t.v!=="bourse") ? "w" : "r"; }); syncMode(); if(!M) defAccts(); draw(); }; });
         [].forEach.call(s.qa("#fyTk button"), function(b){ b.onclick=function(){ st.tk=b.getAttribute("data-v"); draw(); }; });
-        [].forEach.call(s.qa("[data-t]"), function(b){ b.onclick=function(){ var t=b.getAttribute("data-t"), i=st.tabs.indexOf(t); if(i>=0) st.tabs.splice(i,1); else st.tabs.push(t); draw(); }; });
         [].forEach.call(s.qa("[data-a]"), function(b){ b.onclick=function(){ st.touched=true; var a=b.getAttribute("data-a");
           if(a==="__all") st.accts=null; else if(a==="__none") st.accts=[]; else { if(st.accts==null) st.accts=[]; var i=st.accts.indexOf(a); if(i>=0) st.accts.splice(i,1); else st.accts.push(a); if(!st.accts.length) st.accts=null; }
           draw(); }; });
@@ -7479,7 +7508,7 @@
         s.q("#fyOk").onclick=function(){
           var er=s.q(".ui-err"); function bad(t){ er.textContent=t; er.style.display=""; }
           if(!M){ st.name=(s.q("#fyName").value||"").trim(); if(!st.name) return bad("Indique son prénom."); if(st.name===me) return bad("C'est ton prénom : choisis celui du membre."); }
-          if(!st.tabs.length) return bad("Choisis au moins un onglet.");
+          syncMode(); if(!st.tabs.length) return bad("Mets au moins un onglet en lecture ou en modification.");
           var tabs=FY_TABS.map(function(t){ return t.v; }).filter(function(v){ return st.tabs.indexOf(v)>=0; });
           if(st.accts!=null){ tabs=tabs.filter(function(v){ return v!=="communes" && v!=="bourse" && (st.accts.length || v!=="compte"); }); if(!tabs.length) return bad(st.accts.length?"Avec des comptes choisis, le Commun et la Bourse ne sont pas visibles : choisis un autre onglet.":"Sans compte, choisis au moins l'Accueil, les Articles ou l'Analyse."); }
           var b=s.q("#fyOk"); b.disabled=true;
@@ -7487,13 +7516,13 @@
             var roleCh=M.role!==st.role;
             (roleCh ? fyCall("PATCH","/member/"+id,{ role:st.role }) : Promise.resolve({ status:200 })).then(function(r){
               if(r.status!==200) throw new Error("relais "+r.status);
-              M.role=st.role; M.tabs=tabs; M.accts=st.accts; M.tk=(st.accts!=null && st.tk==="all")?"all":"own"; fyVer++; fySave(); s.close(); render(); uiToast("Droits de "+M.name+" enregistrés"); fySyncSoon(0);
+              M.role=st.role; M.tabs=tabs; M.ed=tabs.filter(function(v){ return st.mode[v]==="w"; }); M.accts=st.accts; M.tk=(st.accts!=null && st.tk==="all")?"all":"own"; fyVer++; fySave(); s.close(); render(); uiToast("Droits de "+M.name+" enregistrés"); fySyncSoon(0);
             }).catch(function(e){ b.disabled=false; bad("Pas de connexion au relais : réessaie."); });
             return;
           }
           var mid=fyRand(9), km=fyRand(32);
           fyEnsurePerson(st.name);
-          fyCfg.members[mid]={ name:st.name, role:st.role, tabs:tabs, accts:st.accts, tk:(st.accts!=null && st.tk==="all")?"all":"own", km:km, created:Date.now(), ack:0 };
+          fyCfg.members[mid]={ name:st.name, role:st.role, tabs:tabs, ed:tabs.filter(function(v){ return st.mode[v]==="w"; }), accts:st.accts, tk:(st.accts!=null && st.tk==="all")?"all":"own", km:km, created:Date.now(), ack:0 };
           fyInvite(mid).then(function(){ s.close(); render(); }).catch(function(e){ delete fyCfg.members[mid]; fySave(); b.disabled=false; bad("Pas de connexion au relais : réessaie."); });
         };
       }
@@ -7513,7 +7542,7 @@
       var m=fyCfg.members[mid];
       var s=uiSheet('<div class="sheet-title">Inviter '+esc(m.name)+'</div><div class="fy-qr">'+qrSvg(text, 236)+'</div>'+
         '<div class="fy-qrt"><b>Scanne ce code avec Tickets sur le téléphone de '+esc(m.name)+'</b><small id="fyExp"></small></div>'+
-        '<div class="fy-card fy-list fy-recap"><div><span>Accès</span><b>'+esc(fyRoleLabel(m.role))+'</b></div><div><span>Onglets</span><b>'+esc(fyTabsLabel(m))+'</b></div>'+(comptes.length?'<div><span>Comptes</span><b>'+esc(fyAcctsLabel(m))+'</b></div>':'')+'<div><span>Sur son téléphone</span><b style="color:var(--accent)">code + empreinte obligatoires</b></div></div>'+
+        '<div class="fy-card fy-list fy-recap"><div><span>Accès</span><b>'+esc(fyRightsLabel(m))+'</b></div><div><span>Onglets</span><b>'+esc(fyTabsLabel(m))+'</b></div>'+(comptes.length?'<div><span>Comptes</span><b>'+esc(fyAcctsLabel(m))+'</b></div>':'')+'<div><span>Sur son téléphone</span><b style="color:var(--accent)">code + empreinte obligatoires</b></div></div>'+
         '<div class="ui-stack"><button type="button" class="btn ghost" id="fyShare">Le QR ne passe pas ? Envoyer l\'invitation</button><button type="button" class="btn primary ui-no">Terminé</button></div>');
       var tick=setInterval(function(){
         var e=s.q("#fyExp"); if(!e || !document.body.contains(s.ov)){ clearInterval(tick); return; }
@@ -7534,7 +7563,7 @@
     function fyMemberMenu(id){
       var m=fyCfg.members[id]; if(!m) return;
       var s=fyCfg.srv && fyCfg.srv[id], joined=s && !s.pending;
-      uiChoice(m.name, esc(fyRoleLabel(m.role)+" · "+fyTabsLabel(m)+(m.accts!=null?" · "+fyAcctsLabel(m):"")), [
+      uiChoice(m.name, esc(fyRightsLabel(m)+(m.accts!=null?" · "+fyAcctsLabel(m):"")), [
         { l:"Modifier ses droits", fn:function(){ fyMemberForm(id); } },
         { l:joined?"Nouveau téléphone : nouveau QR code":"Nouveau QR code", fn:function(){
           var go=function(){ fyInvite(id).catch(function(){ uiToast("Pas de connexion au relais : réessaie."); }); };
@@ -7791,7 +7820,7 @@
       state.view=map[t]||"list"; render(); window.scrollTo(0,0);
     }
     function widgetScan(){
-      if(fyRO()){ uiToast("Consultation : tu ne peux pas ajouter de ticket"); return; }
+      if(fyMember() && (fyCfg.role==="view" || !fyTabEd("list"))){ uiToast("Lecture seule : tu ne peux pas ajouter de ticket"); return; }
       var Cam=capPlugin("Camera"); if(!Cam || typeof Cam.getPhoto!=="function"){ openScanChooser(); return; }
       Cam.getPhoto({ quality:88, width:2400, resultType:"dataUrl", source:"CAMERA", correctOrientation:true, saveToGallery:false, allowEditing:false }).then(function(ph){
         var u=ph && ph.dataUrl; if(!u) return;

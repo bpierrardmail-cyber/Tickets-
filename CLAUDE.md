@@ -73,7 +73,8 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 - Le téléphone du propriétaire a toutes les données. Il publie sur le relais une copie **chiffrée** (AES-GCM, gzip, format `g1.`) pour chaque membre, filtrée par `fyFilter(m)` selon les onglets, les comptes et `tk`.
 - Un membre en **modification** envoie ses changements dans `/inbox`. Le propriétaire les fusionne fiche par fiche (le plus récent l'emporte), les contrôle avec `fyAllowed` et les remet en forme avec `fyFromMember`, puis republie.
 - `FY_KEYS` liste les données synchronisées. Chaque fiche a pour chemin `clé + "\u001f" + id`.
-- Membre (`fyCfg` : `{role: owner|view|edit, fid, tok, km, me, tabs, accts, tk}`) :
+- Droits par onglet : `m.ed` = onglets en modification (Masqué / Lecture / Modif. dans « Droits de … »). `role` vaut `edit` dès qu'un onglet est en modification. Chaque donnée est rattachée à un onglet (`FY_KEY_TAB` : tickets → Accueil, taxonomie et budgets → Articles, frais et parts → Commun, comptes / virements / épargne / provisions → Compte) ; `fyAllowed` refuse un changement dont l'onglet n'est pas en modification. Côté membre : `fyTabEd(t)`, et `fyRO()` dépend de l'onglet affiché. Ancien membre sans `ed` : tous ses onglets visibles en modification s'il est `edit`.
+- Membre (`fyCfg` : `{role: owner|view|edit, fid, tok, km, me, tabs, ed, accts, tk}`) :
   - `accts: null` = tous les comptes ; `[]` = « Aucun · ses tickets » (compte fictif `__tickets`) ;
   - `tk: "all"` = tous les tickets et tous les frais fixes du foyer, ceux des autres en lecture seule (`fyCanEdit`, `fyFraisCanEdit`).
 - Invitation par QR code `TK1.<fid>.<mid>.<inv>.<km>`, sans dépendance externe (`qrMatrix`).
