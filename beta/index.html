@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="23/10 15:11" />
+  <meta name="build" content="23/10 19:11" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -7466,7 +7466,7 @@
       function defAccts(){ if(st.touched) return; var a=comptes.filter(function(c){ return st.name && acctOwner(c)===st.name; }).map(function(c){ return c.key; }); st.accts=(a.length && st.role==="view")?a:null; }
       if(!M) defAccts();
       // droit de chaque onglet : « off » (masqué), « r » (lecture), « w » (modification)
-      st.mode={}; FY_TABS.forEach(function(t){ var vis=M ? fyTabOn(M, t.v) : (t.v==="list" || t.v==="compte"); st.mode[t.v]=!vis ? "off" : (M && fyEdTabs(M).indexOf(t.v)>=0 ? "w" : "r"); });
+      st.mode={}; FY_TABS.forEach(function(t){ var vis=M ? fyTabOn(M, t.v) : (t.v==="list" || t.v==="compte"); st.mode[t.v]=!vis ? "off" : (M && fyEdTabs(M).indexOf(t.v)>=0 && t.v!=="analyse" && t.v!=="bourse" ? "w" : "r"); });   // Analyse et Bourse : lecture au plus
       function syncMode(){ st.tabs=FY_TABS.map(function(t){ return t.v; }).filter(function(v){ return st.mode[v]!=="off"; }); st.role=FY_TABS.some(function(t){ return st.mode[t.v]==="w"; }) ? "edit" : "view"; }
       syncMode();
       var s=uiSheet('<div class="sheet-title">'+(M?'Droits de '+esc(M.name):'Ajouter un membre')+'</div><div class="ui-intro">Son téléphone reçoit seulement ce que tu choisis ici, chiffré.</div><div id="fyF"></div>');
