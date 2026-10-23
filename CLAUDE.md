@@ -76,6 +76,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 - Droits par onglet : `m.ed` = onglets en modification (Masqué / Lecture / Modif. dans « Droits de … »). `role` vaut `edit` dès qu'un onglet est en modification. Chaque donnée est rattachée à un onglet (`FY_KEY_TAB` : tickets → Accueil, taxonomie et budgets → Articles, frais et parts → Commun, comptes / virements / épargne / provisions → Compte) ; `fyAllowed` refuse un changement dont l'onglet n'est pas en modification. Côté membre : `fyTabEd(t)`, et `fyRO()` dépend de l'onglet affiché. Ancien membre sans `ed` : tous ses onglets visibles en modification s'il est `edit`.
 - Membre (`fyCfg` : `{role: owner|view|edit, fid, tok, km, me, tabs, ed, accts, tk}`) :
   - `accts: null` = tous les comptes ; `[]` = « Aucun · ses tickets » (compte fictif `__tickets`) ;
+  - Commun et Bourse ne dépendent pas des comptes choisis : avec Commun visible, il reçoit les frais communs, les parts et ses frais perso (pas ceux des autres) ; les produits partagés des autres seulement avec `tk: "all"` ;
   - `tk: "all"` = tous les tickets et tous les frais fixes du foyer, ceux des autres en lecture seule (`fyCanEdit`, `fyFraisCanEdit`).
 - Invitation par QR code `TK1.<fid>.<mid>.<inv>.<km>`, sans dépendance externe (`qrMatrix`).
 - Code à 6 chiffres + empreinte obligatoires sur tous les téléphones du foyer. Code de récupération du propriétaire : 26 caractères.

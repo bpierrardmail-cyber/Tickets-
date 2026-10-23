@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="23/10 19:11" />
+  <meta name="build" content="23/10 19:15" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -6832,6 +6832,7 @@
     }
     // Sur le téléphone d'un membre « tout le foyer » : les frais fixes des comptes qu'il n'a pas sont en consultation
     function fyFraisCanEdit(f){ if(!fyMember()) return true; if(fyCfg.role==="view" || !fyTabEd("communes")) return false; if(fyCfg.accts==null) return true;
+      var fw=(f.personne||"").trim()||"Commun"; if(fw==="Commun" || fw===mePerson()) return true;
       return comptes.some(function(a){ return a.key!=="__tickets" && !!fraisKind(f, a.key); }); }
     function fyTicketsOnly(){ return fyMember() && !!fyCfg.accts && !fyCfg.accts.length; }
     function fyDefPayer(){ return fyMember() ? mePerson() : ""; }
@@ -7025,11 +7026,12 @@
         K.comptes=K.comptes.filter(function(a){ return R.acc[a.key]; });
         if(m.tk!=="all") K.entries=(K.entries||[]).filter(R.inA);   // « Tickets visibles : tout le foyer » : tous les tickets, sans les comptes
         K.virements=(K.virements||[]).filter(function(v){ return R.acc[v.person]; });
-        if(m.tk!=="all") K.fraisCommuns=(K.fraisCommuns||[]).filter(R.inF);   // « tout le foyer » : tous les frais fixes aussi
+        var comOn=fyTabOn(m,"communes");   // Commun visible : les frais communs et ses frais perso, même sans ces comptes (pas les frais perso des autres)
+        if(m.tk!=="all") K.fraisCommuns=(K.fraisCommuns||[]).filter(function(f){ var w=(f.personne||"").trim()||"Commun"; return R.inF(f) || (comOn && (w==="Commun" || w===m.name)); });   // « tout le foyer » : tous les frais fixes aussi
         ["soldeInit","liquideMois","argentMois"].forEach(function(k){ var o={}, src=K[k]||{}; Object.keys(src).forEach(function(p){ if(R.acc[p] || R.payers[p]) o[p]=src[p]; }); K[k]=o; });
         K.epargne=K.epargne.filter(function(x){ return R.payers[x.owner]; });
         K.provisions=K.provisions.filter(function(x){ return R.payers[x.owner]; });
-        K.bourse=[]; if(m.tk!=="all") K.budgets={};
+        if(!fyTabOn(m,"bourse")) K.bourse=[]; if(m.tk!=="all") K.budgets={};   // la Bourse n'est pas un compte : elle suit l'onglet
         var bp={}; Object.keys(K.budgetsP||{}).forEach(function(p){ if(R.payers[p]) bp[p]=K.budgetsP[p]; }); K.budgetsP=bp;   // seulement ses budgets à lui
         if(!K.comptes.length) K.comptes=[{ key:"__tickets", nom:"Mes tickets", payer:"", main:true }];
       }
@@ -7045,13 +7047,14 @@
         if(x==null) return true;
         if(k==="entries") return R.inA(x);
         if(k==="virements") return !!R.acc[x.person];
-        if(k==="fraisCommuns") return R.inF(x);
+        if(k==="fraisCommuns"){ var w=(x.personne||"").trim()||"Commun"; return R.inF(x) || w==="Commun" || w===m.name; }   // l'onglet Commun en modification est déjà vérifié
         if(k==="comptes") return !!R.acc[x.key];
         if(k==="epargne" || k==="provisions") return !!R.payers[fyOwnerOf(x, isOld?me:m.name)];
         return false;
       }
       if(k==="soldeInit" || k==="liquideMois" || k==="argentMois"){ var pp=p.split(FY_SEP)[1]; return !!(R.acc[pp] || R.payers[pp]); }
       if(k==="budgetsP") return !!R.payers[p.split(FY_SEP)[1]];
+      if(k==="communParts") return true;   // parts du commun : onglet Commun en modification
       if(k==="cats" || k==="familles" || k==="produits" || k==="appris" || k==="familleDe") return true;
       if(typeof FY_KEYS[k]==="string") return ok(old, true) && ok(nw, false);
       return false;
@@ -7476,7 +7479,7 @@
           h+='<label class="ui-l" for="fyName">Prénom</label><input class="f" id="fyName" type="text" value="'+esc(st.name)+'" placeholder="Ex. : Léa" autocomplete="off">';
           if(names.length) h+='<div class="fy-chips">'+names.map(function(n){ return '<button type="button" class="chip'+(n===st.name?' on':'')+'" data-n="'+esc(n)+'">'+esc(n)+'</button>'; }).join("")+'</div>';
         }
-        var noTab=function(v){ return st.accts!=null && (v==="communes" || v==="bourse" || (!st.accts.length && v==="compte")); };   // comptes choisis : ni Commun ni Bourse ; aucun compte : pas d'onglet Compte
+        var noTab=function(v){ return st.accts!=null && !st.accts.length && v==="compte"; };   // aucun compte : pas d'onglet Compte (Commun et Bourse ne sont pas des comptes)
         var TAB_SUB={ list:"tickets, saisie, scan", articles:"produits, catégories, budgets", communes:"frais fixes, parts", compte:"comptes, virements, épargne, provisions", bourse:"modifiée sur ton téléphone", analyse:"toujours en lecture" };
         h+='<label class="ui-l">Droits par onglet</label><div class="fy-quick"><button type="button" data-q="r">Tout en lecture</button><button type="button" data-q="w">Tout en modification</button></div>';
         h+='<div class="fy-rights">'+FY_TABS.map(function(t){ var off=noTab(t.v), md=off?"off":st.mode[t.v], noW=(t.v==="analyse" || t.v==="bourse");
@@ -7486,7 +7489,8 @@
         if(comptes.length){   // même avec un seul compte : « Aucun · ses tickets » doit rester possible
           h+='<label class="ui-l">Comptes visibles</label><div class="fy-chips"><button type="button" class="chip'+(st.accts==null?' on':'')+'" data-a="__all">Tous</button><button type="button" class="chip'+(st.accts && !st.accts.length?' on':'')+'" data-a="__none">Aucun · ses tickets</button>'+comptes.map(function(a){ var on=st.accts!=null && st.accts.indexOf(a.key)>=0; return '<button type="button" class="chip'+(on?' on':'')+'" data-a="'+esc(a.key)+'">'+esc(a.nom)+(acctOwner(a)?' · '+esc(acctOwner(a)):'')+'</button>'; }).join("")+'</div>';
           if(st.accts && !st.accts.length) h+='<div class="ui-help">Ses tickets arrivent chez toi (Articles, Analyse, dépenses) sans toucher à aucun compte.</div>';
-          else if(st.accts!=null) h+='<div class="ui-help">Avec des comptes choisis, il ne reçoit que leurs virements et frais ; pas le Commun ni la Bourse.</div>';
+          else if(st.accts!=null) h+='<div class="ui-help">Avec des comptes choisis, il ne reçoit que leurs virements, soldes et frais perso.</div>';
+          if(st.accts!=null && st.mode.communes!=="off") h+='<div class="ui-help">Commun : les frais communs, les parts et ses frais perso ; les produits partagés des autres seulement avec « Tickets visibles : tout le foyer ».</div>';
           if(st.accts!=null){
             h+='<label class="ui-l">Tickets visibles</label><div class="ui-seg" id="fyTk"><button type="button" data-v="own"'+(st.tk!=="all"?' class="on"':'')+'>Les siens</button><button type="button" data-v="all"'+(st.tk==="all"?' class="on"':'')+'>Tout le foyer</button></div>';
             h+='<div class="ui-help">'+(st.tk==="all"?'Il voit les tickets de chacun (Accueil, Articles, Analyse, par personne), sans les comptes ni les soldes. Il ne peut modifier que les siens.':'Il ne voit que ses propres tickets'+(st.accts.length?' et ceux de ses comptes':'')+'.')+'</div>';
@@ -7510,7 +7514,7 @@
           if(!M){ st.name=(s.q("#fyName").value||"").trim(); if(!st.name) return bad("Indique son prénom."); if(st.name===me) return bad("C'est ton prénom : choisis celui du membre."); }
           syncMode(); if(!st.tabs.length) return bad("Mets au moins un onglet en lecture ou en modification.");
           var tabs=FY_TABS.map(function(t){ return t.v; }).filter(function(v){ return st.tabs.indexOf(v)>=0; });
-          if(st.accts!=null){ tabs=tabs.filter(function(v){ return v!=="communes" && v!=="bourse" && (st.accts.length || v!=="compte"); }); if(!tabs.length) return bad(st.accts.length?"Avec des comptes choisis, le Commun et la Bourse ne sont pas visibles : choisis un autre onglet.":"Sans compte, choisis au moins l'Accueil, les Articles ou l'Analyse."); }
+          if(st.accts!=null){ tabs=tabs.filter(function(v){ return st.accts.length || v!=="compte"; }); if(!tabs.length) return bad(st.accts.length?"Avec des comptes choisis, le Commun et la Bourse ne sont pas visibles : choisis un autre onglet.":"Sans compte, choisis au moins l'Accueil, les Articles ou l'Analyse."); }
           var b=s.q("#fyOk"); b.disabled=true;
           if(M){
             var roleCh=M.role!==st.role;
