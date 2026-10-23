@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="23/10 19:37" />
+  <meta name="build" content="23/10 19:41" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4897,14 +4897,14 @@
       if(!epargne.length) bEp+='<div class="muted" style="font-size:11px;margin:4px 0">Aucun compte épargne.</div>';
       var tpm=pctStr(totPrev,totCur); if(tpm && epargne.length>1) bEp+='<div class="muted" style="font-size:10.5px;margin:2px 0"><span style="color:'+pctColor(totPrev,totCur)+'">Total '+tpm+' vs mois préc.</span></div>';
       bEp+='<div class="clink" id="addep"><span>+ Ajouter un compte épargne</span><span></span></div>';
-      var accEp=acct.main ? sec("ep", "#7c9cf4", "Épargne", fmtS(totCur), "var(--ink)", nb(epargne.length, "compte épargne", "comptes épargne")) : "";
+      var accEp=true ? sec("ep", "#7c9cf4", "Épargne", fmtS(totCur), "var(--ink)", nb(epargne.length, "compte épargne", "comptes épargne")) : "";
 
       // ---- Provisions (ouvre l'écran dédié) ----
       var provT=0; try{ provT=provTotalAt(month); }catch(e){}
       // Groupes : 1. Virements + Dépenses · 2. Provisions + Épargne (compte principal) · 3. Solde bancaire estimé
       acc+='</section>';
-      var accProv=acct.main ? '<div class="cacc-sec"><div class="cacc-h" id="goprov"><span class="t"><span class="tic">📦</span> Provisions<small>'+provisions.length+' enveloppe'+(provisions.length>1?'s':'')+'</small></span><span class="v">'+fmtS(provT)+'</span><span class="ch">›</span></div></div>' : '';
-      if(acct.main) acc+='<section class="paper cacc">'+accProv+accEp+'</section>';
+      var accProv=true ? '<div class="cacc-sec"><div class="cacc-h" id="goprov"><span class="t"><span class="tic">📦</span> Provisions<small>'+provisions.length+' enveloppe'+(provisions.length>1?'s':'')+'</small></span><span class="v">'+fmtS(provT)+'</span><span class="ch">›</span></div></div>' : '';
+      acc+='<section class="paper cacc">'+accProv+accEp+'</section>';   // épargne et provisions accessibles depuis chaque compte
       acc+='<section class="paper cacc">'+accRes+'</section>';
       if(!page){
         if(multi) h+=acctPagerHTML(person, month);
