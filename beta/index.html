@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="23/10 07:35" />
+  <meta name="build" content="23/10 08:48" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -5502,7 +5502,9 @@
       function epAtAll(mk){ var t=0; epargne.forEach(function(c){ if(avOwnerOk(c)) t+=epAt(c, mk); }); return t; }
       function provAt(mk){ try{ return provTotalAt(mk, avOwnerOk); }catch(e){ return 0; } }
       var past=[]; m=curM; for(i=0;i<6;i++){ past.unshift(m); m=prevMonthKey(m); }
-      var hist=past.map(function(mk){ var b=bankAt(mk), e2=epAtAll(mk), p2=provAt(mk); return { m:mk, bank:b, ep:e2, prov:p2, tot:b+e2+p2 }; });
+      // les provisions sont mises de côté sur l'épargne : elles sont déjà dans son solde, on ne les ajoute pas une 2e fois
+      var hist=past.map(function(mk){ var b=bankAt(mk), e2=epAtAll(mk), p2=provAt(mk); return { m:mk, bank:b, ep:e2, prov:p2, tot:b+e2 }; });
+      while(hist.length>2 && Math.abs(hist[0].bank)<0.005 && Math.abs(hist[0].ep)<0.005) hist.shift();   // mois d'avant le début du suivi
       var dB=[], dT=[], dE=[]; for(i=hist.length-3;i<hist.length;i++){ if(i<1) continue; dB.push(hist[i].bank-hist[i-1].bank); dT.push(hist[i].tot-hist[i-1].tot); dE.push(hist[i].ep-hist[i-1].ep); }
       function mean(a){ return a.length?a.reduce(function(t,x){ return t+x; },0)/a.length:0; }
       function sd(a){ var mu=mean(a); return a.length>1?Math.sqrt(a.reduce(function(t,x){ return t+(x-mu)*(x-mu); },0)/(a.length-1)):0; }
@@ -5598,10 +5600,10 @@
         else {
           var serR=Pj.hist.map(function(x){ return x.tot; }).concat(Pj.fut.map(function(){ return null; })), serP=Pj.hist.map(function(x,i){ return i===Pj.hist.length-1?x.tot:null; }).concat(Pj.fut.map(function(x){ return x.tot; }));
           var band=Pj.hist.map(function(x,i){ return i===Pj.hist.length-1?[x.tot,x.tot]:null; }).concat(Pj.fut.map(function(x){ return [x.lo,x.hi]; }));
-          var pb='<div class="avbig '+(Pj.end.tot<0?'up':'')+'">'+fmtK(Pj.end.tot)+'</div><div class="avsub">compte'+(Pj.now.ep?' + épargne':'')+(Pj.now.prov?' + provisions':'')+' · si tu continues comme ces 3 derniers mois ('+(Pj.netT>=0?'+':'−')+fmtK(Math.abs(Pj.netT))+' / mois)</div>';
+          var pb='<div class="avbig '+(Pj.end.tot<0?'up':'')+'">'+fmtK(Pj.end.tot)+'</div><div class="avsub">compte'+(Pj.now.ep?' + épargne'+(Pj.now.prov?' (provisions comprises)':''):'')+' · si tu continues comme ces 3 derniers mois ('+(Pj.netT>=0?'+':'−')+fmtK(Math.abs(Pj.netT))+' / mois)</div>';
           pb+=avLine([serR, serP], ["#4fd6a0","#4fd6a0"], { dash:[false,true], band:band, h:110, zero:true, n:serR.length });
           pb+='<div class="avleg" style="justify-content:space-between"><span>'+esc(monthLabelOf(Pj.hist[0].m).split(" ")[0])+'</span><span><i style="background:#4fd6a0"></i>réel · <i style="background:rgba(79,214,160,.4)"></i>prévu (fourchette)</span><span>'+esc(monthLabelOf(Pj.hzM).split(" ")[0])+'</span></div>';
-          pb+=avRow("Aujourd'hui", "compte "+fmtK(Pj.now.bank)+(Pj.now.ep?" · épargne "+fmtK(Pj.now.ep):"")+(Pj.now.prov?" · provisions "+fmtK(Pj.now.prov):""), fmtK(Pj.now.tot));
+          pb+=avRow("Aujourd'hui", "compte "+fmtK(Pj.now.bank)+(Pj.now.ep?" · épargne "+fmtK(Pj.now.ep)+(Pj.now.prov?" dont provisions "+fmtK(Pj.now.prov):""):""), fmtK(Pj.now.tot));
           h+=avCard(Pj.H===12-(+curM.slice(5,7)) ? "Fin d'année prévue" : "Dans "+Pj.H+" mois", esc(monthLabelOf(Pj.hzM)), pb, "avhero");
           h+=avCard("Mois les plus chers à venir", "d'après tes frais fixes et tes habitudes", D.next.map(function(x){ return avRow(esc(capFirst(monthLabelOf(x.m).split(" ")[0])), "frais fixes "+fmtK(x.fx)+" + tickets ≈ "+fmtK(x.v-x.fx)+(x.notes.length?" · "+x.notes.join(" · "):""), (x.est?"≈ ":"")+fmtK(x.v), x.est?"am":""); }).join(""));
           h+=avCard("Partager l'analyse", "", '<div class="avr clk" id="avPdf"><span class="n">📄 Rapport PDF de l\'année<small>bilan de janvier à aujourd\'hui, prêt à imprimer</small></span><span class="v">›</span></div><div class="avr clk" id="avIA"><span class="n">🤖 Analyser avec une IA<small>résumé à coller dans Claude ou une autre IA · rien n\'est envoyé par l\'appli</small></span><span class="v">›</span></div>');
@@ -5652,7 +5654,7 @@
       if(fx.length){ L.push(""); L.push("Frais fixes ce mois-ci :"); fx.forEach(function(f){ L.push("- "+f.label+" : "+fmtK(fraisMontant(f, curM))+" ("+((f.personne||"Commun")==="Commun"?"commun":who(f.personne))+")"); }); }
       if(D.save.has){ L.push(""); L.push("Rentrées moyennes : "+fmtK(D.save.inc)+" / mois · taux d'épargne "+avPct(D.save.rate,0).replace("+","")+" · reste à vivre après frais fixes "+fmtK(D.save.rav)+" / mois"); }
       if(D.infl.rate!=null) L.push("Inflation sur mes produits (12 mois) : "+avPct(D.infl.rate));
-      if(D.proj.ok){ L.push("Comptes aujourd'hui : "+fmtK(D.proj.now.bank)+(D.proj.now.ep?" · épargne "+fmtK(D.proj.now.ep):"")+(D.proj.now.prov?" · provisions "+fmtK(D.proj.now.prov):"")+" · prévision "+monthLabelOf(D.proj.hzM)+" : "+fmtK(D.proj.end.tot)); }
+      if(D.proj.ok){ L.push("Comptes aujourd'hui : "+fmtK(D.proj.now.bank)+(D.proj.now.ep?" · épargne "+fmtK(D.proj.now.ep)+(D.proj.now.prov?" (dont provisions "+fmtK(D.proj.now.prov)+")":""):"")+" · prévision "+monthLabelOf(D.proj.hzM)+" : "+fmtK(D.proj.end.tot)); }
       if(D.alerts.length){ L.push(""); L.push("À surveiller :"); D.alerts.forEach(function(a){ L.push("- "+a.t.replace(/<[^>]+>/g,"")+" ("+a.d+")"); }); }
       return L.join("\n");
     }
