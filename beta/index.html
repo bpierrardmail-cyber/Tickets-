@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="23/10 09:19" />
+  <meta name="build" content="23/10 09:28" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4250,9 +4250,10 @@
           if(hc>0) g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(y0-hc).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hc.toFixed(1)+'" rx="3" style="fill:'+COLC+';opacity:'+op+'"/>';
           if(hp>0) g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(y0-hc-hp-(hc>0?2:0)).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hp.toFixed(1)+'" rx="3" style="fill:'+COLR+';opacity:'+op+'"/>';
           var many=S.length>8, isMax=(i===maxI && !S.slice(0,i).some(function(x){ return x.c+x.p>=smx-0.004; }) && (r.c+r.p)>=smx-0.004), stepL=Math.ceil(S.length/12);
-          if(r.c+r.p>0 && (!many || on || (isMax && Math.abs(i-onI)>1))) g+='<text x="'+cx.toFixed(1)+'" y="'+(y0-hc-hp-(hc>0&&hp>0?2:0)-5).toFixed(1)+'" text-anchor="middle" style="fill:var(--ink-soft);font-size:10.5px;font-weight:600;font-family:var(--sans)">'+cptK(r.c+r.p)+'</text>';
+          var dense=S.length>12;   // jusqu'à 12 barres : un montant sur chaque barre (4 chiffres, sans espace)
+          if(r.c+r.p>0 && (!dense || on || (isMax && Math.abs(i-onI)>1))) g+='<text x="'+cx.toFixed(1)+'" y="'+(y0-hc-hp-(hc>0&&hp>0?2:0)-5).toFixed(1)+'" text-anchor="middle" style="fill:'+(on?'var(--ink)':'var(--ink-soft)')+';font-size:'+(many?9:10.5)+'px;font-weight:600;font-family:var(--sans);letter-spacing:-.02em">'+(many?String(Math.round(r.c+r.p)):cptK(r.c+r.p))+'</text>';
           g+='<rect class="barhit" data-m="'+esc(r.m)+'" x="'+(slot*i).toFixed(1)+'" y="0" width="'+slot.toFixed(1)+'" height="'+H+'" style="fill:transparent;cursor:pointer"/>';
-          if(on || (i%stepL===0 && Math.abs(i-onI)>=Math.min(stepL,2)) || !many) g+='<text x="'+cx.toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" style="fill:'+(on?'var(--ink)':'var(--muted)')+';font-size:'+(many?9:10)+'px;font-weight:'+(on?700:400)+';font-family:var(--sans)">'+esc(many?mShort(r.m).slice(0,3):mShort(r.m))+'</text>'; });
+          if(on || (i%stepL===0 && Math.abs(i-onI)>=Math.min(stepL,2)) || !many) g+='<text x="'+cx.toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" style="fill:'+(on?'var(--ink)':'var(--muted)')+';font-size:'+(many?9:10)+'px;font-weight:'+(on?700:400)+';font-family:var(--sans)">'+esc(many?["jan","fév","mar","avr","mai","juin","juil","aoû","sep","oct","nov","déc"][+r.m.slice(5,7)-1]:mShort(r.m))+'</text>'; });
         chart+='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Dépenses communes par mois">'+g+'</svg>';
         chart+='<div class="cch-leg"><span><i style="background:'+COLC+'"></i>Frais communs</span><span><i style="background:'+COLR+'"></i>Produits partagés</span></div>';
         chart+='<div class="dmode comrange" style="justify-content:center;margin:8px 0 0">'+[["6","6 mois"],["12","12 mois"],["next","12 à venir"],["all","Tout"]].map(function(x){ return '<button type="button" data-r="'+x[0]+'"'+(cr===x[0]?' class="on"':'')+'>'+x[1]+'</button>'; }).join("")+'</div>';
