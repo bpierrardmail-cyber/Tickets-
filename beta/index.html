@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="23/10 19:19" />
+  <meta name="build" content="23/10 19:37" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4745,7 +4745,7 @@
       function inOut(m){ var inn=0, out=computeDepensesMonth(person,m); virementsOf(person,m).forEach(function(v){ var x=Number(v.montant)||0; if(x>=0) inn+=x; else out+=-x; }); return { inn:inn, out:out }; }
       var chart=chartTabsHTML(CMODES, cmode, "cptChartDef", "mois").replace('<div class="cch-tabs">','<div class="cch-tabs wrap2">')+'<div class="cch">';   // 6 choix : sur deux lignes
 
-      var pvCpt=acct.main ? provSumWhere(month, function(w, p){ return w==="cpt"; }) : 0;
+      var pvCpt=provSumWhere(month, function(w, p){ return (acct.main && w==="cpt") || w==="cpt:"+acct.key; });
       var hero={ label:(multi?esc(acct.nom):"Solde du compte")+(futur?" · fin "+esc(monthLabelOf(month))+" prévue":" (banque estimée)"), big:soldeBanque, color:(soldeBanque<0?"var(--coral)":"var(--ink)"), sub:(futur?"Prévu, tout ce qui est planifié compris, sans le liquide":"Estimé, sans le liquide")+(pvCpt>0.004?" · dont provisions "+fmtK(pvCpt)+", disponible "+fmtK(soldeBanque-pvCpt):"") };
       if(cmode==="mois"){
         var steps=[{l:"Report", v:reporte, t:"base", k:"report"}];
@@ -6410,12 +6410,13 @@
     function provWhere(p){
       var o=String((p&&p.ou)||"");
       if(o.indexOf("ep:")===0){ var id=o.slice(3); if(epargne.some(function(c){ return String(c.id)===id; })) return o; }
+      else if(o.indexOf("cpt:")===0){ var ak=o.slice(4), ac=acctByKey(ak); if(ac) return ac.main ? "cpt" : o; }   // un autre compte bancaire
       else if(o==="cpt" || o==="ext") return o;
       var mine=epargne.filter(function(c){ return ownerOf(c)===ownerOf(p); })[0]||epargne[0];
       return mine ? "ep:"+mine.id : "cpt";
     }
-    function provWhereLabel(p){ var w=provWhere(p); if(w==="cpt") return "compte courant"; if(w==="ext") return "ailleurs"; var c=epargne.filter(function(x){ return "ep:"+x.id===w; })[0]; return c?c.nom:"épargne"; }
-    function provWhereOptions(){ return epargne.map(function(c){ return { v:"ep:"+c.id, l:c.nom+(byOwner(epargne).length>1?" · "+ownerOf(c):"") }; }).concat([{ v:"cpt", l:"Compte courant" }, { v:"ext", l:"Ailleurs (livret non suivi dans l'appli)" }]); }
+    function provWhereLabel(p){ var w=provWhere(p); if(w==="cpt") return (mainAcct()||{}).nom||"compte courant"; if(w.indexOf("cpt:")===0) return (acctByKey(w.slice(4))||{}).nom||"compte"; if(w==="ext") return "ailleurs"; var c=epargne.filter(function(x){ return "ep:"+x.id===w; })[0]; return c?c.nom:"épargne"; }
+    function provWhereOptions(){ return epargne.map(function(c){ return { v:"ep:"+c.id, l:c.nom+(byOwner(epargne).length>1?" · "+ownerOf(c):"") }; }).concat(comptes.filter(function(a){ return a.key!=="__tickets"; }).map(function(a){ return { v:(a.main?"cpt":"cpt:"+a.key), l:a.nom+(comptes.length>1 && acctOwner(a)?" · "+acctOwner(a):"")+" (compte bancaire)" }; })).concat([{ v:"ext", l:"Ailleurs (livret non suivi dans l'appli)" }]); }
     function provSumWhere(m, test){ var t=0; provisions.forEach(function(p){ if(!test(provWhere(p), p)) return; try{ t+=provBalance(p, m); }catch(e){} }); return t; }
     function addProvision(){
       uiForm({ title:"Nouvelle provision", fields:[
