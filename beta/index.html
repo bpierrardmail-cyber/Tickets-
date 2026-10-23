@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="23/10 08:48" />
+  <meta name="build" content="23/10 08:54" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -4700,7 +4700,8 @@
       function inOut(m){ var inn=0, out=computeDepensesMonth(person,m); virementsOf(person,m).forEach(function(v){ var x=Number(v.montant)||0; if(x>=0) inn+=x; else out+=-x; }); return { inn:inn, out:out }; }
       var chart=chartTabsHTML(CMODES, cmode, "cptChartDef", "mois").replace('<div class="cch-tabs">','<div class="cch-tabs wrap2">')+'<div class="cch">';   // 6 choix : sur deux lignes
 
-      var hero={ label:(multi?esc(acct.nom):"Solde du compte")+(futur?" · fin "+esc(monthLabelOf(month))+" prévue":" (banque estimée)"), big:soldeBanque, color:(soldeBanque<0?"var(--coral)":"var(--ink)"), sub:(futur?"Prévu, tout ce qui est planifié compris, sans le liquide":"Estimé, sans le liquide") };
+      var pvCpt=acct.main ? provSumWhere(month, function(w, p){ return w==="cpt"; }) : 0;
+      var hero={ label:(multi?esc(acct.nom):"Solde du compte")+(futur?" · fin "+esc(monthLabelOf(month))+" prévue":" (banque estimée)"), big:soldeBanque, color:(soldeBanque<0?"var(--coral)":"var(--ink)"), sub:(futur?"Prévu, tout ce qui est planifié compris, sans le liquide":"Estimé, sans le liquide")+(pvCpt>0.004?" · dont provisions "+fmtK(pvCpt)+", disponible "+fmtK(soldeBanque-pvCpt):"") };
       if(cmode==="mois"){
         var steps=[{l:"Report", v:reporte, t:"base", k:"report"}];
         if(virIn) steps.push({l:"Reçu", v:virIn, k:"es"});
@@ -4826,6 +4827,8 @@
            (FEAT.bourse?'<button class="btn ghost eplink" type="button" data-id="'+esc(c.id)+'" title="Lier/délier la Bourse">🔗</button>':'')+
            '<button class="btn ghost epedit" type="button" data-id="'+esc(c.id)+'">✎</button>'+
            '<button class="btn ghost epdel" type="button" data-id="'+esc(c.id)+'">✕</button></div>';
+        var cPv=provSumWhere(month, function(w){ return w==="ep:"+c.id; });
+        if(cPv>0.004) bEp+='<div class="muted" style="font-size:10.5px;margin:-2px 0 6px 2px">dont provisions '+fmtK(cPv)+' · <b style="color:var(--ink)">disponible '+fmtK(cur-cPv)+'</b></div>';
         if(c.objectif && c.objectif.montant>0){
           var oT=c.objectif.montant, oP=Math.min(100, Math.round(cur/oT*100));
           bEp+='<div class="obj"><div class="ob-bar"><i style="width:'+oP+'%"></i></div><div class="ob-t">'+(cur>=oT?'✓ Objectif de '+fmt(oT)+' atteint':'🎯 '+oP+' % de '+fmt(oT)+' · reste '+fmt(oT-cur)+(c.objectif.mois?(monthsBetween(month, c.objectif.mois)>0?' · ≈ '+fmt((oT-cur)/monthsBetween(month, c.objectif.mois))+' / mois':' · échéance dépassée'):''))+'</div></div>';
@@ -5501,9 +5504,10 @@
       function bankAt(mk){ var t=0; A.forEach(function(a){ try{ t+=soldeFlow(a.key, mk).closing; }catch(e){} }); return t; }
       function epAtAll(mk){ var t=0; epargne.forEach(function(c){ if(avOwnerOk(c)) t+=epAt(c, mk); }); return t; }
       function provAt(mk){ try{ return provTotalAt(mk, avOwnerOk); }catch(e){ return 0; } }
+      function provExtAt(mk){ return provSumWhere(mk, function(w, p){ return w==="ext" && avOwnerOk(p); }); }
       var past=[]; m=curM; for(i=0;i<6;i++){ past.unshift(m); m=prevMonthKey(m); }
       // les provisions sont mises de côté sur l'épargne : elles sont déjà dans son solde, on ne les ajoute pas une 2e fois
-      var hist=past.map(function(mk){ var b=bankAt(mk), e2=epAtAll(mk), p2=provAt(mk); return { m:mk, bank:b, ep:e2, prov:p2, tot:b+e2 }; });
+      var hist=past.map(function(mk){ var b=bankAt(mk), e2=epAtAll(mk), p2=provAt(mk); var px=provExtAt(mk); return { m:mk, bank:b, ep:e2, prov:p2, pext:px, tot:b+e2+px }; });   // seules les provisions « ailleurs » s'ajoutent
       while(hist.length>2 && Math.abs(hist[0].bank)<0.005 && Math.abs(hist[0].ep)<0.005) hist.shift();   // mois d'avant le début du suivi
       var dB=[], dT=[], dE=[]; for(i=hist.length-3;i<hist.length;i++){ if(i<1) continue; dB.push(hist[i].bank-hist[i-1].bank); dT.push(hist[i].tot-hist[i-1].tot); dE.push(hist[i].ep-hist[i-1].ep); }
       function mean(a){ return a.length?a.reduce(function(t,x){ return t+x; },0)/a.length:0; }
@@ -5600,10 +5604,10 @@
         else {
           var serR=Pj.hist.map(function(x){ return x.tot; }).concat(Pj.fut.map(function(){ return null; })), serP=Pj.hist.map(function(x,i){ return i===Pj.hist.length-1?x.tot:null; }).concat(Pj.fut.map(function(x){ return x.tot; }));
           var band=Pj.hist.map(function(x,i){ return i===Pj.hist.length-1?[x.tot,x.tot]:null; }).concat(Pj.fut.map(function(x){ return [x.lo,x.hi]; }));
-          var pb='<div class="avbig '+(Pj.end.tot<0?'up':'')+'">'+fmtK(Pj.end.tot)+'</div><div class="avsub">compte'+(Pj.now.ep?' + épargne'+(Pj.now.prov?' (provisions comprises)':''):'')+' · si tu continues comme ces 3 derniers mois ('+(Pj.netT>=0?'+':'−')+fmtK(Math.abs(Pj.netT))+' / mois)</div>';
+          var pb='<div class="avbig '+(Pj.end.tot<0?'up':'')+'">'+fmtK(Pj.end.tot)+'</div><div class="avsub">compte'+(Pj.now.ep?' + épargne':'')+(Pj.now.pext>0.004?' + provisions hors comptes':(Pj.now.prov?' (provisions comprises)':''))+' · si tu continues comme ces 3 derniers mois ('+(Pj.netT>=0?'+':'−')+fmtK(Math.abs(Pj.netT))+' / mois)</div>';
           pb+=avLine([serR, serP], ["#4fd6a0","#4fd6a0"], { dash:[false,true], band:band, h:110, zero:true, n:serR.length });
           pb+='<div class="avleg" style="justify-content:space-between"><span>'+esc(monthLabelOf(Pj.hist[0].m).split(" ")[0])+'</span><span><i style="background:#4fd6a0"></i>réel · <i style="background:rgba(79,214,160,.4)"></i>prévu (fourchette)</span><span>'+esc(monthLabelOf(Pj.hzM).split(" ")[0])+'</span></div>';
-          pb+=avRow("Aujourd'hui", "compte "+fmtK(Pj.now.bank)+(Pj.now.ep?" · épargne "+fmtK(Pj.now.ep)+(Pj.now.prov?" dont provisions "+fmtK(Pj.now.prov):""):""), fmtK(Pj.now.tot));
+          pb+=avRow("Aujourd'hui", "compte "+fmtK(Pj.now.bank)+(Pj.now.ep?" · épargne "+fmtK(Pj.now.ep):"")+(Pj.now.pext>0.004?" · provisions ailleurs "+fmtK(Pj.now.pext):(Pj.now.prov?" · dont provisions "+fmtK(Pj.now.prov):"")), fmtK(Pj.now.tot));
           h+=avCard(Pj.H===12-(+curM.slice(5,7)) ? "Fin d'année prévue" : "Dans "+Pj.H+" mois", esc(monthLabelOf(Pj.hzM)), pb, "avhero");
           h+=avCard("Mois les plus chers à venir", "d'après tes frais fixes et tes habitudes", D.next.map(function(x){ return avRow(esc(capFirst(monthLabelOf(x.m).split(" ")[0])), "frais fixes "+fmtK(x.fx)+" + tickets ≈ "+fmtK(x.v-x.fx)+(x.notes.length?" · "+x.notes.join(" · "):""), (x.est?"≈ ":"")+fmtK(x.v), x.est?"am":""); }).join(""));
           h+=avCard("Partager l'analyse", "", '<div class="avr clk" id="avPdf"><span class="n">📄 Rapport PDF de l\'année<small>bilan de janvier à aujourd\'hui, prêt à imprimer</small></span><span class="v">›</span></div><div class="avr clk" id="avIA"><span class="n">🤖 Analyser avec une IA<small>résumé à coller dans Claude ou une autre IA · rien n\'est envoyé par l\'appli</small></span><span class="v">›</span></div>');
@@ -6332,6 +6336,18 @@
     }
     function provTotalAt(month, keep){ var t=0; provisions.forEach(function(p){ if(keep && !keep(p)) return; var st=provState(p, month); t+=st.bal; for(var k in st.over){ if(k<=month) t-=st.over[k]; } }); return t; }
     function echOptions(){ return [{v:"",l:"Aucune"}].concat(MOIS_NOMS.map(function(n,i){ return {v:String(i+1), l:n.charAt(0).toUpperCase()+n.slice(1)}; })); }
+    // Où est l'argent d'une provision : sur un compte épargne (« ep:<id> »), sur le compte courant (« cpt ») ou ailleurs (« ext », non suivi)
+    // Par défaut : le premier compte épargne de la même personne, sinon le premier compte épargne, sinon le compte courant.
+    function provWhere(p){
+      var o=String((p&&p.ou)||"");
+      if(o.indexOf("ep:")===0){ var id=o.slice(3); if(epargne.some(function(c){ return String(c.id)===id; })) return o; }
+      else if(o==="cpt" || o==="ext") return o;
+      var mine=epargne.filter(function(c){ return ownerOf(c)===ownerOf(p); })[0]||epargne[0];
+      return mine ? "ep:"+mine.id : "cpt";
+    }
+    function provWhereLabel(p){ var w=provWhere(p); if(w==="cpt") return "compte courant"; if(w==="ext") return "ailleurs"; var c=epargne.filter(function(x){ return "ep:"+x.id===w; })[0]; return c?c.nom:"épargne"; }
+    function provWhereOptions(){ return epargne.map(function(c){ return { v:"ep:"+c.id, l:c.nom+(byOwner(epargne).length>1?" · "+ownerOf(c):"") }; }).concat([{ v:"cpt", l:"Compte courant" }, { v:"ext", l:"Ailleurs (livret non suivi dans l'appli)" }]); }
+    function provSumWhere(m, test){ var t=0; provisions.forEach(function(p){ if(!test(provWhere(p), p)) return; try{ t+=provBalance(p, m); }catch(e){} }); return t; }
     function addProvision(){
       uiForm({ title:"Nouvelle provision", fields:[
         {key:"nom", label:"Nom", placeholder:"Impôt foncier, assurance, eau…", required:true}
@@ -6339,10 +6355,11 @@
         {key:"mens", label:"Mis de côté chaque mois", type:"money", required:true},
         {key:"init", label:"Déjà de côté aujourd'hui", type:"money", value:0},
         {key:"ech", label:"Mois de la facture (optionnel)", type:"select", value:"", options:echOptions()},
-        {key:"prevu", label:"Montant prévu de la facture (optionnel)", type:"money", value:"", help:"Pour vérifier que tu seras prêt à temps."}
+        {key:"prevu", label:"Montant prévu de la facture (optionnel)", type:"money", value:"", help:"Pour vérifier que tu seras prêt à temps."},
+        {key:"ou", label:"Où est l'argent ?", type:"select", value:provWhere({}), options:provWhereOptions(), help:"Sur un compte épargne ou le compte courant : il est déjà dans leur solde, l'appli ne le compte pas deux fois."}
       ])}, function(r){
         var p={ id:Date.now(), nom:r.nom, mensuel:r.mens, soldeInitial:r.init||0, startMonth:monthKey(todayISO()), prelevements:[] };
-        setOwner(p, r);
+        setOwner(p, r); if(r.ou) p.ou=r.ou;
         if(r.ech) p.echeance=+r.ech; if(r.prevu) p.prevu=r.prevu;
         provisions.push(p); persistProvisions(); render();
       });
@@ -6357,9 +6374,10 @@
         {key:"mens", label:"Mis de côté chaque mois", type:"money", value:curMens, required:true, help:"À partir de "+esc(monthLabelOf(em))+". Les mois précédents ne changent pas."},
         {key:"init", label:"Montant de départ ("+monthLabelOf(p.startMonth||em)+")", type:"money", value:(p.soldeInitial||0)},
         {key:"ech", label:"Mois de la facture", type:"select", value:(p.echeance?String(p.echeance):""), options:echOptions()},
-        {key:"prevu", label:"Montant prévu de la facture", type:"money", value:(p.prevu||"")}
+        {key:"prevu", label:"Montant prévu de la facture", type:"money", value:(p.prevu||"")},
+        {key:"ou", label:"Où est l'argent ?", type:"select", value:provWhere(p), options:provWhereOptions(), help:"Sur un compte épargne ou le compte courant : il est déjà dans leur solde, l'appli ne le compte pas deux fois."}
       ])}, function(r){
-        p.nom=r.nom||p.nom; setOwner(p, r);
+        p.nom=r.nom||p.nom; setOwner(p, r); if(r.ou) p.ou=r.ou;
         if(Math.abs(r.mens-curMens)>0.001){ if(!p.mensuelChanges) p.mensuelChanges={}; p.mensuelChanges[em]=r.mens; }
         p.soldeInitial=r.init||0;
         if(r.ech) p.echeance=+r.ech; else delete p.echeance;
@@ -6504,7 +6522,7 @@
         var skipped=canSkip && (p.skips||[]).indexOf(month)>=0;
         h+='<div style="display:flex;align-items:center;gap:8px;margin:1px 6px 0">';
         if(skipped) h+='<span style="flex:1;font-size:10px;color:#e6b450">⏸ Rien mis de côté en '+esc(monthLabelOf(month))+' (au lieu de '+fmt(mensuelAt(p, month))+')</span>';
-        else h+='<span class="muted" style="flex:1;font-size:10px">+ '+fmt(mensuelAt(p, month))+' / mois</span>';
+        else h+='<span class="muted" style="flex:1;font-size:10px">+ '+fmt(mensuelAt(p, month))+' / mois · sur '+esc(provWhereLabel(p))+'</span>';
         if(canSkip) h+='<button class="btn ghost prskip" type="button" data-id="'+esc(p.id)+'" style="padding:5px 9px;font-size:11px;flex:0 0 auto">'+(skipped?'↺ Rétablir ce mois':'⏸ Sauter ce mois')+'</button>';
         h+='</div>';
         var ec=provEcheance(p, month);

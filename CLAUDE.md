@@ -47,6 +47,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
   - `startMonth` : premier mois d'un frais récurrent (sinon déduit par `fraisStart`). `amounts` et `parts` sont indexés par mois de début (« à partir de »).
   - `parts` : `{"AAAA-MM": {prénom: %} ou null}` = parts propres au frais ; toujours passer par `fraisPct(f, qui, mois)`.
 - `virements`, `epargne`, `provisions`, `bourse`.
+  - Provision `ou` : où est l'argent (`ep:<id épargne>`, `cpt`, `ext`) ; toujours passer par `provWhere(p)` (défaut : premier compte épargne de la personne). Sur l'épargne ou le compte, elle est déjà dans leur solde : ne pas l'ajouter une 2e fois.
 - `budgets` (budgets du foyer par catégorie), `budgetsP` (`{personne: {catégorie: montant}}`).
 - `communParts` (part de chacun dans le commun, en %), `argentMois`, `liquideMois`, `soldeInit`, `devise`.
 - Taxonomie : `cats`, `familles`, `produits`, `appris`, `familleDe`.
