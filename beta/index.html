@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="24/10 08:09" />
+  <meta name="build" content="24/10 19:33" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -3272,12 +3272,43 @@
         texts.forEach(function(t){
           var x=parseFloat(t.getAttribute("x")), y=parseFloat(t.getAttribute("y")); if(!isFinite(x) || !isFinite(y)) return;
           var col=t.getAttribute("fill")||"", bold=(t.getAttribute("font-weight")||"")>="600";
-          if(y>H*0.85) under.push('<span style="left:'+(x/W*100).toFixed(2)+'%'+(bold?';color:var(--ink);font-weight:700':'')+'">'+esc(t.textContent)+'</span>');
-          else over+='<span style="left:'+(x/W*100).toFixed(2)+'%;top:'+(y/H*100).toFixed(2)+'%'+(col&&col!=="currentColor"?';color:'+col:'')+(bold?';font-weight:700':'')+'">'+esc(t.textContent)+'</span>';
+          if(y>H*0.85) under.push('<span style="left:'+(x/W*100).toFixed(2)+'%'+(bold?';color:var(--ink);font-weight:700':'')+'"'+(bold?' data-b="1"':'')+'>'+esc(t.textContent)+'</span>');
+          else over+='<span style="left:'+(x/W*100).toFixed(2)+'%;top:'+(y/H*100).toFixed(2)+'%'+(col&&col!=="currentColor"?';color:'+col:'')+(bold?';font-weight:700':'')+'"'+(bold?' data-b="1"':'')+' data-v="'+miniAbs(t.textContent)+'">'+esc(miniNum(t.textContent))+'</span>';
         });
         if(over) wrap.insertAdjacentHTML("beforeend", '<div class="mov">'+over+'</div>');
         if(under.length) wrap.insertAdjacentHTML("afterend", '<div class="mx">'+under.join("")+'</div>');
+        miniDeclutter(wrap);
       });
+    }
+    // Montant court pour les petites cartes : 427 · 4,3k · 43k · 1,5M (signe gardé) ; le détail reste dans l'onglet
+    function miniParse(txt){ var m=String(txt||"").trim().match(/^([+\-−]?)\s*(\d[\d\s\u202f\u00a0]*(?:,\d+)?)\s*(\S*)$/); if(!m) return null;
+      var v=Number(m[2].replace(/[\s\u202f\u00a0]/g,"").replace(",",".")); return isFinite(v) ? { sg:m[1], v:v, u:m[3] } : null; }
+    function miniAbs(txt){ var p=miniParse(txt); return p ? (p.u==="k" ? p.v*1000 : p.u==="M" ? p.v*1e6 : p.v) : 0; }
+    function miniNum(txt){ var p=miniParse(txt); if(!p || p.u==="k" || p.u==="M" || p.v<1000) return String(txt||"").trim();
+      var v=p.v, s=v>=999500 ? String(Math.round(v/1e5)/10).replace(".",",")+"M" : v>=9950 ? Math.round(v/1000)+"k" : String(Math.round(v/100)/10).replace(".",",")+"k";
+      return p.sg+s; }
+    // Petites cartes : les étiquettes qui se chevauchent sont masquées (on garde d'abord le mois choisi, puis le dernier,
+    // puis les plus gros montants) ; celles qui dépassent du bord sont ramenées dans la carte ; un libellé trop large passe sur deux lignes
+    function miniDeclutter(wrap){
+      var B=wrap.getBoundingClientRect(); if(!(B.width>0)) return;
+      function inside(sp, base){ var r=sp.getBoundingClientRect();
+        if(r.left<B.left-1){ sp.style.left="0"; sp.style.transform=base.replace("-50%","0"); r=sp.getBoundingClientRect(); }
+        else if(r.right>B.right+1){ sp.style.left="100%"; sp.style.transform=base.replace("-50%","-100%"); r=sp.getBoundingClientRect(); }
+        return r; }
+      function place(list, base){ var kept=[];
+        list.forEach(function(sp){ var r=inside(sp, base);
+          var hit=kept.some(function(k){ return r.left<k.right+1.5 && r.right+1.5>k.left && r.top<k.bottom && r.bottom>k.top; });
+          if(hit) sp.style.visibility="hidden"; else kept.push(r); }); }
+      var ov=[].slice.call(wrap.querySelectorAll(".mov span")), n=ov.length;
+      place(ov.map(function(sp,i){ return { sp:sp, k:(sp.getAttribute("data-b")?0:(i===n-1?1:2)), v:Number(sp.getAttribute("data-v"))||0, i:i }; })
+        .sort(function(a,b){ return a.k-b.k || b.v-a.v || a.i-b.i; }).map(function(x){ return x.sp; }), "translate(-50%,-100%)");
+      var mx=wrap.nextElementSibling; if(!mx || !mx.classList.contains("mx")) return;
+      var un=[].slice.call(mx.querySelectorAll("span")), xs=un.map(function(sp){ return parseFloat(sp.style.left)||0; }).sort(function(a,b){ return a-b; }), gap=100;
+      for(var i=1;i<xs.length;i++) gap=Math.min(gap, xs[i]-xs[i-1]);
+      var slot=gap/100*B.width, two=false;
+      un.forEach(function(sp){ if(sp.getBoundingClientRect().width>slot-2 && /\s/.test(sp.textContent.trim())){ sp.style.whiteSpace="normal"; sp.style.width=Math.max(22, slot-6)+"px"; sp.style.textAlign="center"; sp.style.lineHeight="1.15"; two=true; } });
+      if(two) mx.style.height="22px";
+      place(un.filter(function(sp){ return sp.getAttribute("data-b"); }).concat(un.filter(function(sp){ return !sp.getAttribute("data-b"); })), "translateX(-50%)");
     }
     function homeCarouselHTML(x){
       var cards=homeChartCards(); x=x||{}; cards.forEach(function(k){ if(k.tab==='analyse' && k.mode==='mois' && x.an) k.c.sub=x.an; });

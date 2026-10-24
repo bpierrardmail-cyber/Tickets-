@@ -19,7 +19,8 @@ Après chaque modification, dans le même commit :
 ## État actuel (24/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `24/10 08:09`, environ 7 900 lignes.
+- β web : `beta/index.html`, étiquette `24/10 19:33
+([^`, environ 7 900 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -54,7 +55,9 @@ Après chaque modification, dans le même commit :
 
 ## En cours / à reprendre
 
-- Rien n'est en cours. La dernière modification (24/10) fait accepter les montants tapés avec virgule, espaces ou symbole (`num()`).
+- **Import d'un relevé pour démarrer un compte** : à l'étude, en attente d'un fichier d'exemple de Benoît, puis maquette de l'écran d'import avant de coder.
+  - Formats visés : OFX/QFX (banques, Money, Quicken, iCompta), QIF (Money, Quicken, Grisbi, HomeBank…) et CSV (banques, Bankin', Linxo, tableurs).
+  - Import en une fois, sur le téléphone, limité aux mois passés pour éviter les doublons avec les tickets. Il propose : solde de départ, revenus, prélèvements qui reviennent (frais fixes à cocher) et dépenses par carte (historique de l'Analyse, sans articles).
 - Reportés à la sortie Store :
   - QR code lisible par l'appareil photo ;
   - Workers Paid ;
@@ -67,7 +70,9 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
-- **24/10** : tenir ce journal à jour à chaque modification.
+- **24/10**
+  - Tenir ce journal à jour à chaque modification.
+  - Étudier un import de relevé pour remplir un nouveau compte ; il doit aussi accepter les fichiers de Money, de Quicken et des autres logiciels de comptes connus.
 - **22/10** : le lien avec la banque est mis de côté. Pistes, dans l'ordre :
   - bouton « Ouvrir ma banque » ;
   - import de relevé CSV/OFX ;
@@ -95,6 +100,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 24/10
+- Accueil, petites cartes : montants courts (427 · 4,3k · 43k · 1,2M), étiquettes qui se chevauchent masquées (le mois en cours et les plus gros montants d'abord), ramenées dans la carte au bord, libellés trop longs sur deux lignes (`enrichMiniCharts`, `miniNum`, `miniDeclutter`). Avant, les montants à 4 ou 5 chiffres se chevauchaient.
 - Montants : virgule, espaces (clavier Android) et symbole € acceptés du premier coup, via `num()` (`aa7e3de`).
 - Guide `CLAUDE.md` complété (lecture des montants, Accueil, frais retirés pour un mois). Création de ce journal.
 
