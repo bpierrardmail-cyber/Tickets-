@@ -19,8 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (24/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `24/10 19:33
-([^`, environ 7 900 lignes.
+- β web : `beta/index.html`, étiquette `24/10 19:33`, environ 7 900 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
