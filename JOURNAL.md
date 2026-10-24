@@ -7,6 +7,13 @@ Après chaque modification, dans le même commit :
 2. noter toute décision de Benoît dans **Décisions**, avec sa date ;
 3. mettre à jour **État actuel** et **En cours** si nécessaire.
 
+### Reprendre le travail ailleurs
+- **Claude Code ouvert sur le dépôt** : rien à faire, `CLAUDE.md` est lu automatiquement et renvoie vers ce journal.
+- **Autre conversation Claude** : demander « Lis CLAUDE.md puis JOURNAL.md du dépôt GitHub bpierrardmail-cyber/Tickets- ». Si l'accès à GitHub n'est pas branché, donner les liens directs :
+  - https://raw.githubusercontent.com/bpierrardmail-cyber/Tickets-/main/CLAUDE.md
+  - https://raw.githubusercontent.com/bpierrardmail-cyber/Tickets-/main/JOURNAL.md
+- Si le dépôt devient privé, ces liens ne marchent plus : joindre les deux fichiers à la conversation.
+
 ---
 
 ## État actuel (24/10/2026)
