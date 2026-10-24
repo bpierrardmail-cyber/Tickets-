@@ -58,7 +58,6 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 
 - **Accueil** : graphiques choisis par l'utilisateur (`homeCharts`, bouton ⚙ Choisir, appui long sur une carte), grande carte du haut au choix (`homeTop`, hauteur fixe 300 px) ; puces ✍️ Saisie et 🧾 Tickets (page Tickets, `state.listSub="tickets"`) ; bouton personne en haut à droite. Rien sous les graphiques.
 - **Début d'utilisation** : `acctStart` (mois de départ d'un compte) ; avant ce mois, pas de solde, de provision (`provBalance`) ni de mensualité (`mensuelAt`).
-
 - **Ticket ↔ compte** : le compte choisi sur le ticket, sinon celui dont le `payer` est égal à `payePar` (`ticketInAcct`). Un `payePar` vide compte pour le propriétaire (`payerOf`).
 - **Commun** : `communModel(month)` calcule les parts. Les parts **ne changent pas les soldes des comptes**. Un frais « Commun » est retiré :
   - en entier du compte principal (ou de `f.compte`) par défaut ;
