@@ -4,6 +4,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 
 ## Règles de travail avec Benoît
 
+- **Lire `JOURNAL.md` en début de session** (état actuel, en cours, décisions) au lieu de relire les conversations. **Le tenir à jour à chaque modification, dans le même commit** : une entrée datée en haut de l'Historique, plus les sections Décisions, État actuel et En cours si elles changent.
 - Répondre **en français**, court et concret.
 - « Ne fais rien », « comment tu vois ça », « montre-moi » → donner un avis ou une maquette, **ne pas modifier l'appli**. Par défaut, montrer la proposition avant de modifier ; il dit « tu peux intégrer directement » quand il veut qu'on le fasse.
 - On travaille dans `beta/index.html`. Le `index.html` à la racine est l'ancienne version stable : ne pas y toucher sans demande.
