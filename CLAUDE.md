@@ -35,6 +35,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
   - `store.read(k, def)` / `store.write(k, v)` : JSON dans localStorage.
   - `render()` : redessine tout ; il remet aussi les mémos à zéro (`pvMemo`, `fsMemo`). `renderView()` choisit l'écran selon `state.view`.
   - `uiForm({title, fields}, cb)`, `uiChoice`, `uiToast` : fenêtres intégrées. Les champs de `uiForm` sont de type `seg`, `select`, `money`… ; `api.show/get/set` dans `onChange`.
+  - `num(x)` : lit un montant tapé (virgule ou point, espaces — le clavier Android en met après la virgule —, €, « 1 234,56 »). Toujours l'utiliser, jamais `parseFloat` directement.
   - `fmt`, `fmtK`, `fmtS` : montants. **Tout texte inséré en HTML passe par `esc()`.**
 - Écran mobile, thème sombre (variables CSS `--bg`, `--card`, `--ink`, `--accent`…). Tester à 412 px de large.
 
@@ -43,7 +44,8 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 - `entries` : tickets `{id, date, marchand, montant, categorie, payePar, compte?, articles[]}`.
 - `comptes` : `{key, nom, payer, main}` (un compte principal).
 - `personnes` : `{nom, archived?}`.
-- `fraisCommuns` : frais fixes `{id, label, montant, personne ("Commun" ou un prénom), recurrent, month, startMonth?, endMonth?, compte?, split?, amounts?, parts?, doneMonths}`.
+- `fraisCommuns` : frais fixes `{id, label, montant, personne ("Commun" ou un prénom), recurrent, month, startMonth?, endMonth?, compte?, split?, amounts?, parts?, doneMonths, skipMonths?}`.
+  - `skipMonths` : mois où un frais récurrent est retiré pour ce mois seulement (« Rétablir » dans la liste).
   - `startMonth` : premier mois d'un frais récurrent (sinon déduit par `fraisStart`). `amounts` et `parts` sont indexés par mois de début (« à partir de »).
   - `parts` : `{"AAAA-MM": {prénom: %} ou null}` = parts propres au frais ; toujours passer par `fraisPct(f, qui, mois)`.
 - `virements`, `epargne`, `provisions`, `bourse`.
@@ -53,6 +55,9 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 - Taxonomie : `cats`, `familles`, `produits`, `appris`, `familleDe`.
 
 ## Notions métier à connaître
+
+- **Accueil** : graphiques choisis par l'utilisateur (`homeCharts`, bouton ⚙ Choisir, appui long sur une carte), grande carte du haut au choix (`homeTop`, hauteur fixe 300 px) ; puces ✍️ Saisie et 🧾 Tickets (page Tickets, `state.listSub="tickets"`) ; bouton personne en haut à droite. Rien sous les graphiques.
+- **Début d'utilisation** : `acctStart` (mois de départ d'un compte) ; avant ce mois, pas de solde, de provision (`provBalance`) ni de mensualité (`mensuelAt`).
 
 - **Ticket ↔ compte** : le compte choisi sur le ticket, sinon celui dont le `payer` est égal à `payePar` (`ticketInAcct`). Un `payePar` vide compte pour le propriétaire (`payerOf`).
 - **Commun** : `communModel(month)` calcule les parts. Les parts **ne changent pas les soldes des comptes**. Un frais « Commun » est retiré :
