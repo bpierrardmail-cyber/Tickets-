@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="25/10 09:30" />
+  <meta name="build" content="25/10 09:39" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -1238,6 +1238,8 @@
       for(var k in o){ if(k<=m && (best===null||k>best)) best=k; }
       return best===null ? null : { val:Number(o[best])||0, month:best };
     }
+    // Bouton « Liquide » de l'onglet Compte : compter ou non l'argent liquide dans les soldes (Compte, Accueil, widgets, Bilan)
+    function liqCounted(){ var v=state.cptLiq; if(v==null) v=store.read("cptLiq", true); return !!v; }
     var virements = store.read("virements", []);
     if(store.read("virEpV2", null)!==1){
       virements.forEach(function(v){ if(v.epargneId) v.done=true; });
@@ -3438,8 +3440,9 @@
         var multiA=comptes.length>1 && !fyMember(), scope=multiA ? (state.homeScope||store.read("homeScope","moi")) : "moi"; if(scope!=="foyer") scope="moi";
         function heroFig(m){
           var keys=(scope==="foyer") ? comptes.map(function(a){ return a.key; }) : [myAcct().key], b=0, l=0, has=false;
-          keys.forEach(function(k){ b+=computeCompteMonth(k, m).solde; var q=liquideAt(k, m); if(q){ has=true; l+=q.val; } });
-          return { banque:b, liq:l, hasLiq:has, solde:b+l };
+          var lc=liqCounted(), off=false;
+          keys.forEach(function(k){ b+=computeCompteMonth(k, m).solde; var q=liquideAt(k, m); if(q){ if(lc){ has=true; l+=q.val; } else off=true; } });
+          return { banque:b, liq:l, hasLiq:has, liqOff:off, solde:b+l };
         }
         var HF=heroFig(month), cb={ solde:HF.banque };
         var lq=HF.hasLiq, lqV=HF.liq;
@@ -3491,7 +3494,7 @@
           h += '<div class="dash-split h3"><span>Par jour<b>'+fk(parJour)+'</b></span><span>'+(isCur?'Projection':'Total')+'<b>'+fk(isCur?projection:totalMois)+'</b></span><span>Mois préc.<b>'+fk(prevTot)+'</b></span></div>';
         } else {
           h += '<div class="dash-big" style="color:'+(solde<0?"var(--coral)":"var(--ink)")+'">'+money(solde)+'</div>';
-          h += '<div class="dash-cap">Solde de fin de mois prévu'+(scope==="foyer"?' · foyer, '+comptes.length+' comptes':(multiA?' · '+esc(myAcct().nom):''))+'</div>';
+          h += '<div class="dash-cap">Solde de fin de mois prévu'+(scope==="foyer"?' · foyer, '+comptes.length+' comptes':(multiA?' · '+esc(myAcct().nom):''))+(HF.liqOff?' · sans le liquide':'')+'</div>';
           (function(){ var pS=heroFig(pm).solde, dS=solde-pS;
             var pl=monthLabelOf(pm).split(" ")[0];
             if(Math.abs(dS)>=0.005) h += '<div class="dash-trend" style="color:'+(dS>=0?"var(--accent)":"var(--coral)")+'">'+(dS>=0?'▲ +':'▼ −')+fk(Math.abs(dS))+' <span>vs fin '+esc(pl)+'</span></div>';
@@ -4668,7 +4671,7 @@
       return '<svg viewBox="0 0 '+W+' '+H+'" role="img">'+g+'</svg>';
     }
     function acctFigures(key, month){
-      var fl=soldeFlow(key, month), lq=liquideAt(key, month), lqV=lq?lq.val:0;
+      var fl=soldeFlow(key, month), lq=liquideAt(key, month), lqV=(lq && liqCounted())?lq.val:0;
       var banque=soldeFlowDone(key, month).opening + virementsSumDone(key, month) - computeDepensesMonthDone(key, month);
       if(month>monthKey(todayISO())) banque=fl.closing;   // mois à venir : ce qui restera en banque à la fin du mois (tout ce qui est prévu)
       return { banque:banque, fin:fl.closing+lqV, liq:lqV };
@@ -4831,7 +4834,7 @@
       var depenses=paidTotal + fraisTotal;
       var liq=liquideAt(person, month), liqAll=liq?liq.val:0;
       // bouton « Liquide » (Ce mois, Solde) : compter ou non l'argent liquide
-      var liqOn=state.cptLiq; if(liqOn==null) liqOn=store.read("cptLiq", true); liqOn=!!liqOn;
+      var liqOn=liqCounted();
       var liqV=liqOn?liqAll:0, liqHas=!!liq || liquideMois && liquideMois[person] && Object.keys(liquideMois[person]).length>0;
       function liqAt(m){ if(!liqOn) return 0; var l=liquideAt(person,m); return l?l.val:0; }
       var soldeFin=fl.closing + liqV;
@@ -5001,9 +5004,9 @@
 
       // ---- Résultat ----
       var bRes='<div class="leader"><span class="lbl">Solde de fin de mois</span><span class="fill"></span><span class="val" style="font-weight:700;color:'+(soldeFin<0?"var(--coral)":"var(--accent)")+'">'+fmt(soldeFin)+'</span></div>';
-      bRes+='<div class="muted note">'+(liq?'dont '+fmt(liqV)+' en liquide · la partie banque ('+fmt(fl.closing)+') se reporte au mois suivant':'se reporte automatiquement au mois suivant')+'</div>';
-      bRes+='<div class="leader" id="liqrow" style="cursor:pointer"><span class="lbl">💶 Argent liquide ✎</span><span class="fill"></span><span class="val">'+(liq?fmt(liqV):"—")+'</span></div>';
-      bRes+='<div class="muted note">'+(!liq?"touche pour indiquer tes espèces du mois":(liq.month===month?"saisi pour ce mois":"repris de "+esc(monthLabelOf(liq.month))))+'</div>';
+      bRes+='<div class="muted note">'+(liq&&liqOn?'dont '+fmt(liqV)+' en liquide · la partie banque ('+fmt(fl.closing)+') se reporte au mois suivant':(liq?'sans le liquide · ':'')+'se reporte automatiquement au mois suivant')+'</div>';
+      bRes+='<div class="leader" id="liqrow" style="cursor:pointer"><span class="lbl">💶 Argent liquide ✎</span><span class="fill"></span><span class="val"'+(liq&&!liqOn?' style="color:var(--muted)"':'')+'>'+(liq?fmt(liqAll):"—")+'</span></div>';
+      bRes+='<div class="muted note">'+(!liq?"touche pour indiquer tes espèces du mois":(liq.month===month?"saisi pour ce mois":"repris de "+esc(monthLabelOf(liq.month)))+(liqOn?"":" · non compté (bouton Liquide décoché)"))+'</div>';
       bRes+='<div class="leader"><span class="lbl">Solde bancaire estimé</span><span class="fill"></span><span class="val" style="color:'+(soldeBanque<0?"var(--coral)":"var(--accent)")+'">'+fmt(soldeBanque)+'</span></div>';
       bRes+='<div class="muted note">sans le liquide · reporté + virements faits − tickets − frais faits</div>';
       var accRes=sec("res", "#e6b450", "Solde bancaire estimé", fmtS(soldeBanque), (soldeBanque<0?"var(--coral)":"var(--ink)"));
@@ -5066,8 +5069,9 @@
                extra:(depenses>0?'<div class="cdon cdon-big">'+compteDonutSVG(dParts, depenses)+'<div class="cdon-l">'+dParts.map(function(x){ return '<div class="cdon-r"><i class="cdot" style="background:'+x.col+';margin:0"></i><span class="n">'+esc(x.l)+'</span><span class="p">'+Math.round(x.v/depenses*100)+' %</span><span class="a">'+cptK(x.v)+' '+esc(curSym())+'</span></div>'; }).join("")+'</div></div>':'') };
           pb=bOut;
         } else if(page==="res"){
-          ph={ label:"Solde bancaire estimé", big:soldeBanque, color:(soldeBanque<0?"var(--coral)":"var(--ink)"), sub:"Fin de mois prévue "+fmtK(soldeFin)+(liq?" · Liquide "+fmtK(liqV):""),
-               extra:'<div class="cch">'+compteBarsSVG(six.map(function(m){ var lq=liquideAt(person,m); return { m:m, lbl:mShort(m), v:soldeFlow(person,m).closing+(lq?lq.val:0) }; }), month)+'<div class="cch-note">Solde de fin de mois (banque + liquide), sur 6 mois</div></div>' };
+          ph={ label:"Solde bancaire estimé", big:soldeBanque, color:(soldeBanque<0?"var(--coral)":"var(--ink)"), sub:"Fin de mois prévue "+fmtK(soldeFin)+(liq?" · Liquide "+fmtK(liqAll)+(liqOn?"":" non compté"):""),
+               extra:(liqHas?'<div class="cnr"><button type="button" class="anfx'+(liqOn?' on':'')+'" id="cptLiqBtn" aria-pressed="'+liqOn+'">'+(liqOn?'✓':'＋')+' Liquide</button></div>':'')+
+                 '<div class="cch">'+compteBarsSVG(six.map(function(m){ return { m:m, lbl:mShort(m), v:soldeFlow(person,m).closing+liqAt(m) }; }), month)+'<div class="cch-note">Solde de fin de mois ('+(liqOn?'banque + liquide':'banque seule, sans le liquide')+'), sur 6 mois</div></div>' };
           pb=bRes;
         } else {
           var epR=six.map(function(m){ return { m:m, lbl:mShort(m), v:epTotAt(m) }; });
@@ -7034,7 +7038,7 @@
       var tickets=mois.reduce(function(t,x){ return t+(Number(x.montant)||0); },0);
       var parCat={}; mois.forEach(function(x){ parCat[x.categorie]=(parCat[x.categorie]||0)+(Number(x.montant)||0); });
       var cats=Object.keys(parCat).sort(function(a,b){ return parCat[b]-parCat[a]; });
-      var cb={ argent:0, depenses:0, solde:computeCompteMonth(person, to).solde }, lq=liquideAt(person, to), lqV=lq?lq.val:0;
+      var cb={ argent:0, depenses:0, solde:computeCompteMonth(person, to).solde }, lq=liquideAt(person, to), lqV=(lq && liqCounted())?lq.val:0;
       ms.forEach(function(m){ var x=computeCompteMonth(person, m); cb.argent+=x.argent; cb.depenses+=x.depenses; });
       var epTot=0; epargne.forEach(function(c){ epTot+=epAt(c, month); });
       var prTot=provTotalAt(month);
@@ -8475,7 +8479,8 @@
     function widgetSnapshot(){
       var m=monthKey(todayISO()), pm=prevMonthKey(m), me=mePerson(), mainK=myAcct().key;
       function r2(n){ return Math.round((Number(n)||0)*100)/100; }
-      function fig(keys, mm){ var t=0; keys.forEach(function(k){ t+=computeCompteMonth(k, mm).solde; var q=liquideAt(k, mm); if(q) t+=q.val; }); return t; }
+      var lc=liqCounted();
+      function fig(keys, mm){ var t=0; keys.forEach(function(k){ t+=computeCompteMonth(k, mm).solde; var q=liquideAt(k, mm); if(q && lc) t+=q.val; }); return t; }
       var allK=comptes.map(function(a){ return a.key; }), sMe=fig([mainK], m), sAll=fig(allK, m);
       var _p=m.split("-"), dim=new Date(+_p[0], +_p[1], 0).getDate();
       var snap={ v:1, t:Date.now(), edition:EDITION, plus:canUse("widgets"), lock:!!lockCfg, sym:curSym(), multi:comptes.length>1,
