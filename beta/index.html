@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="25/10 02:44" />
+  <meta name="build" content="25/10 07:50" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -56,6 +56,16 @@
     .head.hasback .htitle{ padding:0 100px; }
     .hleft .hback{ width:42px; height:36px; padding:0; font-size:22px; line-height:1; display:grid; place-items:center; color:var(--ink); }
     .drawer{ display:flex; flex-direction:column; }
+    .dr-grp{ background:var(--card2); border:1px solid var(--line); border-radius:16px; overflow:hidden; margin-top:12px; }
+    .dr-row{ display:flex; align-items:center; gap:12px; width:100%; min-height:54px; padding:0 14px; border:0; border-top:1px solid var(--line); background:none; color:var(--ink); font-family:var(--sans); text-align:left; cursor:pointer; }
+    .dr-row:first-child{ border-top:0; }
+    .dr-row .ic{ flex:0 0 22px; text-align:center; font-size:17px; }
+    .dr-row .t{ flex:1; min-width:0; font-size:15px; font-weight:700; }
+    .dr-row .t small{ display:block; font-size:11.5px; font-weight:500; color:var(--muted); margin-top:2px; }
+    .dr-row .st{ flex:0 1 auto; min-width:0; font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:48%; }
+    .dr-row .chev{ color:var(--muted); font-size:19px; line-height:1; }
+    .dr-row.tall{ min-height:58px; padding-top:6px; padding-bottom:6px; }
+    .dr-row.danger .t{ color:var(--coral); }
     .dr-foot{ margin-top:auto; padding-top:22px; text-align:center; font-size:11px; color:var(--muted); }
     .rule{ border:0; border-top:1px solid var(--line); margin:14px 0; }
     /* Carte principale */
@@ -1045,30 +1055,23 @@
     function closeMenu(){ var ov=document.querySelector(".drawer-ov"); if(ov && ov.parentNode) ov.parentNode.removeChild(ov); }
     function openMenu(){
       closeMenu();
-      var lb=store.read("lastBackup", null), bt, bc="var(--muted)";
-      if(!lb){ bt="Jamais sauvegardé — pense à exporter."; bc="var(--coral)"; }
-      else { var d=new Date(lb), days=Math.floor((Date.now()-d.getTime())/86400000); bt="Dernière : "+d.toLocaleDateString("fr-FR")+(days<=0?" (aujourd'hui)":" (il y a "+days+" j)"); if(days>=7) bc="var(--coral)"; }
-      function it(k, ic, t, sub, danger){ return '<button type="button" class="dr-item'+(danger?' danger':'')+'" data-k="'+k+'"><span class="ic">'+ic+'</span><span>'+esc(t)+(sub?'<small>'+sub+'</small>':'')+'</span></button>'; }
+      // Menu court : 3 blocs de lignes, l'état à droite ; ce qu'on touche rarement est dans « Réglages »
+      var bk=backupAge(), fyM=fyMember(), fyFull=!fyM || (fyCfg.role==="edit" && fyCfg.accts==null);
+      function row(k, ic, t, st, stCol, chev){ return '<button type="button" class="dr-row" data-k="'+k+'"><span class="ic">'+ic+'</span><span class="t">'+esc(t)+'</span>'+(st?'<span class="st"'+(stCol?' style="color:'+stCol+'"':'')+'>'+esc(st)+'</span>':'')+(chev?'<span class="chev">›</span>':'')+'</button>'; }
+      function grp(rows){ rows=rows.filter(function(x){ return x; }); return rows.length ? '<div class="dr-grp">'+rows.join("")+'</div>' : ''; }
       var h='<div class="drawer" role="dialog" aria-label="Menu"><div class="dr-head"><b>Menu</b><button type="button" class="dr-x" aria-label="Fermer">✕</button></div>';
-      var fyM=fyMember(), fyFull=!fyM || (fyCfg.role==="edit" && fyCfg.accts==null);
-      h+='<div class="dr-sec">Foyer partagé</div>';
-      if(!fyCfg) h+=it("foyer","👨‍👩‍👧","Foyer partagé",esc(canUse("foyer")?"Suivre les comptes à plusieurs, chacun sur son téléphone":"Tickets Plus · suivre les comptes à plusieurs"));
-      else if(!fyM) h+=it("foyer","👨‍👩‍👧","Foyer partagé",esc(Object.keys(fyCfg.members||{}).length+" membre(s) · "+fySyncLabel()));
-      else h+=it("foyer","👨‍👩‍👧","Foyer de "+(fyCfg.owner||"…"),esc(fyRightsLabel(fyCfg)+" · "+fySyncLabel()));
-      if(!fyM) h+='<div class="dr-sec">Sauvegarde</div>'+it("backup","💾","Sauvegarder",'<span style="color:'+bc+'">'+esc(bt)+'</span>')+it("restore","📂","Restaurer une sauvegarde",esc("Remplace les données par celles du fichier"));
-      h+='<div class="dr-sec">Sécurité</div>';
-      if(!lockCfg) h+=it("lockSetup","🔒","Verrouiller l'app par un code",esc("Tu pourras ajouter l'empreinte ensuite"));
-      else {
-        h+=it("lockSetup","🔑","Changer le code",esc("Verrouillage actif"+(lockCfg.bioId?" · code + empreinte":" · code")+(fyCfg?" · obligatoire avec le foyer partagé":"")));
-        if(!lockCfg.bioId) h+=it("lockBio","👆","Ajouter l'empreinte","");
-        if(!fyCfg) h+=it("lockOff","🔓","Désactiver le verrouillage","",true);
-      }
       var plist=uniquePersons(); if(plist.indexOf(mePerson())<0) plist.unshift(mePerson());
-      if(fyFull) h+='<div class="dr-sec">Personnes</div>'+it("persons","👥","Personnes",esc(plist.join(", ")+" · ajouter, renommer, supprimer"));
-      if(fyFull) h+='<div class="dr-sec">Devise</div>'+it("devise","💱","Devise principale",esc(curSym()+" · "+CURS[BASE].l));
-      h+='<div class="dr-sec">Tickets</div>'+it("gallery","🖼️","Galerie",esc("Les photos de tes tickets"));
-      if(impCan()) h+='<div class="dr-sec">Import</div>'+it("import","📥","Importer un relevé",esc("OFX, QIF ou CSV · ta banque, Money, Quicken…"));
-      h+='<div class="dr-sec">Export</div>'+it("pdf","📄","Exporter en PDF",esc("Bilan sur la période de ton choix"));
+      var fyT, fyS;
+      if(!fyCfg){ fyT="Foyer partagé"; fyS=canUse("foyer")?"à plusieurs":"Tickets Plus"; }
+      else if(!fyM){ var nm=Object.keys(fyCfg.members||{}).length; fyT="Foyer partagé"; fyS=nm+" membre"+(nm>1?"s":"")+" · "+fySyncLabel(); }
+      else { fyT="Foyer de "+(fyCfg.owner||"…"); fyS=fySyncLabel(); }
+      h+=grp([ row("foyer","👨‍👩‍👧",fyT,fyS),
+               fyFull ? row("persons","👥","Personnes",plist.length+" personne"+(plist.length>1?"s":"")) : "",
+               !fyM ? row("backup","💾","Sauvegarder",bk.label,(bk.days===null || bk.days>=7)?"var(--coral)":"var(--accent)") : "" ]);
+      h+=grp([ impCan() ? row("import","📥","Importer un relevé","OFX · QIF · CSV") : "",
+               row("pdf","📄","Exporter en PDF","bilan"),
+               row("gallery","🖼️","Galerie","photos des tickets") ]);
+      h+=grp([ row("settings","⚙️","Réglages",[fyFull?"devise":"", "code", !fyM?"restaurer":""].filter(function(x){ return x; }).join(", "),"",true) ]);
       h+='<div class="dr-foot"><span class="beta-tag">Version β · '+esc((document.querySelector('meta[name=build]')||{}).content||'')+(capNative()?(EDITION==="store"?' · appli Store':' · appli Perso'):' · navigateur'+(EDITION==="store"?' (Store)':''))+'</span></div>';
       h+='</div>';
       var ov=document.createElement("div"); ov.className="drawer-ov"; ov.innerHTML=h; document.body.appendChild(ov);
@@ -1077,8 +1080,33 @@
       function closeAnim(){ ov.classList.remove("open"); setTimeout(closeMenu, 200); }
       ov.onclick=function(e){ if(e.target===ov) closeAnim(); };
       ov.querySelector(".dr-x").onclick=closeAnim;
-      var acts={ import:function(){ impStart(null); }, gallery:function(){ state.view="gallery"; render(); window.scrollTo(0,0); }, foyer:function(){ state.view="foyer"; render(); window.scrollTo(0,0); }, backup:backupData, restore:function(){ restorein.click(); }, lockSetup:lockSetup, lockBio:lockEnableBio, lockOff:lockDisable, devise:chooseCurrency, pdf:choosePdfPeriod, persons:managePersons };
-      [].forEach.call(ov.querySelectorAll(".dr-item"), function(b){ b.onclick=function(){ var fn=acts[b.getAttribute("data-k")]; closeMenu(); if(fn) fn(); }; });
+      var acts={ settings:openSettings, import:function(){ impStart(null); }, gallery:function(){ state.view="gallery"; render(); window.scrollTo(0,0); }, foyer:function(){ state.view="foyer"; render(); window.scrollTo(0,0); }, backup:backupData, restore:function(){ restorein.click(); }, lockSetup:lockSetup, lockBio:lockEnableBio, lockOff:lockDisable, devise:chooseCurrency, pdf:choosePdfPeriod, persons:managePersons };
+      [].forEach.call(ov.querySelectorAll(".dr-row"), function(b){ b.onclick=function(){ var fn=acts[b.getAttribute("data-k")]; closeMenu(); if(fn) fn(); }; });
+    }
+    // Âge de la dernière sauvegarde, en jours de calendrier (une sauvegarde de la veille au soir = « hier »)
+    function backupAge(){
+      var lb=store.read("lastBackup", null); if(!lb) return { days:null, label:"jamais" };
+      var d=new Date(lb), n=new Date(), d0=new Date(d.getFullYear(), d.getMonth(), d.getDate()), n0=new Date(n.getFullYear(), n.getMonth(), n.getDate()), days=Math.max(0, Math.round((n0-d0)/86400000));
+      return { days:days, label:days===0?"aujourd'hui":(days===1?"hier":"il y a "+days+" j") };
+    }
+    // Réglages (depuis le menu) : devise, code et empreinte, restaurer une sauvegarde
+    function openSettings(){
+      var fyM=fyMember(), fyFull=!fyM || (fyCfg.role==="edit" && fyCfg.accts==null), rows=[];
+      function row(k, ic, t, sub, danger){ return '<button type="button" class="dr-row tall'+(danger?' danger':'')+'" data-k="'+k+'"><span class="ic">'+ic+'</span><span class="t">'+esc(t)+(sub?'<small>'+esc(sub)+'</small>':'')+'</span><span class="chev">›</span></button>'; }
+      if(fyFull) rows.push(row("devise","💱","Devise principale",curSym()+" · "+CURS[BASE].l));
+      rows.push(lockCfg ? row("lock","🔑","Code et empreinte",lockCfg.bioId?"code + empreinte actifs":"code actif · empreinte à ajouter") : row("lock","🔒","Verrouiller par un code","tu pourras ajouter l'empreinte ensuite"));
+      var h='<div class="sheet-title">Réglages</div><div class="dr-grp">'+rows.join("")+'</div>';
+      if(!fyM) h+='<div class="dr-grp" style="margin-top:10px">'+row("restore","📂","Restaurer une sauvegarde","remplace toutes les données par celles du fichier")+'</div>';
+      h+='<div class="ui-stack" style="margin-top:12px"><button type="button" class="btn ghost ui-no">Fermer</button></div>';
+      var s=uiSheet(h); s.q(".ui-no").onclick=s.close;
+      var acts={ devise:chooseCurrency, restore:function(){ restorein.click(); },
+        lock:function(){
+          if(!lockCfg) return lockSetup();
+          var ch=[{ l:"Changer le code", fn:lockSetup }];
+          if(!lockCfg.bioId) ch.push({ l:"Ajouter l'empreinte", fn:lockEnableBio });
+          if(!fyCfg) ch.push({ l:"Désactiver le verrouillage", danger:true, fn:lockDisable });
+          uiChoice("Code et empreinte", fyCfg?"Obligatoires avec le foyer partagé.":"", ch); } };
+      [].forEach.call(s.qa(".dr-row"), function(b){ b.onclick=function(){ var fn=acts[b.getAttribute("data-k")]; s.close(); if(fn) fn(); }; });
     }
     function personCounts(n){
       var t=state.entries.filter(function(e){ return (e.payePar||"").trim()===n; }).length, f=fraisCommuns.filter(function(x){ return (x.personne||"").trim()===n; }).length;
@@ -2829,9 +2857,9 @@
     function backupStatus(){
       var lb=store.read("lastBackup", null);
       if(!lb) return { col:"var(--coral)", label:"jamais sauvegardé" };
-      var d=new Date(lb), days=Math.floor((Date.now()-d.getTime())/86400000);
+      var days=backupAge().days;
       var col=(days>=7)?"var(--coral)":(days>=3?"#e0a458":"var(--accent)");
-      var when=(days<=0)?"aujourd'hui":("il y a "+days+" j");
+      var when=backupAge().label;
       return { col:col, label:"sauvegardé "+when };
     }
     var VIEW_TITLES={ import:"Import", avancee:"Analyse avancée", list:"Accueil", form:"Ticket", articles:"Articles", produits:"Produits & catégories", graph:"Analyse", history:"Analyse", analyse:"Analyse", month:"Analyse", artDetail:"Articles", communes:"Commun", compte:"Compte", bourse:"Bourse", gallery:"Galerie", photo:"Photo", patrimoine:"Patrimoine", provisions:"Provisions", bilan:"Bilan", foyer:"Foyer partagé" };
@@ -3164,7 +3192,7 @@
       return { total:t, n:n };
     }
     // ---------- Sauvegarde : rappel + partage ----------
-    function backupAgeDays(){ var lb=store.read("lastBackup", null); return lb ? Math.floor((Date.now()-new Date(lb).getTime())/86400000) : null; }
+    function backupAgeDays(){ return backupAge().days; }
     try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
 
     // ---------- Graphiques de l'accueil : choix ----------

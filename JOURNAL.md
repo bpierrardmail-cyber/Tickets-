@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (25/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `25/10 02:44`, environ 8 500 lignes.
+- β web : `beta/index.html`, étiquette `25/10 07:50`, environ 8 500 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -38,6 +38,8 @@ Après chaque modification, dans le même commit :
   - bouton « + Frais fixes » ;
   - détail d'un mois ;
   - **Analyse avancée** (Plus) : inflation perso (INSEE), année / an dernier, alertes, reste à vivre, projection, simulateur, résumé pour une IA.
+
+**Menu** : 3 blocs sans titres et sans défilement. Foyer partagé, Personnes, Sauvegarder · Importer un relevé, Exporter en PDF, Galerie · Réglages (devise, code et empreinte, restaurer une sauvegarde).
 
 **Foyer partagé**
 - Invitation par QR code. Copies chiffrées sur le relais, que le relais ne peut pas lire. Code + empreinte obligatoires.
@@ -75,6 +77,7 @@ Après chaque modification, dans le même commit :
   - Tenir ce journal à jour à chaque modification.
   - Étudier un import de relevé pour remplir un nouveau compte ; il doit aussi accepter les fichiers de Money, de Quicken et des autres logiciels de comptes connus.
 - **25/10**
+  - Menu raccourci comme sur la maquette, avec « Personnes » gardé dans le menu, sous « Foyer partagé ».
   - Accord sur la maquette de l'import : paiements par carte → tickets sans articles, prélèvements → frais fixes (« chaque mois » ou « une fois »), virements reçus et envoyés → virements, solde de départ calculé.
   - Les comptes d'une même page se suivent sur une rangée au lieu de s'empiler.
 - **22/10** : le lien avec la banque est mis de côté. Pistes, dans l'ordre :
@@ -104,6 +107,8 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 25/10
+- **Menu raccourci** (`openMenu`, `openSettings`) : 7 lignes en 3 blocs, l'état à droite (« 2 personnes », « hier », « OFX · QIF · CSV »), plus de titres de rubrique. Il tient sans défiler, même sur un écran de 360×640. Devise, code et empreinte, et Restaurer passent dans « Réglages » ; Restaurer n'est plus à côté de Sauvegarder.
+- Âge de la sauvegarde compté en jours de calendrier (`backupAge`) : une sauvegarde de la veille au soir affichait « aujourd'hui ».
 - **Import d'un relevé** (`impParse`, `impBuild`, `renderImport`, `impApply`, `impUndo`, `state.view="import"`) :
   - Lecture sur le téléphone :
     - OFX 2 (XML) et OFX 1 (SGML), plusieurs comptes, LEDGERBAL ou AVAILBAL ;
