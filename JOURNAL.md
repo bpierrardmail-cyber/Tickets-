@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (25/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `25/10 09:03`, environ 8 500 lignes.
+- β web : `beta/index.html`, étiquette `25/10 09:30`, environ 8 600 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -107,6 +107,9 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 25/10
+- **Import, provisions et écart expliqué** (les −26 € de Benoît étaient le virement de ses provisions, jamais noté dans ses virements) :
+  - un virement envoyé du montant des provisions du mois (celles qui ne sont pas sur ce compte, sans les mois sautés ; d'abord celles du titulaire, puis tout le foyer) s'appelle « Provisions du mois » avec « = tes N provisions d'octobre (X €) » ; une seule provision du même montant → « Provision · nom ». L'épargne programmée n'est jamais prise pour une provision ;
+  - quand le solde ne tombe pas comme la banque, le résultat dit « L'écart de X € correspond peut-être à : » la ligne décochée, ou le ticket, le frais fixe payé ou le virement de l'appli absent du relevé qui a exactement ce montant ; sinon l'explication générale d'avant.
 - **Import, doublons mieux repérés** (retour de Benoît sur son vrai compte) :
   - chaque dépense est comparée aux frais fixes du compte (même montant ce mois-là), aux virements du compte et aux tickets (même montant à 3 jours près) ;
   - même nom = « Déjà … » ; autre nom = « Peut-être déjà … (X, même montant) » : Active Assurances 115,55 ↔ Mutuelle, Bouygues 4,99 ↔ CDiscount mobile, paiement AlloVoisins ↔ frais fixe AlloVoisins, Anthropic ↔ virements ;

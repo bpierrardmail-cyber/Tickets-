@@ -80,6 +80,8 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
     - un ticket saisi sur un autre compte peut y être déplacé.
   - `S.kind` change le type d'une ligne (ticket, frais fixe, virement).
   - Un frais fixe retrouvé et laissé de côté est marqué payé (`lastImport.paid`).
+  - Un virement envoyé égal aux provisions du mois gardées hors de ce compte (toutes, ou une seule) devient « Provisions du mois » ou « Provision · nom » (`provHit`, sauf épargne programmée).
+  - S'il reste un écart avec la banque, `impGapHints` cherche ce qui a exactement ce montant : ligne décochée ou vue comme déjà présente, ticket, frais fixe payé ou virement de l'appli absent du relevé.
   - `impOpening` calcule le solde de départ ; `impApply` crée les données ; `impUndo` annule.
   - Le résultat se compare à `acctFigures(compte, mois).banque` (ce qui est fait), comme la carte « banque estimée ».
   - Accessible si `impCan()` (un vrai compte et, dans un foyer, l'onglet Compte en modification).
