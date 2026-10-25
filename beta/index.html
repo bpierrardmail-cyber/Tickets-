@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="25/10 07:50" />
+  <meta name="build" content="25/10 09:03" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -709,6 +709,7 @@
     .imp-in{ flex-direction:column; align-items:stretch; gap:6px; padding:10px 0; }
     .imp-in label{ color:var(--ink-soft); } .imp-in i{ font-style:normal; color:var(--muted); }
     .imp-pill{ min-height:36px; max-width:62%; border:1px solid var(--line2); border-radius:10px; background:var(--card2); color:var(--ink); font-family:var(--sans); font-size:13.5px; font-weight:700; padding:0 12px; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .imp-pill.ty{ color:var(--ink-soft); border-style:dashed; }
     .imp-pill.sm{ min-height:28px; max-width:none; flex:0 0 auto; border-radius:999px; font-size:12px; font-weight:600; padding:0 10px; }
     .imp-ck{ flex:0 0 40px; width:40px; height:40px; margin-left:-8px; border:0; background:none; padding:0; display:flex; align-items:center; justify-content:center; cursor:pointer; }
     .imp-ck i{ width:20px; height:20px; border-radius:6px; border:2px solid var(--line2); box-sizing:border-box; font-style:normal; font-size:13px; font-weight:900; line-height:16px; text-align:center; color:#0a130f; }
@@ -6416,27 +6417,44 @@
       fraisCommuns.forEach(function(f){ if(f.compte===target) (f.impKeys||[]).forEach(function(k){ importedKeys[k]=1; }); });
       var cards=[], vir=[], prlv=[], groups=[], pfirst=null;
       ops.forEach(function(o){ var m=o.d.slice(0, 7); if(!pfirst || m<pfirst) pfirst=m; });
+      // Ce paiement est-il déjà dans l'appli ? Un frais fixe de ce compte (même montant ce mois-là), un virement du compte,
+      // ou un ticket (même montant à 3 jours près). Même nom = sûr ; autre nom = « peut-être ». Chaque donnée ne sert qu'une fois.
+      function words(t){ return norm(t).split(" ").filter(function(w){ return w.length>=4; }); }
+      function sameName(a, b){ var wb=" "+norm(b)+" "; return words(a).some(function(w){ return wb.indexOf(" "+w+" ")>=0; }); }
+      function fraisHit(L){ var amt=Math.abs(L.amt), best=null, bs=0;
+        fraisCommuns.forEach(function(f){ if(used["f"+f.id+"|"+L.m] || !fraisActif(f, L.m) || !fraisKind(f, target)) return;
+          var fa=fraisAcctAmt(f, target, L.m), exact=Math.abs(fa-amt)<0.006, near=Math.abs(fa-amt)<=Math.max(0.5, amt*0.05), same=sameName(f.label, L.name);
+          var sc=exact&&same?3:(exact?2:(near&&same?1:0)); if(sc>bs){ bs=sc; best=f; } });
+        return best ? { f:best, sure:bs!==2 } : null; }
+      function virHit(L){ var best=null, bs=0;
+        virements.forEach(function(v){ if(used["v"+v.id] || v.person!==target || v.month!==L.m || Math.abs((Number(v.montant)||0)-L.amt)>=0.006) return;
+          var sc=sameName(v.label||"", L.name)?2:1; if(sc>bs){ bs=sc; best=v; } });
+        return best ? { v:best, sure:bs===2 } : null; }
+      function ticketHit(L, o){ var best=null, bs=0, bd=99;
+        state.entries.forEach(function(e){ if(used["e"+e.id]) return; if(e.imp && !ticketInAcct(e, target)) return;   // importé dans un autre compte : autre relevé
+          if(Math.abs((Number(e.montant)||0)-Math.abs(L.amt))>=0.006) return;
+          var dd=Math.min(impDays(e.date, L.date||o.d), impDays(e.date, o.d)); if(dd>3) return;
+          var sc=sameName(e.marchand||"", L.name)?2:1; if(sc>bs || (sc===bs && dd<bd)){ bs=sc; bd=dd; best=e; } });
+        return best ? { e:best, sure:bs===2 } : null; }
+      function dm(d){ return String(d||"").split("-").reverse().slice(0, 2).join("/"); }
       ops.forEach(function(o, i){
-        var kind=impKind(o), name=impClean(o, kind), key=impKeyOf(a, o), m=o.d.slice(0, 7), L={ k:"o"+i, kind:kind, o:o, d:o.d, m:m, amt:impR2(o.amt), name:name, key:key, dup:"" };
+        var k="o"+i, auto=impKind(o), kind=(o.amt>0) ? "in" : (S.kind[k]||auto), name=impClean(o, auto), key=impKeyOf(a, o), m=o.d.slice(0, 7),
+            L={ k:k, kind:kind, auto:auto, o:o, d:o.d, m:m, amt:impR2(o.amt), name:name, key:key, dup:"" };
         months[m]=1;
+        if(kind==="card"){ L.date=impBuyDate(o); if(L.date.slice(0, 7)<pfirst) L.date=o.d; }   // acheté avant la période : compté au mois du passage en banque
         if(importedKeys[key]) L.dup="Déjà importé";
-        if(kind==="card"){
-          L.date=impBuyDate(o); if(L.date.slice(0, 7)<pfirst) L.date=o.d;   // acheté avant la période : compté au mois du passage en banque
-          var c=impCatFor(o, name); L.cat=(S.cat[L.k]||c.c); L.catSrc=S.cat[L.k]?"choisie":c.src;
-          // un ticket déjà saisi pour ce paiement : sur ce compte → laissé de côté ; sur un autre compte → coché, il y est déplacé
-          if(!L.dup){ var hit=null; state.entries.forEach(function(e){ if(hit || used["e"+e.id]) return; if(e.imp && !ticketInAcct(e, target)) return;   // importé dans un autre compte : autre relevé
-              if(Math.abs((Number(e.montant)||0)-Math.abs(L.amt))<0.006 && (impDays(e.date, L.date)<=3 || impDays(e.date, o.d)<=3)) hit=e; });
-            if(hit){ used["e"+hit.id]=1; var here=ticketInAcct(hit, target), oa=null; comptes.forEach(function(c){ if(!oa && c.key!==target && ticketInAcct(hit, c.key)) oa=c; });
-              L.dup="Déjà dans tes tickets ("+(hit.marchand||"?")+" · "+String(hit.date||"").split("-").reverse().slice(0, 2).join("/")+(here?"":(oa?" · sur "+oa.nom:" · sans compte"))+")"+(here?"":" : coche pour le passer sur ce compte");
-              L.dupOther=!here; L.hit=hit.id; } }
-          cards.push(L);
+        else if(L.amt<0){
+          var hf=fraisHit(L), hv=hf?null:virHit(L), he=(hf||hv)?null:ticketHit(L, o);
+          if(hf){ used["f"+hf.f.id+"|"+m]=1; L.ref={ t:"f", id:hf.f.id, m:m }; L.dup=(hf.sure?"Déjà en frais fixe (":"Peut-être déjà en frais fixe (")+hf.f.label+(hf.sure?")":", même montant)"); }
+          else if(hv){ used["v"+hv.v.id]=1; L.dup=(hv.sure?"Déjà dans les virements (":"Peut-être déjà dans les virements (")+(hv.v.label||"")+(hv.sure?")":", même montant)"); }
+          else if(he){ var hit=he.e; used["e"+hit.id]=1; var here=ticketInAcct(hit, target), oa=null; comptes.forEach(function(c){ if(!oa && c.key!==target && ticketInAcct(hit, c.key)) oa=c; });
+            L.dup=(he.sure?"Déjà dans tes tickets (":"Peut-être déjà dans tes tickets (")+(hit.marchand||"?")+" · "+dm(hit.date)+(he.sure?"":", même montant")+(here?"":(oa?" · sur "+oa.nom:" · sans compte"))+")"+(here?"":" : coche pour le passer sur ce compte");
+            if(kind==="card"){ L.dupOther=!here; L.hit=hit.id; } }
         }
+        else { var hv2=virHit(L); if(hv2){ used["v"+hv2.v.id]=1; L.dup=(hv2.sure?"Déjà dans les virements (":"Peut-être déjà dans les virements (")+(hv2.v.label||"")+(hv2.sure?")":", même montant)"); } }
+        if(kind==="card"){ var c=impCatFor(o, name); L.cat=(S.cat[k]||c.c); L.catSrc=S.cat[k]?"choisie":c.src; cards.push(L); }
         else if(kind==="prlv") prlv.push(L);
-        else {
-          if(!L.dup){ var hv=null; virements.forEach(function(v){ if(hv || used["v"+v.id]) return; if(v.person===target && v.month===m && Math.abs((Number(v.montant)||0)-L.amt)<0.006) hv=v; });
-            if(hv){ used["v"+hv.id]=1; L.dup="Déjà dans les virements ("+(hv.label||"")+")"; } }
-          L.ep=S.ep[L.k]||""; vir.push(L);
-        }
+        else { L.ep=S.ep[k]||""; vir.push(L); }
       });
       // prélèvements : un frais par abonnement (même nom, montant proche, au plus une fois par mois)
       prlv.sort(function(x, y){ return x.d<y.d?-1:1; }).forEach(function(L){
@@ -6451,11 +6469,8 @@
       groups.forEach(function(g){
         g.months=Object.keys(g.ms).sort(); g.amt=g.occ[g.occ.length-1].amt; g.keys=g.occ.map(function(L){ return L.key; });
         g.d=g.occ[g.occ.length-1].d;
+        g.opKeys=g.occ.map(function(L){ return L.k; });
         if(g.occ.every(function(L){ return L.dup; })) g.dup=g.occ[0].dup;
-        if(!g.dup){ var hf=null; fraisCommuns.forEach(function(f){ if(hf || used["f"+f.id]) return; var m0=g.months[g.months.length-1], fa=fraisMontant(f, m0), ok=Math.abs(fa-Math.abs(g.amt))<=Math.max(0.5, Math.abs(g.amt)*0.05);
-            var w1=norm(f.label).split(" ").filter(function(w){ return w.length>=4; }), w2=" "+g.nn+" ", same=w1.some(function(w){ return w2.indexOf(" "+w+" ")>=0; });
-            if(ok && (fraisActif(f, m0) || f.recurrent) && fraisKind(f, target) && (same || f.compte===target)) hf=f; });
-          if(hf){ used["f"+hf.id]=1; g.dup="Déjà en frais fixe ("+hf.label+")"; } }
         var tax=/^Impôts|^Urssaf/.test(g.name), nb=impMonthsBetween(g.months[0], g.months[g.months.length-1]), cov=g.months.length/nb;
         g.defFreq=(g.months.length>=2) ? (cov>=0.6 ? "m" : "o") : ((tax || span>=3) ? "o" : "m");
         g.ended=(g.months.length>=2 && impMonthsBetween(g.months[g.months.length-1], lastM)>=3) ? g.months[g.months.length-1] : null;
@@ -6513,7 +6528,7 @@
         var ms=a.ops.map(function(o){ return o.d.slice(0, 7); }).sort(), lastM=ms[ms.length-1], from=null;
         if(ms[0]<lastM){ var y=+lastM.slice(0, 4), mo=+lastM.slice(5, 7), f12=(mo===12 ? y : y-1)+"-"+("0"+(mo===12 ? 1 : mo+1)).slice(-2); if(ms[0]<f12) from=f12; }
         var hadSI=!!(soldeInit[tgt] && Object.keys(soldeInit[tgt]).length);
-        impState={ txt:txt, fileName:name, P:P, acc:a, target:tgt, from:from, sel:{}, cat:{}, freq:{}, ep:{}, more:{}, balTyped:null, setOpen:!hadSI, map:map||null };
+        impState={ txt:txt, fileName:name, P:P, acc:a, target:tgt, from:from, sel:{}, cat:{}, freq:{}, ep:{}, kind:{}, more:{}, balTyped:null, setOpen:!hadSI, map:map||null };
         state.view="import"; render(); window.scrollTo(0, 0);
       }
       if(P.accounts.length===1) return go(P.accounts[0]);
@@ -6550,6 +6565,7 @@
         h+='<div class="imp-row"><button type="button" class="imp-ck'+(S.setOpen?' on':'')+'" data-imp="open" aria-pressed="'+S.setOpen+'" aria-label="Solde de départ"><i>'+(S.setOpen?'✓':'')+'</i></button><span>Solde de départ au 1er '+esc(monthLabelOf(M.first.slice(0, 7)).split(" ")[0])+(ks.length?'<small>le compte en a déjà un ('+esc(monthLabelOf(ks.sort()[0]))+')</small>':'')+'</span><b class="'+(open<0?'neg':'')+'">'+impMoney(open)+'</b></div>'; }
       else if(S.acc.bal==null) h+='<div class="imp-note">Sans solde, le compte part de son solde actuel.</div>';
       h+='</section>';
+      function tyPill(k, t){ return '<button type="button" class="imp-pill sm ty" data-imp="kind" data-k="'+esc(k)+'" aria-label="Type : '+t+'">'+t+' ▾</button>'; }
       function ck(on, k, kind){ return '<button type="button" class="imp-ck'+(on?' on':'')+'" data-imp="'+kind+'" data-k="'+esc(k)+'" aria-pressed="'+on+'" aria-label="Importer"><i>'+(on?'✓':'')+'</i></button>'; }
       function grp(id, title, hint, list, line){
         if(!list.length) return '';
@@ -6563,16 +6579,16 @@
       }
       h+=grp("card", "Dépenses par carte → Tickets", "Un ticket par paiement, à la date d'achat, sans articles. Ceux déjà dans l'appli sont laissés de côté.", M.cards, function(L){
         return '<div class="imp-l'+(L.on?'':' off')+'">'+ck(L.on, L.k, "sel")+'<div class="m"><div class="r1"><span class="d">'+impDM(L.date)+'</span><span class="n">'+esc(L.name)+'</span></div>'+
-          '<div class="r2"><button type="button" class="imp-pill sm" data-imp="cat" data-k="'+L.k+'">'+esc(L.cat)+' ▾</button><span>'+esc(L.catSrc)+'</span></div>'+(L.dup?'<div class="dup">'+esc(L.dup)+'</div>':'')+'</div><b>'+impMoney(L.amt)+'</b></div>'; });
+          '<div class="r2">'+tyPill(L.k, "Ticket")+'<button type="button" class="imp-pill sm" data-imp="cat" data-k="'+L.k+'">'+esc(L.cat)+' ▾</button><span>'+esc(L.catSrc)+'</span></div>'+(L.dup?'<div class="dup">'+esc(L.dup)+'</div>':'')+'</div><b>'+impMoney(L.amt)+'</b></div>'; });
       h+=grp("prlv", "Prélèvements → Frais fixes", "« Chaque mois » : il revient tout seul les mois suivants. « Une fois » : seulement le mois du prélèvement.", M.prlv, function(g){
         var info=(g.months.length>1 ? g.months.length+' mois · dernier le '+impDM(g.d) : 'le '+impDM(g.d))+(g.ended && g.freq==="m" ? ' · arrêté depuis' : '');
-        return '<div class="imp-l'+(g.on?'':' off')+'">'+ck(g.on, g.k, "sel")+'<div class="m"><div class="r1"><span class="d">'+info+'</span></div><div class="r1"><span class="n">'+esc(g.name)+'</span></div>'+
+        return '<div class="imp-l'+(g.on?'':' off')+'">'+ck(g.on, g.k, "sel")+'<div class="m"><div class="r1"><span class="d">'+info+'</span></div><div class="r1"><span class="n">'+esc(g.name)+'</span></div><div class="r2">'+tyPill(g.k, "Frais fixe")+'</div>'+
           '<div class="imp-seg" role="group" aria-label="Fréquence"><button type="button" data-imp="freq" data-k="'+g.k+'" data-v="m" class="'+(g.freq==="m"?'on':'')+'" aria-pressed="'+(g.freq==="m")+'">Chaque mois</button><button type="button" data-imp="freq" data-k="'+g.k+'" data-v="o" class="'+(g.freq==="o"?'on':'')+'" aria-pressed="'+(g.freq==="o")+'">Une fois</button></div>'+
           (g.dup?'<div class="dup">'+esc(g.dup)+'</div>':'')+'</div><b>'+impMoney(g.amt)+'</b></div>'; });
       var vin=M.vir.filter(function(L){ return L.amt>0; }), vout=M.vir.filter(function(L){ return L.amt<0; }), epL=epargne.filter(function(c){ return !c.bourseLink; });
       function vline(L){
         return '<div class="imp-l'+(L.on?'':' off')+'">'+ck(L.on, L.k, "sel")+'<div class="m"><div class="r1"><span class="d">'+impDM(L.d)+'</span><span class="n">'+esc(L.name)+'</span></div>'+
-          (L.amt<0 && L.kind!=="cash" && epL.length ? '<div class="r2"><span>vers l\'épargne</span><button type="button" class="imp-pill sm" data-imp="ep" data-k="'+L.k+'">'+esc(L.ep?(epNameOf(L.ep)||"?"):"Aucune")+' ▾</button></div>' : '')+
+          (L.amt<0 ? '<div class="r2">'+tyPill(L.k, "Virement")+(L.kind!=="cash" && epL.length ? '<span>vers l\'épargne</span><button type="button" class="imp-pill sm" data-imp="ep" data-k="'+L.k+'">'+esc(L.ep?(epNameOf(L.ep)||"?"):"Aucune")+' ▾</button>' : '')+'</div>' : '')+
           (L.dup?'<div class="dup">'+esc(L.dup)+'</div>':'')+'</div><b class="'+(L.amt>0?'pos':'')+'">'+impMoney(L.amt, true)+'</b></div>'; }
       h+=grp("in", "Argent reçu → Virements", "Entrées du compte, déjà faites.", vin, vline);
       h+=grp("out", "Virements envoyés et retraits → Virements", "Sorties du compte, déjà faites."+(epL.length?" Un virement vers l'épargne peut remplir ton livret (son solde augmente d'autant).":""), vout, vline);
@@ -6603,6 +6619,10 @@
         else if(a==="freq"){ S.freq[k]=b.getAttribute("data-v"); again(); }
         else if(a==="more"){ S.more[b.getAttribute("data-g")]=true; again(); }
         else if(a==="open"){ S.setOpen=!S.setOpen; again(); }
+        else if(a==="kind"){
+          var g0=null; M.prlv.forEach(function(g){ if(g.k===k) g0=g; }); var keys=g0 ? g0.opKeys : [k];
+          function setK(v){ keys.forEach(function(x){ S.kind[x]=v; delete S.sel[x]; }); again(); }
+          uiChoice("C'est…", "", [{ l:"Un ticket (dépense)", primary:false, fn:function(){ setK("card"); } }, { l:"Un frais fixe", primary:false, fn:function(){ setK("prlv"); } }, { l:"Un virement", primary:false, fn:function(){ setK("out"); } }]); }
         else if(a==="cat"){ uiChoice("Catégorie", "", CATS.map(function(c){ return { l:c, primary:false, fn:function(){ S.cat[k]=c; again(); } }; })); }
         else if(a==="ep"){ uiChoice("Vers l'épargne", "Le montant s'ajoute au solde du livret choisi.", [{ l:"Aucune", primary:false, fn:function(){ S.ep[k]=""; again(); } }].concat(epargne.filter(function(c){ return !c.bourseLink; }).map(function(c){ return { l:c.nom, primary:false, fn:function(){ S.ep[k]=String(c.id); again(); } }; }))); }
         else if(a==="acct"){ uiChoice("Dans quel compte ?", "", comptes.filter(function(x){ return x.key!=="__tickets"; }).map(function(x){ return { l:x.nom+(x.key===S.target?" ✓":""), primary:x.key===S.target, fn:function(){ S.target=x.key; S.sel={}; S.setOpen=!(soldeInit[x.key] && Object.keys(soldeInit[x.key]).length); again(); } }; })); }
@@ -6639,18 +6659,22 @@
         var v={ id:nid(), person:S.target, month:L.m, label:L.name, note:impDM(L.d)+" · relevé", montant:L.amt, done:true, imp:id, impKey:L.key };
         if(L.ep && L.amt<0){ var ep=epargneById(L.ep); if(ep && !ep.bourseLink){ v.epargneId=ep.id; var delta=-v.montant; applyEp(ep.id, delta); v.epApplied=delta; } }
         virements.push(v); made.v++; });
+      var paid=[];
+      M.cards.concat(M.vir).forEach(function(L){ if(!L.on) markPaid(L); }); M.prlv.forEach(function(g){ if(!g.on) g.occ.forEach(markPaid); });   // laissé de côté = c'est ce frais-là
+      function markPaid(L){ if(!L.ref || L.ref.t!=="f") return; var f=fraisCommuns.filter(function(x){ return String(x.id)===String(L.ref.id); })[0]; if(!f || fraisDone(f, L.ref.m)) return;
+        if(!f.doneMonths) f.doneMonths={}; f.doneMonths[L.ref.m]=true; paid.push({ id:f.id, m:L.ref.m }); }
       var si=null;
       if(open!=null && S.setOpen){ var m0=M.first.slice(0, 7); si={ m:m0, prev:getSoldeInit(S.target, m0) }; setSoldeInit(S.target, m0, open); }
       persist(); persistFrais(); persistVirements();
       var bank=impBankBal(M);
-      store.write("lastImport", { id:id, acct:S.target, at:todayISO(), file:S.fileName, n:made, si:si, moved:moved });
+      store.write("lastImport", { id:id, acct:S.target, at:todayISO(), file:S.fileName, n:made, si:si, moved:moved, paid:paid });
       impState=null;
       state.compteSel=S.target; store.write("compteSel", S.target);
       if(!state.months) state.months={}; state.months.compte=(bank ? bank.d : M.last).slice(0, 7);
       state.view="compte"; render(); window.scrollTo(0, 0);
       var fin=null; try{ fin=acctFigures(S.target, (bank ? bank.d : M.last).slice(0, 7)).banque; }catch(e){}
       var same=bank && fin!=null && Math.abs(fin-bank.v)<0.01;
-      var msg=made.t+' ticket'+(made.t>1?'s':'')+(made.m?' (+ '+made.m+' déplacé'+(made.m>1?'s':'')+' sur ce compte)':'')+' · '+made.f+' frais fixe'+(made.f>1?'s':'')+(made.r?' ('+made.r+' chaque mois)':'')+' · '+made.v+' virement'+(made.v>1?'s':'')+(si?' · solde de départ '+impMoney(open):'')+'.';
+      var msg=made.t+' ticket'+(made.t>1?'s':'')+(made.m?' (+ '+made.m+' déplacé'+(made.m>1?'s':'')+' sur ce compte)':'')+' · '+made.f+' frais fixe'+(made.f>1?'s':'')+(made.r?' ('+made.r+' chaque mois)':'')+' · '+made.v+' virement'+(made.v>1?'s':'')+(si?' · solde de départ '+impMoney(open):'')+'.'+(paid.length?' '+paid.length+' frais fixe'+(paid.length>1?'s':'')+' déjà présent'+(paid.length>1?'s':'')+' marqué'+(paid.length>1?'s':'')+' payé'+(paid.length>1?'s':'')+'.':'');
       var why=[], offN=0, otherN=0; M.cards.concat(M.vir).forEach(function(L){ if(!L.on){ if(!L.dup) offN++; else if(L.dupOther) otherN++; } }); M.prlv.forEach(function(g){ if(!g.on && !g.dup) offN+=g.occ.length; });
       if(offN) why.push(offN+' ligne'+(offN>1?'s':'')+' décochée'+(offN>1?'s':''));
       if(otherN) why.push(otherN+' ticket'+(otherN>1?'s':'')+' resté'+(otherN>1?'s':'')+' sur un autre compte');
@@ -6664,6 +6688,7 @@
       function doIt(){
         virements.forEach(function(v){ if(v.imp===L.id && v.epargneId && v.epApplied) applyEp(v.epargneId, -v.epApplied); });
         state.entries=state.entries.filter(function(e){ return e.imp!==L.id; });
+        (L.paid||[]).forEach(function(pd){ fraisCommuns.forEach(function(f){ if(String(f.id)===String(pd.id) && f.doneMonths) delete f.doneMonths[pd.m]; }); });
         (L.moved||[]).forEach(function(mv){ state.entries.forEach(function(e){ if(String(e.id)===String(mv.id)){ if(mv.compte==null) delete e.compte; else e.compte=mv.compte; } }); });
         virements=virements.filter(function(v){ return v.imp!==L.id; });
         fraisCommuns=fraisCommuns.filter(function(f){ return f.imp!==L.id; });

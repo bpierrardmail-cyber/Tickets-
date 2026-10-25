@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (25/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `25/10 07:50`, environ 8 500 lignes.
+- β web : `beta/index.html`, étiquette `25/10 09:03`, environ 8 500 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -107,6 +107,11 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 25/10
+- **Import, doublons mieux repérés** (retour de Benoît sur son vrai compte) :
+  - chaque dépense est comparée aux frais fixes du compte (même montant ce mois-là), aux virements du compte et aux tickets (même montant à 3 jours près) ;
+  - même nom = « Déjà … » ; autre nom = « Peut-être déjà … (X, même montant) » : Active Assurances 115,55 ↔ Mutuelle, Bouygues 4,99 ↔ CDiscount mobile, paiement AlloVoisins ↔ frais fixe AlloVoisins, Anthropic ↔ virements ;
+  - un frais fixe retrouvé et laissé de côté est marqué payé pour ce mois (annulé avec l'import) ;
+  - pastille de type sur chaque dépense (Ticket / Frais fixe / Virement) pour changer son rangement.
 - **Menu raccourci** (`openMenu`, `openSettings`) : 7 lignes en 3 blocs, l'état à droite (« 2 personnes », « hier », « OFX · QIF · CSV »), plus de titres de rubrique. Il tient sans défiler, même sur un écran de 360×640. Devise, code et empreinte, et Restaurer passent dans « Réglages » ; Restaurer n'est plus à côté de Sauvegarder.
 - Âge de la sauvegarde compté en jours de calendrier (`backupAge`) : une sauvegarde de la veille au soir affichait « aujourd'hui ».
 - **Import d'un relevé** (`impParse`, `impBuild`, `renderImport`, `impApply`, `impUndo`, `state.view="import"`) :

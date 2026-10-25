@@ -73,7 +73,13 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
     - carte → tickets sans articles, à la date d'achat ;
     - prélèvements → frais fixes regroupés (« chaque mois » ou « une fois ») ;
     - le reste → virements faits.
-  - `impBuild` repère aussi les doublons (`importedKeys` : seulement dans le compte visé ; un ticket saisi sur un autre compte peut y être déplacé).
+  - `impBuild` repère aussi les doublons :
+    - `importedKeys` : seulement dans le compte visé ;
+    - puis, pour chaque dépense, `fraisHit` (frais fixe du compte, même montant ce mois-là), `virHit` et `ticketHit` ;
+    - même nom = sûr, autre nom = « peut-être » ;
+    - un ticket saisi sur un autre compte peut y être déplacé.
+  - `S.kind` change le type d'une ligne (ticket, frais fixe, virement).
+  - Un frais fixe retrouvé et laissé de côté est marqué payé (`lastImport.paid`).
   - `impOpening` calcule le solde de départ ; `impApply` crée les données ; `impUndo` annule.
   - Le résultat se compare à `acctFigures(compte, mois).banque` (ce qui est fait), comme la carte « banque estimée ».
   - Accessible si `impCan()` (un vrai compte et, dans un foyer, l'onglet Compte en modification).
