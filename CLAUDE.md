@@ -49,6 +49,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
   - `skipMonths` : mois où un frais récurrent est retiré pour ce mois seulement (« Rétablir » dans la liste).
   - `startMonth` : premier mois d'un frais récurrent (sinon déduit par `fraisStart`). `amounts` et `parts` sont indexés par mois de début (« à partir de »).
   - `parts` : `{"AAAA-MM": {prénom: %} ou null}` = parts propres au frais ; toujours passer par `fraisPct(f, qui, mois)`.
+- Données venues d'un relevé importé : `imp` (n° de l'import), `impKey` (tickets, virements) ou `impKeys` (frais fixes), `src:"releve"` (tickets). `lastImport` (localStorage, non synchronisé) permet « Annuler le dernier import ».
 - `virements`, `epargne`, `provisions`, `bourse`.
   - Provision `ou` : où est l'argent (`ep:<id épargne>`, `cpt` = compte principal, `cpt:<clé>` = autre compte bancaire, `ext`) ; toujours passer par `provWhere(p)` (défaut : premier compte épargne de la personne). Sur l'épargne ou le compte, elle est déjà dans leur solde : ne pas l'ajouter une 2e fois.
 - `budgets` (budgets du foyer par catégorie), `budgetsP` (`{personne: {catégorie: montant}}`).
@@ -66,6 +67,16 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
   
   Toujours passer par `fraisKind(f, compte)` et `fraisAcctAmt(f, compte, mois)` pour les soldes.
 - **Filtre par personne** (Accueil, Articles, Analyse, Commun) : `pvCur()` vaut `moi`, un prénom ou `all` ; utiliser `vEntries()` et `inView()`. Dans Commun, il choisit seulement la part affichée en grand et dans les bulles. « Qui a payé » (Analyse) montre toujours tout le foyer. Il ne s'applique ni aux comptes, ni au Bilan, ni aux widgets.
+- **Import d'un relevé** (section `// ---------- Import d'un relevé`, `state.view="import"`) :
+  - `impParse` lit l'OFX, le QIF ou le CSV, tout sur le téléphone. Montants avec `impNum`, dates avec `impDate` + `impDateOrder` (jj/mm ou mm/jj).
+  - `impBuild` range les opérations :
+    - carte → tickets sans articles, à la date d'achat ;
+    - prélèvements → frais fixes regroupés (« chaque mois » ou « une fois ») ;
+    - le reste → virements faits.
+  - `impBuild` repère aussi les doublons (`importedKeys` : seulement dans le compte visé ; un ticket saisi sur un autre compte peut y être déplacé).
+  - `impOpening` calcule le solde de départ ; `impApply` crée les données ; `impUndo` annule.
+  - Le résultat se compare à `acctFigures(compte, mois).banque` (ce qui est fait), comme la carte « banque estimée ».
+  - Accessible si `impCan()` (un vrai compte et, dans un foyer, l'onglet Compte en modification).
 - **Analyse « + Frais fixes »** : `fraisLines(mois, qui)` donne ce qui sort réellement du compte de la personne. `anFraisLines` limite le calcul aux mois qui ont des tickets.
 - **Éditions** : `EDITION` vaut `perso` ou `store`. L'appli Android l'annonce par `TicketsApp/<édition>` dans son identifiant de navigateur ; dans un navigateur, ajouter `?edition=store`.
   - La version Store n'a pas la Bourse.

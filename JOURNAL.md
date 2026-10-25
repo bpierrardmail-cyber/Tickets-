@@ -16,10 +16,10 @@ Après chaque modification, dans le même commit :
 
 ---
 
-## État actuel (24/10/2026)
+## État actuel (25/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `25/10 02:05`, environ 7 900 lignes.
+- β web : `beta/index.html`, étiquette `25/10 02:44`, environ 8 600 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -28,7 +28,7 @@ Après chaque modification, dans le même commit :
 - **Commun** : parts du commun en % et parts propres à chaque frais. Frais fixes « en entier » ou « chacun sa part », frais retirés pour un mois. Graphique Mois (6, 12, 12 à venir, Tout). Bandeau des personnes.
 - **Compte** :
   - plusieurs comptes par personne, sur une rangée qui défile (la carte des comptes garde la même hauteur) ; graphique plein écran ;
-  - page Configuration par compte (provisions, épargne) ;
+  - page Configuration par compte (provisions, épargne, **Importer un relevé**, « Annuler le dernier import ») ;
   - bouton « Liquide » ;
   - rien avant le début du suivi ;
   - mois à venir = solde prévu.
@@ -50,19 +50,15 @@ Après chaque modification, dans le même commit :
 - Empreinte native, Bilan PDF, geste retour.
 - Widgets (Scan, Solde, Commun, Mois, Foyer, Bourse), masqués par défaut.
 
-**Version Store** : `PLUS_FEATURES = widgets, foyer, avancee`. L'achat de Plus n'est pas encore branché.
+**Import d'un relevé** (menu et Compte › Configuration) : OFX/QFX, QIF, CSV lus sur le téléphone, aperçu à cocher, import en une fois, annulable. Détails dans `CLAUDE.md`.
+
+**Version Store** : `PLUS_FEATURES = widgets, foyer, avancee`. L'achat de Plus n'est pas encore branché. L'import de relevé est gratuit pour l'instant.
 
 ## En cours / à reprendre
 
-- **Import d'un relevé pour démarrer un compte** : maquette faite le 25/10 (artefact « Tickets — Import de relevé »), en attente de l'accord de Benoît avant de coder.
-  - Fichiers d'exemple reçus : export BoursoBank du 1er au 20/10/2026 en OFX, QIF et CSV, soit 29 opérations identiques. Ils restent hors du dépôt, qui est public.
-  - Ce que contiennent ces fichiers :
-    - OFX : solde inclus (−36,56 € au 20/10, donc −8,76 € au 1er/10) ;
-    - QIF : catégories de la banque, mais pas de solde ;
-    - CSV : séparateur `;`, la première colonne « Solde » est en fait le montant (virgule) et la seconde le solde (point), « Libellé Suggéré » donne un nom propre ;
-    - « CARTE jj/mm/aa … » donne la vraie date d'achat.
-  - Formats visés : OFX/QFX (banques, Money, Quicken, iCompta), QIF (Money, Quicken, Grisbi, HomeBank…) et CSV (banques, Bankin', Linxo, tableurs).
-  - Import en une fois, sur le téléphone, limité aux mois passés pour éviter les doublons avec les tickets. Il propose : solde de départ, revenus, prélèvements qui reviennent (frais fixes à cocher) et dépenses par carte (historique de l'Analyse, sans articles).
+- **Import d'un relevé** : fait le 25/10, à essayer par Benoît sur son téléphone avec ses 3 exports BoursoBank (comptes « Compte OFX », « Compte QIF », « Compte CSV »).
+  - À décider : gratuit ou réservé à Plus.
+  - Pistes si besoin : lire directement les fichiers propres à Grisbi (`.gsb`, du XML) ; rapprocher un remboursement d'un achat (ex. virement de 77,41 € pour un Brico Dépôt de 77,41 €).
 - Reportés à la sortie Store :
   - QR code lisible par l'appareil photo ;
   - Workers Paid ;
@@ -78,6 +74,9 @@ Après chaque modification, dans le même commit :
 - **24/10**
   - Tenir ce journal à jour à chaque modification.
   - Étudier un import de relevé pour remplir un nouveau compte ; il doit aussi accepter les fichiers de Money, de Quicken et des autres logiciels de comptes connus.
+- **25/10**
+  - Accord sur la maquette de l'import : paiements par carte → tickets sans articles, prélèvements → frais fixes (« chaque mois » ou « une fois »), virements reçus et envoyés → virements, solde de départ calculé.
+  - Les comptes d'une même page se suivent sur une rangée au lieu de s'empiler.
 - **22/10** : le lien avec la banque est mis de côté. Pistes, dans l'ordre :
   - bouton « Ouvrir ma banque » ;
   - import de relevé CSV/OFX ;
@@ -105,6 +104,24 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 25/10
+- **Import d'un relevé** (`impParse`, `impBuild`, `renderImport`, `impApply`, `impUndo`, `state.view="import"`) :
+  - Lecture sur le téléphone :
+    - OFX 2 (XML) et OFX 1 (SGML), plusieurs comptes, LEDGERBAL ou AVAILBAL ;
+    - QIF de Money ou Quicken : comptes `!Account`, solde d'ouverture, virements `[Compte]`, dates jj/mm ou mm/jj'aa, montants « 1 234,56 » ou « 1,086.00 » ;
+    - CSV : séparateur et ligne d'en-tête devinés, débit / crédit, colonnes « Changer » à la main, piège « Solde » de BoursoBank ;
+    - encodage UTF-8 ou Windows-1252.
+  - Rangement :
+    - carte → tickets sans articles, à la date d'achat ;
+    - prélèvements → frais fixes regroupés : « chaque mois » s'ils reviennent presque tous les mois (montant qui change, mois sautés, arrêté), sinon « une fois » ; impôts « une fois » ;
+    - virements reçus, envoyés et retraits → virements faits, avec un lien possible vers l'épargne ;
+    - noms nettoyés : prénoms des personnes reconnus, enseignes déjà connues dans les tickets ;
+    - catégories : d'abord celles des tickets, puis l'enseigne, puis la banque.
+  - Doublons :
+    - déjà importé dans ce compte ;
+    - ticket déjà saisi (sur un autre compte, on peut le déplacer ici) ;
+    - virement ou frais fixe déjà présent.
+  - Solde de départ calculé pour que le compte affiche le solde de la banque. Le résultat le vérifie et explique un éventuel écart.
+  - Tests : 3 exports BoursoBank (même résultat), Crédit Mutuel OFX SGML, Money multi-comptes, Quicken US, Crédit Agricole CSV, CSV sans en-tête, fichier de 3 ans (1 244 opérations en 0,2 s), foyer (un membre en modification importe, le propriétaire reçoit ; un membre en lecture n'a pas l'import).
 - Compte : les comptes d'une page (une personne, Comptes partagés, Foyer) se suivent sur une rangée qui défile au lieu de s'empiler. La carte garde la même hauteur quel que soit leur nombre, le graphique en dessous n'est plus écrasé. Le compte choisi reste visible, fondu sur le bord quand la rangée continue ; avec 1 ou 2 comptes ils prennent toute la largeur (`acctPagerHTML`, `.ap-strip`).
 
 ### 24/10
