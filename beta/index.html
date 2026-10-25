@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="24/10 19:33" />
+  <meta name="build" content="25/10 02:05" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -682,12 +682,20 @@
     .ap-h small{ font-size:12px; color:var(--accent); font-weight:600; margin-left:4px; }
     .ap-h b{ font-size:14.5px; font-variant-numeric:tabular-nums; flex:0 0 auto; }
     .ap-sub{ font-size:11.5px; color:var(--muted); padding:0 2px; margin-top:-6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .ap-row{ display:flex; align-items:center; gap:10px; width:100%; min-height:46px; padding:0 12px; border-radius:12px; border:1px solid var(--line); background:var(--card2); color:var(--ink); font-family:var(--sans); font-size:14px; font-weight:600; text-align:left; cursor:pointer; }
+    .ap-strip{ display:flex; gap:7px; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; margin:0 -14px; padding:0 14px 1px; scroll-padding:0 14px; }
+    .ap-strip::-webkit-scrollbar{ display:none; }
+    .ap-strip.ov{ -webkit-mask-image:linear-gradient(to right,#000 calc(100% - 34px),transparent); mask-image:linear-gradient(to right,#000 calc(100% - 34px),transparent); }
+    .ap-strip.ovl{ -webkit-mask-image:linear-gradient(to right,transparent,#000 34px); mask-image:linear-gradient(to right,transparent,#000 34px); }
+    .ap-strip.ov.ovl{ -webkit-mask-image:linear-gradient(to right,transparent,#000 34px,#000 calc(100% - 34px),transparent); mask-image:linear-gradient(to right,transparent,#000 34px,#000 calc(100% - 34px),transparent); }
+    .ap-row{ flex:1 0 auto; min-width:118px; max-width:190px; display:flex; flex-direction:column; align-items:stretch; justify-content:center; gap:3px; min-height:54px; padding:7px 12px; border-radius:12px; border:1px solid var(--line); background:var(--card2); color:var(--ink); font-family:var(--sans); text-align:left; cursor:pointer; }
+    .ap-strip.n1 .ap-row, .ap-strip.n2 .ap-row{ flex:1 1 0; min-width:0; max-width:none; }   /* 1 ou 2 comptes : ils prennent toute la largeur */
     .ap-row.on{ border-color:var(--accent); background:var(--accent-dim); }
-    .ap-row i{ flex:0 0 9px; width:9px; height:9px; border-radius:50%; }
-    .ap-row span{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .ap-row em{ font-style:normal; color:var(--accent); }
-    .ap-row b{ flex:0 0 auto; font-variant-numeric:tabular-nums; }
+    .ap-row .ap-n{ display:flex; align-items:center; gap:7px; min-width:0; font-size:12.5px; font-weight:600; color:var(--ink-soft); }
+    .ap-row.on .ap-n{ color:var(--ink); }
+    .ap-row i{ flex:0 0 8px; width:8px; height:8px; border-radius:50%; }
+    .ap-row .ap-n span{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .ap-row em{ font-style:normal; color:var(--accent); flex:0 0 auto; }
+    .ap-row b{ font-size:15px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
     .ap-row b.neg{ color:var(--coral); }
     .com-tools{ display:flex; flex-wrap:wrap; justify-content:flex-start; gap:8px; margin:12px 0 0; }
     .com-tools + .thero, .com-tools + .pvbar{ margin-top:10px; }
@@ -4608,20 +4616,29 @@
       // toi, puis ceux qui ont le plus de comptes (souvent les adultes), puis par ordre alphabétique
       order.sort(function(x,y){ if(x===me) return -1; if(y===me) return 1; if(x==="__shared") return 1; if(y==="__shared") return -1;
         return (groups[y].length-groups[x].length) || x.localeCompare(y,"fr"); });
-      function row(key, nom, amt, col, main){ return '<button type="button" class="ap-row'+(key===sel?' on':'')+'" data-acct="'+esc(key)+'"><i style="background:'+col+'"></i><span>'+esc(nom)+(main?' <em>★</em>':'')+'</span><b'+(amt<0?' class="neg"':'')+'>'+fmtS(amt)+'</b></button>'; }
+      function row(key, nom, amt, col, main){ return '<button type="button" class="ap-row'+(key===sel?' on':'')+'" data-acct="'+esc(key)+'"><span class="ap-n"><i style="background:'+col+'"></i><span>'+esc(nom)+'</span>'+(main?'<em>★</em>':'')+'</span><b'+(amt<0?' class="neg"':'')+'>'+fmtS(amt)+'</b></button>'; }
+      // les comptes d'une page se suivent sur une rangée qui défile : la carte garde la même hauteur quel que soit leur nombre
+      function strip(rows, n){ return '<div class="ap-strip n'+Math.min(n,3)+'">'+rows+'</div>'; }
       var pages=[], start=0, nPers=order.filter(function(o){ return o!=="__shared"; }).length, epBy={}, prBy={}, epAll=0, prAll=0;
       epargne.forEach(function(c){ var o=ownerOf(c), v=epAt(c, month); epBy[o]=(epBy[o]||0)+v; epAll+=v; });
       provisions.forEach(function(p){ var o=ownerOf(p), v=0; try{ v=provTotalAt(month, function(x){ return x===p; }); }catch(e){} prBy[o]=(prBy[o]||0)+v; prAll+=v; });
       function extra(ep, pr){ return (ep?' · épargne '+cptK(ep)+' '+curSym():'')+(pr?' · provisions '+cptK(pr)+' '+curSym():''); }
       order.forEach(function(o, idx){ var L=groups[o], tot=0; L.forEach(function(a){ tot+=figs[a.key]; if(a.key===sel) start=idx; });
         pages.push('<div class="ap-h"><span>'+(o==="__shared"?"Comptes partagés":esc(o)+(o===me?'<small>toi</small>':''))+'</span><b>'+fmtS(tot)+'</b></div><div class="ap-sub">'+L.length+' compte'+(L.length>1?'s':'')+extra(epBy[o==="__shared"?"Commun":o], prBy[o==="__shared"?"Commun":o])+'</div>'+
-          L.map(function(a){ return row(a.key, a.nom, figs[a.key], acctCol(a), a.main); }).join("")); });
-      pages.push('<div class="ap-h"><span>Foyer<small>tout le monde</small></span><b>'+fmtS(grand)+'</b></div><div class="ap-sub">'+(nPers>1?nPers+' personnes · ':'')+comptes.length+' comptes'+extra(epAll, prAll)+'</div>'+row("__all", "Tous les comptes", grand, "var(--ink-soft)", false));
+          strip(L.map(function(a){ return row(a.key, a.nom, figs[a.key], acctCol(a), a.main); }).join(""), L.length)); });
+      pages.push('<div class="ap-h"><span>Foyer<small>tout le monde</small></span><b>'+fmtS(grand)+'</b></div><div class="ap-sub">'+(nPers>1?nPers+' personnes · ':'')+comptes.length+' comptes'+extra(epAll, prAll)+'</div>'+strip(row("__all", "Tous les comptes", grand, "var(--ink-soft)", false), 1));
       if(sel==="__all") start=pages.length-1;
       var tools='<button type="button" class="ap-tool" data-acct="__add" aria-label="Ajouter un compte">＋</button><button type="button" class="ap-tool" data-acct="__manage" aria-label="Gérer les comptes">⚙︎</button>';
       return '<section class="paper ap-card">'+pagerHTML("acct", pages, { start:start, force:true, tools:tools, nav:true })+'</section>';
     }
     function wireAcctPick(){
+      // rangée des comptes : le compte choisi bien visible, fondu sur le bord quand la rangée continue
+      [].forEach.call(document.querySelectorAll(".ap-strip"), function(sc){
+        var on=sc.querySelector(".ap-row.on");
+        if(on){ var l=on.offsetLeft-sc.offsetLeft; if(l+on.offsetWidth>sc.scrollLeft+sc.clientWidth-8 || l<sc.scrollLeft) sc.scrollLeft=Math.max(0, l-(sc.clientWidth-on.offsetWidth)/2); }
+        function upd(){ sc.classList.toggle("ov", sc.scrollWidth>sc.clientWidth+1 && sc.scrollLeft+sc.clientWidth<sc.scrollWidth-2); sc.classList.toggle("ovl", sc.scrollLeft>2); }
+        upd(); sc.addEventListener("scroll", upd, { passive:true });
+      });
       [].forEach.call(document.querySelectorAll(".acc-chips button, .ap-row, .ap-tool"), function(bt){ bt.onclick=function(){ var k=bt.getAttribute("data-acct");
         if(k==="__add") return acctForm(null);
         if(k==="__manage") return manageAccts();

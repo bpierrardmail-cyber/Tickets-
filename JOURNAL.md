@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (24/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `24/10 19:33`, environ 7 900 lignes.
+- β web : `beta/index.html`, étiquette `25/10 02:05`, environ 7 900 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -27,7 +27,7 @@ Après chaque modification, dans le même commit :
 - **Articles** : produits et prix (Mes produits, Hausses, Magasins, Familles, Budgets). Fiche produit avec tous les achats. Bouton « Produits partagés ».
 - **Commun** : parts du commun en % et parts propres à chaque frais. Frais fixes « en entier » ou « chacun sa part », frais retirés pour un mois. Graphique Mois (6, 12, 12 à venir, Tout). Bandeau des personnes.
 - **Compte** :
-  - plusieurs comptes par personne, graphique plein écran ;
+  - plusieurs comptes par personne, sur une rangée qui défile (la carte des comptes garde la même hauteur) ; graphique plein écran ;
   - page Configuration par compte (provisions, épargne) ;
   - bouton « Liquide » ;
   - rien avant le début du suivi ;
@@ -97,6 +97,9 @@ Après chaque modification, dans le même commit :
 ---
 
 ## Historique (le plus récent en haut)
+
+### 25/10
+- Compte : les comptes d'une page (une personne, Comptes partagés, Foyer) se suivent sur une rangée qui défile au lieu de s'empiler. La carte garde la même hauteur quel que soit leur nombre, le graphique en dessous n'est plus écrasé. Le compte choisi reste visible, fondu sur le bord quand la rangée continue ; avec 1 ou 2 comptes ils prennent toute la largeur (`acctPagerHTML`, `.ap-strip`).
 
 ### 24/10
 - Accueil, petites cartes : montants courts (427 · 4,3k · 43k · 1,2M), étiquettes qui se chevauchent masquées (le mois en cours et les plus gros montants d'abord), ramenées dans la carte au bord, libellés trop longs sur deux lignes (`enrichMiniCharts`, `miniNum`, `miniDeclutter`). Avant, les montants à 4 ou 5 chiffres se chevauchaient.
