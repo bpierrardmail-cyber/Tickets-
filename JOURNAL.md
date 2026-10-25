@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (25/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `25/10 02:44`, environ 8 600 lignes.
+- β web : `beta/index.html`, étiquette `25/10 02:44`, environ 8 500 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -121,6 +121,7 @@ Après chaque modification, dans le même commit :
     - ticket déjà saisi (sur un autre compte, on peut le déplacer ici) ;
     - virement ou frais fixe déjà présent.
   - Solde de départ calculé pour que le compte affiche le solde de la banque. Le résultat le vérifie et explique un éventuel écart.
+  - Anciens tests (t52 à t68) : mêmes résultats avant et après ces changements du 24 et 25/10. Plusieurs sont périmés depuis les refontes des 21–23/10 (pastilles de personnes, droits du foyer par onglet, épargne dans Configuration) et sont à réécrire.
   - Tests : 3 exports BoursoBank (même résultat), Crédit Mutuel OFX SGML, Money multi-comptes, Quicken US, Crédit Agricole CSV, CSV sans en-tête, fichier de 3 ans (1 244 opérations en 0,2 s), foyer (un membre en modification importe, le propriétaire reçoit ; un membre en lecture n'a pas l'import).
 - Compte : les comptes d'une page (une personne, Comptes partagés, Foyer) se suivent sur une rangée qui défile au lieu de s'empiler. La carte garde la même hauteur quel que soit leur nombre, le graphique en dessous n'est plus écrasé. Le compte choisi reste visible, fondu sur le bord quand la rangée continue ; avec 1 ou 2 comptes ils prennent toute la largeur (`acctPagerHTML`, `.ap-strip`).
 
