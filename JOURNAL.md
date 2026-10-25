@@ -54,7 +54,13 @@ Après chaque modification, dans le même commit :
 
 ## En cours / à reprendre
 
-- **Import d'un relevé pour démarrer un compte** : à l'étude, en attente d'un fichier d'exemple de Benoît, puis maquette de l'écran d'import avant de coder.
+- **Import d'un relevé pour démarrer un compte** : maquette faite le 25/10 (artefact « Tickets — Import de relevé »), en attente de l'accord de Benoît avant de coder.
+  - Fichiers d'exemple reçus : export BoursoBank du 1er au 20/10/2026 en OFX, QIF et CSV, soit 29 opérations identiques. Ils restent hors du dépôt, qui est public.
+  - Ce que contiennent ces fichiers :
+    - OFX : solde inclus (−36,56 € au 20/10, donc −8,76 € au 1er/10) ;
+    - QIF : catégories de la banque, mais pas de solde ;
+    - CSV : séparateur `;`, la première colonne « Solde » est en fait le montant (virgule) et la seconde le solde (point), « Libellé Suggéré » donne un nom propre ;
+    - « CARTE jj/mm/aa … » donne la vraie date d'achat.
   - Formats visés : OFX/QFX (banques, Money, Quicken, iCompta), QIF (Money, Quicken, Grisbi, HomeBank…) et CSV (banques, Bankin', Linxo, tableurs).
   - Import en une fois, sur le téléphone, limité aux mois passés pour éviter les doublons avec les tickets. Il propose : solde de départ, revenus, prélèvements qui reviennent (frais fixes à cocher) et dépenses par carte (historique de l'Analyse, sans articles).
 - Reportés à la sortie Store :
