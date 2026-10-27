@@ -63,6 +63,9 @@ Après chaque modification, dans le même commit :
 - **Import d'un relevé** : fait le 25/10, à essayer par Benoît sur son téléphone avec ses 3 exports BoursoBank (comptes « Compte OFX », « Compte QIF », « Compte CSV »).
   - À décider : gratuit ou réservé à Plus.
   - Pistes si besoin : lire directement les fichiers propres à Grisbi (`.gsb`, du XML) ; rapprocher un remboursement d'un achat (ex. virement de 77,41 € pour un Brico Dépôt de 77,41 €).
+- **Bourse dans les totaux** (Benoît réfléchit, 28/10) : dissociée de l'épargne, la Bourse n'est comptée dans aucun total, et l'épargne garde une valeur figée. Pistes proposées :
+  - compter toujours la Bourse une fois dans « Épargne » (« dont Bourse X »), liée ou non ;
+  - ou rendre la page « Patrimoine » (`renderPatrimoine`, plus accessible aujourd'hui) en touchant « Épargne » sur l'Accueil.
 - Reportés à la sortie Store :
   - QR code lisible par l'appareil photo ;
   - Workers Paid ;
