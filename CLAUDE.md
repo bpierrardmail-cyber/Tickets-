@@ -59,6 +59,8 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 ## Notions métier à connaître
 
 - **Accueil** : graphiques choisis par l'utilisateur (`homeCharts`, bouton ⚙ Choisir, appui long sur une carte), grande carte du haut au choix (`homeTop`, hauteur fixe 300 px) ; puces ✍️ Saisie et 🧾 Tickets (page Tickets, `state.listSub="tickets"`) ; bouton personne en haut à droite. Rien sous les graphiques.
+- **Compte** : la page principale est la liste des opérations du mois (`cptOps(compte, mois)` → `{done, todo}`, `opsBodyHTML`) : tickets, frais fixes et virements par jour, solde du soir, « À venir » avec le rond « fait ». Filtre `state.cptF` (`tout`, `in`, `out`, `av`), recherche `state.cptQ`. Les graphiques sont sur la page `state.view="comptedet"`, `cptPage="graph"` (plein écran) ; les cartes « Compte » de l'Accueil sont prises là.
+- **Jour d'une opération** : ticket = sa date ; virement = `virDay(v)` (`v.day`, sinon la note d'un ancien import) ; frais fixe = `fraisDay(f, mois)` (`f.doneDays[mois]`, sinon `f.jour`). Noté quand on coche « fait » ce mois-ci (`toggleFraisDone`, `toggleVirementDone`) et par l'import ; 0 = rangé au 1er.
 - **Début d'utilisation** : `acctStart` (mois de départ d'un compte) ; avant ce mois, pas de solde, de provision (`provBalance`) ni de mensualité (`mensuelAt`).
 - **Ticket ↔ compte** : le compte choisi sur le ticket, sinon celui dont le `payer` est égal à `payePar` (`ticketInAcct`). Un `payePar` vide compte pour le propriétaire (`payerOf`).
 - **Commun** : `communModel(month)` calcule les parts. Les parts **ne changent pas les soldes des comptes**. Un frais « Commun » est retiré :
@@ -79,7 +81,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
     - même nom = sûr, autre nom = « peut-être » ;
     - un ticket saisi sur un autre compte peut y être déplacé.
   - `S.kind` change le type d'une ligne (ticket, frais fixe, virement).
-  - Un frais fixe retrouvé et laissé de côté est marqué payé (`lastImport.paid`).
+  - Un frais fixe retrouvé et laissé de côté est marqué payé (`lastImport.paid`) ; un frais ou virement déjà là reçoit le jour du relevé s'il n'en avait pas (`lastImport.dayed`).
   - Un virement envoyé égal aux provisions du mois gardées hors de ce compte (toutes, ou une seule) devient « Provisions du mois » ou « Provision · nom » (`provHit`, sauf épargne programmée).
   - S'il reste un écart avec la banque, `impGapHints` cherche ce qui a exactement ce montant : ligne décochée ou vue comme déjà présente, ticket, frais fixe payé ou virement de l'appli absent du relevé.
   - `impOpening` calcule le solde de départ ; `impApply` crée les données ; `impUndo` annule.

@@ -16,10 +16,10 @@ Après chaque modification, dans le même commit :
 
 ---
 
-## État actuel (25/10/2026)
+## État actuel (27/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `25/10 09:39`, environ 8 600 lignes.
+- β web : `beta/index.html`, étiquette `27/10 08:43`, environ 8 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -27,7 +27,9 @@ Après chaque modification, dans le même commit :
 - **Articles** : produits et prix (Mes produits, Hausses, Magasins, Familles, Budgets). Fiche produit avec tous les achats. Bouton « Produits partagés ».
 - **Commun** : parts du commun en % et parts propres à chaque frais. Frais fixes « en entier » ou « chacun sa part », frais retirés pour un mois. Graphique Mois (6, 12, 12 à venir, Tout). Bandeau des personnes.
 - **Compte** :
-  - plusieurs comptes par personne, sur une rangée qui défile (la carte des comptes garde la même hauteur) ; graphique plein écran ;
+  - s'ouvre sur la **liste des opérations du mois**, comme un relevé de banque : solde estimé, Entrées / Sorties / Fin de mois, filtres Tout · Entrées · Sorties · À venir, recherche (nom ou montant, avec le total), bloc « À venir » avec un rond pour marquer « fait », puis les opérations par jour (le plus récent en haut) avec le solde du soir, et le report en bas ;
+  - les graphiques d'avant sont sur la page « Graphiques » (bouton), en plein écran ;
+  - plusieurs comptes par personne, sur une rangée qui défile (la carte des comptes garde la même hauteur) ;
   - page Configuration par compte (provisions, épargne, **Importer un relevé**, « Annuler le dernier import ») ;
   - bouton « Liquide » ;
   - rien avant le début du suivi ;
@@ -73,6 +75,8 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **27/10** : l'onglet Compte s'ouvre sur la liste des opérations (comme un relevé de banque), d'après la maquette « Tickets — Relevé du compte » ; un bouton « Graphiques » suffit pour les graphiques. Le jour des frais fixes et des virements se note tout seul (coché « fait », import), sinon le 1er du mois ; modifiable dans la fiche.
+
 - **24/10**
   - Tenir ce journal à jour à chaque modification.
   - Étudier un import de relevé pour remplir un nouveau compte ; il doit aussi accepter les fichiers de Money, de Quicken et des autres logiciels de comptes connus.
@@ -105,6 +109,19 @@ Après chaque modification, dans le même commit :
 ---
 
 ## Historique (le plus récent en haut)
+
+### 27/10
+- **Compte : liste des opérations du mois** (`cptOps`, `opsBodyHTML`, `opsOpen` ; la page principale de l'onglet, les graphiques passent sur `cptPage="graph"`) :
+  - en haut : solde estimé, Entrées et Sorties passées, Fin de mois prévue (toucher filtre la liste), boutons Graphiques et Configuration ;
+  - filtres Tout · Entrées · Sorties · À venir (`state.cptF`) et recherche par nom ou montant avec le total trouvé (`state.cptQ`, la liste se refait sans perdre le clavier) ;
+  - « À venir ce mois-ci » (« Pas encore passé à la banque » pour un mois passé, « Prévu en … » pour un mois à venir) : frais fixes et virements pas faits, un rond pour les marquer faits ;
+  - les opérations par jour, la plus récente en haut, avec le solde du soir ; ligne touchée = sa fiche (ticket, frais fixe, virement) ; report du mois précédent en bas, touchable ;
+  - un membre en lecture voit la liste sans rond ni fiche modifiable ;
+  - les cartes « Compte » de l'Accueil viennent de la page Graphiques, et la toucher ouvre ce graphique.
+- **Jour des frais fixes et des virements** (ils n'avaient que le mois) :
+  - virement : `day` ; frais fixe : `doneDays` (jour où il est passé, par mois) et `jour` (jour habituel, champ « Jour du prélèvement » dans la fiche) ;
+  - noté tout seul quand on coche « fait » ce mois-ci, et par l'import (y compris pour les frais et virements déjà là repérés comme doublons ; retiré si on annule l'import) ; les anciens imports gardent la date de leur note « 05/10 · relevé » ;
+  - sans jour : rangé au 1er du mois.
 
 ### 25/10
 - **Bouton « Liquide » de l'onglet Compte** (`liqCounted()`, clé `cptLiq`) : décoché, le liquide n'était retiré que du graphique de l'onglet Compte. L'Accueil le comptait toujours (−16,59 au lieu de −52,55), la page Solde bancaire affichait « Argent liquide 0,00 € » et son graphique l'ajoutait quand même. Maintenant :
