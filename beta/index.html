@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="27/10 08:49" />
+  <meta name="build" content="27/10 08:54" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -532,6 +532,9 @@
     /* Relevé du compte : opérations du mois */
     .ops-sum .hstat{ font:inherit; color:inherit; text-align:left; cursor:pointer; }
     .ops-btns{ display:flex; gap:8px; margin-top:12px; }
+    .ops-subrow{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px 10px; margin-top:4px; }
+    .ops-liq{ min-height:38px; padding:0 13px; border-radius:19px; border:1px solid var(--line2); background:var(--card2); color:var(--ink); font:inherit; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; }
+    .ops-liq.off{ color:var(--ink-soft); }
     .ops-btns button{ flex:1; min-height:44px; border-radius:13px; border:1px solid var(--line2); background:transparent; color:var(--ink); font:inherit; font-size:14px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; }
     .ops-f{ display:flex; gap:7px; margin-top:14px; overflow-x:auto; scrollbar-width:none; }
     .ops-f::-webkit-scrollbar{ display:none; }
@@ -4946,6 +4949,17 @@
       if(!done.length && !todo.length && (filtered || cx.futur)) h+='<div class="ops-empty">'+(filtered?'Rien ne correspond.':'Rien de prévu en '+mo+'.')+'</div>';
       return h;
     }
+    // Argent liquide du mois (vide = repris du mois précédent)
+    function liqEdit(person, month){
+      var o=liquideMois[person]||{};
+      uiForm({ title:"Argent liquide", intro:"Les espèces que tu as. Laisse vide pour reprendre la valeur du mois précédent.", fields:[
+        {key:"v", label:capFirst(monthLabelOf(month)), type:"money", value:((month in o)?o[month]:"")}
+      ]}, function(r){
+        if(!liquideMois[person]) liquideMois[person]={};
+        if(r.v===null) delete liquideMois[person][month]; else liquideMois[person][month]=r.v;
+        persistLiquide(); render();
+      });
+    }
     function opsOpen(k, id, month, done){
       if(k==="t") return editEntry(id);
       if(fyRO()){ uiToast("En consultation seulement"); return; }
@@ -5213,10 +5227,11 @@
         cx={ month:month, futur:futur, past:(month<curM), report:reporteReel, ro:fyRO(), prevName:impDeMois(prevMonthKey(month)), edited:(getSoldeInit(person, month)!==null) };
         var cf=state.cptF||"tout", lSub=preStart ? "Compte suivi à partir de "+esc(monthLabelOf(aStart))+" : rien avant" : (futur?"Prévu, tout ce qui est planifié compris, sans le liquide":"Estimé, sans le liquide")+(pvCpt>0.004?" · dont provisions "+fmtK(pvCpt)+", disponible "+fmtK(soldeBanque-pvCpt):"");
         h+='<section class="dash-hero ops-sum"><div class="dash-cap">'+(multi?esc(acct.nom):"Solde du compte")+(futur?" · fin "+esc(monthLabelOf(month))+" prévue":" (banque estimée)")+'</div>'+
-           '<div class="dash-big" style="margin-top:6px;color:'+(soldeBanque<0?"var(--coral)":"var(--ink)")+'">'+moneyBig(soldeBanque)+'</div><div class="dash-cap" style="margin-top:2px">'+lSub+'</div>'+
+           '<div class="dash-big" style="margin-top:6px;color:'+(soldeBanque<0?"var(--coral)":"var(--ink)")+'">'+moneyBig(soldeBanque)+'</div>'+
+           '<div class="ops-subrow"><span class="dash-cap">'+lSub+'</span>'+((person!=="__tickets" && (liq || !fyRO())) ? '<button type="button" id="opsLiq" class="ops-liq'+(liq&&!liqOn?' off':'')+'">💶 '+(liq ? 'Liquide '+esc(fmtK(liqAll))+(liqOn?'':' · non compté') : '＋ Liquide')+'</button>' : '')+'</div>'+
            '<div class="hstats"><button type="button" class="hstat" data-f="in"><span>'+(futur?"Entrées prévues":"Entrées")+'</span><b style="color:var(--accent)">'+opsAmtS(inT, true)+'</b></button>'+
            '<button type="button" class="hstat" data-f="out"><span>'+(futur?"Sorties prévues":"Sorties")+'</span><b>'+opsAmtS(outT)+'</b></button>'+
-           '<button type="button" class="hstat" data-f="av"><span>Fin de mois</span><b'+(fl.closing<0?' style="color:var(--coral)"':'')+'>'+opsAmtS(fl.closing)+'</b></button></div>'+
+           '<button type="button" class="hstat" data-f="av"><span>Fin de mois</span><b'+(soldeFin<0?' style="color:var(--coral)"':'')+'>'+opsAmtS(soldeFin)+'</b></button></div>'+
            '<div class="ops-btns"><button type="button" id="cptGraph">'+opsIco("g")+'Graphiques</button><button type="button" class="cptGo" data-page="cfg">'+opsIco("c")+'Configuration</button></div></section>';
         var chips=[["tout","Tout"],["in","Entrées"],["out","Sorties"],["av","À venir"+(O.todo.length?" · "+O.todo.length:"")]];
         h+='<div class="ops-f" role="group" aria-label="Filtrer les opérations">'+chips.map(function(c){ return '<button type="button" data-f="'+c[0]+'"'+(cf===c[0]?' class="on"':'')+' aria-pressed="'+(cf===c[0])+'">'+c[1]+'</button>'; }).join("")+'</div>'+
@@ -5312,15 +5327,17 @@
       var clq=document.getElementById("cptLiqBtn"); if(clq) clq.onclick=function(ev){ ev.stopPropagation(); state.cptLiq=!liqOn; store.write("cptLiq", state.cptLiq); render(); };
       [].forEach.call(document.querySelectorAll(".crange button, .crange-c"), function(b){ b.onclick=function(){ state.cptRange=b.getAttribute("data-r"); store.write("cptRange", state.cptRange); render(); }; });
       if(graphV && document.querySelector(".cch-tabs")) wireCptSwipe(cmode, CMODES.map(function(x){ return x[0]; }));
-      var lr=document.getElementById("liqrow"); if(lr) lr.onclick=function(){
-        var o=liquideMois[person]||{};
-        uiForm({ title:"Argent liquide", intro:"Laisse vide pour reprendre la valeur du mois précédent.", fields:[
-          {key:"v", label:monthLabel, type:"money", value:((month in o)?o[month]:"")}
-        ]}, function(r){
-          if(!liquideMois[person]) liquideMois[person]={};
-          if(r.v===null) delete liquideMois[person][month]; else liquideMois[person][month]=r.v;
-          persistLiquide(); render();
-        });
+      var lr=document.getElementById("liqrow"); if(lr) lr.onclick=function(){ liqEdit(person, month); };
+      // bouton « Liquide » de la liste : le montant, le changer, le compter ou non dans les soldes
+      var ol=document.getElementById("opsLiq"); if(ol) ol.onclick=function(){
+        var ro=fyRO();
+        if(!liq){ if(ro) uiToast("Pas de liquide noté"); else liqEdit(person, month); return; }
+        var cur=liquideAt(person, month), msg='<b>'+esc(fmtK(cur.val))+'</b> · '+(cur.month===month?"noté pour "+esc(monthLabelOf(month)):"repris "+esc(impDeMois(cur.month)))+'<br>'+
+          (liqOn?"Compté dans les soldes : fin de mois, Accueil, widgets.":"Pas compté dans les soldes.");
+        var ch=[];
+        if(!ro) ch.push({ l:"✎ Changer le montant", fn:function(){ liqEdit(person, month); } });
+        ch.push({ l:(liqOn?"Ne plus le compter dans les soldes":"Le compter dans les soldes"), primary:ro, fn:function(){ state.cptLiq=!liqOn; store.write("cptLiq", state.cptLiq); render(); uiToast(state.cptLiq?"Liquide compté":"Liquide pas compté"); } });
+        uiChoice("Argent liquide", msg, ch);
       };
       if(!state.months) state.months={};
       var cmp=document.getElementById("cm-prev"); if(cmp) cmp.onclick=function(){ state.months.compte=prevMonthKey(month); render(); };
