@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="27/10 08:43" />
+  <meta name="build" content="27/10 08:49" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -1291,7 +1291,8 @@
     function toggleVirementDone(id){
       var v=virements.filter(function(x){ return String(x.id)===String(id); })[0]; if(!v) return;
       v.done=!v.done;
-      if(v.done){ var td=todayDay(v.month), vd=dayFix(v.day, v.month); if(td && (!vd || vd>td)) v.day=td; }   // le jour où c'est passé (relevé du compte) : aujourd'hui, sauf jour déjà noté avant
+      if(v.done){ var td=todayDay(v.month), vd=dayFix(v.day, v.month); if(td && (!vd || vd>td)){ v.day=td; v.dayAuto=1; } }   // le jour où c'est passé (relevé du compte) : aujourd'hui, sauf jour déjà noté avant
+      else if(v.dayAuto){ delete v.day; delete v.dayAuto; }   // décoché : on oublie le jour mis en cochant
       if(v.epargneId){
         if(v.done){ var delta=-(Number(v.montant)||0); applyEp(v.epargneId, delta); v.epApplied=delta; }
         else { applyEp(v.epargneId, -(v.epApplied||0)); v.epApplied=0; }
@@ -1541,7 +1542,7 @@
       ]}, function(r){
         var jd=dayRead(r); if(jd.err) return jd.err;
         v.label=r.label||v.label; v.note=r.note||"";
-        if(jd.v) v.day=jd.v; else delete v.day;
+        if(jd.v) v.day=jd.v; else delete v.day; delete v.dayAuto;
         var newM=(r.sens==="out"?-1:1)*Math.abs(r.montant);
         if(v.epargneId && v.done){ var delta=-(newM - v.montant); applyEp(v.epargneId, delta); v.epApplied=(v.epApplied||0)+delta; }
         v.montant=newM;
@@ -4937,7 +4938,7 @@
         Object.keys(byD).map(Number).sort(function(x, y){ return y-x; }).forEach(function(d){
           h+='<div class="ops-dh"><span>'+esc(opsDayLabel(cx.month, d))+'</span>'+(filtered?'':'<span>solde '+fmtK(bal[d])+'</span>')+'</div>';
           byD[d].forEach(function(o){ var kk=opsKind(o);
-            h+='<button type="button" class="ops-r ops-open" data-k="'+o.k+'" data-id="'+esc(o.id)+'"><span class="ops-ic k-'+kk+'">'+opsIco(kk)+'</span><span class="ops-t"><b>'+esc(o.n)+'</b><small>'+esc(o.s)+'</small></span><b class="ops-a'+(o.a>0?' pos':'')+'">'+opsAmt(o.a)+'</b></button>'; });
+            h+='<button type="button" class="ops-r ops-open" data-k="'+o.k+'" data-id="'+esc(o.id)+'" data-done="1"><span class="ops-ic k-'+kk+'">'+opsIco(kk)+'</span><span class="ops-t"><b>'+esc(o.n)+'</b><small>'+esc(o.s)+'</small></span><b class="ops-a'+(o.a>0?' pos':'')+'">'+opsAmt(o.a)+'</b></button>'; });
         });
         if(showRep) h+='<div class="ops-dh"><span>Début du mois</span></div><button type="button" class="ops-r" id="opsReport"'+(cx.ro?' disabled':'')+'><span class="ops-ic k-r">'+opsIco("r")+'</span><span class="ops-t"><b>Report '+esc(cx.prevName)+'</b><small>solde au 1er '+esc(mo)+'</small></span><b class="ops-a">'+fmtK(cx.report)+'</b></button>';
         h+='</section>';
@@ -4945,11 +4946,18 @@
       if(!done.length && !todo.length && (filtered || cx.futur)) h+='<div class="ops-empty">'+(filtered?'Rien ne correspond.':'Rien de prévu en '+mo+'.')+'</div>';
       return h;
     }
-    function opsOpen(k, id, month){
+    function opsOpen(k, id, month, done){
       if(k==="t") return editEntry(id);
       if(fyRO()){ uiToast("En consultation seulement"); return; }
-      if(k==="f") return editFraisCommun(id, month);
-      editVirement(id);
+      function edit(){ if(k==="f") editFraisCommun(id, month); else editVirement(id); }
+      if(!done) return edit();
+      // déjà passé : le remettre dans « À venir » (décocher) ou ouvrir sa fiche
+      var x=(k==="f" ? fraisCommuns : virements).filter(function(r){ return String(r.id)===String(id); })[0]; if(!x) return;
+      var amt=(k==="f") ? -fraisAcctAmt(x, curAcctKey(), month) : (Number(x.montant)||0), d=(k==="f") ? fraisDay(x, month) : virDay(x);
+      uiChoice((k==="f" ? x.label : x.label)||"Opération", esc(opsAmt(amt)+(d?" · passé le "+(d===1?"1er":d)+" "+MOIS_NOMS[+month.slice(5, 7)-1]:" · passé à la banque")), [
+        { l:"↩ Pas encore passé à la banque", fn:function(){ if(k==="f") toggleFraisDone(id, month); else toggleVirementDone(id); uiToast("Remis dans « À venir »"); } },
+        { l:"✎ Modifier", primary:false, fn:edit }
+      ]);
     }
     function renderCompte(){
       var person=curAcctKey(), acct=acctByKey(person), multi=comptes.length>1;
@@ -5251,7 +5259,7 @@
       }
       // la liste : une ligne touchée ouvre sa fiche ; le rond la marque « fait »
       function wireOps(){
-        [].forEach.call(document.querySelectorAll("#opsBody .ops-open"), function(b){ b.onclick=function(){ opsOpen(b.getAttribute("data-k"), b.getAttribute("data-id"), month); }; });
+        [].forEach.call(document.querySelectorAll("#opsBody .ops-open"), function(b){ b.onclick=function(){ opsOpen(b.getAttribute("data-k"), b.getAttribute("data-id"), month, b.getAttribute("data-done")==="1"); }; });
         [].forEach.call(document.querySelectorAll("#opsBody .ops-ck"), function(b){ b.onclick=function(){ if(fyRO()) return; var k=b.getAttribute("data-k"), id=b.getAttribute("data-id"); if(k==="f") toggleFraisDone(id, month); else toggleVirementDone(id); }; });
         var rp=document.getElementById("opsReport"); if(rp && !fyRO()) rp.onclick=openReport;
       }

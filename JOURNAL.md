@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (27/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `27/10 08:43`, environ 8 800 lignes.
+- β web : `beta/index.html`, étiquette `27/10 08:49`, environ 8 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -111,6 +111,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 27/10
+- **Compte, décocher** : une opération déjà passée (frais fixe, virement) ne pouvait plus être remise « à venir » (le rond n'existe que dans « À venir »). La toucher propose maintenant « ↩ Pas encore passé à la banque » ou « ✎ Modifier » (`opsOpen`). Le jour mis en cochant un virement (`dayAuto`) est oublié quand on décoche.
 - **Compte : liste des opérations du mois** (`cptOps`, `opsBodyHTML`, `opsOpen` ; la page principale de l'onglet, les graphiques passent sur `cptPage="graph"`) :
   - en haut : solde estimé, Entrées et Sorties passées, Fin de mois prévue (toucher filtre la liste), boutons Graphiques et Configuration ;
   - filtres Tout · Entrées · Sorties · À venir (`state.cptF`) et recherche par nom ou montant avec le total trouvé (`state.cptQ`, la liste se refait sans perdre le clavier) ;
