@@ -51,6 +51,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
   - `parts` : `{"AAAA-MM": {prénom: %} ou null}` = parts propres au frais ; toujours passer par `fraisPct(f, qui, mois)`.
 - Données venues d'un relevé importé : `imp` (n° de l'import), `impKey` (tickets, virements) ou `impKeys` (frais fixes), `src:"releve"` (tickets). `lastImport` (localStorage, non synchronisé) permet « Annuler le dernier import ».
 - `virements`, `epargne`, `provisions`, `bourse`.
+  - Épargne `bourseLink` : la ligne « Bourse » automatique (une seule, valeur = portefeuille, mise à jour par `syncBourseEpargne`, créée par `ensureBourseEp`). La Bourse compte ainsi une fois dans tous les totaux d'épargne ; `bourseEpAt(mois)` donne sa part. Pas de virement ni de provision vers elle.
   - Provision `ou` : où est l'argent (`ep:<id épargne>`, `cpt` = compte principal, `cpt:<clé>` = autre compte bancaire, `ext`) ; toujours passer par `provWhere(p)` (défaut : premier compte épargne de la personne). Sur l'épargne ou le compte, elle est déjà dans leur solde : ne pas l'ajouter une 2e fois.
 - `budgets` (budgets du foyer par catégorie), `budgetsP` (`{personne: {catégorie: montant}}`).
 - `communParts` (part de chacun dans le commun, en %), `argentMois`, `liquideMois`, `soldeInit`, `devise`.

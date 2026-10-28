@@ -16,10 +16,10 @@ Après chaque modification, dans le même commit :
 
 ---
 
-## État actuel (27/10/2026)
+## État actuel (28/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `27/10 08:54`, environ 8 800 lignes.
+- β web : `beta/index.html`, étiquette `28/10 09:04`, environ 8 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -34,7 +34,7 @@ Après chaque modification, dans le même commit :
   - bouton « Liquide » ;
   - rien avant le début du suivi ;
   - mois à venir = solde prévu.
-- **Bourse** (Perso seulement) : cours Yahoo et CoinGecko via le relais, courbe 1J.
+- **Bourse** (Perso seulement) : cours Yahoo et CoinGecko via le relais, courbe 1J. Comptée une fois dans l'épargne, comme une ligne automatique (« dont Bourse » sur l'Accueil et dans Épargne).
 - **Analyse** :
   - graphiques Mois, Répartition, Récurrentes et Qui a payé ;
   - bouton « + Frais fixes » ;
@@ -63,9 +63,6 @@ Après chaque modification, dans le même commit :
 - **Import d'un relevé** : fait le 25/10, à essayer par Benoît sur son téléphone avec ses 3 exports BoursoBank (comptes « Compte OFX », « Compte QIF », « Compte CSV »).
   - À décider : gratuit ou réservé à Plus.
   - Pistes si besoin : lire directement les fichiers propres à Grisbi (`.gsb`, du XML) ; rapprocher un remboursement d'un achat (ex. virement de 77,41 € pour un Brico Dépôt de 77,41 €).
-- **Bourse dans les totaux** (Benoît réfléchit, 28/10) : dissociée de l'épargne, la Bourse n'est comptée dans aucun total, et l'épargne garde une valeur figée. Pistes proposées :
-  - compter toujours la Bourse une fois dans « Épargne » (« dont Bourse X »), liée ou non ;
-  - ou rendre la page « Patrimoine » (`renderPatrimoine`, plus accessible aujourd'hui) en touchant « Épargne » sur l'Accueil.
 - Reportés à la sortie Store :
   - QR code lisible par l'appareil photo ;
   - Workers Paid ;
@@ -77,6 +74,8 @@ Après chaque modification, dans le même commit :
 - À surveiller : l'option « Ajouter au foyer » (verser ses anciennes données en rejoignant) sera retirée si personne ne s'en sert.
 
 ## Décisions de Benoît
+
+- **28/10** : la Bourse est toujours comptée une fois dans l'épargne, comme une ligne automatique qui suit l'onglet Bourse (maquette « Tickets — Bourse dans l'épargne ») ; plus de liaison manuelle.
 
 - **27/10** : l'onglet Compte s'ouvre sur la liste des opérations (comme un relevé de banque), d'après la maquette « Tickets — Relevé du compte » ; un bouton « Graphiques » suffit pour les graphiques. Le jour des frais fixes et des virements se note tout seul (coché « fait », import), sinon le 1er du mois ; modifiable dans la fiche.
 
@@ -112,6 +111,15 @@ Après chaque modification, dans le même commit :
 ---
 
 ## Historique (le plus récent en haut)
+
+### 28/10
+- **Bourse dans l'épargne** : avant, seule une épargne liée à la main (🔗) comptait la Bourse, et la dissocier la faisait disparaître des totaux en laissant une valeur figée. Maintenant :
+  - une seule épargne `bourseLink` = la ligne « Bourse » automatique, créée dès qu'il y a un compte Bourse, avec l'historique du portefeuille mois par mois (`ensureBourseEp`, au démarrage et à chaque mise à jour des cours) ; une épargne déjà liée garde ce rôle et son nom ;
+  - s'il y en avait plusieurs, les autres reprennent leur valeur d'avant la liaison ;
+  - plus de bouton 🔗 ni de choix « Suit la Bourse » pour un nouveau compte épargne ; la ligne est marquée « automatique · suit l'onglet Bourse », la toucher ouvre l'onglet Bourse ;
+  - « dont Bourse X » sous l'épargne de l'Accueil et dans la page Épargne, avec la Bourse en pointillés sur le graphique (`compteLineSVG` : 2e courbe `v2`) ;
+  - foyer : un membre sans l'onglet Bourse ne reçoit pas cette ligne (`fyFilter`) ;
+  - version Store : rien ne change.
 
 ### 27/10
 - **Compte, bouton « 💶 Liquide »** dans la carte du haut (à côté de « Estimé, sans le liquide ») : montre le liquide (« · non compté » s'il n'est pas compté) ; le toucher permet de changer le montant (`liqEdit`) ou de le compter / ne plus le compter dans les soldes (`cptLiq`). Sans liquide : « ＋ Liquide » ouvre la saisie. « Fin de mois » compte le liquide quand il est compté, comme l'Accueil.

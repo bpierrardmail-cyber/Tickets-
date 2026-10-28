@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="27/10 08:54" />
+  <meta name="build" content="28/10 09:04" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -623,6 +623,9 @@
     .dash-split.h3{ grid-template-columns:repeat(3,minmax(0,1fr)) 10px; cursor:pointer; }
     .dash-split.h3.h4{ grid-template-columns:repeat(4,minmax(0,auto)) 10px; justify-content:space-between; gap:6px; }
     .dash-split.h3 em{ font-style:normal; color:var(--muted); font-size:15px; align-self:center; }
+    .dash-split.h3 span i{ font-style:normal; font-size:10.5px; line-height:1.25; color:var(--ink-soft); }
+    .ep-auto{ font-size:9.5px; font-weight:700; color:var(--accent); background:var(--accent-dim); border-radius:7px; padding:1px 6px; vertical-align:middle; }
+    .ep-go{ color:var(--ink-soft); font-size:18px; width:28px; text-align:center; flex:0 0 28px; }
     .dash-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
     .hscope{ flex:0 0 auto; margin:-6px -4px -6px 0; display:flex; gap:2px; padding:3px; border-radius:999px; background:rgba(255,255,255,.05); border:1px solid var(--line); }
     .hscope button{ border:0; background:none; color:var(--ink-soft); font:600 12.5px var(--sans); padding:7px 13px; border-radius:999px; cursor:pointer; }
@@ -2233,7 +2236,22 @@
     function bPrev(c){ var ms=bMonths(c); return ms.length>1?c.vals[ms[ms.length-2]]:null; }
     function bFirst(c){ var ms=bMonths(c); return ms.length?c.vals[ms[0]]:null; }
     function bourseTotalLive(){ var t=0; bourse.forEach(function(c){ if(c.sol && c.solQty && state.solPrice){ t+=c.solQty*state.solPrice+bCash(bLast(c)); } else { t+=bTot(bLast(c)); } }); return t; }
-    function syncBourseEpargne(){ if(!FEAT.bourse || fyMember()) return; try{ recordBourseHist(); }catch(err){} var m=monthKey(todayISO()), ch=false, tot=bourseTotalLive(); epargne.forEach(function(c){ if(c.bourseLink){ if(!c.vals) c.vals={}; if(Number(c.vals[m])!==tot){ c.vals[m]=tot; ch=true; } } }); if(ch) persistEpargne(); }
+    // La Bourse est une ligne automatique de l'épargne (bourseLink), une seule, qui suit le portefeuille : elle compte une fois dans tous les totaux.
+    // Créée dès qu'il y a un compte Bourse ; s'il y en avait plusieurs (ancienne liaison manuelle), les autres reprennent leur valeur d'avant la liaison.
+    function ensureBourseEp(){
+      if(!FEAT.bourse || fyMember()) return false;
+      var L=epargne.filter(function(c){ return c.bourseLink; }), ch=false;
+      L.slice(1).forEach(function(c){ c.bourseLink=false; var pl=c.preLink; delete c.preLink; ch=true;
+        if(pl && pl.month && c.vals){ Object.keys(c.vals).forEach(function(k){ if(k>=pl.month) delete c.vals[k]; }); if(pl.had) c.vals[pl.month]=pl.val; } });
+      if(!L.length && bourse.length){   // avec l'historique du portefeuille, mois par mois
+        var v={}, ms={}; bourse.forEach(function(c){ bMonths(c).forEach(function(m){ ms[m]=1; }); });
+        Object.keys(ms).sort().forEach(function(m){ var t=0; bourse.forEach(function(c){ var u=bMonthsUpto(c, m); if(u.length) t+=bTot(c.vals[u[u.length-1]]); }); v[m]=Math.round(t*100)/100; });
+        v[monthKey(todayISO())]=bourseTotalLive();
+        epargne.push({ id:Date.now(), nom:"Bourse", vals:v, bourseLink:true, auto:1 }); ch=true; }
+      return ch;
+    }
+    function bourseEpAt(m, keep){ var t=0; epargne.forEach(function(c){ if(c.bourseLink && (!keep || keep(c))) t+=epAt(c, m); }); return t; }
+    function syncBourseEpargne(){ if(!FEAT.bourse || fyMember()) return; try{ recordBourseHist(); }catch(err){} var m=monthKey(todayISO()), ch=ensureBourseEp(), tot=bourseTotalLive(); epargne.forEach(function(c){ if(c.bourseLink){ if(!c.vals) c.vals={}; if(Number(c.vals[m])!==tot){ c.vals[m]=tot; ch=true; } } }); if(ch) persistEpargne(); }
     function bPct(from,to){ if(!from||from===0) return null; var p=(to-from)/Math.abs(from)*100; return (p>=0?"+":"")+p.toFixed(1).replace(".",",")+" %"; }
     function bPctCol(from,to){ return (to-from)>=0?"#4fd6a0":"#f4796b"; }
     function bBadge(from,to,label){
@@ -2356,16 +2374,13 @@
       uiForm({ title:"Nouveau compte épargne", fields:[
         {key:"nom", label:"Nom du compte", placeholder:"Livret A, assurance vie…", required:true}
       ].concat(ownerField(null)).concat([
-        {key:"type", label:"Valeur", type:"seg", value:"manuel", hidden:!FEAT.bourse, options:[{v:"manuel",l:"Saisie manuelle"},{v:"bourse",l:"Suit la Bourse"}],
-          onChange:function(v,api){ api.show("montant", v==="manuel"); }},
         {key:"montant", label:"Montant actuel", type:"money", value:""},
         {key:"obj", label:"Objectif (optionnel)", type:"money", value:"", help:"Un montant à atteindre, avec une date si tu veux."},
         {key:"objMois", label:"Pour quand (optionnel)", type:"month", value:""}
       ])}, function(r){
         var m=monthKey(todayISO()), v={}, c={ id:Date.now(), nom:r.nom, vals:v };
         setOwner(c, r);
-        if(r.type==="bourse"){ v[m]=bourseTotalLive(); c.bourseLink=true; }
-        else v[m]=r.montant||0;
+        v[m]=r.montant||0;
         if(r.obj && r.obj>0) c.objectif={ montant:r.obj, mois:r.objMois||"" };
         epargne.push(c); persistEpargne(); render();
       });
@@ -3519,6 +3534,7 @@
         var projection=parJour*dim;
         // Épargne
         var epTot=0, epPrev=0; epargne.forEach(function(c){ if(scope==="moi" && !isMine(c)) return; epTot+=epAt(c, month); var pv=epPrevAt(c, month); epPrev+=(pv===null?epAt(c, month):pv); });
+        var epB=bourseEpAt(month, function(c){ return scope!=="moi" || isMine(c); }), epBi=(epB>=0.5 ? '<i>dont Bourse <small style="font-size:inherit;white-space:nowrap">'+cptK(epB)+' '+esc(curSym())+'</small></i>' : '');
         // Provisions
         var prTot=provTotalAt(month, scope==="moi" ? isMine : null);
 
@@ -3566,9 +3582,9 @@
           })();
           if(fyMember()){   // membre du foyer : sa banque, sa part du commun, ses tickets
             var myCom=null; if(fyTabOn(fyCfg,"communes")){ try{ myCom=communModel(month).partOf(mePerson()); }catch(e){} }
-            h += '<div class="dash-split h3'+(lq?' h4':'')+'" id="heroCpt"><span>Banque<b>'+fk(cb.solde)+'</b></span>'+(lq?'<span>Liquide<b>'+fk(lqV)+'</b></span>':'')+(myCom!=null?'<span>Ma part du commun<b>'+fk(myCom)+'</b></span>':'<span>Épargne<b style="color:var(--accent)">'+fk(epTot)+'</b></span>')+'<span>Mes tickets<b>'+fk(totalMois)+'</b></span><em>›</em></div>';
+            h += '<div class="dash-split h3'+(lq?' h4':'')+'" id="heroCpt"><span>Banque<b>'+fk(cb.solde)+'</b></span>'+(lq?'<span>Liquide<b>'+fk(lqV)+'</b></span>':'')+(myCom!=null?'<span>Ma part du commun<b>'+fk(myCom)+'</b></span>':'<span>Épargne<b style="color:var(--accent)">'+fk(epTot)+'</b>'+epBi+'</span>')+'<span>Mes tickets<b>'+fk(totalMois)+'</b></span><em>›</em></div>';
           } else
-          h += '<div class="dash-split h3'+(lq?' h4':'')+'" id="heroCpt"><span>Banque<b>'+fk(cb.solde)+'</b></span>'+(lq?'<span>Liquide<b>'+fk(lqV)+'</b></span>':'')+'<span>Épargne<b style="color:var(--accent)">'+fk(epTot)+'</b></span><span>Provisions<b>'+fk(prTot)+'</b></span><em>›</em></div>';
+          h += '<div class="dash-split h3'+(lq?' h4':'')+'" id="heroCpt"><span>Banque<b>'+fk(cb.solde)+'</b></span>'+(lq?'<span>Liquide<b>'+fk(lqV)+'</b></span>':'')+'<span>Épargne<b style="color:var(--accent)">'+fk(epTot)+'</b>'+epBi+'</span><span>Provisions<b>'+fk(prTot)+'</b></span><em>›</em></div>';
         }
         var fut=(month>curM);
         h += '<div class="dash-track"><i style="width:'+(fut?0:pctM)+'%"></i></div>';
@@ -4722,8 +4738,8 @@
       return '<svg viewBox="0 0 '+W+' '+H+'" role="img">'+g+'</svg>';
     }
     function compteLineSVG(rows, sel, color){
-      var W=340, H=178+CHB, top=24, bot=24, ph=H-top-bot, padX=20, vals=[];
-      rows.forEach(function(r){ vals.push(r.v); });
+      var W=340, H=178+CHB, top=24, bot=24, ph=H-top-bot, padX=20, vals=[], has2=rows.some(function(r){ return r.v2!=null; });
+      rows.forEach(function(r){ vals.push(r.v); if(has2 && r.v2!=null) vals.push(r.v2); });
       var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals);
       var pad=(hi-lo)*0.15 || Math.max(1,Math.abs(hi)*0.1); lo-=pad; hi+=pad; if(lo>0 && Math.min.apply(null,vals)>=0) lo=Math.max(0,lo);
       function y(v){ return top+(hi-v)/(hi-lo)*ph; }
@@ -4732,6 +4748,11 @@
       var line=pts.map(function(p){ return p[0].toFixed(1)+','+p[1].toFixed(1); }).join(" ");
       g+='<polygon points="'+pts[0][0].toFixed(1)+','+(top+ph)+' '+line+' '+pts[n-1][0].toFixed(1)+','+(top+ph)+'" style="fill:'+color+';opacity:.14"/>';
       g+='<polyline points="'+line+'" style="fill:none;stroke:'+color+';stroke-width:2.2;stroke-linejoin:round"/>';
+      if(has2){   // deuxième courbe en pointillés (ex. la part de la Bourse dans l'épargne), sa valeur au dernier point
+        var p2=rows.map(function(r,i){ return [padX+i*step, y(r.v2||0)]; });
+        g+='<polyline points="'+p2.map(function(p){ return p[0].toFixed(1)+','+p[1].toFixed(1); }).join(" ")+'" style="fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:5 4;stroke-linejoin:round"/>';
+        var lp=p2[n-1]; g+='<circle cx="'+lp[0].toFixed(1)+'" cy="'+lp[1].toFixed(1)+'" r="3.5" style="fill:var(--accent)"/><text x="'+(lp[0]-4).toFixed(1)+'" y="'+(lp[1]-8).toFixed(1)+'" text-anchor="middle" style="fill:var(--accent);font-size:10px;font-weight:700;font-family:var(--sans)">'+cptK(rows[n-1].v2||0)+'</text>';
+      }
       rows.forEach(function(r,i){ var on=(r.m===sel), cx=pts[i][0], cy=pts[i][1];
         g+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+(on?4.5:(n>8?2:3))+'" style="fill:'+(on?color:"var(--card)")+';stroke:'+color+';stroke-width:2"/>';
         if(r.m) g+='<rect class="barhit" data-m="'+esc(r.m)+'" x="'+(cx-step/2).toFixed(1)+'" y="0" width="'+step.toFixed(1)+'" height="'+H+'" style="fill:transparent"/>';
@@ -5081,9 +5102,10 @@
         chart+=compteSixMonthsSVG(rows, month)+'<div class="cch-leg"><span><i style="background:var(--accent)"></i>Entrées · virements reçus</span><span><i style="background:var(--coral)"></i>Sorties · dépenses</span></div>';
       } else if(cmode==="ep"){
         var eFirst=month; epargne.forEach(function(c){ Object.keys(c.vals||{}).forEach(function(k){ if(k<eFirst) eFirst=k; }); });
-        var epRows=cRangeMonths(eFirst).map(function(m){ return { m:m, lbl:mShort(m), v:epTotAt(m) }; }), e0=epRows[epRows.length-2].v, e1=epRows[epRows.length-1].v;
-        hero={ label:"Épargne totale", big:e1, color:"var(--ink)", sub:(epRows.length>1?(e1-e0>=0?"+":"")+fmtK(e1-e0)+" vs mois précédent":"") };
-        chart+=compteLineSVG(epRows, month, "#7c9cf4")+'<div class="cch-note">Total de tes comptes épargne, '+cRangeNote(epRows.map(function(r){ return r.m; }))+'</div>'+cRangeSeg();
+        var hasB=epargne.some(function(c){ return c.bourseLink; });
+        var epRows=cRangeMonths(eFirst).map(function(m){ return { m:m, lbl:mShort(m), v:epTotAt(m), v2:(hasB?bourseEpAt(m):null) }; }), e0=epRows[epRows.length-2].v, e1=epRows[epRows.length-1].v;
+        hero={ label:"Épargne totale", big:e1, color:"var(--ink)", sub:(epRows.length>1?(e1-e0>=0?"+":"")+fmtK(e1-e0)+" vs mois précédent":"")+(hasB?(epRows.length>1?" · ":"")+"dont Bourse "+fmtS(epRows[epRows.length-1].v2):"") };
+        chart+=compteLineSVG(epRows, month, "#7c9cf4")+'<div class="cch-note">Total de tes comptes épargne'+(hasB?' (pointillés : dont Bourse)':'')+', '+cRangeNote(epRows.map(function(r){ return r.m; }))+'</div>'+cRangeSeg();
       } else {
         var pRows=six.map(function(m){ return { m:m, lbl:mShort(m), v:provAt(m) }; }), p0=pRows[pRows.length-2].v, p1=pRows[pRows.length-1].v;
         hero={ label:"Provisions mises de côté", big:p1, color:"var(--ink)", sub:(p1-p0>=0?"+":"")+fmtK(p1-p0)+" vs mois précédent" };
@@ -5192,9 +5214,14 @@
         if(epG.length>1){ var gs=0; g.items.forEach(function(c){ gs+=epAt(c, month); }); bEp+='<div class="dsub"><span>'+esc(g.label)+'</span><span>'+fmtK(gs)+'</span></div>'; }
         g.items.forEach(function(c){
         var cur=epAt(c, month), prev=epPrevAt(c, month), pm=pctStr(prev,cur);
+        if(c.bourseLink){   // la Bourse : automatique, elle suit l'onglet Bourse
+          bEp+='<div class="prow epbourse"'+(FEAT.bourse?' role="button" tabindex="0" style="cursor:pointer"':'')+'><span class="pname" style="display:flex;flex-direction:column;min-width:0;gap:1px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.nom)+' <span class="ep-auto">automatique</span></span>'+
+             '<span style="font-size:10px;font-weight:500;color:var(--ink-soft)">suit l\'onglet Bourse'+(pm?' · <span style="color:'+pctColor(prev,cur)+'">'+pm+' vs mois préc.</span>':'')+'</span></span>'+
+             '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:2px">'+fmtK(cur)+'</span>'+(FEAT.bourse?'<span class="ep-go" aria-hidden="true">›</span>':'')+'</div>';
+          return;
+        }
         bEp+='<div class="prow"><span class="pname" style="display:flex;flex-direction:column;min-width:0;gap:1px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.nom)+(c.bourseLink?' <span style="font-size:9px;color:var(--accent);font-weight:600">● Bourse</span>':'')+'</span>'+(pm?'<span style="font-size:10px;font-weight:500;color:'+pctColor(prev,cur)+'">'+pm+' vs mois préc.</span>':'')+'</span>'+
            '<span style="font-variant-numeric:tabular-nums;font-weight:700;flex:0 0 auto;margin-right:2px">'+fmtK(cur)+'</span>'+
-           (FEAT.bourse?'<button class="btn ghost eplink" type="button" data-id="'+esc(c.id)+'" title="Lier/délier la Bourse">🔗</button>':'')+
            '<button class="btn ghost epedit" type="button" data-id="'+esc(c.id)+'">✎</button>'+
            '<button class="btn ghost epdel" type="button" data-id="'+esc(c.id)+'">✕</button></div>';
         var cPv=provSumWhere(month, function(w){ return w==="ep:"+c.id; });
@@ -5264,9 +5291,9 @@
                  '<div class="cch">'+compteBarsSVG(six.map(function(m){ return { m:m, lbl:mShort(m), v:soldeFlow(person,m).closing+liqAt(m) }; }), month)+'<div class="cch-note">Solde de fin de mois ('+(liqOn?'banque + liquide':'banque seule, sans le liquide')+'), sur 6 mois</div></div>' };
           pb=bRes;
         } else {
-          var epR=six.map(function(m){ return { m:m, lbl:mShort(m), v:epTotAt(m) }; });
-          ph={ label:"Épargne totale", big:totCur, color:"var(--ink)", sub:(totPrev!==null?(totCur-totPrev>=0?"+":"")+fmtK(totCur-totPrev)+" vs mois précédent":""),
-               extra:'<div class="cch">'+compteLineSVG(epR, month, "#7c9cf4")+'<div class="cch-note">Total de tes comptes épargne, sur 6 mois</div></div>' };
+          var hasB2=epargne.some(function(c){ return c.bourseLink; }), epR=six.map(function(m){ return { m:m, lbl:mShort(m), v:epTotAt(m), v2:(hasB2?bourseEpAt(m):null) }; });
+          ph={ label:"Épargne totale", big:totCur, color:"var(--ink)", sub:(totPrev!==null?(totCur-totPrev>=0?"+":"")+fmtK(totCur-totPrev)+" vs mois précédent":"")+(hasB2?(totPrev!==null?" · ":"")+"dont Bourse "+fmtS(bourseEpAt(month)):""),
+               extra:'<div class="cch">'+compteLineSVG(epR, month, "#7c9cf4")+'<div class="cch-note">Total de tes comptes épargne'+(hasB2?' (pointillés : dont Bourse)':'')+', sur 6 mois</div></div>' };
           pb=bEp;
         }
         if(multi) ph.label+=' · '+esc(acct.nom);
@@ -5307,7 +5334,7 @@
       [].forEach.call(document.querySelectorAll(".virdel"), function(b){ b.onclick=function(){ delVirement(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".entry"), function(node){ node.onclick=function(){ editEntry(node.getAttribute("data-id")); }; });
       var ae=document.getElementById("addep"); if(ae) ae.onclick=addEpargne;
-      [].forEach.call(document.querySelectorAll(".eplink"), function(b){ b.onclick=function(){ toggleEpargneLink(b.getAttribute("data-id")); }; });
+      [].forEach.call(document.querySelectorAll(".epbourse"), function(b){ if(!FEAT.bourse) return; b.onclick=function(){ state.view="bourse"; render(); window.scrollTo(0,0); }; });
       [].forEach.call(document.querySelectorAll(".epedit"), function(b){ b.onclick=function(){ editEpargne(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".epdel"), function(b){ b.onclick=function(){ delEpargne(b.getAttribute("data-id")); }; });
       var gprov=document.getElementById("goprov"); if(gprov) gprov.onclick=function(){ if(!state.months) state.months={}; state.months.provisions=(month===curM?null:month); state.view="provisions"; render(); window.scrollTo(0,0); };
@@ -7963,7 +7990,7 @@
       if(!(K.personnes||[]).some(function(p){ return p.nom===me; })) K.personnes=(K.personnes||[]).concat([{ nom:me }]);
       // frais communs payés en entier : le membre doit savoir par qui (pour l'Analyse « + Frais fixes »)
       K.fraisCommuns=(K.fraisCommuns||[]).map(function(f){ if(((f.personne||"").trim()||"Commun")!=="Commun" || f.split) return f; var x=JSON.parse(JSON.stringify(f)); x.payeur=fraisPayer(f); return x; });
-      if(!fyTabOn(m,"bourse")) K.bourse=[];
+      if(!fyTabOn(m,"bourse")){ K.bourse=[]; K.epargne=(K.epargne||[]).filter(function(x){ return !x.bourseLink; }); }   // la ligne Bourse de l'épargne suit l'onglet Bourse
       if(R.acc){
         K.comptes=K.comptes.filter(function(a){ return R.acc[a.key]; });
         if(m.tk!=="all") K.entries=(K.entries||[]).filter(R.inA);   // « Tickets visibles : tout le foyer » : tous les tickets, sans les comptes
@@ -8656,6 +8683,7 @@
       if(document.hidden){ if(Object.keys(fyDirty).length){ clearTimeout(fyDetT); fyFlush(); } fySync(); }
       else fySyncSoon(600);
     });
+    try{ if(ensureBourseEp()) persistEpargne(); }catch(e){}
     fyInit();
     render();
     if(store.read("askName", false) && !mainAcct().payer && !fyCfg) setTimeout(function(){ if(!document.getElementById("lockscreen")) fyWelcome(); }, 500);
