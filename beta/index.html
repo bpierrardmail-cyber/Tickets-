@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="28/10 09:33" />
+  <meta name="build" content="28/10 09:45" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -170,6 +170,7 @@
     .offline-bar{ text-align:center; margin:20px 0 6px; font-size:12px; letter-spacing:.02em; }
     .art{ margin:10px 0; padding:12px; background:var(--card2); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:12px; }
     .art.warn{ border-color:rgba(224,164,88,.45); border-left-color:#e0a458; background:rgba(224,164,88,.07); }
+    .art .art-prod.need{ border-color:#e0a458; box-shadow:inset 0 0 0 1px rgba(224,164,88,.5); }
     /* Ticket : articles comparés au montant, photo en vignette */
     .f-mrow{ display:flex; gap:10px; align-items:center; }
     .f-mrow input.f{ flex:1; min-width:0; }
@@ -2487,14 +2488,25 @@
       var wr=tot? inter/tot : 0;
       return Math.max(lr, wr);
     }
-    function lookupAppris(label){
+    // Produits appris : propres à chaque personne, tirés de ses tickets (pour un article, le produit qu'elle lui a donné la dernière fois)
+    var apprisMemo={ arr:null, v:-1, p:null, m:null }, entriesVer=0;
+    function apprisOf(person){
+      if(apprisMemo.arr===state.entries && apprisMemo.v===entriesVer && apprisMemo.p===person) return apprisMemo.m;
+      var m={};
+      state.entries.filter(function(e){ return payerOf(e)===person; })
+        .sort(function(a, b){ return String(a.date||"").localeCompare(String(b.date||"")) || ((Number(a.id)||0)-(Number(b.id)||0)); })
+        .forEach(function(e){ (e.articles||[]).forEach(function(a){ var n=norm(a.label); if(n && a.produit && a.produit!=="Remise") m[n]=a.produit; }); });
+      apprisMemo={ arr:state.entries, v:entriesVer, p:person, m:m }; return m;
+    }
+    function lookupAppris(label, person){
+      var D=person ? apprisOf(person) : APPRIS;
       var n=norm(label); if(!n) return "";
-      if(APPRIS[n]) return APPRIS[n];
+      if(D[n]) return D[n];
       var best="", bestKey="";
-      for(var k in APPRIS){ if(k.length>=3 && (n.indexOf(k)>=0 || (n.length>=4 && k.indexOf(n)>=0)) && k.length>bestKey.length){ bestKey=k; best=APPRIS[k]; } }
+      for(var k in D){ if(k.length>=3 && (n.indexOf(k)>=0 || (n.length>=4 && k.indexOf(n)>=0)) && k.length>bestKey.length){ bestKey=k; best=D[k]; } }
       if(best) return best;
       var bestScore=0, bestSim="";
-      for(var k2 in APPRIS){ if(k2.length<3) continue; var sc=simRatio(n,k2); if(sc>bestScore){ bestScore=sc; bestSim=APPRIS[k2]; } }
+      for(var k2 in D){ if(k2.length<3) continue; var sc=simRatio(n,k2); if(sc>bestScore){ bestScore=sc; bestSim=D[k2]; } }
       if(bestScore>=SIM_THRESHOLD/100) return bestSim;
       return "";
     }
@@ -2662,7 +2674,7 @@
       offline: store.read("offlineReady", false) ? "ready" : "idle",
       busy: false, prog: 0, scanMsg: "", note: "", graphSel: null, graphView: "depenses", graphPeriod: "cur", graphDim: "fam", graphType: "donut", graphHide: {}, histCat: "", histMonth: null, artSel: null, prixActuel: "", solPrice: null, solLoading: false, solError: "", solTime: "", stockPrices: {}, stockLoading: {}, stockError: {}
     };
-    function persist(){ store.write("entries", state.entries); }
+    function persist(){ entriesVer++; store.write("entries", state.entries); }
 
     var app = document.getElementById("app");
     var filein = document.getElementById("filein");
@@ -3837,7 +3849,7 @@
         '<div class="art-row">'+
           '<input class="f art-prix" inputmode="decimal" value="'+esc(a.prix)+'" placeholder="0,00">'+
           '<div class="combo">'+
-            '<input class="f art-prod" autocomplete="off" value="'+esc(a.produit)+'" placeholder="Produit — tape ou touche">'+
+            '<input class="f art-prod" autocomplete="off" value="'+esc(a.produit)+'"'+(a.auto && a.produit ? ' data-autov="'+esc(a.produit)+'"' : '')+' placeholder="Produit — tape ou touche">'+
             '<div class="combo-pop"></div>'+
           '</div>'+
           '<button class="btn ghost art-del" type="button">✕</button>'+
@@ -3892,6 +3904,11 @@
       artChkPaint();
       var fmi=document.getElementById("f-montant"); if(fmi) fmi.addEventListener("input", artChkPaint);
       var artsBox=document.getElementById("arts"); if(artsBox) artsBox.addEventListener("input", function(ev){ var t=ev.target; if(t && t.classList && (t.classList.contains("art-prix") || t.classList.contains("art-prod"))) artChkPaint(); });
+      // article tapé à la main : son dernier produit pour cette personne, si le produit est encore vide
+      if(artsBox) artsBox.addEventListener("change", function(ev){ var t=ev.target; if(!t || !t.classList || !t.classList.contains("art-name")) return;
+        var pi=t.parentNode && t.parentNode.querySelector(".art-prod"); if(!pi || pi.value.trim()) return;
+        var who=payerOf({ payePar:(state.draft && state.draft.payePar)||"" }), pr=lookupAppris(t.value, who); if(!pr) return;
+        pi.value=pr; pi.setAttribute("data-autov", pr); artChkPaint(); });
       var pv=document.getElementById("photoview"); if(pv) pv.onclick=function(){ readForm();
         var ro=state.draftRO, s=uiSheet('<div class="sheet-title">Photo du ticket</div><img src="'+state.draft.photo+'" alt="Photo du ticket" style="max-width:100%;max-height:70vh;display:block;margin:0 auto 12px;border-radius:12px;border:1px solid var(--line)">'+
           '<div class="ui-stack">'+(ro?'':'<button type="button" class="btn ghost" id="pvchg">Changer la photo</button><button type="button" class="btn ghost" id="pvdel">Supprimer la photo</button>')+'<button type="button" class="btn primary ui-no">Fermer</button></div>');
@@ -3916,6 +3933,9 @@
           var v=btn.getAttribute("data-payer");
           if(v==="__new"){ var nm=(window.prompt("Payé par qui ?")||"").trim(); readForm(); state.draft.payePar=nm; render(); return; }
           state.draft.payePar=v;
+          readForm(); var who=payerOf(state.draft), ch=false;
+          (state.draft.articles||[]).forEach(function(a){ if(a.produit && !a.auto) return; var pr=lookupAppris(a.label, who); if(pr!==(a.produit||"")){ a.produit=pr; a.auto=!!pr; ch=true; } });
+          if(ch){ render(); return; }
           [].forEach.call(document.querySelectorAll("#payer .chip"), function(b){ b.classList.remove("on"); });
           btn.classList.add("on");
         };
@@ -3985,10 +4005,14 @@
     }
     function artChkPaint(){
       var c=artChkForm(), box=document.getElementById("artchk"), sm=document.getElementById("artsum"); if(!box) return;
-      var show=c.n>0 && c.tot>0;
+      var show=c.n>0 && c.tot>0, np=0;
+      [].forEach.call(document.querySelectorAll("#arts .art"), function(node){   // produit pas encore choisi : en orange
+        var pi=node.querySelector(".art-prod"), has=(node.querySelector(".art-prix").value.trim()!=="" || node.querySelector(".art-name").value.trim()!=="");
+        var need=has && !pi.value.trim(); pi.classList.toggle("need", need); if(need) np++; });
+      var npT=np ? np+' sans produit' : '';
       box.innerHTML=!show ? "" : (c.ok
-        ? '<button type="button" class="chk ok" id="chkgo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="t"><b>'+c.n+' article'+(c.n>1?'s':'')+' = total '+esc(fmtK(c.tot))+'</b><span>rien à corriger</span></span><span class="go">Voir ↓</span></button>'
-        : '<button type="button" class="chk bad" id="chkgo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17.5v.5"/></svg><span class="t"><b>'+c.n+' article'+(c.n>1?'s':'')+' · '+esc(fmtK(c.sum))+' ≠ '+esc(fmtK(c.tot))+'</b><span>écart '+esc(fmtK(Math.abs(c.diff)))+' · vérifie les articles</span></span><span class="go">Vérifier ↓</span></button>');
+        ? '<button type="button" class="chk ok" id="chkgo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="t"><b>'+c.n+' article'+(c.n>1?'s':'')+' = total '+esc(fmtK(c.tot))+'</b><span>'+(npT ? npT+' à ranger' : 'rien à corriger')+'</span></span><span class="go">Voir ↓</span></button>'
+        : '<button type="button" class="chk bad" id="chkgo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17.5v.5"/></svg><span class="t"><b>'+c.n+' article'+(c.n>1?'s':'')+' · '+esc(fmtK(c.sum))+' ≠ '+esc(fmtK(c.tot))+'</b><span>écart '+esc(fmtK(Math.abs(c.diff)))+' · vérifie les articles'+(npT ? ' · '+npT : '')+'</span></span><span class="go">Vérifier ↓</span></button>');
       var go=document.getElementById("chkgo"); if(go) go.onclick=function(){ var h=document.getElementById("artshead"); if(h) h.scrollIntoView({ behavior:"smooth", block:"start" }); };
       if(sm){ sm.textContent=show ? (c.ok ? "✓ "+fmtK(c.sum) : fmtK(c.sum)+" sur "+fmtK(c.tot)) : ""; sm.className=show ? (c.ok?"ok":"bad") : ""; }
       [].forEach.call(document.querySelectorAll("#arts .art"), function(node){ node.classList.toggle("warn", show && !c.ok); });
@@ -3999,9 +4023,10 @@
       state.draft.date=document.getElementById("f-date").value;
       var arts=[];
       [].forEach.call(document.querySelectorAll("#arts .art"), function(node){
+        var pi=node.querySelector(".art-prod");
         arts.push({ label:node.querySelector(".art-name").value,
                     prix:node.querySelector(".art-prix").value,
-                    produit:node.querySelector(".art-prod").value,
+                    produit:pi.value, auto:(pi.value!=="" && pi.getAttribute("data-autov")===pi.value),
                     commun:node.querySelector(".art-comc")?node.querySelector(".art-comc").checked:false });
       });
       state.draft.articles=arts;
@@ -7177,7 +7202,8 @@
           state.draft.date = p.date || state.draft.date;
           state.draft.marchand = p.marchand || state.draft.marchand;
           state.draft.categorie = p.categorie;
-          state.draft.articles = (p.lignes||[]).map(function(a){ return {label:a.label, prix:a.prix, produit:lookupAppris(a.label)}; });
+          var who=payerOf(state.draft);
+          state.draft.articles = (p.lignes||[]).map(function(a){ var pr=lookupAppris(a.label, who); return {label:a.label, prix:a.prix, produit:pr, auto:!!pr}; });
           var hasData = state.draft.montant || (state.draft.articles && state.draft.articles.length);
           var eng = diag.some(function(d){ return /^mlkit:/.test(d); }) ? "sur le téléphone (ML Kit)" : (diag.some(function(d){ return /^cloud \d/.test(d); }) ? "par OCR.space" : "par Tesseract");
           var ko = diag.filter(function(d){ return /KO/.test(d); }).join(" · ");

@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (28/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `28/10 09:33`, environ 8 800 lignes.
+- β web : `beta/index.html`, étiquette `28/10 09:45`, environ 8 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -75,6 +75,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **28/10** : produit d'un article vide = en orange ; rempli avec le dernier produit que la personne du ticket a donné à cet article, cloisonné par personne.
 - **28/10** : ticket scanné : bandeau d'écart articles / total, question à l'enregistrement s'il reste un écart, photo en vignette (les 3 points de la maquette).
 - **28/10** : la Bourse est toujours comptée une fois dans l'épargne, comme une ligne automatique qui suit l'onglet Bourse (maquette « Tickets — Bourse dans l'épargne ») ; plus de liaison manuelle.
 
@@ -114,6 +115,10 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 28/10
+- **Produit des articles, propre à chaque personne** (demande de Benoît : Sylvette enregistrait sans produit) :
+  - champ « Produit » vide d'un article : encadré en orange ; le bandeau dit « N sans produit à ranger » ; on peut toujours enregistrer ;
+  - le produit se remplit avec le dernier que **la personne du ticket** (« Payé par ») a donné à cet article (`apprisOf(personne)` tiré de ses tickets, `lookupAppris(libellé, personne)`) : au scan, quand on tape un article, et quand on change « Payé par » (les produits vides ou remplis tout seuls changent, ceux tapés à la main restent) ;
+  - cloisonné : ce que Benoît a rangé ne remplit plus les tickets de Sylvette, et inversement. La liste des produits reste commune.
 - **Lecture des tickets, suite** : sur le téléphone de Sylvette la lecture coupe les mots (« Vo lume e 21,45 »). Chaque ligne est aussi testée sans ses espaces : « Volume » en début de ligne est une quantité (jamais un article), « TOT TIC » / « N et » sont des totaux. Une ligne de volume ou une station connue (TotalEnergies, Total Access, Esso…) suffit pour faire du ticket un plein : un seul article (le carburant lu, sinon « CARBURANT ») au montant total. Un produit nommé « … VOLUME » (mascara) reste un article.
 - **Ticket : vérifier les articles** (maquette « Tickets — Vérifier un ticket scanné ») : on voyait le montant en haut du scan sans vérifier les articles en bas.
   - bandeau sous le montant (`artChkPaint`) : orange « 3 articles · 110,72 € ≠ 48,69 € · écart 62,03 € · Vérifier ↓ » (descend aux articles), vert « ✓ 4 articles = total » ; mis à jour pendant la saisie ; rappel « 110,72 € sur 48,69 € » au titre des articles, cartes d'articles en orange tant que ça ne colle pas ; remises déduites, 5 centimes d'arrondi tolérés (`CHK_TOL`) ;
