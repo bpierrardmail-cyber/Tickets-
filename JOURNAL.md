@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (28/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `28/10 10:36`, environ 8 800 lignes.
+- β web : `beta/index.html`, étiquette `28/10 10:47`, environ 8 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -71,7 +71,7 @@ Après chaque modification, dans le même commit :
   - copies différentielles ;
   - domaine UE.
 - À décider par Benoît : répartition gratuit / Plus et prix, nom de l'appli, type de compte Google Play, lien avec la banque.
-- **Lecture des tickets** : sur le vrai ticket Intermarché, ML Kit perdait encore 4 ou 5 articles (sur 31) que le texte idéal donne bien ; il faut le texte lu par le téléphone pour trouver pourquoi. « Copier la lecture » est en place (28/10) : attendre que Benoît rescanne le ticket Intermarché et colle la lecture. Idée à reprendre ensuite (Benoît : « on verra après ») : un retrait au distributeur scanné proposé comme « argent liquide » plutôt qu'en dépense.
+- **Lecture des tickets** : sur le vrai ticket Intermarché, ML Kit perdait encore 4 ou 5 articles (sur 31) que le texte idéal donne bien ; il faut le texte lu par le téléphone pour trouver pourquoi. « Copier la lecture » est en place (28/10) et a servi pour le ticket Intermarché (corrigé). Pour tout ticket mal lu : photo + lecture copiée. Idée à reprendre ensuite (Benoît : « on verra après ») : un retrait au distributeur scanné proposé comme « argent liquide » plutôt qu'en dépense.
 - À surveiller : l'option « Ajouter au foyer » (verser ses anciennes données en rejoignant) sera retirée si personne ne s'en sert.
 
 ## Décisions de Benoît
@@ -118,6 +118,13 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 28/10
+- **Lecture des tickets, d'après la vraie lecture du ticket Intermarché** (collée par Benoît avec « Copier la lecture ») : les lignes étaient bien regroupées ; les 4 articles perdus venaient de prix mal lus.
+  - « 142 EUR » (virgule perdue) = 1,42 ; « A84 EUR » (4 lu A) = 4,84 : seulement sur une ligne d'article sans autre montant ;
+  - article pesé dont le prix est illisible (« 0,5 EUR A ») : prix calculé, poids × prix au kilo (0,170 × 2,99 = 0,51) ; aussi quand seul le prix au kilo a été lu ;
+  - article dont le prix n'a pas été lu du tout (« *AIGUILLETTE POULET EUR A ») : gardé avec le prix vide, encadré en orange ; le bandeau dit « 1 sans prix » ;
+  - à l'enregistrement, s'il manque de l'argent et qu'un seul article n'a pas de prix : « Mettre 7,59 € sur « AIGUILLETTE POULET » » (en plus de « Divers ») ;
+  - noms : « 4ETREZ » (« * » lu 4), « ELUR » / « EUAR » (EUR mal lu), « IGP 0C » → « IGP OC ».
+  - Résultat sur ce ticket : 33 lignes, 90,69 € lus ; il ne manque que l'aiguillette (7,59 €), proposée à l'enregistrement.
 - **« Copier la lecture »** (demande de Benoît) : sous un ticket scanné, à côté de « Lu sur le téléphone… » (et aussi après une « Lecture vide »), un lien ouvre « Lecture du ticket » : les lignes lues, puis chaque morceau rendu par ML Kit avec ses 4 coins, et la taille de la photo. Boutons Copier / Partager… / Fermer ; l'appli n'envoie rien elle-même. Gardé seulement pendant la saisie du ticket scanné (`state.ocrRaw`, `ocrRawText`, `ocrRawSheet`) : pour un ticket déjà enregistré, il faut le rescanner. Benoît colle ce texte à Claude avec la photo ; les morceaux suffisent à refaire exactement le regroupement des lignes (`mlkitRows`) et la lecture. Au passage, ouvrir un ancien ticket n'affiche plus la note du dernier scan.
 - **Lecture des tickets, 4 tickets envoyés par Benoît** (retrait, TotalEnergies, Grand Frais, Intermarché ; recopiés comme tests dans l'espace de travail de Claude, jamais dans le dépôt) :
   - retrait au distributeur : « RETRAIT : 50 EUR » sans centimes était une lecture vide ; un montant rond suivi de EUR / € est lu sur une ligne retrait / montant / total ;

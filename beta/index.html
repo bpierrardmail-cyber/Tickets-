@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="28/10 10:36" />
+  <meta name="build" content="28/10 10:47" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -170,7 +170,7 @@
     .offline-bar{ text-align:center; margin:20px 0 6px; font-size:12px; letter-spacing:.02em; }
     .art{ margin:10px 0; padding:12px; background:var(--card2); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:12px; }
     .art.warn{ border-color:rgba(224,164,88,.45); border-left-color:#e0a458; background:rgba(224,164,88,.07); }
-    .art .art-prod.need{ border-color:#e0a458; box-shadow:inset 0 0 0 1px rgba(224,164,88,.5); }
+    .art .art-prix.need, .art .art-prod.need{ border-color:#e0a458; box-shadow:inset 0 0 0 1px rgba(224,164,88,.5); }
     /* Ticket : articles comparés au montant, photo en vignette */
     .f-mrow{ display:flex; gap:10px; align-items:center; }
     .f-mrow input.f{ flex:1; min-width:0; }
@@ -2618,11 +2618,12 @@
       function cleanLabel(l){
         // « A 1x * » en tête (le « 1x » est parfois lu « IX ») ; « EUR A » ou « EURA » (code TVA) en fin
         l=l.replace(/^\s*[A-D]\s+(?=(?:\d+|[Il|])\s?[xX]\b|\*)/, "").replace(/^\s*(?:\d{1,2}|[Il|])\s?[xX]\s+/, "").replace(/^\s*\*\s*/, "");
-        var t=l.replace(/-?\s?(?:\d{1,3}\.(?=\d{3}[.,]))?(\d{1,4}) ?[.,] ?(\d{2})\b/g," ").replace(/\beur(?:os?)?(?:\s*[a-d])?\b/gi," ").replace(/€/g," ");
+        l=l.replace(/^\s*[4+](?=[A-Z]{3})/, "");   // « *ETREZ » lu « 4ETREZ »
+        var t=l.replace(/-?\s?(?:\d{1,3}\.(?=\d{3}[.,]))?(\d{1,4}) ?[.,] ?(\d{2})\b/g," ").replace(/\b(?:e[lu]{1,2}a?r|eur)(?:os?)?(?:\s*[a-d])?\b/gi," ").replace(/€/g," ");
         var up=(t.match(/[A-ZÀ-Ý]/g)||[]).length, lo=(t.match(/[a-zà-ÿ]/g)||[]).length;
         // ticket en majuscules : un mot avec des minuscules est du bruit (filigrane lu à l'envers…)
         if(up>=4 && up>=lo*3) t=t.split(/\s+/).filter(function(w){ return !/[a-zà-ÿ]/.test(w); }).join(" ");
-        t=t.replace(/\b0(?=[A-ZÀ-Ý]{2})/g,"O").replace(/([A-ZÀ-Ý])0(?=[A-ZÀ-Ý])/g,"$1O");
+        t=t.replace(/\b0(?=[A-ZÀ-Ý])/g,"O").replace(/([A-ZÀ-Ý])0(?=[A-ZÀ-Ý])/g,"$1O");
         return t.replace(/[^0-9A-Za-zÀ-ÿ ]+/g," ").replace(/\s+/g," ").trim().replace(/\s[A-D]$/,"");
       }
       // ticket de carburant : volume, prix au litre, pompe ne sont jamais des articles
@@ -2649,10 +2650,22 @@
         var isKey=(key.test(l) || cTot || cFuel) && !weightL;
         if(isKey && last && (totRe.test(l) || cTot || payRe.test(l))) afterTotal=true;   // après le total (ou le paiement, si le total est mal lu) : TVA, pied de ticket
         if(afterTotal || isSkip || isKey) return;
+        var lsrc=l;
+        // pesée « 0,170 kg X 2,99EURO/kg » : le prix se calcule si la lecture l'a manqué (« 0,5 EUR A »)
+        var wp=weightL && /(\d{1,3})[.,](\d{3})\s*k\s?g\s*[xX*×]\s*(\d{1,3})[.,](\d{2})/i.exec(l);
+        if(wp){ var up=+(wp[3]+"."+wp[4]), wv=Math.round((+(wp[1]+"."+wp[2]))*up*100+1e-6)/100;
+          if(wv>0 && (!last || (Math.abs(lastV-up)<0.005 && Math.abs(wv-up)>0.01))){ last=true; lastV=wv; neg=false; } }
+        // prix d'article lu sans sa virgule ou avec une lettre : « 142 EUR » = 1,42 ; « A84 EUR » = 4,84
+        var fx=!last && !weightL && /(?:^|\s)([0-9OoASB])([0-9OoASB]{2})\s*(?:E[LU]{1,2}A?R|EUR|€)/.exec(l);
+        if(fx && /\d/.test(fx[1]+fx[2])){ lsrc=l.slice(0, fx.index); var dg=(fx[1]+fx[2]).replace(/[Oo]/g,"0").replace(/A/g,"4").replace(/S/g,"5").replace(/B/g,"8"); last=true; lastV=+(dg.charAt(0)+"."+dg.slice(1)); neg=false; }
+        // article dont le prix n'a pas été lu (« *AIGUILLETTE POULET  EUR A ») : gardé, prix à remplir
+        if(!last && !weightL && /(?:\bE[LU]{1,2}A?R|\bEUR|€)\s?[A-D]\s*$/.test(l)){ var lb=cleanLabel(l); pend="";
+          if(lb.replace(/[^A-Za-zÀ-ÿ]/g,"").length>=3) lignes.push({ label:lb.slice(0,28), prix:"", produit:"", remise:false });
+          return; }
         if(!last){ if(!weightL && !/^\s*p[tnu]\b/i.test(l) && /[A-Za-zÀ-ÿ]{3,}/.test(l)) pend=l; return; }   // sans prix : peut-être un article pesé
         var prix = lastV;
         if(!(prix>0)) return;
-        var label = cleanLabel(weightL && pend ? pend : l); pend="";
+        var label = cleanLabel(weightL && pend ? pend : lsrc); pend="";
         if(label.replace(/[^A-Za-zÀ-ÿ]/g,"").length < 2) return;
         if(neg){ var pc=/^\s*-?(\d{1,2})\s*%/.exec(l); if(pc) label=label.replace(/^\d{1,2}\s+/, "-"+pc[1]+"% "); }
         lignes.push({ label: label.slice(0,28), prix: prix.toFixed(2).replace(".",","), produit:"", remise:neg });
@@ -4080,13 +4093,14 @@
     }
     function artChkPaint(){
       var c=artChkForm(), box=document.getElementById("artchk"), sm=document.getElementById("artsum"); if(!box) return;
-      var show=c.n>0 && c.tot>0, np=0;
+      var show=c.n>0 && c.tot>0, np=0, nx=0;
       [].forEach.call(document.querySelectorAll("#arts .art"), function(node){   // produit pas encore choisi : en orange
         var pi=node.querySelector(".art-prod"), has=(node.querySelector(".art-prix").value.trim()!=="" || node.querySelector(".art-name").value.trim()!=="");
-        var need=has && !pi.value.trim(); pi.classList.toggle("need", need); if(need) np++; });
-      var npT=np ? np+' sans produit' : '';
+        var need=has && !pi.value.trim(); pi.classList.toggle("need", need); if(need) np++;
+        var px=node.querySelector(".art-prix"), noP=!num(px.value) && node.querySelector(".art-name").value.trim()!=="" && pi.value!=="Remise"; px.classList.toggle("need", noP); if(noP) nx++; });
+      var npT=(nx ? nx+' sans prix' : '')+(nx && np ? ' · ' : '')+(np ? np+' sans produit' : '');
       box.innerHTML=!show ? "" : (c.ok
-        ? '<button type="button" class="chk ok" id="chkgo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="t"><b>'+c.n+' article'+(c.n>1?'s':'')+' = total '+esc(fmtK(c.tot))+'</b><span>'+(npT ? npT+' à ranger' : 'rien à corriger')+'</span></span><span class="go">Voir ↓</span></button>'
+        ? '<button type="button" class="chk ok" id="chkgo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="t"><b>'+c.n+' article'+(c.n>1?'s':'')+' = total '+esc(fmtK(c.tot))+'</b><span>'+(npT ? npT+(np && !nx ? ' à ranger' : '') : 'rien à corriger')+'</span></span><span class="go">Voir ↓</span></button>'
         : '<button type="button" class="chk bad" id="chkgo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17.5v.5"/></svg><span class="t"><b>'+c.n+' article'+(c.n>1?'s':'')+' · '+esc(fmtK(c.sum))+' ≠ '+esc(fmtK(c.tot))+'</b><span>écart '+esc(fmtK(Math.abs(c.diff)))+' · vérifie les articles'+(npT ? ' · '+npT : '')+'</span></span><span class="go">Vérifier ↓</span></button>');
       var go=document.getElementById("chkgo"); if(go) go.onclick=function(){ var h=document.getElementById("artshead"); if(h) h.scrollIntoView({ behavior:"smooth", block:"start" }); };
       if(sm){ sm.textContent=show ? (c.ok ? "✓ "+fmtK(c.sum) : fmtK(c.sum)+" sur "+fmtK(c.tot)) : ""; sm.className=show ? (c.ok?"ok":"bad") : ""; }
@@ -4125,9 +4139,12 @@
       if(!montant){ var f=document.getElementById("f-montant"); if(f) f.focus(); return; }
       var ck=artChkOf(state.draft.montant, state.draft.articles);
       if(force!==true && ck.n>0 && !ck.ok){   // les articles ne font pas le total : vérifier, compléter ou enregistrer quand même
+        var noP=(state.draft.articles||[]).filter(function(a){ return !num(a.prix) && String(a.label||"").trim() && a.produit!=="Remise"; });
+        var one=ck.diff>0 && noP.length===1 ? noP[0] : null;   // un seul article sans prix : c'est sans doute lui qui manque
         var miss=ck.diff>0, s=uiSheet('<div class="sheet-title">Les articles ne font pas le total</div>'+
           '<div class="chk-tab"><div><span>Articles</span><b>'+esc(fmtK(ck.sum))+'</b></div><div><span>Ticket</span><b>'+esc(fmtK(ck.tot))+'</b></div><div><span>'+(miss?'Il manque':'En trop')+'</span><b>'+esc(fmtK(Math.abs(ck.diff)))+'</b></div></div>'+
           '<div class="ui-stack"><button type="button" class="btn primary" id="ckv">Vérifier les articles</button>'+
+          (one ? '<button type="button" class="btn" id="ckone">Mettre '+esc(fmtK(ck.diff))+' sur « '+esc(String(one.label).trim().slice(0, 24))+' »</button>' : '')+
           '<button type="button" class="btn" id="ckfix">'+(miss ? 'Ajouter '+esc(fmtK(ck.diff))+' en « Divers »' : 'Mettre le montant à '+esc(fmtK(ck.sum)))+'</button>'+
           '<button type="button" class="btn ghost" id="cksave">Enregistrer quand même</button></div>');
         s.q("#ckv").onclick=function(){ s.close(); var h=document.getElementById("artshead"); if(h) h.scrollIntoView({ behavior:"smooth", block:"start" }); };
@@ -4136,6 +4153,7 @@
           else state.draft.montant=String(ck.sum).replace(".", ",");
           render(); saveDraft(true); };
         s.q("#cksave").onclick=function(){ s.close(); saveDraft(true); };
+        if(one) s.q("#ckone").onclick=function(){ s.close(); one.prix=ck.diff.toFixed(2).replace(".", ","); render(); saveDraft(true); };
         return;
       }
       (function(){
