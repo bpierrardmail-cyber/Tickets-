@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="28/10 09:58" />
+  <meta name="build" content="28/10 10:28" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -1284,7 +1284,7 @@
     function persistCats(){ store.write("cats", CATS); }
     var KEYWORDS = {
       "Alimentation":["carrefour","leclerc","lidl","aldi","intermarch","super u","hyper u","casino","monoprix","auchan","netto","cora","biocoop","grand frais","franprix"],
-      "Carburant":["total","esso"," bp ","station","avia","agip","gasoil","sp95","sp98","carburant"],
+      "Carburant":["totalenerg","total energ","total access","relais total","station total","esso"," bp ","station service","station-service","avia","agip","gasoil","gazole","diesel","sp95","sp98","carburant"],
       "Restaurant":["restaurant","mcdo","mcdonald","burger","kebab","pizz","boulang","cafe","brasserie"],
       "Maison":["leroy merlin","castorama","brico","weldom","mr bricolage","point p","gedimat","ikea"],
       "Santé":["pharmacie","parapharm","optique","mutuelle"],
@@ -2505,7 +2505,8 @@
       var n=norm(label); if(!n) return "";
       if(D[n]) return D[n];
       var best="", bestKey="";
-      for(var k in D){ if(k.length>=3 && (n.indexOf(k)>=0 || (n.length>=4 && k.indexOf(n)>=0)) && k.length>bestKey.length){ bestKey=k; best=D[k]; } }
+      var sn=" "+n+" ";   // mots entiers seulement : « eur » ne doit pas trouver « beurre »
+      for(var k in D){ if(k.length>=3 && (sn.indexOf(" "+k+" ")>=0 || (n.length>=4 && (" "+k+" ").indexOf(sn)>=0)) && k.length>bestKey.length){ bestKey=k; best=D[k]; } }
       if(best) return best;
       var bestScore=0, bestSim="";
       for(var k2 in D){ if(k2.length<3) continue; var sc=simRatio(n,k2); if(sc>bestScore){ bestScore=sc; bestSim=D[k2]; } }
@@ -2556,7 +2557,7 @@
     }
 
     function guessCat(text){
-      var t=(text||"").toLowerCase();
+      var t=(text||"").toLowerCase().replace(/\s+/g," ");
       for(var i=0;i<CATS.length;i++){ var c=CATS[i], kws=KEYWORDS[c]||[]; for(var j=0;j<kws.length;j++){ if(t.indexOf(kws[j])>=0) return c; } }
       return "Autre";
     }
@@ -2585,22 +2586,38 @@
         });
       });
       if(best && bs>=0.86) return best;
+      // sinon : une grande enseigne citée plus bas (« VOTRE MAGASIN GRAND FRAIS ») ; pas celles qui sont aussi des marques ou des mots courants
+      var all=" "+norm((lines||[]).join(" "))+" ", hit=null, hn=0;
+      CHAINS.forEach(function(c){ var nc=norm(c); if(nc.length<5 || /^(casino|match|action|paul|quick|jules|shell|total|la poste|boulanger|starbucks)$/.test(nc)) return;
+        var n=all.split(" "+nc+" ").length-1; if(n>hn || (n && n===hn && nc.length>norm(hit).length)){ hit=c; hn=n; } });
+      if(hit) return hit;
       // sinon : casse remise d'aplomb (« IntermaRche » → « Intermarche »)
       return (guess||"").replace(/[A-Za-zÀ-ÿ]+/g, function(w){ return (/[a-zà-ÿ]/.test(w) && /[A-ZÀ-Ý]/.test(w.slice(1))) ? w.charAt(0).toUpperCase()+w.slice(1).toLowerCase() : w; });
     }
+    function ticketCat(marchand, text, fuel){
+      var nn=norm(marchand), cnt={}, best=null;
+      if(nn) (state.entries||[]).forEach(function(e){ if(e.categorie && norm(e.marchand)===nn) cnt[e.categorie]=(cnt[e.categorie]||0)+1; });
+      Object.keys(cnt).forEach(function(c){ if(CATS.indexOf(c)>=0 && (!best || cnt[c]>cnt[best])) best=c; });
+      if(best) return best;
+      if(fuel && CATS.indexOf("Carburant")>=0) return "Carburant";
+      var g=guessCat(marchand); return g!=="Autre" ? g : guessCat(text);
+    }
     function parseTicket(text){
       var lines = text.split(/\n/).map(function(l){return l.trim();}).filter(Boolean);
-      var amtRe = /(\d{1,4})[.,](\d{2})\b/g;
+      var amtRe = /(\d{1,4}) ?[.,] ?(\d{2})\b/g;   // « 48 ,42 » : la lecture ajoute parfois une espace
       // Lignes de paiement / totaux (tolère les erreurs de lecture : T0TAL, YONTANT…)
       // (« TOT TTC », lu parfois « TOT TIC » ; « Net » = net à payer ou net HT ; carburant : volume et prix au litre ne sont pas des articles)
-      var key = /t[o0]ta[l1i]|\bt[o0]t\b|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|net a|net à|carte|\bcb\b|visa|mastercard|sans contact|esp[eè]ces|rendu|rendre|monnaie|tva|\bttc\b|\bht\b|€\s*\/\s*l\b|prix\s*(unit|au\s*litre)|\bp\.?u\.?\b/i;
+      // (« carte » en mot entier : « CARTES MAXI TRAD » est un article)
+      var key = /t[o0]ta[l1i]|\bt[o0]t\b|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|net a|net à|\bcarte\b|\bcb\b|visa|mastercard|sans contact|esp[eè]ces|rendu|rendre|monnaie|tva|\bttc\b|\bht\b|€\s*\/\s*l(?:it(?:re)?s?)?\b|prix\s*(unit|au\s*litre)|\bp\.?u\.?\b/i;
       var totRe = /t[o0]ta[l1i]|\bt[o0]t\b|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|net a|net à/i;
       // En-tête du magasin : téléphone, RCS, SIRET… (jamais des articles ni des montants)
+      var payRe = /\bcb\b|\bcarte\s+(?:bancaire|bleue|cb|visa)|paiement|visa|mastercard|sans contact|esp[eè]ces/i;
       var skip = /\b(t[eé]l|tel|fax|siret|siren|rcs|naf|ape|www|http|caisse|ticket|op[eé]rateur|h[oô]tesse|vendeur)\b|@/i;
       var all = [], lignes = [], afterTotal = false;
       function cleanLabel(l){
-        l=l.replace(/^\s*[A-D]\s+(?=\d+\s?[xX]\b|\*)/, "").replace(/^\s*\d{1,2}\s?[xX]\s+/, "").replace(/^\s*\*\s*/, "");
-        var t=l.replace(/(\d{1,4})[.,](\d{2})\b/g," ").replace(/\b(eur|euros?)\b(\s+[a-d]\b)?/gi," ").replace(/€/g," ");
+        // « A 1x * » en tête (le « 1x » est parfois lu « IX ») ; « EUR A » ou « EURA » (code TVA) en fin
+        l=l.replace(/^\s*[A-D]\s+(?=(?:\d+|[Il|])\s?[xX]\b|\*)/, "").replace(/^\s*(?:\d{1,2}|[Il|])\s?[xX]\s+/, "").replace(/^\s*\*\s*/, "");
+        var t=l.replace(/-?\s?(?:\d{1,3}\.(?=\d{3}[.,]))?(\d{1,4}) ?[.,] ?(\d{2})\b/g," ").replace(/\beur(?:os?)?(?:\s*[a-d])?\b/gi," ").replace(/€/g," ");
         var up=(t.match(/[A-ZÀ-Ý]/g)||[]).length, lo=(t.match(/[a-zà-ÿ]/g)||[]).length;
         // ticket en majuscules : un mot avec des minuscules est du bruit (filigrane lu à l'envers…)
         if(up>=4 && up>=lo*3) t=t.split(/\s+/).filter(function(w){ return !/[a-zà-ÿ]/.test(w); }).join(" ");
@@ -2608,31 +2625,45 @@
         return t.replace(/[^0-9A-Za-zÀ-ÿ ]+/g," ").replace(/\s+/g," ").trim().replace(/\s[A-D]$/,"");
       }
       // ticket de carburant : volume, prix au litre, pompe ne sont jamais des articles
-      var fuelT=/\b(gazole|gasoil|diesel|sp\s?9[58]|sans\s*plomb|e\s?10|e\s?85|gpl|carburant|adblue|essence|pompe|esso|avia|agip|shell)\b|total\s*(energ|access)/i.test(text);
+      var fuelT=/\b(gazole|gasoil|diesel|sp\s?9[58](?:\s?-?\s?e\s?(?:5|10))?|sans\s*plomb|e\s?10|e\s?85|gpl|carburant|adblue|essence|pompe|esso|avia|agip|shell)\b|total\s*(energ|access)/i.test(text);
       var sawVol=false, pend="";   // pend : nom d'un article pesé, dont le prix est sur la ligne suivante (« NET 0,980 kg x 1,99 €/kg 1,95 € »)
       lines.forEach(function(l){
-        var m, last=null, isSkip=skip.test(l) || /\b\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\b/.test(l); amtRe.lastIndex=0;
+        var m, last=null, lastV=0, neg=false, nAmt=0, isSkip=skip.test(l) || /\b\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\b/.test(l); amtRe.lastIndex=0;
         // la même ligne sans ses espaces : la lecture coupe parfois les mots (« Vo lume », « T OT TIC », « N et »)
         var cmp=l.toLowerCase().replace(/\s+/g,"");
-        var weightL=/€\s*\/\s*k?g\b|\d[.,]\d{3}\s*k\s?g\b/i.test(l);   // ligne de pesée : poids net, prix au kilo
+        var weightL=/(?:€|eur(?:os?)?)\s*\/\s*k?g\b|\d[.,]\d{3}\s*k\s?g\b/i.test(l);   // ligne de pesée : poids net, prix au kilo (« 2,99 €/kg », « 2,99EURO/kg »)
         var cTot=/^t[o0]t(?:a[l1i])?(?:ttc|tic|t1c|apayer|àpayer)?[0-9:€.,]/.test(cmp) || (/^net(?:ht|ttc|apayer|àpayer)?[0-9:€.,]/.test(cmp) && !weightL);
-        var cFuel=/^volume/.test(cmp) || (/volume|litre|prixunit|prixaulitre|€\/l|eur\/l|pompe|quantit/.test(cmp) && (fuelT || /\d\s*l\b/i.test(l)));   // « Volume » en début de ligne : une quantité, pas un article
-        while((m=amtRe.exec(l))){ if(!isSkip) all.push({ value: parseFloat(m[1]+"."+m[2]), line:l, tot:cTot }); last=m; }
-        if(cFuel && /^volume|litre/.test(cmp)) sawVol=true;
+        var volL=fuelT && /^\d{1,3}[.,]\d{2,3}(?:l|lit|litres?)(?![a-z])/.test(cmp);   // « 24,33 lit » : le volume pris à la pompe
+        var cFuel=volL || /^volume/.test(cmp) || (/volume|litre|prixunit|prixaulitre|€\/l|eur\/l|pompe|quantit/.test(cmp) && (fuelT || /\d\s*l\b/i.test(l)));   // « Volume » en début de ligne : une quantité, pas un article
+        while((m=amtRe.exec(l))){
+          if(/^[.,]\d/.test(l.substr(m.index+m[0].length, 2)) || (m[1].length!==3 && /\d[.,]$/.test(l.slice(Math.max(0, m.index-2), m.index)))) continue;   // « 7.19.15 », « 3.0.16 » (version), « 04.70.08 » (téléphone) : pas un montant
+          var ng=/-\s?$/.test(l.slice(Math.max(0, m.index-2), m.index));   // « -0,73 » : une remise
+          var v=parseFloat(m[1]+"."+m[2]), th=m[1].length===3 && /(?:^|[^\d.,])(\d{1,3})\.$/.exec(l.slice(Math.max(0, m.index-5), m.index));   // « 1.234,56 »
+          if(th) v+=1000*th[1];
+          if(!isSkip && !ng) all.push({ value: v, line:l, tot:cTot, pay:payRe.test(l) }); last=m; lastV=v; neg=ng; nAmt++;
+        }
+        if(cFuel && (volL || /^volume|litre/.test(cmp))) sawVol=true;
+        // tableau de TVA (« A 5,5% 42,15 € 2,32 € 44,47 € ») : ni un article, ni la fin des articles
+        if(nAmt>=2 && /^[^A-Za-zÀ-ÿ]*(?:[A-Za-z]\b[^A-Za-zÀ-ÿ\d]*)?\d{1,2}(?:[.,]\d{1,2})?\s*%/.test(l)) return;
         var isKey=(key.test(l) || cTot || cFuel) && !weightL;
-        if(isKey && last && (totRe.test(l) || cTot)) afterTotal=true;   // après le total : paiement, TVA, pied de ticket
+        if(isKey && last && (totRe.test(l) || cTot || payRe.test(l))) afterTotal=true;   // après le total (ou le paiement, si le total est mal lu) : TVA, pied de ticket
         if(afterTotal || isSkip || isKey) return;
         if(!last){ if(!weightL && !/^\s*p[tnu]\b/i.test(l) && /[A-Za-zÀ-ÿ]{3,}/.test(l)) pend=l; return; }   // sans prix : peut-être un article pesé
-        var prix = parseFloat(last[1]+"."+last[2]);
+        var prix = lastV;
         if(!(prix>0)) return;
         var label = cleanLabel(weightL && pend ? pend : l); pend="";
         if(label.replace(/[^A-Za-zÀ-ÿ]/g,"").length < 2) return;
-        lignes.push({ label: label.slice(0,28), prix: String(prix).replace(".",","), produit:"" });
+        if(neg){ var pc=/^\s*-?(\d{1,2})\s*%/.exec(l); if(pc) label=label.replace(/^\d{1,2}\s+/, "-"+pc[1]+"% "); }
+        lignes.push({ label: label.slice(0,28), prix: prix.toFixed(2).replace(".",","), produit:"", remise:neg });
       });
       var flagged = all.filter(function(a){ return a.tot || totRe.test(a.line); });
       var total = "";
+      var paid = all.filter(function(a){ return a.pay; });   // total illisible : le montant payé
       if(flagged.length) total = Math.max.apply(null, flagged.map(function(a){return a.value;}));
+      else if(paid.length) total = Math.max.apply(null, paid.map(function(a){return a.value;}));
       else if(all.length) total = Math.max.apply(null, all.map(function(a){return a.value;}));
+      // retrait au distributeur, montant rond : « RETRAIT : 50 EUR »
+      if(total===""){ lines.some(function(l){ var mi=/(?:retrait|montant|total|a payer|à payer|somme)\D{0,20}?(\d{1,5})\s*(?:eur\b|euros?\b|€)/i.exec(l); if(mi && !skip.test(l)){ total=+mi[1]; return true; } }); }
       // Date : la première date valide (jour/mois cohérents, pas dans le futur), de préférence avec l'année sur 4 chiffres
       // (« 16/1072026 » = « 16/10/2026 » dont le second « / » a été lu comme un 7)
       var date="", best=null, dm, today=todayISO(), dateFix=false;
@@ -2650,11 +2681,11 @@
       }
       if(best){ date=best.v; dateFix=best.fx; }
       var marchand="";
-      for(var i=0;i<lines.length;i++){ if(/[A-Za-zÀ-ÿ]{3,}/.test(lines[i]) && !skip.test(lines[i])){ marchand=lines[i].slice(0,32); break; } }
+      for(var i=0;i<lines.length;i++){ if(/[A-Za-zÀ-ÿ]{3,}/.test(lines[i]) && !skip.test(lines[i])){ marchand=lines[i].replace(/\s+/g," ").slice(0,32); break; } }
       marchand=matchMerchant(lines, marchand);
-      var fuel=/\b(gazole|gasoil|diesel|sp\s?95(?:\s?e\s?10)?|sp\s?98|sans\s*plomb|e\s?85|gpl|carburant|adblue)\b/i.exec(text);
-      if((fuel || fuelT || sawVol) && !lignes.length && total>0) lignes.push({ label:(fuel ? fuel[1].toUpperCase().replace(/\s+/g," ") : "CARBURANT"), prix:String(total).replace(".",","), produit:"" });
-      return { total: total, date: date, dateFix: dateFix, marchand: marchand, categorie: guessCat(text), lignes: lignes };
+      var fuel=/\b(gazole|gasoil|diesel|sp\s?9[58](?:\s?-?\s?e\s?(?:5|10))?|sans\s*plomb|e\s?85|gpl|carburant|adblue)\b/i.exec(text);
+      if((fuel || fuelT || sawVol) && !lignes.length && total>0) lignes.push({ label:(fuel ? fuel[1].toUpperCase().replace(/\s+/g," ") : "CARBURANT"), prix:total.toFixed(2).replace(".",","), produit:"" });
+      return { total: total, date: date, dateFix: dateFix, marchand: marchand, categorie: ticketCat(marchand, text, !!(fuel || sawVol)), lignes: lignes };
     }
 
 
@@ -7246,7 +7277,7 @@
           state.draft.marchand = p.marchand || state.draft.marchand;
           state.draft.categorie = p.categorie;
           var who=payerOf(state.draft);
-          state.draft.articles = (p.lignes||[]).map(function(a){ var pr=lookupAppris(a.label, who); return {label:a.label, prix:a.prix, produit:pr, auto:!!pr}; });
+          state.draft.articles = (p.lignes||[]).map(function(a){ if(a.remise) return {label:a.label, prix:a.prix, produit:"Remise"}; var pr=lookupAppris(a.label, who); return {label:a.label, prix:a.prix, produit:pr, auto:!!pr}; });
           var hasData = state.draft.montant || (state.draft.articles && state.draft.articles.length);
           var eng = diag.some(function(d){ return /^mlkit:/.test(d); }) ? "sur le téléphone (ML Kit)" : (diag.some(function(d){ return /^cloud \d/.test(d); }) ? "par OCR.space" : "par Tesseract");
           var ko = diag.filter(function(d){ return /KO/.test(d); }).join(" · ");

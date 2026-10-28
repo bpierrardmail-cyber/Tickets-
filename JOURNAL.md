@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (28/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `28/10 09:58`, environ 8 800 lignes.
+- β web : `beta/index.html`, étiquette `28/10 10:28`, environ 8 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -71,6 +71,7 @@ Après chaque modification, dans le même commit :
   - copies différentielles ;
   - domaine UE.
 - À décider par Benoît : répartition gratuit / Plus et prix, nom de l'appli, type de compte Google Play, lien avec la banque.
+- **Lecture des tickets** : sur le vrai ticket Intermarché, ML Kit perdait encore 4 ou 5 articles (sur 31) que le texte idéal donne bien ; il faut le texte lu par le téléphone pour trouver pourquoi. Idée proposée à Benoît le 28/10 : « Copier la lecture » sous le ticket scanné, pour l'envoyer à Claude. Idée aussi : un retrait au distributeur scanné proposé comme « argent liquide » plutôt qu'en dépense.
 - À surveiller : l'option « Ajouter au foyer » (verser ses anciennes données en rejoignant) sera retirée si personne ne s'en sert.
 
 ## Décisions de Benoît
@@ -116,6 +117,15 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 28/10
+- **Lecture des tickets, 4 tickets envoyés par Benoît** (retrait, TotalEnergies, Grand Frais, Intermarché ; recopiés comme tests dans l'espace de travail de Claude, jamais dans le dépôt) :
+  - retrait au distributeur : « RETRAIT : 50 EUR » sans centimes était une lecture vide ; un montant rond suivi de EUR / € est lu sur une ligne retrait / montant / total ;
+  - TotalEnergies : « 7.19.15-sp5-hf1 » (numéro de version) et « 24,33 lit » (volume) n'étaient pas des articles ; « SP95E5 » est reconnu (le seul article = le total) ;
+  - Grand Frais : la ligne du tableau de TVA (« A 5,5% 42,15 € 2,32 € 44,47 € ») doublait le total ; « A IX * » (le « 1x » mal lu) est retiré du nom ;
+  - Intermarché : « CARTES MAXI TRAD » était pris pour un paiement par carte (« carte » en mot entier seulement) ; les remises « -0,73 » sont lues en moins (produit « Remise ») ; « EURA » retiré du nom ;
+  - enseigne : si le haut du ticket ne donne pas d'enseigne connue (« GIE LE SAINT JACQUES », « SAS SURISAL »), une grande enseigne écrite plus bas est prise (« VOTRE MAGASIN GRAND FRAIS », « Votre INTERMARCHE est ouvert ») ;
+  - catégorie (`ticketCat`) : celle de tes tickets dans ce magasin, sinon d'après l'enseigne, sinon le texte. « total » seul n'est plus un mot du Carburant (tout ticket a un TOTAL : Grand Frais tombait en Carburant), ni « station » ;
+  - produit rempli tout seul : mot entier seulement (« eur », appris sur un ticket de parking, mettait « Parking » sur « PATE SABLEE AU BEURRE ») ;
+  - aussi : « 48 ,42 » (espace lue) et « 1.234,56 » sont des montants ; prix des articles toujours avec 2 décimales ; si le total est illisible, le montant payé par carte sert de total et la lecture s'arrête là.
 - **Lecture des tickets, correction** : depuis ce matin, « NET 0,980 kg » (poids net d'un article pesé) était pris pour « Net à payer » : la lecture s'arrêtait au premier article (ticket Grand Frais de 15 articles). « Net » n'est un total que hors ligne de pesée. Les articles pesés sont lus : le nom sur la ligne du dessus, le prix sur la ligne de pesée (« NET 0,980 kg x 1,99 €/kg 1,95 € »). Les noms perdent le code TVA et la quantité du début (« A 1x *… »). Le ticket donne ses 15 articles, somme = total.
 - **Appui long sur un ticket** (Sylvette cherchait à supprimer un ticket ainsi) : partout où des tickets sont listés (page Tickets, liste du Compte, Analyse, Articles), un appui long ouvre « ✎ Ouvrir le ticket » / « 🗑 Supprimer » (`wireTicketLongPress`, `ticketMenu`), avec une petite vibration ; le simple toucher ouvre toujours le ticket. Supprimer se fait tout de suite avec « Ticket supprimé · Annuler » pendant 6 s (`delEntryUndo`, `uiUndoToast`) ; la photo n'est effacée qu'à la fin du délai. Pas de « Supprimer » en consultation seulement.
 - **Produit des articles, propre à chaque personne** (demande de Benoît : Sylvette enregistrait sans produit) :
