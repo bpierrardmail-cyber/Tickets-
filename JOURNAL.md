@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (28/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `28/10 09:26`, environ 8 800 lignes.
+- β web : `beta/index.html`, étiquette `28/10 09:33`, environ 8 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -114,6 +114,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 28/10
+- **Lecture des tickets, suite** : sur le téléphone de Sylvette la lecture coupe les mots (« Vo lume e 21,45 »). Chaque ligne est aussi testée sans ses espaces : « Volume » en début de ligne est une quantité (jamais un article), « TOT TIC » / « N et » sont des totaux. Une ligne de volume ou une station connue (TotalEnergies, Total Access, Esso…) suffit pour faire du ticket un plein : un seul article (le carburant lu, sinon « CARBURANT ») au montant total. Un produit nommé « … VOLUME » (mascara) reste un article.
 - **Ticket : vérifier les articles** (maquette « Tickets — Vérifier un ticket scanné ») : on voyait le montant en haut du scan sans vérifier les articles en bas.
   - bandeau sous le montant (`artChkPaint`) : orange « 3 articles · 110,72 € ≠ 48,69 € · écart 62,03 € · Vérifier ↓ » (descend aux articles), vert « ✓ 4 articles = total » ; mis à jour pendant la saisie ; rappel « 110,72 € sur 48,69 € » au titre des articles, cartes d'articles en orange tant que ça ne colle pas ; remises déduites, 5 centimes d'arrondi tolérés (`CHK_TOL`) ;
   - « Enregistrer » avec un écart (`saveDraft`) : Articles / Ticket / Il manque (ou En trop), puis « Vérifier les articles », « Ajouter X en « Divers » » (ou « Mettre le montant à X ») et « Enregistrer quand même » ; sans écart ou sans article, pas de question ;

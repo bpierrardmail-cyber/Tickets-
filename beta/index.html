@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="28/10 09:26" />
+  <meta name="build" content="28/10 09:33" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2579,7 +2579,7 @@
       var amtRe = /(\d{1,4})[.,](\d{2})\b/g;
       // Lignes de paiement / totaux (tolère les erreurs de lecture : T0TAL, YONTANT…)
       // (« TOT TTC », lu parfois « TOT TIC » ; « Net » = net à payer ou net HT ; carburant : volume et prix au litre ne sont pas des articles)
-      var key = /t[o0]ta[l1i]|\bt[o0]t\b|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|^\s*net\b|net a|net à|carte|\bcb\b|visa|mastercard|sans contact|esp[eè]ces|rendu|rendre|monnaie|tva|\bttc\b|\bht\b|\bvolume\b|€\s*\/\s*l\b|prix\s*(unit|au\s*litre)|\bp\.?u\.?\b/i;
+      var key = /t[o0]ta[l1i]|\bt[o0]t\b|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|^\s*net\b|net a|net à|carte|\bcb\b|visa|mastercard|sans contact|esp[eè]ces|rendu|rendre|monnaie|tva|\bttc\b|\bht\b|€\s*\/\s*l\b|prix\s*(unit|au\s*litre)|\bp\.?u\.?\b/i;
       var totRe = /t[o0]ta[l1i]|\bt[o0]t\b|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|^\s*net\b|net a|net à/i;
       // En-tête du magasin : téléphone, RCS, SIRET… (jamais des articles ni des montants)
       var skip = /\b(t[eé]l|tel|fax|siret|siren|rcs|naf|ape|www|http|caisse|ticket|op[eé]rateur|h[oô]tesse|vendeur)\b|@/i;
@@ -2592,11 +2592,19 @@
         t=t.replace(/\b0(?=[A-ZÀ-Ý]{2})/g,"O").replace(/([A-ZÀ-Ý])0(?=[A-ZÀ-Ý])/g,"$1O");
         return t.replace(/[^0-9A-Za-zÀ-ÿ ]+/g," ").replace(/\s+/g," ").trim().replace(/\s[A-D]$/,"");
       }
+      // ticket de carburant : volume, prix au litre, pompe ne sont jamais des articles
+      var fuelT=/\b(gazole|gasoil|diesel|sp\s?9[58]|sans\s*plomb|e\s?10|e\s?85|gpl|carburant|adblue|essence|pompe|esso|avia|agip|shell)\b|total\s*(energ|access)/i.test(text);
+      var sawVol=false;
       lines.forEach(function(l){
         var m, last=null, isSkip=skip.test(l) || /\b\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\b/.test(l); amtRe.lastIndex=0;
-        while((m=amtRe.exec(l))){ if(!isSkip) all.push({ value: parseFloat(m[1]+"."+m[2]), line:l }); last=m; }
-        var isKey=key.test(l);
-        if(isKey && last && totRe.test(l)) afterTotal=true;   // après le total : paiement, TVA, pied de ticket
+        // la même ligne sans ses espaces : la lecture coupe parfois les mots (« Vo lume », « T OT TIC », « N et »)
+        var cmp=l.toLowerCase().replace(/\s+/g,"");
+        var cTot=/^t[o0]t(?:a[l1i])?(?:ttc|tic|t1c|apayer|àpayer)?[0-9:€.,]/.test(cmp) || /^net(?:ht|apayer|àpayer)?[0-9:€.,]/.test(cmp);
+        var cFuel=/^volume/.test(cmp) || (/volume|litre|prixunit|prixaulitre|€\/l|eur\/l|pompe|quantit/.test(cmp) && (fuelT || /\d\s*l\b/i.test(l)));   // « Volume » en début de ligne : une quantité, pas un article
+        while((m=amtRe.exec(l))){ if(!isSkip) all.push({ value: parseFloat(m[1]+"."+m[2]), line:l, tot:cTot }); last=m; }
+        if(cFuel && /^volume|litre/.test(cmp)) sawVol=true;
+        var isKey=key.test(l) || cTot || cFuel;
+        if(isKey && last && (totRe.test(l) || cTot)) afterTotal=true;   // après le total : paiement, TVA, pied de ticket
         if(afterTotal || isSkip || isKey || !last) return;
         var prix = parseFloat(last[1]+"."+last[2]);
         if(!(prix>0)) return;
@@ -2604,7 +2612,7 @@
         if(label.replace(/[^A-Za-zÀ-ÿ]/g,"").length < 2) return;
         lignes.push({ label: label.slice(0,28), prix: String(prix).replace(".",","), produit:"" });
       });
-      var flagged = all.filter(function(a){ return totRe.test(a.line); });
+      var flagged = all.filter(function(a){ return a.tot || totRe.test(a.line); });
       var total = "";
       if(flagged.length) total = Math.max.apply(null, flagged.map(function(a){return a.value;}));
       else if(all.length) total = Math.max.apply(null, all.map(function(a){return a.value;}));
@@ -2628,7 +2636,7 @@
       for(var i=0;i<lines.length;i++){ if(/[A-Za-zÀ-ÿ]{3,}/.test(lines[i]) && !skip.test(lines[i])){ marchand=lines[i].slice(0,32); break; } }
       marchand=matchMerchant(lines, marchand);
       var fuel=/\b(gazole|gasoil|diesel|sp\s?95(?:\s?e\s?10)?|sp\s?98|sans\s*plomb|e\s?85|gpl|carburant|adblue)\b/i.exec(text);
-      if(fuel && !lignes.length && total>0) lignes.push({ label:fuel[1].toUpperCase().replace(/\s+/g," "), prix:String(total).replace(".",","), produit:"" });
+      if((fuel || fuelT || sawVol) && !lignes.length && total>0) lignes.push({ label:(fuel ? fuel[1].toUpperCase().replace(/\s+/g," ") : "CARBURANT"), prix:String(total).replace(".",","), produit:"" });
       return { total: total, date: date, dateFix: dateFix, marchand: marchand, categorie: guessCat(text), lignes: lignes };
     }
 
