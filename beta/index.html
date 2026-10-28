@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="28/10 09:45" />
+  <meta name="build" content="28/10 09:53" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -1016,6 +1016,8 @@
     .btn.danger{ background:var(--coral); color:#1d0c09; border-color:var(--coral); font-weight:700; }
     .ui-toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:calc(104px + env(safe-area-inset-bottom)); z-index:130;
       background:#2b303b; color:var(--ink); border:1px solid var(--line2); padding:10px 16px; border-radius:12px; font-size:13px; box-shadow:0 10px 26px rgba(0,0,0,.4); max-width:86vw; text-align:center; }
+    .ui-toast.undo{ display:flex; align-items:center; gap:14px; padding:8px 8px 8px 16px; text-align:left; }
+    .ui-toast.undo button{ min-height:40px; padding:0 14px; border-radius:10px; border:0; background:var(--accent-dim); color:var(--accent); font:inherit; font-size:14px; font-weight:700; cursor:pointer; }
     /* Filtre par personne */
     .hpv{ position:absolute; right:0; top:12px; height:36px; max-width:118px; display:flex; align-items:center; gap:6px; padding:0 10px 0 11px; background:var(--card2); border:1px solid var(--line); border-radius:10px; color:var(--ink); font-family:var(--sans); font-size:13px; font-weight:600; cursor:pointer; }
     .hpv i{ flex:0 0 8px; width:8px; height:8px; border-radius:50%; }
@@ -2875,6 +2877,43 @@
       s.q(".ui-no").onclick=s.close;
       [].forEach.call(s.qa("button[data-i]"), function(b){ b.onclick=function(){ s.close(); choices[+b.getAttribute("data-i")].fn(); }; });
     }
+    // Message avec un bouton (« Annuler ») pendant quelques secondes ; fin() est appelé si on n'a pas annulé
+    function uiUndoToast(msg, label, onUndo, fin, ms){
+      var t=document.createElement("div"); t.className="ui-toast undo"; t.setAttribute("role", "status");
+      t.innerHTML='<span>'+esc(msg)+'</span><button type="button">'+esc(label)+'</button>'; document.body.appendChild(t);
+      var done=false, tm=setTimeout(function(){ if(done) return; done=true; try{ document.body.removeChild(t); }catch(e){} if(fin) fin(); }, ms||6000);
+      t.querySelector("button").onclick=function(){ if(done) return; done=true; clearTimeout(tm); try{ document.body.removeChild(t); }catch(e){} onUndo(); };
+    }
+    // Supprimer un ticket, avec « Annuler » (la photo n'est effacée qu'à la fin du délai)
+    function delEntryUndo(id){
+      var i=-1; state.entries.forEach(function(x, k){ if(String(x.id)===String(id)) i=k; }); if(i<0) return;
+      var e=state.entries[i], ph=PHOTOS[String(e.id)];
+      state.entries.splice(i, 1); delete PHOTOS[String(e.id)]; persist(); render();
+      uiUndoToast("Ticket supprimé", "Annuler", function(){
+        state.entries.splice(Math.min(i, state.entries.length), 0, e); if(ph) PHOTOS[String(e.id)]=ph; persist(); render(); uiToast("Ticket remis");
+      }, function(){ if(ph || e.photo) idbDel(e.id); });
+    }
+    // Appui long sur un ticket (listes, Compte, Analyse, Articles) : Ouvrir ou Supprimer
+    function wireTicketLongPress(root){
+      [].forEach.call((root||app).querySelectorAll('.entry[data-id], .ops-open[data-k="t"]'), function(node){
+        if(node.getAttribute("data-lp")) return; node.setAttribute("data-lp", "1");
+        var t=null, x0=0, y0=0, fired=false;
+        function stop(){ if(t){ clearTimeout(t); t=null; } }
+        function fire(){ t=null; fired=true; try{ if(navigator.vibrate) navigator.vibrate(15); }catch(e){} ticketMenu(node.getAttribute("data-id")); }
+        node.addEventListener("touchstart", function(ev){ var p=ev.touches[0]; x0=p.clientX; y0=p.clientY; fired=false; stop(); t=setTimeout(fire, 520); }, { passive:true });
+        node.addEventListener("touchmove", function(ev){ var p=ev.touches[0]; if(Math.abs(p.clientX-x0)>10 || Math.abs(p.clientY-y0)>10) stop(); }, { passive:true });
+        node.addEventListener("touchend", stop); node.addEventListener("touchcancel", stop);
+        node.addEventListener("contextmenu", function(ev){ ev.preventDefault(); stop(); if(!fired){ fired=true; ticketMenu(node.getAttribute("data-id")); } });
+        node.addEventListener("click", function(ev){ if(fired){ fired=false; ev.preventDefault(); ev.stopImmediatePropagation(); } }, true);   // l'appui long n'ouvre pas en plus le ticket
+      });
+    }
+    function ticketMenu(id){
+      var e=state.entries.filter(function(x){ return String(x.id)===String(id); })[0]; if(!e) return;
+      var dd=String(e.date||"").split("-"), can=!fyRO() && fyCanEdit(e);
+      var ch=[{ l:"✎ Ouvrir le ticket", fn:function(){ editEntry(e.id); } }];
+      if(can) ch.push({ l:"🗑 Supprimer", danger:true, fn:function(){ delEntryUndo(e.id); } });
+      uiChoice((e.marchand||"Ticket")+" · "+fmtK(Number(e.montant)||0), esc((dd.length===3?dd[2]+"/"+dd[1]+"/"+dd[0]:"")+(e.categorie?" · "+e.categorie:"")+(can?"":" · en consultation seulement")), ch);
+    }
     function uiToast(msg){
       var t=document.createElement("div"); t.className="ui-toast"; t.textContent=msg; document.body.appendChild(t);
       setTimeout(function(){ try{ document.body.removeChild(t); }catch(e){} }, 2600);
@@ -3069,7 +3108,7 @@
         if(fitView() && !document.querySelector(".sheet-overlay")){ fitMemo={}; render(); } }, 200); });
     })();
     function v0key(){ var on=document.querySelector(".thero .cch-tabs button.on"); return state.view+"|"+(on?on.getAttribute("data-m"):""); }
-    function render(){ pvMemo=null; fsMemo={}; pvWanted=false; avMemo=null; pvLockMe=false; if(!fitting) CHB=fitView()?(fitMemo[state.view+"|"+(state.view==="communes"?(state.comChart||store.read("comChartDef","rep")):state.view==="articles"?(state.artChart||store.read("artChartDef","prod")):state.view==="analyse"?(state.anChart||store.read("anChartDef","mois")):(state.view==="compte"||state.view==="comptedet")?(function(){ var c=state.cptChart||store.read("cptChartDef","mois"); return c==="6m"?"es":c; })():"")]||0):0; fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); wirePV(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); try{ fitHero(); }catch(err){ console.warn(err); } }
+    function render(){ pvMemo=null; fsMemo={}; pvWanted=false; avMemo=null; setTimeout(function(){ try{ wireTicketLongPress(); }catch(err){} }, 0); pvLockMe=false; if(!fitting) CHB=fitView()?(fitMemo[state.view+"|"+(state.view==="communes"?(state.comChart||store.read("comChartDef","rep")):state.view==="articles"?(state.artChart||store.read("artChartDef","prod")):state.view==="analyse"?(state.anChart||store.read("anChartDef","mois")):(state.view==="compte"||state.view==="comptedet")?(function(){ var c=state.cptChart||store.read("cptChartDef","mois"); return c==="6m"?"es":c; })():"")]||0):0; fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); wirePV(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); try{ fitHero(); }catch(err){ console.warn(err); } }
     function renderView(){
       armBack();
       fyViewGuard();
@@ -5407,6 +5446,7 @@
       }
       // la liste : une ligne touchée ouvre sa fiche ; le rond la marque « fait »
       function wireOps(){
+        try{ wireTicketLongPress(document.getElementById("opsBody")); }catch(err){}
         [].forEach.call(document.querySelectorAll("#opsBody .ops-open"), function(b){ b.onclick=function(){ opsOpen(b.getAttribute("data-k"), b.getAttribute("data-id"), month, b.getAttribute("data-done")==="1"); }; });
         [].forEach.call(document.querySelectorAll("#opsBody .ops-ck"), function(b){ b.onclick=function(){ if(fyRO()) return; var k=b.getAttribute("data-k"), id=b.getAttribute("data-id"); if(k==="f") toggleFraisDone(id, month); else toggleVirementDone(id); }; });
         var rp=document.getElementById("opsReport"); if(rp && !fyRO()) rp.onclick=openReport;

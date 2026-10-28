@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (28/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `28/10 09:45`, environ 8 800 lignes.
+- β web : `beta/index.html`, étiquette `28/10 09:53`, environ 8 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -75,6 +75,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **28/10** : appui long sur un ticket → Ouvrir / Supprimer, suppression annulable.
 - **28/10** : produit d'un article vide = en orange ; rempli avec le dernier produit que la personne du ticket a donné à cet article, cloisonné par personne.
 - **28/10** : ticket scanné : bandeau d'écart articles / total, question à l'enregistrement s'il reste un écart, photo en vignette (les 3 points de la maquette).
 - **28/10** : la Bourse est toujours comptée une fois dans l'épargne, comme une ligne automatique qui suit l'onglet Bourse (maquette « Tickets — Bourse dans l'épargne ») ; plus de liaison manuelle.
@@ -115,6 +116,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 28/10
+- **Appui long sur un ticket** (Sylvette cherchait à supprimer un ticket ainsi) : partout où des tickets sont listés (page Tickets, liste du Compte, Analyse, Articles), un appui long ouvre « ✎ Ouvrir le ticket » / « 🗑 Supprimer » (`wireTicketLongPress`, `ticketMenu`), avec une petite vibration ; le simple toucher ouvre toujours le ticket. Supprimer se fait tout de suite avec « Ticket supprimé · Annuler » pendant 6 s (`delEntryUndo`, `uiUndoToast`) ; la photo n'est effacée qu'à la fin du délai. Pas de « Supprimer » en consultation seulement.
 - **Produit des articles, propre à chaque personne** (demande de Benoît : Sylvette enregistrait sans produit) :
   - champ « Produit » vide d'un article : encadré en orange ; le bandeau dit « N sans produit à ranger » ; on peut toujours enregistrer ;
   - le produit se remplit avec le dernier que **la personne du ticket** (« Payé par ») a donné à cet article (`apprisOf(personne)` tiré de ses tickets, `lookupAppris(libellé, personne)`) : au scan, quand on tape un article, et quand on change « Payé par » (les produits vides ou remplis tout seuls changent, ceux tapés à la main restent) ;

@@ -35,7 +35,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 - Outils internes :
   - `store.read(k, def)` / `store.write(k, v)` : JSON dans localStorage.
   - `render()` : redessine tout ; il remet aussi les mémos à zéro (`pvMemo`, `fsMemo`). `renderView()` choisit l'écran selon `state.view`.
-  - `uiForm({title, fields}, cb)`, `uiChoice`, `uiToast` : fenêtres intégrées. Les champs de `uiForm` sont de type `seg`, `select`, `money`… ; `api.show/get/set` dans `onChange`.
+  - `uiForm({title, fields}, cb)`, `uiChoice`, `uiToast`, `uiUndoToast(msg, "Annuler", annuler, fin)` : fenêtres intégrées. Les champs de `uiForm` sont de type `seg`, `select`, `money`… ; `api.show/get/set` dans `onChange`.
   - `num(x)` : lit un montant tapé (virgule ou point, espaces — le clavier Android en met après la virgule —, €, « 1 234,56 »). Toujours l'utiliser, jamais `parseFloat` directement.
   - `fmt`, `fmtK`, `fmtS` : montants. **Tout texte inséré en HTML passe par `esc()`.**
 - Écran mobile, thème sombre (variables CSS `--bg`, `--card`, `--ink`, `--accent`…). Tester à 412 px de large.
@@ -62,6 +62,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 - **Accueil** : graphiques choisis par l'utilisateur (`homeCharts`, bouton ⚙ Choisir, appui long sur une carte), grande carte du haut au choix (`homeTop`, hauteur fixe 300 px) ; puces ✍️ Saisie et 🧾 Tickets (page Tickets, `state.listSub="tickets"`) ; bouton personne en haut à droite. Rien sous les graphiques.
 - **Compte** : la page principale est la liste des opérations du mois (`cptOps(compte, mois)` → `{done, todo}`, `opsBodyHTML`) : tickets, frais fixes et virements par jour, solde du soir, « À venir » avec le rond « fait ». Filtre `state.cptF` (`tout`, `in`, `out`, `av`), recherche `state.cptQ`. Les graphiques sont sur la page `state.view="comptedet"`, `cptPage="graph"` (plein écran) ; les cartes « Compte » de l'Accueil sont prises là.
 - **Jour d'une opération** : ticket = sa date ; virement = `virDay(v)` (`v.day`, sinon la note d'un ancien import) ; frais fixe = `fraisDay(f, mois)` (`f.doneDays[mois]`, sinon `f.jour`). Noté quand on coche « fait » ce mois-ci (`toggleFraisDone`, `toggleVirementDone`) et par l'import ; 0 = rangé au 1er.
+- **Appui long sur un ticket** (toute ligne `.entry[data-id]` ou `.ops-open[data-k="t"]`, branché après chaque `render()` par `wireTicketLongPress`) : Ouvrir / Supprimer, suppression annulable (`delEntryUndo`).
 - **Fiche d'un ticket** (`renderForm`, `saveDraft`) : les articles sont comparés au montant (`artChkOf`, `artChkPaint`, tolérance `CHK_TOL`) ; s'il reste un écart à l'enregistrement, une question propose de vérifier, compléter (« Divers ») ou enregistrer quand même (`saveDraft(true)`). La photo est une vignette à côté du montant. Produit vide = orange ; produit rempli avec le dernier que la personne du ticket (`payerOf`) a donné à cet article (`apprisOf`, `lookupAppris(libellé, personne)`), cloisonné par personne.
 - **Début d'utilisation** : `acctStart` (mois de départ d'un compte) ; avant ce mois, pas de solde, de provision (`provBalance`) ni de mensualité (`mensuelAt`).
 - **Ticket ↔ compte** : le compte choisi sur le ticket, sinon celui dont le `payer` est égal à `payePar` (`ticketInAcct`). Un `payePar` vide compte pour le propriétaire (`payerOf`).
