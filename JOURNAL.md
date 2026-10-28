@@ -72,6 +72,7 @@ Après chaque modification, dans le même commit :
   - domaine UE.
 - À décider par Benoît : répartition gratuit / Plus et prix, nom de l'appli, type de compte Google Play, lien avec la banque.
 - **Lecture des tickets** : sur le vrai ticket Intermarché, ML Kit perdait encore 4 ou 5 articles (sur 31) que le texte idéal donne bien ; il faut le texte lu par le téléphone pour trouver pourquoi. « Copier la lecture » est en place (28/10) et a servi pour le ticket Intermarché (corrigé). Pour tout ticket mal lu : photo + lecture copiée. Idée à reprendre ensuite (Benoît : « on verra après ») : un retrait au distributeur scanné proposé comme « argent liquide » plutôt qu'en dépense.
+- **Lecture des tickets par une IA** : mise de côté le 28/10 par Benoît. Pistes étudiées : Gemini Nano dans le téléphone (API Prompt de ML Kit, photo + texte, encore en essai et seulement sur quelques téléphones récents) ; modèle libre embarqué (Gemma, 1 à 3 Go, lent) ; IA en ligne (environ 0,3 centime par ticket avec Gemini Flash-Lite, mais la photo sort du téléphone et il faut une clé payante, via le relais ou par utilisateur). Si on la reprend : option Plus « Relire avec l'IA » seulement quand le ticket ne tombe pas juste, avec accord la première fois. Gain principal attendu : les produits rangés tout seuls et des noms propres, plus que les montants.
 - À surveiller : l'option « Ajouter au foyer » (verser ses anciennes données en rejoignant) sera retirée si personne ne s'en sert.
 
 ## Décisions de Benoît
@@ -118,6 +119,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 28/10
+- **Lecture par une IA** : étudiée puis mise de côté (voir En cours). Rien de changé dans l'appli.
 - **Lecture des tickets, d'après la vraie lecture du ticket Intermarché** (collée par Benoît avec « Copier la lecture ») : les lignes étaient bien regroupées ; les 4 articles perdus venaient de prix mal lus.
   - « 142 EUR » (virgule perdue) = 1,42 ; « A84 EUR » (4 lu A) = 4,84 : seulement sur une ligne d'article sans autre montant ;
   - article pesé dont le prix est illisible (« 0,5 EUR A ») : prix calculé, poids × prix au kilo (0,170 × 2,99 = 0,51) ; aussi quand seul le prix au kilo a été lu ;
