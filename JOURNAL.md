@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (28/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `28/10 09:12`, environ 8 800 lignes.
+- β web : `beta/index.html`, étiquette `28/10 09:26`, environ 8 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -75,6 +75,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **28/10** : ticket scanné : bandeau d'écart articles / total, question à l'enregistrement s'il reste un écart, photo en vignette (les 3 points de la maquette).
 - **28/10** : la Bourse est toujours comptée une fois dans l'épargne, comme une ligne automatique qui suit l'onglet Bourse (maquette « Tickets — Bourse dans l'épargne ») ; plus de liaison manuelle.
 
 - **27/10** : l'onglet Compte s'ouvre sur la liste des opérations (comme un relevé de banque), d'après la maquette « Tickets — Relevé du compte » ; un bouton « Graphiques » suffit pour les graphiques. Le jour des frais fixes et des virements se note tout seul (coché « fait », import), sinon le 1er du mois ; modifiable dans la fiche.
@@ -113,6 +114,10 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 28/10
+- **Ticket : vérifier les articles** (maquette « Tickets — Vérifier un ticket scanné ») : on voyait le montant en haut du scan sans vérifier les articles en bas.
+  - bandeau sous le montant (`artChkPaint`) : orange « 3 articles · 110,72 € ≠ 48,69 € · écart 62,03 € · Vérifier ↓ » (descend aux articles), vert « ✓ 4 articles = total » ; mis à jour pendant la saisie ; rappel « 110,72 € sur 48,69 € » au titre des articles, cartes d'articles en orange tant que ça ne colle pas ; remises déduites, 5 centimes d'arrondi tolérés (`CHK_TOL`) ;
+  - « Enregistrer » avec un écart (`saveDraft`) : Articles / Ticket / Il manque (ou En trop), puis « Vérifier les articles », « Ajouter X en « Divers » » (ou « Mettre le montant à X ») et « Enregistrer quand même » ; sans écart ou sans article, pas de question ;
+  - photo du ticket en vignette à côté du montant ; la toucher l'affiche en grand avec Changer / Supprimer.
 - **Lecture des tickets (`parseTicket`)**, retour sur un ticket de carburant de Sylvette (date en octobre 2025, articles « Volume », « TOT TIC », « Net ») :
   - « TOT TTC » (lu « TOT TIC »), « Net » en début de ligne, volume, prix au litre (€/L, prix unitaire) ne sont plus des articles ; « TOT » et « Net » comptent comme le total ;
   - ticket de carburant sans article : un seul article, le carburant (GAZOLE, SP95-E10…), pour le total ;

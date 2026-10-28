@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="28/10 09:12" />
+  <meta name="build" content="28/10 09:26" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -169,6 +169,30 @@
     .empty b{ color:var(--ink); }
     .offline-bar{ text-align:center; margin:20px 0 6px; font-size:12px; letter-spacing:.02em; }
     .art{ margin:10px 0; padding:12px; background:var(--card2); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:12px; }
+    .art.warn{ border-color:rgba(224,164,88,.45); border-left-color:#e0a458; background:rgba(224,164,88,.07); }
+    /* Ticket : articles comparés au montant, photo en vignette */
+    .f-mrow{ display:flex; gap:10px; align-items:center; }
+    .f-mrow input.f{ flex:1; min-width:0; }
+    .f-thumb{ flex:0 0 48px; width:48px; height:48px; padding:0; border-radius:10px; border:1px solid var(--line2); background:#e9e6dd; overflow:hidden; cursor:pointer; }
+    .f-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .chk{ display:flex; align-items:center; gap:10px; width:100%; margin-top:8px; padding:11px 12px; border-radius:13px; font:inherit; text-align:left; cursor:pointer; }
+    .chk.bad{ background:rgba(224,164,88,.14); border:1px solid rgba(224,164,88,.45); color:#f0c38a; }
+    .chk.ok{ background:rgba(79,214,160,.12); border:1px solid rgba(79,214,160,.4); color:var(--accent); }
+    .chk svg{ flex:0 0 20px; }
+    .chk .t{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+    .chk .t b{ font-size:14px; }
+    .chk .t span{ font-size:12.5px; }
+    .chk.ok .t span{ color:var(--ink-soft); }
+    .chk .go{ font-size:13px; font-weight:700; white-space:nowrap; }
+    .f-arth{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+    .f-arth #artsum{ font-size:12.5px; font-weight:700; color:var(--ink-soft); white-space:nowrap; }
+    .f-arth #artsum.bad{ color:#f0c38a; }
+    .f-arth #artsum.ok{ color:var(--accent); }
+    .chk-tab{ background:var(--card2); border-radius:16px; padding:4px 14px; margin:4px 0 14px; }
+    .chk-tab div{ display:flex; justify-content:space-between; align-items:baseline; padding:10px 0; border-bottom:1px solid var(--line); font-size:15px; }
+    .chk-tab div:last-child{ border-bottom:0; color:#f0c38a; }
+    .chk-tab span{ color:var(--ink-soft); } .chk-tab div:last-child span{ color:inherit; }
+    .chk-tab b{ font-variant-numeric:tabular-nums; }
     .art .art-name{ font-size:14px; }
     .art-row{ display:flex; gap:8px; align-items:center; margin-top:8px; }
     .art-row .art-prix{ flex:0 0 92px; }
@@ -3823,16 +3847,11 @@
                '<div class="progress"><i id="bar" style="width:'+state.prog+'%"></i></div>'+
                '<div class="muted" style="font-size:11px;margin-top:8px">Tu peux déjà corriger les champs ci-dessous.</div></div>';
       }
-      h += '<label class="f">Montant ('+curSym()+')</label><input class="f" id="f-montant" inputmode="decimal" value="'+esc(d.montant)+'" placeholder="0,00">';
+      h += '<label class="f" for="f-montant">Montant ('+curSym()+')</label><div class="f-mrow"><input class="f" id="f-montant" inputmode="decimal" value="'+esc(d.montant)+'" placeholder="0,00">'+
+           (d.photo ? '<button type="button" class="f-thumb" id="photoview" aria-label="Voir la photo du ticket"><img src="'+d.photo+'" alt=""></button>' : '')+'</div><div id="artchk"></div>';
       h += '<label class="f">Enseigne</label><input class="f" id="f-marchand" value="'+esc(d.marchand)+'" placeholder="Nom du magasin">';
       h += '<label class="f">Date</label><input class="f" id="f-date" type="date" value="'+esc(d.date)+'">';
-      h += '<label class="f">Photo du ticket</label>';
-      if(d.photo){
-        h += '<div style="margin-bottom:8px"><img src="'+d.photo+'" style="max-width:100%;display:block;border-radius:12px;border:1px solid var(--line)"></div>';
-        h += '<div class="btns" style="margin:0 0 4px"><button class="btn ghost" id="photochg" type="button">Changer la photo</button><button class="btn ghost" id="photodel" type="button">Supprimer</button></div>';
-      } else {
-        h += '<button class="btn ghost" id="photoadd" type="button">📷 Ajouter une photo</button>';
-      }
+      if(!d.photo) h += '<label class="f">Photo du ticket</label><button class="btn ghost" id="photoadd" type="button">📷 Ajouter une photo</button>';   // la photo : vignette à côté du montant
       h += '<label class="f">Catégorie</label><div class="chips" id="chips">';
       CATS.forEach(function(c){ h += '<button class="chip'+(d.categorie===c?" on":"")+'" data-cat="'+esc(c)+'">'+esc(c)+'</button>'; });
       h += '</div>';
@@ -3848,7 +3867,7 @@
         comptes.forEach(function(a){ h += '<button class="chip'+(d.compte===a.key?" on":"")+'" data-acct="'+esc(a.key)+'">'+esc(a.nom)+'</button>'; });
         h += '</div><div class="muted" style="font-size:10.5px;margin:4px 2px 0">Auto = selon « payé par »</div>';
       }
-      h += '<label class="f">Articles (rangés par produit)</label><div id="arts">';
+      h += '<div class="f-arth" id="artshead"><label class="f">Articles (rangés par produit)</label><span id="artsum"></span></div><div id="arts">';
       (d.articles||[]).forEach(function(a){ h += artRow(a); });
       h += '</div><button class="btn ghost" id="addart" type="button" style="margin-top:10px">+ Ajouter un article</button>'+
            ' <button class="btn ghost" id="addremise" type="button" style="margin-top:10px">+ Remise / promo</button>';
@@ -3861,7 +3880,17 @@
 
       document.getElementById("cancel").onclick=function(){ state.view=formBackView(); state.draft=null; render(); };
       var del=document.getElementById("del"); if(del) del.onclick=delDraft;
-      document.getElementById("save").onclick=saveDraft;
+      document.getElementById("save").onclick=function(){ saveDraft(); };
+      artChkPaint();
+      var fmi=document.getElementById("f-montant"); if(fmi) fmi.addEventListener("input", artChkPaint);
+      var artsBox=document.getElementById("arts"); if(artsBox) artsBox.addEventListener("input", function(ev){ var t=ev.target; if(t && t.classList && (t.classList.contains("art-prix") || t.classList.contains("art-prod"))) artChkPaint(); });
+      var pv=document.getElementById("photoview"); if(pv) pv.onclick=function(){ readForm();
+        var ro=state.draftRO, s=uiSheet('<div class="sheet-title">Photo du ticket</div><img src="'+state.draft.photo+'" alt="Photo du ticket" style="max-width:100%;max-height:70vh;display:block;margin:0 auto 12px;border-radius:12px;border:1px solid var(--line)">'+
+          '<div class="ui-stack">'+(ro?'':'<button type="button" class="btn ghost" id="pvchg">Changer la photo</button><button type="button" class="btn ghost" id="pvdel">Supprimer la photo</button>')+'<button type="button" class="btn primary ui-no">Fermer</button></div>');
+        s.q(".ui-no").onclick=s.close;
+        var a=s.q("#pvchg"); if(a) a.onclick=function(){ s.close(); var pi=document.getElementById("photoin"); if(pi) pi.click(); };
+        var b2=s.q("#pvdel"); if(b2) b2.onclick=function(){ s.close(); state.draft.photo=""; render(); };
+      };
       var photoadd=document.getElementById("photoadd"); if(photoadd) photoadd.onclick=function(){ readForm(); var pi=document.getElementById("photoin"); if(pi) pi.click(); };
       var photochg=document.getElementById("photochg"); if(photochg) photochg.onclick=function(){ readForm(); var pi=document.getElementById("photoin"); if(pi) pi.click(); };
       var photodel=document.getElementById("photodel"); if(photodel) photodel.onclick=function(){ readForm(); state.draft.photo=""; render(); };
@@ -3933,6 +3962,29 @@
       }
     }
 
+    // ---------- Ticket : les articles comparés au montant ----------
+    // Bandeau sous le montant (vert = articles = total, orange = écart), rappel au-dessus des articles, et question à l'enregistrement s'il reste un écart.
+    var CHK_TOL=0.05;   // quelques centimes d'arrondi
+    function artChkOf(montant, arts){
+      var n=0, sum=0;
+      (arts||[]).forEach(function(a){ var pr=num(a.prix); if(!pr) return; if(a.produit==="Remise") pr=-Math.abs(pr); n++; sum+=pr; });
+      sum=Math.round(sum*100)/100; var tot=num(montant), diff=Math.round((tot-sum)*100)/100;
+      return { n:n, sum:sum, tot:tot, diff:diff, ok:Math.abs(diff)<=CHK_TOL };
+    }
+    function artChkForm(){
+      var arts=[]; [].forEach.call(document.querySelectorAll("#arts .art"), function(node){ arts.push({ prix:node.querySelector(".art-prix").value, produit:node.querySelector(".art-prod").value }); });
+      var fm=document.getElementById("f-montant"); return artChkOf(fm ? fm.value : "", arts);
+    }
+    function artChkPaint(){
+      var c=artChkForm(), box=document.getElementById("artchk"), sm=document.getElementById("artsum"); if(!box) return;
+      var show=c.n>0 && c.tot>0;
+      box.innerHTML=!show ? "" : (c.ok
+        ? '<button type="button" class="chk ok" id="chkgo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="t"><b>'+c.n+' article'+(c.n>1?'s':'')+' = total '+esc(fmtK(c.tot))+'</b><span>rien à corriger</span></span><span class="go">Voir ↓</span></button>'
+        : '<button type="button" class="chk bad" id="chkgo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17.5v.5"/></svg><span class="t"><b>'+c.n+' article'+(c.n>1?'s':'')+' · '+esc(fmtK(c.sum))+' ≠ '+esc(fmtK(c.tot))+'</b><span>écart '+esc(fmtK(Math.abs(c.diff)))+' · vérifie les articles</span></span><span class="go">Vérifier ↓</span></button>');
+      var go=document.getElementById("chkgo"); if(go) go.onclick=function(){ var h=document.getElementById("artshead"); if(h) h.scrollIntoView({ behavior:"smooth", block:"start" }); };
+      if(sm){ sm.textContent=show ? (c.ok ? "✓ "+fmtK(c.sum) : fmtK(c.sum)+" sur "+fmtK(c.tot)) : ""; sm.className=show ? (c.ok?"ok":"bad") : ""; }
+      [].forEach.call(document.querySelectorAll("#arts .art"), function(node){ node.classList.toggle("warn", show && !c.ok); });
+    }
     function readForm(){
       state.draft.montant=document.getElementById("f-montant").value;
       state.draft.marchand=document.getElementById("f-marchand").value;
@@ -3958,11 +4010,26 @@
       state.view="form"; render();
     }
     function formBackView(){ var v=state.formFrom||"list"; state.formFrom=null; return v; }
-    function saveDraft(){
+    function saveDraft(force){
       if(state.draftRO) return;
       readForm();
       var montant=num(state.draft.montant);
       if(!montant){ var f=document.getElementById("f-montant"); if(f) f.focus(); return; }
+      var ck=artChkOf(state.draft.montant, state.draft.articles);
+      if(force!==true && ck.n>0 && !ck.ok){   // les articles ne font pas le total : vérifier, compléter ou enregistrer quand même
+        var miss=ck.diff>0, s=uiSheet('<div class="sheet-title">Les articles ne font pas le total</div>'+
+          '<div class="chk-tab"><div><span>Articles</span><b>'+esc(fmtK(ck.sum))+'</b></div><div><span>Ticket</span><b>'+esc(fmtK(ck.tot))+'</b></div><div><span>'+(miss?'Il manque':'En trop')+'</span><b>'+esc(fmtK(Math.abs(ck.diff)))+'</b></div></div>'+
+          '<div class="ui-stack"><button type="button" class="btn primary" id="ckv">Vérifier les articles</button>'+
+          '<button type="button" class="btn" id="ckfix">'+(miss ? 'Ajouter '+esc(fmtK(ck.diff))+' en « Divers »' : 'Mettre le montant à '+esc(fmtK(ck.sum)))+'</button>'+
+          '<button type="button" class="btn ghost" id="cksave">Enregistrer quand même</button></div>');
+        s.q("#ckv").onclick=function(){ s.close(); var h=document.getElementById("artshead"); if(h) h.scrollIntoView({ behavior:"smooth", block:"start" }); };
+        s.q("#ckfix").onclick=function(){ s.close();
+          if(miss) state.draft.articles.push({ label:"Divers", prix:String(ck.diff).replace(".", ","), produit:"" });
+          else state.draft.montant=String(ck.sum).replace(".", ",");
+          render(); saveDraft(true); };
+        s.q("#cksave").onclick=function(){ s.close(); saveDraft(true); };
+        return;
+      }
       (function(){
         var d=state.draft.date||"", m=d.match(/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/);
         if(!m) return;
