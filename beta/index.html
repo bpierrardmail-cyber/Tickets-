@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="28/10 09:53" />
+  <meta name="build" content="28/10 09:58" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2593,12 +2593,13 @@
       var amtRe = /(\d{1,4})[.,](\d{2})\b/g;
       // Lignes de paiement / totaux (tolère les erreurs de lecture : T0TAL, YONTANT…)
       // (« TOT TTC », lu parfois « TOT TIC » ; « Net » = net à payer ou net HT ; carburant : volume et prix au litre ne sont pas des articles)
-      var key = /t[o0]ta[l1i]|\bt[o0]t\b|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|^\s*net\b|net a|net à|carte|\bcb\b|visa|mastercard|sans contact|esp[eè]ces|rendu|rendre|monnaie|tva|\bttc\b|\bht\b|€\s*\/\s*l\b|prix\s*(unit|au\s*litre)|\bp\.?u\.?\b/i;
-      var totRe = /t[o0]ta[l1i]|\bt[o0]t\b|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|^\s*net\b|net a|net à/i;
+      var key = /t[o0]ta[l1i]|\bt[o0]t\b|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|net a|net à|carte|\bcb\b|visa|mastercard|sans contact|esp[eè]ces|rendu|rendre|monnaie|tva|\bttc\b|\bht\b|€\s*\/\s*l\b|prix\s*(unit|au\s*litre)|\bp\.?u\.?\b/i;
+      var totRe = /t[o0]ta[l1i]|\bt[o0]t\b|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|net a|net à/i;
       // En-tête du magasin : téléphone, RCS, SIRET… (jamais des articles ni des montants)
       var skip = /\b(t[eé]l|tel|fax|siret|siren|rcs|naf|ape|www|http|caisse|ticket|op[eé]rateur|h[oô]tesse|vendeur)\b|@/i;
       var all = [], lignes = [], afterTotal = false;
       function cleanLabel(l){
+        l=l.replace(/^\s*[A-D]\s+(?=\d+\s?[xX]\b|\*)/, "").replace(/^\s*\d{1,2}\s?[xX]\s+/, "").replace(/^\s*\*\s*/, "");
         var t=l.replace(/(\d{1,4})[.,](\d{2})\b/g," ").replace(/\b(eur|euros?)\b(\s+[a-d]\b)?/gi," ").replace(/€/g," ");
         var up=(t.match(/[A-ZÀ-Ý]/g)||[]).length, lo=(t.match(/[a-zà-ÿ]/g)||[]).length;
         // ticket en majuscules : un mot avec des minuscules est du bruit (filigrane lu à l'envers…)
@@ -2608,21 +2609,23 @@
       }
       // ticket de carburant : volume, prix au litre, pompe ne sont jamais des articles
       var fuelT=/\b(gazole|gasoil|diesel|sp\s?9[58]|sans\s*plomb|e\s?10|e\s?85|gpl|carburant|adblue|essence|pompe|esso|avia|agip|shell)\b|total\s*(energ|access)/i.test(text);
-      var sawVol=false;
+      var sawVol=false, pend="";   // pend : nom d'un article pesé, dont le prix est sur la ligne suivante (« NET 0,980 kg x 1,99 €/kg 1,95 € »)
       lines.forEach(function(l){
         var m, last=null, isSkip=skip.test(l) || /\b\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\b/.test(l); amtRe.lastIndex=0;
         // la même ligne sans ses espaces : la lecture coupe parfois les mots (« Vo lume », « T OT TIC », « N et »)
         var cmp=l.toLowerCase().replace(/\s+/g,"");
-        var cTot=/^t[o0]t(?:a[l1i])?(?:ttc|tic|t1c|apayer|àpayer)?[0-9:€.,]/.test(cmp) || /^net(?:ht|apayer|àpayer)?[0-9:€.,]/.test(cmp);
+        var weightL=/€\s*\/\s*k?g\b|\d[.,]\d{3}\s*k\s?g\b/i.test(l);   // ligne de pesée : poids net, prix au kilo
+        var cTot=/^t[o0]t(?:a[l1i])?(?:ttc|tic|t1c|apayer|àpayer)?[0-9:€.,]/.test(cmp) || (/^net(?:ht|ttc|apayer|àpayer)?[0-9:€.,]/.test(cmp) && !weightL);
         var cFuel=/^volume/.test(cmp) || (/volume|litre|prixunit|prixaulitre|€\/l|eur\/l|pompe|quantit/.test(cmp) && (fuelT || /\d\s*l\b/i.test(l)));   // « Volume » en début de ligne : une quantité, pas un article
         while((m=amtRe.exec(l))){ if(!isSkip) all.push({ value: parseFloat(m[1]+"."+m[2]), line:l, tot:cTot }); last=m; }
         if(cFuel && /^volume|litre/.test(cmp)) sawVol=true;
-        var isKey=key.test(l) || cTot || cFuel;
+        var isKey=(key.test(l) || cTot || cFuel) && !weightL;
         if(isKey && last && (totRe.test(l) || cTot)) afterTotal=true;   // après le total : paiement, TVA, pied de ticket
-        if(afterTotal || isSkip || isKey || !last) return;
+        if(afterTotal || isSkip || isKey) return;
+        if(!last){ if(!weightL && !/^\s*p[tnu]\b/i.test(l) && /[A-Za-zÀ-ÿ]{3,}/.test(l)) pend=l; return; }   // sans prix : peut-être un article pesé
         var prix = parseFloat(last[1]+"."+last[2]);
         if(!(prix>0)) return;
-        var label = cleanLabel(l);
+        var label = cleanLabel(weightL && pend ? pend : l); pend="";
         if(label.replace(/[^A-Za-zÀ-ÿ]/g,"").length < 2) return;
         lignes.push({ label: label.slice(0,28), prix: String(prix).replace(".",","), produit:"" });
       });

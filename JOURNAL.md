@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (28/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `28/10 09:53`, environ 8 800 lignes.
+- β web : `beta/index.html`, étiquette `28/10 09:58`, environ 8 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -116,6 +116,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 28/10
+- **Lecture des tickets, correction** : depuis ce matin, « NET 0,980 kg » (poids net d'un article pesé) était pris pour « Net à payer » : la lecture s'arrêtait au premier article (ticket Grand Frais de 15 articles). « Net » n'est un total que hors ligne de pesée. Les articles pesés sont lus : le nom sur la ligne du dessus, le prix sur la ligne de pesée (« NET 0,980 kg x 1,99 €/kg 1,95 € »). Les noms perdent le code TVA et la quantité du début (« A 1x *… »). Le ticket donne ses 15 articles, somme = total.
 - **Appui long sur un ticket** (Sylvette cherchait à supprimer un ticket ainsi) : partout où des tickets sont listés (page Tickets, liste du Compte, Analyse, Articles), un appui long ouvre « ✎ Ouvrir le ticket » / « 🗑 Supprimer » (`wireTicketLongPress`, `ticketMenu`), avec une petite vibration ; le simple toucher ouvre toujours le ticket. Supprimer se fait tout de suite avec « Ticket supprimé · Annuler » pendant 6 s (`delEntryUndo`, `uiUndoToast`) ; la photo n'est effacée qu'à la fin du délai. Pas de « Supprimer » en consultation seulement.
 - **Produit des articles, propre à chaque personne** (demande de Benoît : Sylvette enregistrait sans produit) :
   - champ « Produit » vide d'un article : encadré en orange ; le bandeau dit « N sans produit à ranger » ; on peut toujours enregistrer ;
