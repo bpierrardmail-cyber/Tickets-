@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="28/10 10:28" />
+  <meta name="build" content="28/10 10:36" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -176,6 +176,7 @@
     .f-mrow input.f{ flex:1; min-width:0; }
     .f-thumb{ flex:0 0 48px; width:48px; height:48px; padding:0; border-radius:10px; border:1px solid var(--line2); background:#e9e6dd; overflow:hidden; cursor:pointer; }
     .f-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .ocr-raw{ background:none; border:0; padding:0; font:inherit; color:var(--accent); text-decoration:underline; cursor:pointer; }
     .chk{ display:flex; align-items:center; gap:10px; width:100%; margin-top:8px; padding:11px 12px; border-radius:13px; font:inherit; text-align:left; cursor:pointer; }
     .chk.bad{ background:rgba(224,164,88,.14); border:1px solid rgba(224,164,88,.45); color:#f0c38a; }
     .chk.ok{ background:rgba(79,214,160,.12); border:1px solid rgba(79,214,160,.4); color:var(--accent); }
@@ -3934,7 +3935,7 @@
     function renderForm(){
       var d = state.draft;
       var h = header("list") + '<section class="paper">';
-      if(state.note){ h += '<div class="center" style="font-size:11px;color:var(--accent);margin-bottom:8px">'+esc(state.note)+'</div>'; }
+      if(state.note){ h += '<div class="center" style="font-size:11px;color:var(--accent);margin-bottom:8px">'+esc(state.note)+(state.ocrRaw && !state.busy ? ' · <button type="button" class="ocr-raw" id="ocrRawBtn">Copier la lecture</button>' : '')+'</div>'; }
       if(state.busy){
         h += '<div class="scanbox"><span id="scanmsg">'+esc(state.scanMsg||"Lecture du ticket en cours…")+'</span>'+
                '<div class="progress"><i id="bar" style="width:'+state.prog+'%"></i></div>'+
@@ -3993,6 +3994,7 @@
       var photochg=document.getElementById("photochg"); if(photochg) photochg.onclick=function(){ readForm(); var pi=document.getElementById("photoin"); if(pi) pi.click(); };
       var photodel=document.getElementById("photodel"); if(photodel) photodel.onclick=function(){ readForm(); state.draft.photo=""; render(); };
       document.getElementById("addart").onclick=function(){ readForm(); state.draft.articles.push({label:"",prix:"",produit:""}); render(); };
+      var orb=document.getElementById("ocrRawBtn"); if(orb) orb.onclick=ocrRawSheet;
       var addr=document.getElementById("addremise"); if(addr) addr.onclick=function(){ readForm(); state.draft.articles.push({label:"Remise",prix:"",produit:"Remise"}); render(); };
       [].forEach.call(document.querySelectorAll("#chips .chip"), function(btn){
         btn.onclick=function(){
@@ -4105,13 +4107,13 @@
       state.draft.articles=arts;
     }
 
-    function newDraft(){ state.note=""; state.draftRO=false; state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[],payePar:fyDefPayer(),photo:""}; state.view="form"; render(); }
+    function newDraft(){ state.note=""; state.ocrRaw=null; state.draftRO=false; state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[],payePar:fyDefPayer(),photo:""}; state.view="form"; render(); }
     function editEntry(id){
       var e=state.entries.filter(function(x){ return String(x.id)===String(id); })[0];
       if(!e) return;
       state.draft={id:e.id,montant:e.montant,date:e.date,marchand:e.marchand,categorie:e.categorie,payePar:e.payePar||"",compte:e.compte||"",photo:photoOf(e),
         articles:(e.articles||[]).map(function(a){ return {label:a.label,prix:a.prix,produit:a.produit,commun:!!a.commun}; })};
-      state.draftRO=!fyCanEdit(e);
+      state.draftRO=!fyCanEdit(e); state.note=""; state.ocrRaw=null;   // pas la note d'un scan précédent
       state.formFrom=(state.view==="analyse" || state.view==="month" || state.view==="artDetail" || state.view==="articles" || state.view==="compte" || state.view==="comptedet") ? state.view : null;
       state.view="form"; render();
     }
@@ -7237,7 +7239,7 @@
     filein.onchange=function(ev){
       var files=ev.target.files ? [].slice.call(ev.target.files) : []; ev.target.value="";
       if(!files.length) return;
-      state.busy=true; state.prog=0; state.note="";
+      state.busy=true; state.prog=0; state.note=""; state.ocrRaw=null;
       state.scanMsg = files.length>1 ? ("Lecture 1/"+files.length+"…") : (capPlugin("TicketOcr") ? "Lecture du ticket sur le téléphone…" : "Lecture du ticket en cours…");
       state.draftRO=false; state.draft={id:null,montant:"",date:todayISO(),marchand:"",categorie:"Autre",articles:[],payePar:fyDefPayer(),photo:""};
       state.view="form"; render();
@@ -7247,10 +7249,12 @@
         }}).then(function(r){ return (r.data&&r.data.text)||""; }); }
       var diag=[];
       function localOne(src){ return (typeof Tesseract==="undefined") ? Promise.resolve("") : tessText(src).then(function(t){ diag.push("local:"+(t||"").length); return t; }); }
+      var lastRes=null, raws=[];   // ce que ML Kit a rendu (morceaux et positions), pour « Copier la lecture »
       function ocrOne(file){
-        var plug=capPlugin("TicketOcr");
+        var plug=capPlugin("TicketOcr"); lastRes=null;
         if(!plug) return ocrClassic(file);
         return nativeImage(file).then(function(b64){ return plug.recognize({ image:b64 }); }).then(function(res){
+          lastRes=res||null;
           var t=mlkitRows(res||{}); diag.push("mlkit:"+((res&&res.lines)||[]).length+" morceaux");
           if(t && t.replace(/\s/g,"").length>=8) return t;
           throw new Error("lecture vide");
@@ -7282,15 +7286,42 @@
           var eng = diag.some(function(d){ return /^mlkit:/.test(d); }) ? "sur le téléphone (ML Kit)" : (diag.some(function(d){ return /^cloud \d/.test(d); }) ? "par OCR.space" : "par Tesseract");
           var ko = diag.filter(function(d){ return /KO/.test(d); }).join(" · ");
           state.note = hasData ? ("Lu "+eng+(ko?" — "+ko:"")+" · vérifie les montants"+(p.dateFix?" · année de la date corrigée en "+p.date.slice(0, 4):"")) : ("Lecture vide ["+diag.join(" · ")+"]. Réessaie avec une photo plus nette, ou recadrée sur le ticket.");
+          state.ocrRaw={ eng:eng, diag:diag.join(" · "), parts:raws };
           state.busy=false; state.scanMsg=""; render(); return;
         }
         if(files.length>1){ var sm=document.getElementById("scanmsg"); if(sm) sm.textContent="Lecture "+(idx+1)+"/"+files.length+"…"; state.prog=0; var bar=document.getElementById("bar"); if(bar) bar.style.width="0%"; }
-        ocrOne(files[idx]).then(function(t){ texts.push(t||""); idx++; step(); })
+        ocrOne(files[idx]).then(function(t){ texts.push(t||""); raws.push({ t:t||"", res:lastRes }); idx++; step(); })
           .catch(function(e){ console.warn("OCR indisponible:", e); texts.push(""); idx++; step(); });
       }
       step();
     };
 
+    // Ce que le téléphone a lu sur la photo (lignes reconstituées, puis chaque morceau avec ses coins),
+    // à copier ou partager pour faire corriger la lecture. Rien n'est envoyé par l'appli.
+    function ocrRawText(){
+      var R=state.ocrRaw; if(!R) return "";
+      var bm=document.querySelector('meta[name="build"]'), L=["Lecture d'un ticket · Tickets "+(bm?bm.content:"")+" · "+R.eng+(R.diag?" · "+R.diag:"")];
+      R.parts.forEach(function(p, i){
+        if(R.parts.length>1) L.push("", "=== Photo "+(i+1)+" ===");
+        L.push("--- Lignes lues ---", p.t||"(rien)");
+        var ls=(p.res && p.res.lines) || [];
+        if(ls.length){ L.push("--- Morceaux (texte | coins x,y) ---"+(p.res.width?" photo "+p.res.width+"x"+p.res.height:""));
+          ls.forEach(function(l){ if(l && l.t) L.push(String(l.t).replace(/\s+/g," ")+" | "+(l.p||[]).map(function(v){ return Math.round(v); }).join(",")); }); }
+      });
+      return L.join("\n");
+    }
+    function ocrRawSheet(){
+      var t=ocrRawText(); if(!t) return;
+      var s=uiSheet('<div class="sheet-title">Lecture du ticket</div><div class="ui-intro">Le texte que le téléphone a lu sur la photo. Colle-le avec la photo pour faire corriger la lecture. Tout ce qui est imprimé sur le ticket y est ; l\'appli n\'envoie rien elle-même.</div>'+
+        '<textarea class="f" id="ocrTxt" readonly style="width:100%;height:38vh;font-size:11px;line-height:1.35;font-family:ui-monospace,monospace">'+esc(t)+'</textarea>'+
+        '<div class="ui-stack" style="margin-top:10px"><button type="button" class="btn primary" id="ocrCopy">Copier</button><button type="button" class="btn" id="ocrShare">Partager…</button><button type="button" class="btn ghost" id="ocrNo">Fermer</button></div>');
+      s.q("#ocrCopy").onclick=function(){ var ta=s.q("#ocrTxt");
+        function fb(){ try{ ta.removeAttribute("readonly"); ta.select(); document.execCommand("copy"); ta.setAttribute("readonly",""); uiToast("Lecture copiée"); }catch(e){ uiToast("Copie impossible : sélectionne le texte"); } }
+        try{ navigator.clipboard.writeText(t).then(function(){ uiToast("Lecture copiée · colle-la dans la conversation"); }, fb); }catch(e){ fb(); } };
+      s.q("#ocrShare").onclick=function(){ var SH=capPlugin("Share");
+        if(SH) SH.share({ title:"Lecture du ticket", text:t }).catch(function(){}); else if(navigator.share) navigator.share({ title:"Lecture du ticket", text:t }).catch(function(){}); else uiToast("Partage indisponible : utilise « Copier »"); };
+      s.q("#ocrNo").onclick=s.close;
+    }
     function fileToThumb(file, cb){
       try{
         var r=new FileReader();

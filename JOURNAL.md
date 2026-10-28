@@ -19,7 +19,8 @@ Après chaque modification, dans le même commit :
 ## État actuel (28/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `28/10 10:28`, environ 8 800 lignes.
+- β web : `beta/index.html`, étiquette `28/10 10:36
+([^`, environ 8 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -71,11 +72,12 @@ Après chaque modification, dans le même commit :
   - copies différentielles ;
   - domaine UE.
 - À décider par Benoît : répartition gratuit / Plus et prix, nom de l'appli, type de compte Google Play, lien avec la banque.
-- **Lecture des tickets** : sur le vrai ticket Intermarché, ML Kit perdait encore 4 ou 5 articles (sur 31) que le texte idéal donne bien ; il faut le texte lu par le téléphone pour trouver pourquoi. Idée proposée à Benoît le 28/10 : « Copier la lecture » sous le ticket scanné, pour l'envoyer à Claude. Idée aussi : un retrait au distributeur scanné proposé comme « argent liquide » plutôt qu'en dépense.
+- **Lecture des tickets** : sur le vrai ticket Intermarché, ML Kit perdait encore 4 ou 5 articles (sur 31) que le texte idéal donne bien ; il faut le texte lu par le téléphone pour trouver pourquoi. « Copier la lecture » est en place (28/10) : attendre que Benoît rescanne le ticket Intermarché et colle la lecture. Idée à reprendre ensuite (Benoît : « on verra après ») : un retrait au distributeur scanné proposé comme « argent liquide » plutôt qu'en dépense.
 - À surveiller : l'option « Ajouter au foyer » (verser ses anciennes données en rejoignant) sera retirée si personne ne s'en sert.
 
 ## Décisions de Benoît
 
+- **28/10** : « Copier la lecture » sous un ticket scanné, pour envoyer à Claude ce que le téléphone a lu. Le retrait au distributeur → liquide : plus tard.
 - **28/10** : appui long sur un ticket → Ouvrir / Supprimer, suppression annulable.
 - **28/10** : produit d'un article vide = en orange ; rempli avec le dernier produit que la personne du ticket a donné à cet article, cloisonné par personne.
 - **28/10** : ticket scanné : bandeau d'écart articles / total, question à l'enregistrement s'il reste un écart, photo en vignette (les 3 points de la maquette).
@@ -117,6 +119,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 28/10
+- **« Copier la lecture »** (demande de Benoît) : sous un ticket scanné, à côté de « Lu sur le téléphone… » (et aussi après une « Lecture vide »), un lien ouvre « Lecture du ticket » : les lignes lues, puis chaque morceau rendu par ML Kit avec ses 4 coins, et la taille de la photo. Boutons Copier / Partager… / Fermer ; l'appli n'envoie rien elle-même. Gardé seulement pendant la saisie du ticket scanné (`state.ocrRaw`, `ocrRawText`, `ocrRawSheet`) : pour un ticket déjà enregistré, il faut le rescanner. Benoît colle ce texte à Claude avec la photo ; les morceaux suffisent à refaire exactement le regroupement des lignes (`mlkitRows`) et la lecture. Au passage, ouvrir un ancien ticket n'affiche plus la note du dernier scan.
 - **Lecture des tickets, 4 tickets envoyés par Benoît** (retrait, TotalEnergies, Grand Frais, Intermarché ; recopiés comme tests dans l'espace de travail de Claude, jamais dans le dépôt) :
   - retrait au distributeur : « RETRAIT : 50 EUR » sans centimes était une lecture vide ; un montant rond suivi de EUR / € est lu sur une ligne retrait / montant / total ;
   - TotalEnergies : « 7.19.15-sp5-hf1 » (numéro de version) et « 24,33 lit » (volume) n'étaient pas des articles ; « SP95E5 » est reconnu (le seul article = le total) ;
