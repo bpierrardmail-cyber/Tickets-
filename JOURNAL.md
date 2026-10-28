@@ -71,12 +71,19 @@ Après chaque modification, dans le même commit :
   - copies différentielles ;
   - domaine UE.
 - À décider par Benoît : répartition gratuit / Plus et prix, nom de l'appli, type de compte Google Play, lien avec la banque.
-- **Lecture des tickets** : sur le vrai ticket Intermarché, ML Kit perdait encore 4 ou 5 articles (sur 31) que le texte idéal donne bien ; il faut le texte lu par le téléphone pour trouver pourquoi. « Copier la lecture » est en place (28/10) et a servi pour le ticket Intermarché (corrigé). Pour tout ticket mal lu : photo + lecture copiée. Idée à reprendre ensuite (Benoît : « on verra après ») : un retrait au distributeur scanné proposé comme « argent liquide » plutôt qu'en dépense.
+- **Lecture des tickets** : sur le vrai ticket Intermarché, ML Kit perdait encore 4 ou 5 articles (sur 31) que le texte idéal donne bien ; il faut le texte lu par le téléphone pour trouver pourquoi. « Copier la lecture » est en place (28/10) et a servi pour le ticket Intermarché (corrigé). Pour tout ticket mal lu : photo + lecture copiée.
 - **Lecture des tickets par une IA** : mise de côté le 28/10 par Benoît. Pistes étudiées : Gemini Nano dans le téléphone (API Prompt de ML Kit, photo + texte, encore en essai et seulement sur quelques téléphones récents) ; modèle libre embarqué (Gemma, 1 à 3 Go, lent) ; IA en ligne (environ 0,3 centime par ticket avec Gemini Flash-Lite, mais la photo sort du téléphone et il faut une clé payante, via le relais ou par utilisateur). Si on la reprend : option Plus « Relire avec l'IA » seulement quand le ticket ne tombe pas juste, avec accord la première fois. Gain principal attendu : les produits rangés tout seuls et des noms propres, plus que les montants.
+- **Améliorations prévues** (liste de Benoît, à faire plus tard ; montrer une maquette avant) :
+  - **« Lire avec mon IA »** (ajouté le 28/10) : sur un ticket scanné, un bouton envoie la photo et une consigne toute prête à l'IA déjà installée sur le téléphone (Claude, Gemini, ChatGPT, Kimi…) par le menu de partage d'Android. C'est l'abonnement de l'utilisateur qui travaille : ni relais, ni clé, ni coût pour nous. La consigne contient la liste des produits de l'utilisateur, pour que l'IA range chaque article dans **ses** produits ; elle demande une réponse dans un format fixe (`TICKET` / `enseigne | date | total` / une ligne `nom | prix | produit` par article / `FIN`). Retour : on copie la réponse et on la colle dans Tickets, qui remplit articles, prix et produits puis fait la vérification habituelle avec le total. Deux niveaux :
+    - sans nouvel APK : partage de la photo (+ consigne aussi copiée dans le presse-papiers) et champ « Colle la réponse de l'IA » ;
+    - avec un nouvel APK : Tickets apparaît dans « Partager » de l'appli IA, la réponse revient sans copier-coller.
+    Limites à dire à l'utilisateur : la photo part chez le fournisseur de l'IA qu'il a choisi ; 3 ou 4 gestes de plus ; lire la réponse avec souplesse (une IA ne respecte pas toujours le format). En plus de la lecture actuelle, pas à la place.
+  - **Retrait au distributeur** scanné : le proposer comme « argent liquide » plutôt qu'en dépense (Benoît : « on verra après »).
 - À surveiller : l'option « Ajouter au foyer » (verser ses anciennes données en rejoignant) sera retirée si personne ne s'en sert.
 
 ## Décisions de Benoît
 
+- **28/10** : « Lire avec mon IA » (partage vers l'IA déjà sur le téléphone, réponse collée dans Tickets) ajouté à la liste des améliorations ; la lecture par une IA en ligne payée par nous reste de côté.
 - **28/10** : « Copier la lecture » sous un ticket scanné, pour envoyer à Claude ce que le téléphone a lu. Le retrait au distributeur → liquide : plus tard.
 - **28/10** : appui long sur un ticket → Ouvrir / Supprimer, suppression annulable.
 - **28/10** : produit d'un article vide = en orange ; rempli avec le dernier produit que la personne du ticket a donné à cet article, cloisonné par personne.
@@ -119,7 +126,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 28/10
-- **Lecture par une IA** : étudiée puis mise de côté (voir En cours). Rien de changé dans l'appli.
+- **Lecture par une IA** : étudiée puis mise de côté ; l'idée « Lire avec mon IA » (l'IA déjà sur le téléphone, via le partage) est ajoutée aux améliorations prévues (voir En cours). Rien de changé dans l'appli.
 - **Lecture des tickets, d'après la vraie lecture du ticket Intermarché** (collée par Benoît avec « Copier la lecture ») : les lignes étaient bien regroupées ; les 4 articles perdus venaient de prix mal lus.
   - « 142 EUR » (virgule perdue) = 1,42 ; « A84 EUR » (4 lu A) = 4,84 : seulement sur une ligne d'article sans autre montant ;
   - article pesé dont le prix est illisible (« 0,5 EUR A ») : prix calculé, poids × prix au kilo (0,170 × 2,99 = 0,51) ; aussi quand seul le prix au kilo a été lu ;
