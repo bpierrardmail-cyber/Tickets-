@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (28/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `28/10 09:04`, environ 8 800 lignes.
+- β web : `beta/index.html`, étiquette `28/10 09:12`, environ 8 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -113,6 +113,11 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 28/10
+- **Lecture des tickets (`parseTicket`)**, retour sur un ticket de carburant de Sylvette (date en octobre 2025, articles « Volume », « TOT TIC », « Net ») :
+  - « TOT TTC » (lu « TOT TIC »), « Net » en début de ligne, volume, prix au litre (€/L, prix unitaire) ne sont plus des articles ; « TOT » et « Net » comptent comme le total ;
+  - ticket de carburant sans article : un seul article, le carburant (GAZOLE, SP95-E10…), pour le total ;
+  - date : la plus récente du ticket ; si elle tombe à plus de 45 jours mais que le même jour de cette année est récent, l'année a été mal lue (« 25 » pour « 26 ») et elle est corrigée, avec « année de la date corrigée » dans le message ;
+  - un mot court comme « Net » ne trouve plus un produit qui le contient (« Pain ») (`lookupAppris`).
 - **Bourse dans l'épargne** : avant, seule une épargne liée à la main (🔗) comptait la Bourse, et la dissocier la faisait disparaître des totaux en laissant une valeur figée. Maintenant :
   - une seule épargne `bourseLink` = la ligne « Bourse » automatique, créée dès qu'il y a un compte Bourse, avec l'historique du portefeuille mois par mois (`ensureBourseEp`, au démarrage et à chaque mise à jour des cours) ; une épargne déjà liée garde ce rôle et son nom ;
   - s'il y en avait plusieurs, les autres reprennent leur valeur d'avant la liaison ;

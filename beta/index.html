@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="28/10 09:04" />
+  <meta name="build" content="28/10 09:12" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
@@ -2467,7 +2467,7 @@
       var n=norm(label); if(!n) return "";
       if(APPRIS[n]) return APPRIS[n];
       var best="", bestKey="";
-      for(var k in APPRIS){ if(k.length>=3 && (n.indexOf(k)>=0 || k.indexOf(n)>=0) && k.length>bestKey.length){ bestKey=k; best=APPRIS[k]; } }
+      for(var k in APPRIS){ if(k.length>=3 && (n.indexOf(k)>=0 || (n.length>=4 && k.indexOf(n)>=0)) && k.length>bestKey.length){ bestKey=k; best=APPRIS[k]; } }
       if(best) return best;
       var bestScore=0, bestSim="";
       for(var k2 in APPRIS){ if(k2.length<3) continue; var sc=simRatio(n,k2); if(sc>bestScore){ bestScore=sc; bestSim=APPRIS[k2]; } }
@@ -2554,8 +2554,9 @@
       var lines = text.split(/\n/).map(function(l){return l.trim();}).filter(Boolean);
       var amtRe = /(\d{1,4})[.,](\d{2})\b/g;
       // Lignes de paiement / totaux (tolère les erreurs de lecture : T0TAL, YONTANT…)
-      var key = /t[o0]ta[l1i]|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|net a|net à|carte|\bcb\b|visa|mastercard|sans contact|esp[eè]ces|rendu|rendre|monnaie|tva|\bttc\b|\bht\b/i;
-      var totRe = /t[o0]ta[l1i]|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|net a|net à/i;
+      // (« TOT TTC », lu parfois « TOT TIC » ; « Net » = net à payer ou net HT ; carburant : volume et prix au litre ne sont pas des articles)
+      var key = /t[o0]ta[l1i]|\bt[o0]t\b|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|^\s*net\b|net a|net à|carte|\bcb\b|visa|mastercard|sans contact|esp[eè]ces|rendu|rendre|monnaie|tva|\bttc\b|\bht\b|\bvolume\b|€\s*\/\s*l\b|prix\s*(unit|au\s*litre)|\bp\.?u\.?\b/i;
+      var totRe = /t[o0]ta[l1i]|\bt[o0]t\b|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|^\s*net\b|net a|net à/i;
       // En-tête du magasin : téléphone, RCS, SIRET… (jamais des articles ni des montants)
       var skip = /\b(t[eé]l|tel|fax|siret|siren|rcs|naf|ape|www|http|caisse|ticket|op[eé]rateur|h[oô]tesse|vendeur)\b|@/i;
       var all = [], lignes = [], afterTotal = false;
@@ -2585,21 +2586,26 @@
       else if(all.length) total = Math.max.apply(null, all.map(function(a){return a.value;}));
       // Date : la première date valide (jour/mois cohérents, pas dans le futur), de préférence avec l'année sur 4 chiffres
       // (« 16/1072026 » = « 16/10/2026 » dont le second « / » a été lu comme un 7)
-      var date="", best=null, dm, today=todayISO();
+      var date="", best=null, dm, today=todayISO(), dateFix=false;
+      function isoAdd(iso, n){ var t=new Date(iso+"T12:00:00"); t.setDate(t.getDate()+n); return t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0"); }
+      var recent=isoAdd(today, -45);
       var dre=/\b(\d{1,2}) ?[\/.\-] ?(\d{1,2}) ?(?:[\/.\-]|[71lI|](?=20\d\d\b)) ?(\d{4}|\d{2})\b/g;
       var oldest=(function(){ var t=new Date(today+"T12:00:00"); t.setDate(t.getDate()-400); return t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0"); })();
       while((dm=dre.exec(text))){
         var d=+dm[1], mo=+dm[2], y=dm[3].length===2?2000+(+dm[3]):+dm[3];
         if(d<1 || d>31 || mo<1 || mo>12) continue;
-        var iso=y+"-"+(mo<10?"0":"")+mo+"-"+(d<10?"0":"")+d;
+        var iso=y+"-"+(mo<10?"0":"")+mo+"-"+(d<10?"0":"")+d, fx=false;
+        if(iso<recent){ var iso2=today.slice(0, 4)+iso.slice(4); if(iso2<=today && iso2>=recent){ iso=iso2; fx=true; } }   // ticket scanné juste après l'achat : l'année a été mal lue
         if(iso>today || iso<oldest) continue;
-        if(!best || (dm[3].length===4 && best.n!==4)) best={ v:iso, n:dm[3].length };
+        if(!best || (dm[3].length===4 && best.n!==4) || (dm[3].length===best.n && iso>best.v)) best={ v:iso, n:dm[3].length, fx:fx };   // la plus récente
       }
-      if(best) date=best.v;
+      if(best){ date=best.v; dateFix=best.fx; }
       var marchand="";
       for(var i=0;i<lines.length;i++){ if(/[A-Za-zÀ-ÿ]{3,}/.test(lines[i]) && !skip.test(lines[i])){ marchand=lines[i].slice(0,32); break; } }
       marchand=matchMerchant(lines, marchand);
-      return { total: total, date: date, marchand: marchand, categorie: guessCat(text), lignes: lignes };
+      var fuel=/\b(gazole|gasoil|diesel|sp\s?95(?:\s?e\s?10)?|sp\s?98|sans\s*plomb|e\s?85|gpl|carburant|adblue)\b/i.exec(text);
+      if(fuel && !lignes.length && total>0) lignes.push({ label:fuel[1].toUpperCase().replace(/\s+/g," "), prix:String(total).replace(".",","), produit:"" });
+      return { total: total, date: date, dateFix: dateFix, marchand: marchand, categorie: guessCat(text), lignes: lignes };
     }
 
 
@@ -7100,7 +7106,7 @@
           var hasData = state.draft.montant || (state.draft.articles && state.draft.articles.length);
           var eng = diag.some(function(d){ return /^mlkit:/.test(d); }) ? "sur le téléphone (ML Kit)" : (diag.some(function(d){ return /^cloud \d/.test(d); }) ? "par OCR.space" : "par Tesseract");
           var ko = diag.filter(function(d){ return /KO/.test(d); }).join(" · ");
-          state.note = hasData ? ("Lu "+eng+(ko?" — "+ko:"")+" · vérifie les montants") : ("Lecture vide ["+diag.join(" · ")+"]. Réessaie avec une photo plus nette, ou recadrée sur le ticket.");
+          state.note = hasData ? ("Lu "+eng+(ko?" — "+ko:"")+" · vérifie les montants"+(p.dateFix?" · année de la date corrigée en "+p.date.slice(0, 4):"")) : ("Lecture vide ["+diag.join(" · ")+"]. Réessaie avec une photo plus nette, ou recadrée sur le ticket.");
           state.busy=false; state.scanMsg=""; render(); return;
         }
         if(files.length>1){ var sm=document.getElementById("scanmsg"); if(sm) sm.textContent="Lecture "+(idx+1)+"/"+files.length+"…"; state.prog=0; var bar=document.getElementById("bar"); if(bar) bar.style.width="0%"; }
