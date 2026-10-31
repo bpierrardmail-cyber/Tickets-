@@ -71,7 +71,7 @@ Après chaque modification, dans le même commit :
 
 ## En cours / à reprendre
 
-- **Réorganisation de l'appli** (31/10) : il trouve l'organisation et l'accès aux fonctions peu clairs. Plan proposé dans la maquette « Tickets — Plan de l'appli » : un onglet = une question, chaque chose à un seul endroit, sous-onglets visibles au lieu de « Configuration », ✦ partout pareil (on voit la fonction, seul le bouton demande Plus). Onglets proposés : Accueil · Dépenses (Articles + Analyse) · Compte (Opérations · Virements · Épargne · Graphiques, roue du compte) · À venir (ex Factures, ouvert à tous : 12 mois · Frais fixes · Provisions gratuits, Factures ✦, Projection ✦) · Commun (parts seulement) · Bourse. En 4 étapes, À venir d'abord (sa question : les provisions dans Factures). Décidé le 31/10 : nom « À venir », 12 mois gratuits. **Étape 1 (À venir) intégrée le 31/10.** Suite : étape 2 (Compte : sous-onglets Opérations · Virements · Épargne · Graphiques, roue du compte), maquette d'abord.
+- **Réorganisation de l'appli** (31/10) : il trouve l'organisation et l'accès aux fonctions peu clairs. Plan proposé dans la maquette « Tickets — Plan de l'appli » : un onglet = une question, chaque chose à un seul endroit, sous-onglets visibles au lieu de « Configuration », ✦ partout pareil (on voit la fonction, seul le bouton demande Plus). Onglets proposés : Accueil · Dépenses (Articles + Analyse) · Compte (Opérations · Virements · Épargne · Graphiques, roue du compte) · À venir (ex Factures, ouvert à tous : 12 mois · Frais fixes · Provisions gratuits, Factures ✦, Projection ✦) · Commun (parts seulement) · Bourse. En 4 étapes, À venir d'abord (sa question : les provisions dans Factures). Décidé le 31/10 : nom « À venir », 12 mois gratuits. **Étape 1 (À venir) intégrée le 31/10.** Étape 2 (Compte) : maquette sur le canevas (Opérations, Virements, Épargne, Graphiques, roue du compte), en attente de « tu peux intégrer ». La page Dépenses de la Configuration disparaîtrait (filtre Sorties et graphique Dépenses), la page Solde bancaire passerait dans la roue (« Solde de départ »).
 
 - **Sans réseau** (31/10) : à essayer par Benoît en mode avion avec les nouveaux APK.
   - Perso : installer le nouvel APK, l'ouvrir une fois avec du réseau (la copie s'enregistre), puis en mode avion.
@@ -153,6 +153,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 31/10
+- **Étape 2 (Compte)** : maquette ajoutée au canevas « Tickets — Plan de l'appli ». Rien de changé dans l'appli.
 - **Réorganisation, étape 1 : onglet À venir** (d'après la maquette) :
   - l'onglet Factures devient « À venir », ouvert à tous, avec 4 sous-onglets (`state.avnSub` : `mois`, `frais`, `prov`, `fact` ; `avTabsHTML`, `wireAvTabs`) ;
   - Frais fixes = l'ancienne page Frais fixes de Commun (`renderCommunes` en mode À venir) ; Provisions = l'ancienne page Provisions (`renderProvisions`, la vue `provisions` y mène) ;
