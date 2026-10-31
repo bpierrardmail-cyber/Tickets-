@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="31/10 20:05" />
+  <meta name="build" content="31/10 20:22" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -179,7 +179,8 @@
     .avtabs{ display:flex; gap:6px; margin:2px 0 12px; }
     .avtabs button{ flex:1; min-width:0; height:38px; padding:0 4px; border-radius:12px; border:1px solid var(--line2); background:var(--card); color:var(--ink-soft); font:inherit; font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
     .avtabs button.on{ background:var(--accent); border-color:var(--accent); color:#0e0f14; font-weight:700; }
-    .avplus{ color:#f2c76b; } .avtabs button.on .avplus{ color:#0e0f14; }
+    .avplus{ color:#f2c76b; }
+    .hgear{ position:absolute; right:0; top:12px; width:42px; height:36px; display:grid; place-items:center; background:var(--card2); border:1px solid var(--line); border-radius:10px; color:var(--ink); padding:0; cursor:pointer; } .avtabs button.on .avplus{ color:#0e0f14; }
     .cfx-r{ display:flex; align-items:center; gap:10px; padding:9px 2px; border-top:1px solid var(--line); font-size:13.5px; cursor:pointer; }
     .cfx-r .n{ flex:1; min-width:0; } .cfx-r small{ display:block; margin-top:1px; font-size:11.5px; color:var(--ink-soft); }
     .cfx-r .a{ flex:0 0 auto; font-variant-numeric:tabular-nums; font-weight:600; }
@@ -1201,8 +1202,7 @@
       h+=grp([ row("foyer","👨‍👩‍👧",fyT,fyS),
                fyFull ? row("persons","👥","Personnes",plist.length+" personne"+(plist.length>1?"s":"")) : "",
                !fyM ? row("backup","💾","Sauvegarder",bk.label,(bk.days===null || bk.days>=7)?"var(--coral)":"var(--accent)") : "" ]);
-      h+=grp([ impCan() ? row("import","📥","Importer un relevé","OFX · QIF · CSV") : "",
-               row("pdf","📄","Exporter en PDF","bilan"),
+      h+=grp([ row("pdf","📄","Exporter en PDF","bilan"),
                row("gallery","🖼️","Galerie","photos des tickets") ]);
       h+=grp([ row("settings","⚙️","Réglages",[fyFull?"devise":"", "code", !fyM?"restaurer":""].filter(function(x){ return x; }).join(", "),"",true) ]);
       h+='<div class="dr-foot"><span class="beta-tag">Version β · '+esc((document.querySelector('meta[name=build]')||{}).content||'')+(capNative()?(EDITION==="store"?' · appli Store':' · appli Perso'):' · navigateur'+(EDITION==="store"?' (Store)':''))+'</span></div>';
@@ -5140,8 +5140,9 @@
         return { l:a.nom+(a.main?" · principal":""), fn:function(){ acctMenu(a); } };
       }).concat([{ l:"＋ Ajouter un compte", fn:function(){ acctForm(null); } }]));
     }
-    function acctMenu(a){
-      var ch=[{ l:"Modifier", fn:function(){ acctForm(a); } }];
+    function acctMenu(a){ uiChoice(a.nom, a.main?"Compte principal : il reçoit les frais communs et s'affiche sur l'Accueil.":"", acctMenuItems(a)); }
+    function acctMenuItems(a){
+      var ch=[{ l:"Modifier le compte", fn:function(){ acctForm(a); } }];
       if(!a.main) ch.push({ l:"Définir comme compte principal", fn:function(){ comptes.forEach(function(c){ c.main=(c===a); }); persistComptes(); uiToast("« "+a.nom+" » est le compte principal"); render(); } });
       if(!a.main) ch.push({ l:"Supprimer", danger:true, fn:function(){
         var nv=virements.filter(function(v){ return v.person===a.key; }).length;
@@ -5154,7 +5155,7 @@
           state.compteSel=myAcct().key; store.write("compteSel", state.compteSel); render();
         }, { ok:"Supprimer", danger:true });
       } });
-      uiChoice(a.nom, a.main?"Compte principal : il reçoit les frais communs et s'affiche sur l'Accueil.":"", ch);
+      return ch;
     }
     // ---------- Relevé du compte : les opérations du mois ----------
     // L'onglet Compte s'ouvre sur la liste du mois, comme un relevé de banque : tickets, frais fixes et virements mêlés, par jour
@@ -5313,10 +5314,14 @@
       dParts.sort(function(x,y){ return y.v-x.v; }).forEach(function(x,i){ x.col=DCOL[i%DCOL.length]; });
       var cmode=state.cptChart||store.read("cptChartDef","mois"); if(cmode==="6m") cmode="es";
       if(!CMODES.some(function(x){ return x[0]===cmode; })) cmode="mois";
-      var page=(state.view==="comptedet")?state.cptPage:null, PAGE_T={ graph:"Graphiques", es:"Virements", dep:"Dépenses", res:"Solde bancaire", ep:"Épargne", cfg:"Configuration" };
-      if(page && !PAGE_T[page]) page=null;
-      var graphV=(page==="graph");   // les graphiques d'avant ; la page principale est la liste des opérations
-      var h=header(page?"compte":null, page?PAGE_T[page]:null)+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM).replace(/id="mn-/g,'id="cm-')+'</div>';
+      // sous-onglet : Opérations (null) · Virements (es) · Épargne (ep) · Graphiques (graph) ; les anciennes pages y mènent
+      var page=state.cptPage||null;
+      if(page==="dep"){ state.cptF="out"; page=null; } else if(page && ["es","ep","graph"].indexOf(page)<0) page=null;
+      state.cptPage=page; if(state.view==="comptedet") state.view="compte";
+      var graphV=(page==="graph");
+      var gearOn=!!acct && person!=="__tickets" && (!fyRO() || impCan());
+      var h=header(false, "Compte").replace('</header>', gearOn?'<button type="button" class="hgear" id="cptGear" aria-label="Réglages du compte"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button></header>':'</header>')+
+        '<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM).replace(/id="mn-/g,'id="cm-')+'</div>';
       // 6 derniers mois (jusqu'au mois affiché)
       var six=[], mk6=month; for(var i6=0;i6<6;i6++){ six.unshift(mk6); mk6=prevMonthKey(mk6); }
       function mShort(m){ var pm=m.split("-"); return new Date(+pm[0], +pm[1]-1, 1).toLocaleDateString("fr-FR",{month:"short"}).replace(".",""); }
@@ -5506,10 +5511,11 @@
       acc+='<section class="paper cacc">'+accProv+accEp+'</section>';   // épargne et provisions accessibles depuis chaque compte
       acc+='<section class="paper cacc">'+accRes+'</section>';
       var O=null, cx=null;
+      if(multi) h+=acctPagerHTML(person, month);
+      else h+='<div class="acc-chips"><div class="acc-scroll">'+comptes.map(function(a){ return '<button type="button" data-acct="'+esc(a.key)+'" class="on">'+esc(a.nom)+'</button>'; }).join("")+
+         '</div><div class="acc-fixed"><button type="button" data-acct="__add" class="add" aria-label="Ajouter un compte">＋ Compte</button></div></div>';
+      h+='<div class="avtabs" role="tablist">'+[["","Opérations"],["es","Virements"],["ep","Épargne"],["graph","Graphiques"]].map(function(x){ var on=(x[0]||null)===page; return '<button type="button" role="tab" class="cpsub'+(on?' on':'')+'" aria-selected="'+on+'" data-cp="'+x[0]+'">'+x[1]+'</button>'; }).join("")+'</div>';
       if(!page){
-        if(multi) h+=acctPagerHTML(person, month);
-        else h+='<div class="acc-chips"><div class="acc-scroll">'+comptes.map(function(a){ return '<button type="button" data-acct="'+esc(a.key)+'" class="on">'+esc(a.nom)+'</button>'; }).join("")+
-           '</div><div class="acc-fixed"><button type="button" data-acct="__add" class="add" aria-label="Ajouter un compte">＋ Compte</button></div></div>';
         // le haut : solde estimé, entrées / sorties passées, fin de mois prévue ; Graphiques et Configuration
         O=cptOps(person, month);
         var inT=0, outT=0; (futur ? O.todo : O.done).forEach(function(o){ if(o.a>0) inT+=o.a; else outT+=o.a; });
@@ -5520,22 +5526,16 @@
            '<div class="ops-subrow"><span class="dash-cap">'+lSub+'</span>'+((person!=="__tickets" && (liq || !fyRO())) ? '<button type="button" id="opsLiq" class="ops-liq'+(liq&&!liqOn?' off':'')+'">💶 '+(liq ? 'Liquide '+esc(fmtK(liqAll))+(liqOn?'':' · non compté') : '＋ Liquide')+'</button>' : '')+'</div>'+
            '<div class="hstats"><button type="button" class="hstat" data-f="in"><span>'+(futur?"Entrées prévues":"Entrées")+'</span><b style="color:var(--accent)">'+opsAmtS(inT, true)+'</b></button>'+
            '<button type="button" class="hstat" data-f="out"><span>'+(futur?"Sorties prévues":"Sorties")+'</span><b>'+opsAmtS(outT)+'</b></button>'+
-           '<button type="button" class="hstat" data-f="av"><span>Fin de mois</span><b'+(soldeFin<0?' style="color:var(--coral)"':'')+'>'+opsAmtS(soldeFin)+'</b></button></div>'+
-           '<div class="ops-btns"><button type="button" id="cptGraph">'+opsIco("g")+'Graphiques</button><button type="button" class="cptGo" data-page="cfg">'+opsIco("c")+'Configuration</button></div></section>';
+           '<button type="button" class="hstat" data-f="av"><span>Fin de mois</span><b'+(soldeFin<0?' style="color:var(--coral)"':'')+'>'+opsAmtS(soldeFin)+'</b></button></div></section>';
         var chips=[["tout","Tout"],["in","Entrées"],["out","Sorties"],["av","À venir"+(O.todo.length?" · "+O.todo.length:"")]];
         h+='<div class="ops-f" role="group" aria-label="Filtrer les opérations">'+chips.map(function(c){ return '<button type="button" data-f="'+c[0]+'"'+(cf===c[0]?' class="on"':'')+' aria-pressed="'+(cf===c[0])+'">'+c[1]+'</button>'; }).join("")+'</div>'+
            '<label class="ops-q">'+opsIco("q")+'<input id="opsQ" type="search" enterkeyhint="search" autocomplete="off" aria-label="Rechercher une opération" placeholder="Rechercher : nom ou montant" value="'+esc(state.cptQ||"")+'"></label>'+
            '<div id="opsBody">'+(preStart ? '<div class="ops-empty">Compte suivi à partir de '+esc(monthLabelOf(aStart))+' : rien avant.</div>' : opsBodyHTML(O, cx))+'</div>';
       }
       else if(graphV){
-        var bub={ mois:'<div class="cacc-sec"><div class="cacc-h cptGo" data-page="cfg"><span class="t"><span class="tic">⚙︎</span> Configuration<small>virements, dépenses, provisions, épargne, solde</small></span><span class="ch">›</span></div></div>',
-                  dep:accDep, solde:accRes, es:accEs, ep:(accEp||''), prov:(accProv||'') }[cmode];
+        var bub={ es:accEs, ep:(accEp||''), prov:(accProv||'') }[cmode];
         h+=tabHero(heroMain)+(bub?'<section class="paper cacc">'+bub+'</section>':'');
       }
-      else if(page==="cfg"){ h+='<div class="muted" style="font-size:12px;margin:12px 4px 0">Tout le compte du mois : touche une ligne pour l\'ouvrir.</div>'+acc;
-        if(impCan() && person!=="__tickets"){ var lim=store.read("lastImport", null);
-          h+='<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="goimp"><span class="t"><span class="tic">📥</span> Importer un relevé<small>OFX, QIF ou CSV · ta banque, Money, Quicken…</small></span><span class="ch">›</span></div></div>'+
-             (lim && lim.acct===person ? '<div class="cacc-sec"><div class="cacc-h" id="undoimp"><span class="t"><span class="tic">↩︎</span> Annuler le dernier import<small>'+esc(String(lim.at||"").split("-").reverse().join("/"))+' · '+esc(lim.file||"relevé")+'</small></span><span class="ch">›</span></div></div>' : '')+'</section>'; } }
       else {
         var ph, pb;
         if(page==="es"){
@@ -5543,23 +5543,14 @@
           ph={ label:"Virements du mois (net)", big:virTotal, color:(virTotal<0?"var(--coral)":"var(--accent)"), sub:"Reçu "+fmtK(virIn)+" · Envoyé "+fmtK(-virOut),
                extra:'<div class="cch">'+compteSixMonthsSVG(esRows, month)+'<div class="cch-leg"><span><i style="background:var(--accent)"></i>Entrées</span><span><i style="background:var(--coral)"></i>Sorties (dépenses + virements envoyés)</span></div></div>' };
           pb=bIn;
-        } else if(page==="dep"){
-          ph={ label:"Dépenses du mois", big:depenses, color:"var(--coral)", sub:"Tickets "+fmtK(paidTotal)+" · Frais fixes "+fmtK(fraisTotal),
-               extra:(depenses>0?'<div class="cdon cdon-big">'+compteDonutSVG(dParts, depenses)+'<div class="cdon-l">'+dParts.map(function(x){ return '<div class="cdon-r"><i class="cdot" style="background:'+x.col+';margin:0"></i><span class="n">'+esc(x.l)+'</span><span class="p">'+Math.round(x.v/depenses*100)+' %</span><span class="a">'+cptK(x.v)+' '+esc(curSym())+'</span></div>'; }).join("")+'</div></div>':'') };
-          pb=bOut;
-        } else if(page==="res"){
-          ph={ label:"Solde bancaire estimé", big:soldeBanque, color:(soldeBanque<0?"var(--coral)":"var(--ink)"), sub:"Fin de mois prévue "+fmtK(soldeFin)+(liq?" · Liquide "+fmtK(liqAll)+(liqOn?"":" non compté"):""),
-               extra:(liqHas?'<div class="cnr"><button type="button" class="anfx'+(liqOn?' on':'')+'" id="cptLiqBtn" aria-pressed="'+liqOn+'">'+(liqOn?'✓':'＋')+' Liquide</button></div>':'')+
-                 '<div class="cch">'+compteBarsSVG(six.map(function(m){ return { m:m, lbl:mShort(m), v:soldeFlow(person,m).closing+liqAt(m) }; }), month)+'<div class="cch-note">Solde de fin de mois ('+(liqOn?'banque + liquide':'banque seule, sans le liquide')+'), sur 6 mois</div></div>' };
-          pb=bRes;
         } else {
           var hasB2=epargne.some(function(c){ return c.bourseLink; }), epR=six.map(function(m){ return { m:m, lbl:mShort(m), v:epTotAt(m), v2:(hasB2?bourseEpAt(m):null) }; });
           ph={ label:"Épargne totale", big:totCur, color:"var(--ink)", sub:(totPrev!==null?(totCur-totPrev>=0?"+":"")+fmtK(totCur-totPrev)+" vs mois précédent":"")+(hasB2?(totPrev!==null?" · ":"")+"dont Bourse "+fmtS(bourseEpAt(month)):""),
                extra:'<div class="cch">'+compteLineSVG(epR, month, "#7c9cf4")+'<div class="cch-note">Total de tes comptes épargne'+(hasB2?' (pointillés : dont Bourse)':'')+', sur 6 mois</div></div>' };
           pb=bEp;
         }
-        if(multi) ph.label+=' · '+esc(acct.nom);
-        h+=tabHero(ph)+'<section class="paper cacc cpage"><div class="cacc-b">'+pb+'</div></section>';
+        if(multi && page==="es") ph.label+=' · '+esc(acct.nom);
+        h+=tabHero(ph)+'<section class="paper cacc cpage"><div class="cacc-b">'+pb+'</div></section>'+(page==="ep" && accProv ? '<section class="paper cacc">'+accProv+'</section>' : '');
       }
       // la liste : une ligne touchée ouvre sa fiche ; le rond la marque « fait »
       function wireOps(){
@@ -5568,17 +5559,30 @@
         [].forEach.call(document.querySelectorAll("#opsBody .ops-ck"), function(b){ b.onclick=function(){ if(fyRO()) return; var k=b.getAttribute("data-k"), id=b.getAttribute("data-id"); if(k==="f") toggleFraisDone(id, month); else toggleVirementDone(id); }; });
         var rp=document.getElementById("opsReport"); if(rp && !fyRO()) rp.onclick=openReport;
       }
+      // aller à un sous-onglet (les anciennes pages : Dépenses → Opérations filtrées sur les sorties, Solde → Opérations)
+      function goSub(k){ if(k==="dep"){ state.cptF="out"; k=null; } else if(k!=="es" && k!=="ep" && k!=="graph") k=null; state.cptPage=k; state.view="compte"; render(); window.scrollTo(0,0); }
+      function cptWheel(){
+        var a=acctByKey(person); if(!a) return;
+        var ro=fyRO(), items=ro ? [] : acctMenuItems(a), ch=items.slice(0,1);
+        if(!ro) ch.push({ l:"Solde reporté · "+monthLabelOf(month).split(" ")[0]+" : "+fmtK(reporte), fn:openReport });
+        if(impCan() && person!=="__tickets"){ var lim=store.read("lastImport", null);
+          ch.push({ l:"Importer un relevé (OFX, QIF, CSV)", fn:function(){ impStart(person); } });
+          if(lim && lim.acct===person) ch.push({ l:"Annuler le dernier import · "+String(lim.at||"").split("-").reverse().join("/"), fn:function(){ impUndo(false); } }); }
+        ch=ch.concat(items.slice(1));
+        uiChoice(a.nom, a.main?"Compte principal : il reçoit les frais communs et s'affiche sur l'Accueil.":"", ch);
+      }
       app.innerHTML=h;
+      var gear=document.getElementById("cptGear"); if(gear) gear.onclick=cptWheel;
+      [].forEach.call(document.querySelectorAll(".avtabs .cpsub"), function(b){ b.onclick=function(){ goSub(b.getAttribute("data-cp")||null); }; });
       if(!page){
-        var gb=document.getElementById("cptGraph"); if(gb) gb.onclick=function(){ state.cptFromCfg=false; state.cptPage="graph"; state.view="comptedet"; render(); window.scrollTo(0,0); };
         [].forEach.call(document.querySelectorAll(".ops-f button, .ops-sum .hstat"), function(b){ b.onclick=function(){ var k=b.getAttribute("data-f"); state.cptF=(b.classList.contains("hstat") && state.cptF===k) ? "tout" : k; render(); }; });
         var qi=document.getElementById("opsQ"); if(qi && !preStart) qi.addEventListener("input", function(){ state.cptQ=qi.value; var ob=document.getElementById("opsBody"); if(ob){ ob.innerHTML=opsBodyHTML(O, cx); wireOps(); } });
         wireOps();
       }
       // graphiques touchables : cascade → page concernée (Report → solde reporté), camembert → Dépenses, colonnes / points → ce mois
       if(graphV){
-        [].forEach.call(document.querySelectorAll(".thero .wfhit"), function(b){ b.addEventListener("click", function(){ var k=b.getAttribute("data-k"); if(k==="report"){ openReport(); return; } state.cptFromCfg=false; state.cptFromGraph=true; state.cptPage=k; state.view="comptedet"; render(); window.scrollTo(0,0); }); });
-        [].forEach.call(document.querySelectorAll(".thero .dseg, .thero .cdon-r"), function(b){ b.style.cursor="pointer"; b.addEventListener("click", function(){ state.cptFromCfg=false; state.cptFromGraph=true; state.cptPage="dep"; state.view="comptedet"; render(); window.scrollTo(0,0); }); });
+        [].forEach.call(document.querySelectorAll(".thero .wfhit"), function(b){ b.addEventListener("click", function(){ var k=b.getAttribute("data-k"); if(k==="report"){ openReport(); return; } goSub(k); }); });
+        [].forEach.call(document.querySelectorAll(".thero .dseg, .thero .cdon-r"), function(b){ b.style.cursor="pointer"; b.addEventListener("click", function(){ goSub("dep"); }); });
         [].forEach.call(document.querySelectorAll(".thero .barhit"), function(b){ b.style.cursor="pointer"; b.addEventListener("click", function(){ var m=b.getAttribute("data-m"); if(!state.months) state.months={}; if(cmode==="prov"){ state.months.provisions=(m===curM?null:m); state.view="provisions"; render(); window.scrollTo(0,0); return; }   // provisions : ouvre la page du mois touché
           state.months.compte=(m===curM?null:m); render(); }); });
       }
@@ -5603,13 +5607,9 @@
       var gprov=document.getElementById("goprov"); if(gprov) gprov.onclick=function(){ if(!state.months) state.months={}; state.months.provisions=(month===curM?null:month); state.provFrom=null; state.view="provisions"; render(); window.scrollTo(0,0); };
       var cfr=document.getElementById("cptFrais"); if(cfr) cfr.onclick=function(){ state.view="communes"; render(); window.scrollTo(0,0); };
       var cOn=document.querySelector(".cch-tabs button.on"); if(cOn && cOn.parentNode){ var tb=cOn.parentNode; tb.scrollLeft=Math.max(0, cOn.offsetLeft-(tb.clientWidth-cOn.offsetWidth)/2); }
-      if(graphV) [].forEach.call(document.querySelectorAll(".thero .hstat"), function(t,i){ var g=(heroMain.stats[i]||{}).go; if(!g) return; t.style.cursor="pointer"; t.onclick=function(){ state.cptFromGraph=true; state.cptPage=g; state.view="comptedet"; render(); window.scrollTo(0,0); }; });
+      if(graphV) [].forEach.call(document.querySelectorAll(".thero .hstat"), function(t,i){ var g=(heroMain.stats[i]||{}).go; if(!g) return; t.style.cursor="pointer"; t.onclick=function(){ goSub(g); }; });
       accScrollFix(); wireAcctPick();
-      var gi=document.getElementById("goimp"); if(gi) gi.onclick=function(){ impStart(person); };
-      var ui=document.getElementById("undoimp"); if(ui) ui.onclick=function(){ impUndo(false); };
-      [].forEach.call(document.querySelectorAll(".cptGo"), function(r){ r.onclick=function(){ state.cptFromCfg=(page==="cfg"); state.cptFromGraph=graphV; state.cptPage=r.getAttribute("data-page"); state.view="comptedet"; render(); window.scrollTo(0,0); }; });
-      if(page) bindBack(function(){ if(state.cptFromCfg && page!=="cfg"){ state.cptFromCfg=false; state.cptPage="cfg"; render(); window.scrollTo(0,0); return; } state.cptFromCfg=false;
-        if(state.cptFromGraph && !graphV){ state.cptFromGraph=false; state.cptPage="graph"; render(); window.scrollTo(0,0); return; } state.cptFromGraph=false; if(state.cptFromAll){ state.cptFromAll=false; state.compteSel="__all"; store.write("compteSel", "__all"); } state.view="compte"; render(); window.scrollTo(0,0); });
+      [].forEach.call(document.querySelectorAll(".cptGo"), function(r){ r.onclick=function(){ goSub(r.getAttribute("data-page")); }; });
       [].forEach.call(document.querySelectorAll(".dgrp .dgh"), function(hd){ hd.onclick=function(){ var g=hd.parentNode, k=g.getAttribute("data-g"); if(!state.depOpen) state.depOpen={}; state.depOpen[k]=!state.depOpen[k]; g.classList.toggle("open", !!state.depOpen[k]); }; });
       [].forEach.call(document.querySelectorAll(".dmode button"), function(bt){ bt.onclick=function(){ state.depByShop=bt.getAttribute("data-v")==="1"; render(); }; });
       wireChartDefaults();

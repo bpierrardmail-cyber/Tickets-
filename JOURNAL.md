@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `31/10 20:05`, environ 9 700 lignes.
+- β web : `beta/index.html`, étiquette `31/10 20:22`, environ 9 700 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -28,11 +28,11 @@ Après chaque modification, dans le même commit :
 - **Accueil** : graphiques choisis par l'utilisateur (⚙ Choisir, appui long pour changer, déplacer ou masquer), grande carte du haut au choix. Pastilles ✍️ Saisie et 🧾 Tickets. Filtre par personne en haut à droite. Rien sous les graphiques.
 - **Articles** : produits et prix (Mes produits, Hausses, Magasins, Familles, Budgets). Fiche produit avec tous les achats. Bouton « Produits partagés ».
 - **Commun** : parts du commun en % et parts propres à chaque frais. Graphique Mois (6, 12, 12 à venir, Tout). Bandeau des personnes. Les frais communs du mois y sont à voir ; ils se modifient dans À venir › Frais fixes.
-- **Compte** :
-  - s'ouvre sur la **liste des opérations du mois**, comme un relevé de banque : solde estimé, Entrées / Sorties / Fin de mois, filtres Tout · Entrées · Sorties · À venir, recherche (nom ou montant, avec le total), bloc « À venir » avec un rond pour marquer « fait », puis les opérations par jour (le plus récent en haut) avec le solde du soir, et le report en bas ;
-  - les graphiques d'avant sont sur la page « Graphiques » (bouton), en plein écran ;
+- **Compte** : 4 sous-onglets **Opérations · Virements · Épargne · Graphiques**, et la **roue du compte** en haut à droite (modifier le compte, solde reporté, importer un relevé, annuler le dernier import, compte principal, supprimer) ;
+  - Opérations : la **liste des opérations du mois**, comme un relevé de banque : solde estimé, Entrées / Sorties / Fin de mois, filtres Tout · Entrées · Sorties · À venir, recherche (nom ou montant, avec le total), bloc « À venir » avec un rond pour marquer « fait », puis les opérations par jour (le plus récent en haut) avec le solde du soir, et le report en bas ;
+  - Graphiques : les 6 graphiques (Ce mois, Dépenses, Solde, Entrées-sorties, Épargne, Provisions), touchables (une barre ouvre Virements ou les Opérations filtrées) ;
   - plusieurs comptes par personne, sur une rangée qui défile (la carte des comptes garde la même hauteur) ;
-  - page Configuration par compte (épargne ; **Importer un relevé** ; « Annuler le dernier import » ; la ligne Provisions ouvre À venir › Provisions) ;
+  - Épargne : comptes épargne et objectifs, avec la ligne Provisions qui ouvre À venir › Provisions ; plus de page « Configuration », ni de pages Dépenses et Solde bancaire ;
   - bouton « Liquide » ;
   - rien avant le début du suivi ;
   - mois à venir = solde prévu.
@@ -51,7 +51,7 @@ Après chaque modification, dans le même commit :
   - détail d'un mois ;
   - **Analyse avancée** (Plus) : inflation perso (INSEE), année / an dernier, alertes, reste à vivre, projection, simulateur, résumé pour une IA.
 
-**Menu** : 3 blocs sans titres et sans défilement. Foyer partagé, Personnes, Sauvegarder · Importer un relevé, Exporter en PDF, Galerie · Réglages (devise, code et empreinte, restaurer une sauvegarde).
+**Menu** : 3 blocs sans titres et sans défilement. Foyer partagé, Personnes, Sauvegarder · Exporter en PDF, Galerie · Réglages (devise, code et empreinte, restaurer une sauvegarde).
 
 **Foyer partagé**
 - Invitation par QR code. Copies chiffrées sur le relais, que le relais ne peut pas lire. Code + empreinte obligatoires.
@@ -65,13 +65,13 @@ Après chaque modification, dans le même commit :
 - Empreinte native, Bilan PDF, geste retour.
 - Widgets (Scan, Solde, Commun, Mois, Foyer, Bourse), masqués par défaut.
 
-**Import d'un relevé** (menu et Compte › Configuration) : OFX/QFX, QIF, CSV lus sur le téléphone, aperçu à cocher, import en une fois, annulable. Détails dans `CLAUDE.md`.
+**Import d'un relevé** (roue du compte) : OFX/QFX, QIF, CSV lus sur le téléphone, aperçu à cocher, import en une fois, annulable. Détails dans `CLAUDE.md`.
 
 **Version Store** : `PLUS_FEATURES = widgets, foyer, avancee, factures` (« factures » = importer et suivre ses factures ; le reste d'À venir est gratuit). L'achat de Plus n'est pas encore branché. L'import de relevé est gratuit pour l'instant.
 
 ## En cours / à reprendre
 
-- **Réorganisation de l'appli** (31/10) : il trouve l'organisation et l'accès aux fonctions peu clairs. Plan proposé dans la maquette « Tickets — Plan de l'appli » : un onglet = une question, chaque chose à un seul endroit, sous-onglets visibles au lieu de « Configuration », ✦ partout pareil (on voit la fonction, seul le bouton demande Plus). Onglets proposés : Accueil · Dépenses (Articles + Analyse) · Compte (Opérations · Virements · Épargne · Graphiques, roue du compte) · À venir (ex Factures, ouvert à tous : 12 mois · Frais fixes · Provisions gratuits, Factures ✦, Projection ✦) · Commun (parts seulement) · Bourse. En 4 étapes, À venir d'abord (sa question : les provisions dans Factures). Décidé le 31/10 : nom « À venir », 12 mois gratuits. **Étape 1 (À venir) intégrée le 31/10.** Étape 2 (Compte) : maquette sur le canevas (Opérations, Virements, Épargne, Graphiques, roue du compte), en attente de « tu peux intégrer ». La page Dépenses de la Configuration disparaîtrait (filtre Sorties et graphique Dépenses), la page Solde bancaire passerait dans la roue (« Solde de départ »).
+- **Réorganisation de l'appli** (31/10) : il trouve l'organisation et l'accès aux fonctions peu clairs. Plan proposé dans la maquette « Tickets — Plan de l'appli » : un onglet = une question, chaque chose à un seul endroit, sous-onglets visibles au lieu de « Configuration », ✦ partout pareil (on voit la fonction, seul le bouton demande Plus). Onglets proposés : Accueil · Dépenses (Articles + Analyse) · Compte (Opérations · Virements · Épargne · Graphiques, roue du compte) · À venir (ex Factures, ouvert à tous : 12 mois · Frais fixes · Provisions gratuits, Factures ✦, Projection ✦) · Commun (parts seulement) · Bourse. En 4 étapes, À venir d'abord (sa question : les provisions dans Factures). Décidé le 31/10 : nom « À venir », 12 mois gratuits. **Étapes 1 (À venir) et 2 (Compte) intégrées le 31/10.** Suite : étape 3 (Dépenses : Articles et Analyse réunis), maquette d'abord.
 
 - **Sans réseau** (31/10) : à essayer par Benoît en mode avion avec les nouveaux APK.
   - Perso : installer le nouvel APK, l'ouvrir une fois avec du réseau (la copie s'enregistre), puis en mode avion.
@@ -103,6 +103,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **31/10** : étape 2 de la réorganisation intégrée (« tu peux y aller ») : Compte en sous-onglets, roue du compte, import seulement dans la roue.
 - **31/10** : étape 1 de la réorganisation intégrée (« tu peux intégrer ») : onglet À venir.
 - **31/10** : réorganisation de l'appli : l'onglet Factures s'appellera « À venir » ; dans la version Store, les 12 prochains mois y sont gratuits (seules les factures, et leurs estimations, sont dans Plus).
 - **31/10** : estimation des factures selon la saison (l'hiver consomme plus), pour les deux applis.
@@ -153,7 +154,14 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 31/10
-- **Étape 2 (Compte)** : maquette ajoutée au canevas « Tickets — Plan de l'appli ». Rien de changé dans l'appli.
+- **Réorganisation, étape 2 : Compte** (d'après la maquette) :
+  - sous-onglets Opérations · Virements · Épargne · Graphiques (`state.cptPage` : null, `es`, `ep`, `graph` ; la vue `comptedet` revient à `compte`) ; plus de bouton retour ni de page « Configuration » ;
+  - roue du compte (`cptWheel`, `#cptGear`) : modifier, solde reporté, importer un relevé, annuler le dernier import, compte principal, supprimer (`acctMenuItems`) ; cachée en consultation sans import ;
+  - les pages Dépenses et Solde bancaire disparaissent : un lien vers Dépenses ouvre les Opérations filtrées sur les sorties, un lien vers le Solde ouvre les Opérations (`goSub`) ; le détail du liquide reste au bouton « Liquide » et dans Graphiques › Solde ;
+  - Épargne garde la ligne Provisions (→ À venir › Provisions) ;
+  - le menu n'a plus « Importer un relevé » : l'import se fait depuis la roue du compte visé ;
+  - essais : sous-onglets, roue, graphiques touchables, import et annulation par la roue (relevés, foyer), liquide, épargne, cartes de l'Accueil.
+- **Étape 2 (Compte)** : maquette ajoutée au canevas « Tickets — Plan de l'appli ».
 - **Réorganisation, étape 1 : onglet À venir** (d'après la maquette) :
   - l'onglet Factures devient « À venir », ouvert à tous, avec 4 sous-onglets (`state.avnSub` : `mois`, `frais`, `prov`, `fact` ; `avTabsHTML`, `wireAvTabs`) ;
   - Frais fixes = l'ancienne page Frais fixes de Commun (`renderCommunes` en mode À venir) ; Provisions = l'ancienne page Provisions (`renderProvisions`, la vue `provisions` y mène) ;
