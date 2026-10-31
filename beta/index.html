@@ -5,9 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="31/10 08:31" />
+  <meta name="build" content="31/10 09:19" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     :root{
       --bg:#13151b; --bg0:#0e0f14; --card:#1b1e26; --card2:#20242e;
@@ -3922,8 +3921,6 @@
         [].forEach.call(document.querySelectorAll(".entry[data-s]"), function(n){ var ok=!q || n.getAttribute("data-s").indexOf(q)>=0; n.style.display=ok?"":"none"; if(ok) any=true; });
         var re=document.getElementById("results-empty"); if(re) re.style.display=any?"none":"block";
       }; if(state.search){ search.oninput(); } }
-      var prep=document.getElementById("prep"); if(prep) prep.onclick=prepareOffline;
-      var ck=document.getElementById("cloudkey"); if(ck) ck.onclick=function(){ var cur=store.read("ocrKey",""); var k=window.prompt("Colle ta clé API OCR.space (vide = désactiver) :", cur); if(k===null) return; store.write("ocrKey", k.trim()); render(); };
       var bkp=document.getElementById("backup"); if(bkp) bkp.onclick=backupData;
       var rst=document.getElementById("restore"); if(rst) rst.onclick=function(){ restorein.click(); };
       var goprod=document.getElementById("goprod"); if(goprod) goprod.onclick=function(){ state.view="produits"; render(); };
@@ -6223,12 +6220,13 @@
       var topC=Object.keys(cc).sort(function(a,b){ return cc[b]-cc[a]; })[0]||null; D.topCat=topC?{ c:topC, v:cc[topC] }:null;
       avMemo=D; return D;
     }
-    // Inflation officielle (INSEE) : demandée au relais une fois par jour, gardée sur le téléphone
+    // Inflation officielle (INSEE) : demandée au relais une fois par jour, gardée sur le téléphone ;
+    // dans l'appli Store, lue dans l'APK (insee.json, pris au relais à chaque compilation)
     var avInseeAsk=false;
     function avInsee(){
       var c=store.read("inseeIpc", null), cm=monthKey(todayISO()), old=!!(c && c.last && monthsBetween(c.last, cm)>4);   // chiffre trop ancien : on redemande
-      if((!c || old || Date.now()-(c.t||0)>86400000) && !avInseeAsk && coursApi()){ avInseeAsk=true;
-        fetch(coursApi()+"/inflation").then(function(r){ return r.json(); }).then(function(j){ if(j && j.ok && isFinite(j.yoy)){ store.write("inseeIpc", { t:Date.now(), yoy:j.yoy, last:j.last, series:j.series||[] }); if(state.view==="avancee") render(); } else store.write("inseeIpc", { t:Date.now()-82800000, none:1 }); }).catch(function(){}); }
+      if((!c || old || Date.now()-(c.t||0)>86400000) && !avInseeAsk && (appLocal() || coursApi())){ avInseeAsk=true;
+        fetch(appLocal() ? "./insee.json" : coursApi()+"/inflation").then(function(r){ return r.json(); }).then(function(j){ if(j && j.ok && isFinite(j.yoy)){ store.write("inseeIpc", { t:Date.now(), yoy:j.yoy, last:j.last, series:j.series||[] }); if(state.view==="avancee") render(); } else store.write("inseeIpc", { t:Date.now()-82800000, none:1 }); }).catch(function(){}); }
       return (c && !c.none && isFinite(c.yoy) && !old) ? c : null;   // pas de comparaison avec un chiffre de plus de 4 mois
     }
     // petits graphiques
@@ -7231,6 +7229,22 @@
 
     // ---------- Appli Android (Capacitor) : lecture ML Kit sur le téléphone ----------
     function capNative(){ try{ var C=window.Capacitor; return !!(C && C.isNativePlatform && C.isNativePlatform()); }catch(e){ return false; } }
+    // Appli Store complète : la page est dans l'APK (https://localhost), rien n'est chargé en ligne
+    function appLocal(){ return location.protocol==="https:" && location.hostname==="localhost" && capNative(); }
+    // Lecteur de tickets du navigateur (Tesseract) : chargé seulement s'il sert (dans l'appli, ML Kit lit sur le téléphone)
+    var tessP=null;
+    function loadTesseract(){
+      if(typeof Tesseract!=="undefined") return Promise.resolve(true);
+      if(appLocal()) return Promise.resolve(false);
+      if(tessP) return tessP;
+      tessP=new Promise(function(res){
+        var sc=document.createElement("script"), done=false, to=setTimeout(function(){ fin(false); }, 30000);
+        function fin(ok){ if(done) return; done=true; clearTimeout(to); ok=ok && typeof Tesseract!=="undefined"; if(!ok) tessP=null; res(ok); }
+        sc.onload=function(){ fin(true); }; sc.onerror=function(){ fin(false); };
+        sc.src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"; document.head.appendChild(sc);
+      });
+      return tessP;
+    }
     var capPlugs={};
     function capPlugin(name){
       if(!capNative()) return null;
@@ -7288,21 +7302,6 @@
         { l:"Envoyer vers… (Drive, mail)", fn:toShare }
       ]);
     }
-    function ocrCloud(blob){
-      var key=store.read("ocrKey","");
-      if(!key) return Promise.reject(new Error("pas de cle"));
-      var fd=new FormData();
-      fd.append("apikey", key); fd.append("language","fre"); fd.append("OCREngine","2");
-      fd.append("isTable","true"); fd.append("scale","true");
-      fd.append("file", blob, "ticket.jpg");
-      return fetch("https://api.ocr.space/parse/image",{ method:"POST", body:fd })
-        .then(function(r){ return r.json(); })
-        .then(function(j){
-          if(j.IsErroredOnProcessing) throw new Error((j.ErrorMessage&&j.ErrorMessage[0])||"erreur OCR cloud");
-          return (j.ParsedResults&&j.ParsedResults[0]&&j.ParsedResults[0].ParsedText)||"";
-        });
-    }
-
     filein.onchange=function(ev){
       var files=ev.target.files ? [].slice.call(ev.target.files) : []; ev.target.value="";
       if(!files.length) return;
@@ -7315,7 +7314,7 @@
           if(m.status==="recognizing text"){ state.prog=Math.round(m.progress*100); var bar=document.getElementById("bar"); if(bar) bar.style.width=state.prog+"%"; }
         }}).then(function(r){ return (r.data&&r.data.text)||""; }); }
       var diag=[];
-      function localOne(src){ return (typeof Tesseract==="undefined") ? Promise.resolve("") : tessText(src).then(function(t){ diag.push("local:"+(t||"").length); return t; }); }
+      function localOne(src){ return loadTesseract().then(function(ok){ if(!ok){ diag.push("local:absent"); return ""; } return tessText(src).then(function(t){ diag.push("local:"+(t||"").length); return t; }); }); }
       var lastRes=null, raws=[];   // ce que ML Kit a rendu (morceaux et positions), pour « Copier la lecture »
       function ocrOne(file){
         var plug=capPlugin("TicketOcr"); lastRes=null;
@@ -7330,12 +7329,6 @@
       function ocrClassic(file){
         return preprocess(file).then(function(src){
           if(!(src && src.toBlob)) diag.push("preproc-KO");
-          if(store.read("ocrKey","")){
-            return canvasToBlob(src).then(function(blob){
-              var ko = (blob && blob.size) ? Math.round(blob.size/1024) : "?";
-              return ocrCloud(blob).then(function(t){ diag.push("cloud "+ko+"Ko:"+(t||"").length+"car"); return t; });
-            }).catch(function(e){ diag.push("cloud KO("+((e&&e.message)||e)+")"); return localOne(src); });
-          }
           return localOne(src);
         });
       }
@@ -8214,7 +8207,7 @@
       if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
       if(pdfjsP) return pdfjsP;
       pdfjsP=new Promise(function(res, rej){
-        var base="https://cdn.jsdelivr.net/npm/pdfjs-dist@"+PDFJS_V+"/legacy/build/", done=false;
+        var base=appLocal() ? "./pdfjs/" : "https://cdn.jsdelivr.net/npm/pdfjs-dist@"+PDFJS_V+"/legacy/build/", done=false;
         function fin(){ if(done) return; done=true; window.removeEventListener("tk-pdfjs", fin); clearTimeout(to); if(window.pdfjsLib) res(window.pdfjsLib); else { pdfjsP=null; rej(new Error("lecteur de PDF indisponible (connexion ?)")); } }
         var to=setTimeout(fin, 25000);
         window.addEventListener("tk-pdfjs", fin);
@@ -8255,7 +8248,7 @@
     }
     function ocrBillPage(file){
       var plug=capPlugin("TicketOcr");
-      if(!plug){ if(typeof Tesseract==="undefined") return Promise.resolve({ t:"", res:null }); return Tesseract.recognize(file, "fra+eng").then(function(r){ return { t:(r.data&&r.data.text)||"", res:null }; }); }
+      if(!plug) return loadTesseract().then(function(ok){ if(!ok) return { t:"", res:null }; return Tesseract.recognize(file, "fra+eng").then(function(r){ return { t:(r.data&&r.data.text)||"", res:null }; }); });
       function once(rot){ return nativeImageRot(file, rot).then(function(b64){ return plug.recognize({ image:b64 }); }).then(function(res){ return { t:mlkitRows(res||{}), res:res||null }; }); }
       function len(x){ return (x.t||"").replace(/\s/g,"").length; }
       return once(0).then(function(a){
@@ -8535,15 +8528,6 @@
       r.readAsText(file);
     }
     restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if(ev.target) ev.target.value=""; if(f) restoreData(f); };
-
-    function prepareOffline(){
-      if(typeof Tesseract==="undefined"){ state.offline="error"; render(); return; }
-      state.offline="loading"; render();
-      Tesseract.createWorker("fra+eng")
-        .then(function(w){ return w.terminate(); })
-        .then(function(){ store.write("offlineReady", true); state.offline="ready"; render(); })
-        .catch(function(err){ console.warn(err); state.offline="error"; render(); });
-    }
 
     function tickBourse(){
       if(!FEAT.bourse) return;
@@ -9680,12 +9664,19 @@
     setTimeout(function(){ widgetLaunch(); pushWidgets(true); }, 600);
 
     // Mise à jour automatique : au retour dans l'appli, recharge si une nouvelle version β est en ligne
-    (function(){
+    // (pas dans l'appli Store : elle est dans l'APK et se met à jour par le Play Store)
+    // Les vérifications (index.html?v=…) ne doivent pas s'entasser dans la copie hors ligne du navigateur.
+    function swTidy(){
+      try{ if(!window.caches) return; caches.keys().then(function(ns){ ns.forEach(function(n){ if(!/^tickets-shell/.test(n)) return;
+        caches.open(n).then(function(c){ return c.keys().then(function(ks){ ks.forEach(function(k){ if(/[?&]v=\d/.test(k.url)) c.delete(k); }); }); }); }); }).catch(function(){}); }catch(e){}
+    }
+    if(!appLocal()) (function(){
       var cur=(document.querySelector('meta[name=build]')||{}).content||"", last=Date.now();
       function check(){
         if(document.visibilityState!=="visible" || Date.now()-last<60000) return;
         last=Date.now();
         fetch("./index.html?v="+Date.now(), { cache:"no-store" }).then(function(r){ return r.ok ? r.text() : ""; }).then(function(t){
+          setTimeout(swTidy, 3000);
           var m=t && t.match(/<meta name="build" content="([^"]*)"/);
           if(!m || !cur || m[1]===cur) return;
           var ae=document.activeElement, typing=ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName);
@@ -9697,7 +9688,13 @@
       window.addEventListener("focus", check);
       setTimeout(function(){ last=0; check(); }, 8000);   // aussi juste après l'ouverture (au cas où une ancienne version a été servie)
     })();
-    if("serviceWorker" in navigator){
+    // Copie hors ligne : dans un navigateur, le service worker ; dans l'appli Android, pas de service worker :
+    // l'appli Store est dans l'APK, et l'appli Perso récente (« TkOff » dans son identifiant) garde elle-même la page.
+    if("serviceWorker" in navigator && capNative() && (appLocal() || /TkOff\//.test(navigator.userAgent||""))){
+      try{ navigator.serviceWorker.getRegistrations().then(function(rs){ rs.forEach(function(r){ r.unregister(); }); }).catch(function(){}); }catch(e){}
+      try{ if(window.caches) caches.keys().then(function(ns){ ns.forEach(function(n){ if(/^tickets-/.test(n)) caches.delete(n); }); }).catch(function(){}); }catch(e){}
+    } else if("serviceWorker" in navigator){
+      setTimeout(swTidy, 5000);
       window.addEventListener("load", function(){
         navigator.serviceWorker.register("../sw.js").then(function(reg){
           reg.update().catch(function(){});

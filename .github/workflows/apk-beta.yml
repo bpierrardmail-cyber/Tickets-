@@ -1,9 +1,11 @@
 name: APK Android β
 
 # Construit les deux applis Android de test à partir du même code (Capacitor) :
-#   - Perso : tout, Bourse comprise (installée à la main) ;
-#   - Store : la future version Play Store, sans Bourse.
-# Les deux chargent la version β, lisent les tickets avec ML Kit et ont les widgets
+#   - Perso : tout, Bourse comprise (installée à la main). Elle charge la version β en ligne
+#     (chaque correction arrive tout de suite) et garde une copie de la page pour marcher sans réseau ;
+#   - Store : la future version Play Store, sans Bourse. L'appli entière est dans l'APK (β, lecteur PDF,
+#     inflation INSEE du moment) : aucune connexion pour l'usage normal, mises à jour par le Store.
+# Les deux lisent les tickets avec ML Kit et ont les widgets
 # (dans la version Store, les widgets sont réservés à Tickets Plus ; pas de widget Bourse).
 # Elles sont publiées dans la release « apk-beta ».
 on:
@@ -12,6 +14,7 @@ on:
     branches: [main]
     paths:
       - 'app-android/**'
+      - 'beta/**'
       - '.github/workflows/apk-beta.yml'
 
 permissions:
@@ -31,8 +34,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           NOTES="Applis Android de test de Tickets (version ${GITHUB_RUN_NUMBER}, commit ${GITHUB_SHA::7}).
-          - Tickets-perso.apk : ta version, avec la Bourse.
-          - Tickets-store.apk : la future version Play Store, sans Bourse."
+          - Tickets-perso.apk : ta version, avec la Bourse ; chargée en ligne, copie gardée pour marcher sans réseau.
+          - Tickets-store.apk : la future version Play Store, sans Bourse ; l'appli entière est dans l'APK."
           if gh release view apk-beta >/dev/null 2>&1; then
             gh release edit apk-beta --notes "$NOTES"
           else
@@ -78,11 +81,30 @@ jobs:
             const fs=require("fs"), c=JSON.parse(fs.readFileSync("capacitor.config.json","utf8"));
             c.appId=process.env.APP_ID; c.appName=process.env.APP_NAME;
             c.android=c.android||{}; c.android.appendUserAgent="TicketsApp/"+process.env.EDITION;
+            if(process.env.EDITION==="store"){ c.server={ androidScheme:"https" }; }   // appli dans l APK : rien en ligne
+            else { c.android.appendUserAgent+=" TkOff/1"; }   // Perso : copie hors ligne gérée par l appli (pas de service worker)
             fs.writeFileSync("capacitor.config.json", JSON.stringify(c,null,2));
             console.log(JSON.stringify(c,null,2));'
 
       - name: Dépendances Capacitor
         run: npm install --no-audit --no-fund
+
+      - name: Appli dans l'APK (Store)
+        if: matrix.edition == 'store'
+        run: |
+          rm -rf www && mkdir -p www/pdfjs
+          cp -r ../beta/. www/
+          # lecteur de PDF des factures, même version que dans la β
+          V=$(grep -oP 'PDFJS_V="\K[0-9.]+' www/index.html)
+          npm pack "pdfjs-dist@$V" --silent
+          tar xzf "pdfjs-dist-$V.tgz"
+          cp package/legacy/build/pdf.min.mjs package/legacy/build/pdf.worker.min.mjs www/pdfjs/
+          rm -rf package "pdfjs-dist-$V.tgz"
+          # inflation INSEE du moment (Analyse avancée), prise au relais à la compilation
+          API=$(grep -oP 'COURS_API *= *"\K[^"]+' www/index.html | head -1)
+          curl -fsS --max-time 20 "$API/inflation" -o www/insee.json || echo '{}' > www/insee.json
+          node -e 'const j=JSON.parse(require("fs").readFileSync("www/insee.json","utf8")); console.log("INSEE :", j.ok?(j.yoy+" % ("+j.last+")"):"absent")' || echo '{}' > www/insee.json
+          ls -la www www/pdfjs
 
       - name: Projet Android
         run: |

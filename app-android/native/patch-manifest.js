@@ -46,5 +46,9 @@ const add =
 
 if (!x.includes("</application>")) throw new Error("manifeste sans </application>");
 x = x.replace("</application>", add + "    </application>");
+// État du réseau : l'appli Perso ouvre sa copie de la page quand il n'y a pas de réseau (TkOfflineClient)
+if (!x.includes("android.permission.ACCESS_NETWORK_STATE")) {
+  x = x.replace("<application", '<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n    <application');
+}
 fs.writeFileSync(file, x);
 console.log("widgets ajoutés au manifeste");

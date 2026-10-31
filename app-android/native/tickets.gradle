@@ -27,6 +27,8 @@ android {
 dependencies {
     // Lecture de texte ML Kit, modèle latin intégré à l'appli (fonctionne hors ligne)
     implementation 'com.google.mlkit:text-recognition:16.0.1'
+    // Copie hors ligne de l'appli Perso : savoir si le WebView ajoute lui-même le pont Capacitor
+    implementation "androidx.webkit:webkit:${rootProject.ext.has('androidxWebkitVersion') ? rootProject.ext.androidxWebkitVersion : '1.12.1'}"
     // Empreinte digitale (BiometricPrompt)
     implementation 'androidx.biometric:biometric:1.1.0'
     // Widgets : mise à jour de la Bourse en arrière-plan (toutes les 15 minutes)

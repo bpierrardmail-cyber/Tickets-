@@ -11,19 +11,19 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 - Avant chaque commit, mettre à jour l'étiquette de version (heure de Paris) :
   `sed -i "s#<meta name=\"build\" content=\"[^\"]*\" />#<meta name=\"build\" content=\"$(TZ=Europe/Paris date +'%d/%m %H:%M')\" />#" beta/index.html`
 - Commits en français, préfixés « β » quand ils touchent la β, poussés directement sur `main`.
-- Exigences permanentes : marcher sans bug pour une grande famille (10 personnes et plus, plus de 10 comptes, affichage lisible) ; rien à configurer pour l'utilisateur ; aucune source de données payante ; le relais ne doit jamais pouvoir lire les données du foyer.
+- Exigences permanentes : marcher sans bug pour une grande famille (10 personnes et plus, plus de 10 comptes, affichage lisible) ; rien à configurer pour l'utilisateur ; aucune source de données payante ; le relais ne doit jamais pouvoir lire les données du foyer ; **marcher sans réseau** (la version Store est une appli complète, sans aucune connexion pour l'usage normal : seuls le foyer partagé et l'achat de Plus en ont besoin).
 
 ## Dépôt
 
 | Chemin | Rôle |
 |---|---|
 | `beta/index.html` | **L'appli** (≈ 9 700 lignes) : HTML + CSS + JS dans un seul fichier. Servie par GitHub Pages (`/Tickets-/beta/`). |
-| `index.html`, `sw.js`, `manifest.webmanifest` | Ancienne version stable à la racine + service worker (réseau d'abord). |
+| `index.html`, `sw.js`, `manifest.webmanifest` | Ancienne version stable à la racine + service worker (réseau d'abord), qui sert aussi la β dans un navigateur. |
 | `relais/cours-worker.js` | Worker Cloudflare : cours Yahoo / CoinGecko (`/search`, `/quote`, `/chart`, `/crypto/*`), inflation INSEE (`/inflation`) et routage `/foyer`. |
 | `relais/foyer.js` | Foyer partagé : un Durable Object SQLite par foyer (classe `Foyer`). |
 | `wrangler.jsonc` | Config du Worker ; déployé par Workers Builds à chaque push sur `main`. |
-| `app-android/` | Appli Android Capacitor 7 qui charge la β en ligne (`server.url`), plus le code natif dans `native/`. |
-| `.github/workflows/apk-beta.yml` | Compile deux APK (Perso et Store) quand `app-android/**` change ; publiés dans la release `apk-beta`. |
+| `app-android/` | Appli Android Capacitor 7, code natif dans `native/`. **Perso** : charge la β en ligne (`server.url`) et en garde une copie pour marcher sans réseau (`TkOfflineClient`). **Store** : la β est dans l'APK (copiée à la compilation avec pdf.js et `insee.json`), mises à jour par le Store. |
+| `.github/workflows/apk-beta.yml` | Compile deux APK (Perso et Store) quand `app-android/**` ou `beta/**` change ; publiés dans la release `apk-beta`. |
 
 ## Code de `beta/index.html`
 
@@ -39,6 +39,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
   - `num(x)` : lit un montant tapé (virgule ou point, espaces — le clavier Android en met après la virgule —, €, « 1 234,56 »). Toujours l'utiliser, jamais `parseFloat` directement.
   - `fmt`, `fmtK`, `fmtS` : montants. **Tout texte inséré en HTML passe par `esc()`.**
 - Écran mobile, thème sombre (variables CSS `--bg`, `--card`, `--ink`, `--accent`…). Tester à 412 px de large.
+- **Connexions** : aucune pour l'usage normal. `appLocal()` = appli Store (page dans l'APK, `https://localhost`) : pdf.js pris dans `./pdfjs/`, inflation dans `./insee.json`, ni vérification de version ni service worker. Tesseract (lecture des tickets dans un navigateur) n'est chargé qu'au besoin par `loadTesseract()`, jamais dans l'appli Store. Pas de service worker dans l'appli Android (Store, ou Perso avec `TkOff/1` dans son identifiant de navigateur) ; dans un navigateur, `swTidy` retire de sa copie les `index.html?v=…` des vérifications de version. Toute nouvelle connexion doit être justifiée et avoir un repli sans réseau.
 
 ## Données (clés localStorage)
 
@@ -95,10 +96,10 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
   - Le résultat se compare à `acctFigures(compte, mois).banque` (ce qui est fait), comme la carte « banque estimée ».
   - Accessible si `impCan()` (un vrai compte et, dans un foyer, l'onglet Compte en modification).
 - **Analyse « + Frais fixes »** : `fraisLines(mois, qui)` donne ce qui sort réellement du compte de la personne. `anFraisLines` limite le calcul aux mois qui ont des tickets.
-- **Éditions** : `EDITION` vaut `perso` ou `store`. L'appli Android l'annonce par `TicketsApp/<édition>` dans son identifiant de navigateur ; dans un navigateur, ajouter `?edition=store`.
+- **Éditions** : `EDITION` vaut `perso` ou `store`. L'appli Android l'annonce par `TicketsApp/<édition>` dans son identifiant de navigateur (plus ` TkOff/1` pour la Perso qui garde elle-même sa copie hors ligne) ; dans un navigateur, ajouter `?edition=store`.
   - La version Store n'a pas la Bourse.
   - `PLUS_FEATURES = ["widgets","foyer","avancee","factures"]` sont réservées à Tickets Plus dans la version Store ; vérifier avec `canUse()`.
-- **Analyse avancée** (`state.view="avancee"`, `renderAvancee`, `avData`) : inflation perso, année / année précédente, alertes, épargne et reste à vivre, pistes d'économies, projection, simulateur, résumé à coller dans une IA. Tout est calculé sur le téléphone ; seule l'inflation INSEE (publique) vient du relais (`/inflation`, gardée 24 h dans `inseeIpc`).
+- **Analyse avancée** (`state.view="avancee"`, `renderAvancee`, `avData`) : inflation perso, année / année précédente, alertes, épargne et reste à vivre, pistes d'économies, projection, simulateur, résumé à coller dans une IA. Tout est calculé sur le téléphone ; seule l'inflation INSEE (publique) vient du relais (`/inflation`, gardée 24 h dans `inseeIpc`) ; dans l'appli Store, elle est lue dans `insee.json` de l'APK.
   - Rejoindre un foyer est gratuit.
 
 ## Foyer partagé (modèle « le propriétaire est le centre »)
@@ -119,7 +120,8 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 ## Appli Android (`app-android/native`)
 
 - `TicketsNativePlugin` : sauvegarde, partage, widgets, `scanQr` (Google code scanner).
-- `TicketOcrPlugin` : lecture des tickets par ML Kit. Dans le navigateur, c'est Tesseract.js.
+- `TicketOcrPlugin` : lecture des tickets par ML Kit (modèle dans l'APK, hors ligne). Dans le navigateur, c'est Tesseract.js.
+- `TkOfflineClient` (Perso seulement, branché dans `MainActivity`) : sert la page de l'appli depuis le réseau (avec un délai court) et en garde une copie dans `tk-offline-page.html` ; sans réseau, ou si le chargement échoue, il sert la copie à la même adresse (mêmes données). Le pont Capacitor est ajouté par le WebView (DOCUMENT_START_SCRIPT), copie comprise. Permission `ACCESS_NETWORK_STATE` ajoutée par `patch-manifest.js`.
 - Widgets (`TkWidgets.java` + layouts `tk_*`) :
   - masqués par défaut ; on touche le montant → `TkUnlockActivity` (empreinte ou code de l'appareil) ;
   - remasqués au bout de 2 min ou quand l'écran s'éteint ;
@@ -129,6 +131,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 ## Tests
 
 Il n'y a pas de tests dans le dépôt. Ceux qui ont servi sont des scripts Playwright en Python :
+- l'appli Store se teste en servant une copie de `beta/` (+ pdf.js, `insee.json`) sur `https://localhost/` par une route, avec l'identifiant `TicketsApp/store` et un faux `window.Capacitor` : aucune requête ne doit partir ailleurs ;
 - Chromium sans interface, viewport 412×900 ;
 - données injectées dans localStorage puis `reload()` ;
 - plusieurs contextes de navigateur pour simuler le propriétaire et les membres ;

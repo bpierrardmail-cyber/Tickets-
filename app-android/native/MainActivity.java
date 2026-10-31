@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.webkit.WebView;
 import androidx.activity.OnBackPressedCallback;
+import com.getcapacitor.Bridge;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -14,6 +15,14 @@ public class MainActivity extends BridgeActivity {
         // Impression du Bilan, empreinte digitale et widgets
         registerPlugin(TicketsNativePlugin.class);
         super.onCreate(savedInstanceState);
+        // Appli Perso (chargée en ligne) : sans réseau, elle ouvre la copie de la page gardée sur le téléphone
+        Bridge bridge = getBridge();
+        if (TkOfflineClient.usable(bridge)) {
+            TkOfflineClient offline = new TkOfflineClient(bridge, this);
+            bridge.setWebViewClient(offline);
+            // pas de réseau du tout : la copie tout de suite (le chargement lancé juste avant échouerait)
+            if (offline.net() == 0 && offline.hasCopy()) bridge.getWebView().loadUrl(offline.appUrl());
+        }
         TicketsNativePlugin.takeIntent(getIntent());
         // Geste / bouton retour : la page le gère (fermer une fenêtre, écran précédent, accueil).
         // Plus rien à défaire dans la page : comportement normal d'Android (l'appli se réduit).

@@ -19,8 +19,10 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `31/10 08:31`, environ 9 700 lignes.
-- APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
+- β web : `beta/index.html`, étiquette `31/10 09:19`, environ 9 700 lignes.
+- APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
+  - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
+  - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
 
 **Onglets**
 - **Accueil** : graphiques choisis par l'utilisateur (⚙ Choisir, appui long pour changer, déplacer ou masquer), grande carte du haut au choix. Pastilles ✍️ Saisie et 🧾 Tickets. Filtre par personne en haut à droite. Rien sous les graphiques.
@@ -57,20 +59,26 @@ Après chaque modification, dans le même commit :
 - L'Accueil des membres est personnel.
 
 **Appli Android**
+- Marche sans réseau : tickets, scan (ML Kit est dans l'APK), comptes, commun, factures, analyse. Seuls le foyer partagé (changements envoyés au retour du réseau) et la Bourse (Perso) en ont besoin.
 - Lecture des tickets par ML Kit, sauvegarde dans Documents/Tickets.
 - Empreinte native, Bilan PDF, geste retour.
 - Widgets (Scan, Solde, Commun, Mois, Foyer, Bourse), masqués par défaut.
 
 **Import d'un relevé** (menu et Compte › Configuration) : OFX/QFX, QIF, CSV lus sur le téléphone, aperçu à cocher, import en une fois, annulable. Détails dans `CLAUDE.md`.
 
-**Version Store** : `PLUS_FEATURES = widgets, foyer, avancee`. L'achat de Plus n'est pas encore branché. L'import de relevé est gratuit pour l'instant.
+**Version Store** : `PLUS_FEATURES = widgets, foyer, avancee, factures`. L'achat de Plus n'est pas encore branché. L'import de relevé est gratuit pour l'instant.
 
 ## En cours / à reprendre
+
+- **Sans réseau** (31/10) : à essayer par Benoît en mode avion avec les nouveaux APK.
+  - Perso : installer le nouvel APK, l'ouvrir une fois avec du réseau (la copie s'enregistre), puis en mode avion.
+  - Store : l'appli de test repart vide (ses données étaient rattachées à l'adresse en ligne) ; pour garder ses essais, faire une sauvegarde avant et la restaurer après.
 
 - **Import d'un relevé** : fait le 25/10, à essayer par Benoît sur son téléphone avec ses 3 exports BoursoBank (comptes « Compte OFX », « Compte QIF », « Compte CSV »).
   - À décider : gratuit ou réservé à Plus.
   - Pistes si besoin : lire directement les fichiers propres à Grisbi (`.gsb`, du XML) ; rapprocher un remboursement d'un achat (ex. virement de 77,41 € pour un Brico Dépôt de 77,41 €).
 - Reportés à la sortie Store :
+  - paquet signé (AAB) pour la Play Console, envoyé à la main puis automatiquement depuis GitHub ;
   - QR code lisible par l'appareil photo ;
   - Workers Paid ;
   - WebSocket ;
@@ -92,6 +100,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **31/10** : l'appli doit marcher sans réseau. La version Store est une appli standard : entièrement dans l'APK, mises à jour par le Store comme les autres applis, aucune connexion nécessaire pour l'usage normal. La version Perso reste chargée en ligne (corrections tout de suite) avec une copie gardée pour marcher sans réseau.
 - **31/10** : onglet « Factures » intégré (« tu peux intégrer ») : Plus dans la version Store ; les provisions passent de l'onglet Compte à l'onglet Factures pour les droits du foyer (elles restent visibles et gratuites dans Compte › Configuration).
 - **31/10** : « Mes factures » sera un onglet, réservé à Tickets Plus dans la version Store.
 - **31/10** : import de factures : effets proposés « à cocher » ; une page « Mes factures » qui sert d'accueil aux provisions et réunit le prévisionnel.
@@ -138,6 +147,12 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 31/10
+- **Sans réseau** (Benoît n'avait pas pu ouvrir l'appli sans réseau ; l'appli Android chargeait la β en ligne et s'arrêtait sur « Pas de connexion ») :
+  - **Store** : la β est copiée dans l'APK à la compilation, avec pdf.js (`./pdfjs/`) et l'inflation INSEE du moment (`insee.json`, prise au relais par la compilation) ; plus de `server.url`. Dans la page, `appLocal()` : ni vérification de version, ni service worker, ni Tesseract. Essai (appli servie sur `https://localhost`) : onglets, Analyse avancée, facture PDF, scan : aucune requête hors de l'APK ;
+  - **Perso** : `TkOfflineClient` (natif) sert la page depuis le réseau avec un délai court, en garde une copie, et la sert sans réseau ou si le chargement échoue (même adresse, mêmes données). Le nouvel APK s'annonce `TkOff/1` : la page retire alors le service worker et ses copies, devenus inutiles ;
+  - Tesseract n'est plus chargé au démarrage (seulement au premier scan dans un navigateur) ; la lecture en ligne OCR.space (sans bouton depuis longtemps) est retirée, comme l'ancien bouton « préparer hors ligne » ;
+  - navigateur : chaque vérification de version (`index.html?v=…`) restait dans la copie du service worker (près de 1 Mo à chaque retour dans l'appli) ; `swTidy` les retire ;
+  - le workflow des APK se lance aussi quand la β change.
 - **Onglet Factures** (intégré à la demande de Benoît, d'après la maquette « Tickets — Importer une facture ») :
   - nouvel onglet entre Compte et Bourse ; `PLUS_FEATURES` + "factures" (écran Tickets Plus dans la version Store, provisions gratuites dans Compte › Configuration) ;
   - données : `factures` (une facture : fournisseur, type, date, montant, prélèvement ou « à payer », période, consommation, prochaine facture, régularisation) et `factAlias` (nom de fournisseur corrigé à la main, réutilisé) ; frais fixes créés par une facture : `fact` (clé de la série), `factNom`, `est` (estimée), `aPayer` ; provision liée : `fact` ;
