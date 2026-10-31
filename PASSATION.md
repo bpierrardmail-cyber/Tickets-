@@ -168,7 +168,7 @@ Fait et poussé le 31/10 :
 - l'import de relevé avec ses exports BoursoBank (OFX, QIF, CSV) ;
 - la lecture des factures d'eau en photo : il enverra « Copier la lecture ».
 
-**Tests automatiques** : les 15 tests de `tests/` passent, sauf deux vérifications de t76 qui dépendent du jour. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
+**Tests automatiques** : les 16 tests de `tests/` passent, sauf deux vérifications de t76 qui dépendent du jour. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
 
 ---
 
@@ -227,7 +227,7 @@ Fait et poussé le 31/10 :
 5. **Tenir `JOURNAL.md` à jour dans le même commit** : une entrée datée en haut de l'Historique, plus Décisions, État actuel et En cours si nécessaire. Mettre aussi `CLAUDE.md` à jour si une notion technique change.
 6. **Commit en français**, préfixé « β » quand il touche la β, poussé directement sur `main`. Le push met en ligne la β et la Perso, et recompile les deux APK.
 7. **Tester** avec les tests de `tests/` (mode d'emploi dans `tests/README.md`) :
-   - `sh tests/run.sh` lance les 15 tests ; `python3 tests/t95.py` en lance un seul ;
+   - `sh tests/run.sh` lance les 16 tests ; `python3 tests/t95.py` en lance un seul ;
    - ce sont des scripts Playwright en Python : Chromium sans interface, écran de 412×900, données injectées dans localStorage, relais local (Node et `node:sqlite` sur `localhost:8787`) ;
    - aucune requête réseau extérieure pendant les tests ;
    - ajouter un test pour chaque nouvelle fonction, **toujours avec des données inventées**.

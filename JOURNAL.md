@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `31/10 20:42`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `31/10 21:40`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -46,7 +46,7 @@ Après chaque modification, dans le même commit :
   - les 12 prochains mois : frais fixes, factures reçues ou estimées, échéances des provisions ; un mois en jaune s'il manquera de l'argent dans une provision ; toucher un mois donne le détail ; en dessous, ✦ « Tes comptes dans 12 mois » (projection et simulateur, ex Analyse avancée) ;
   - « À payer bientôt » (30 jours, tous comptes) ;
   - Factures : une carte par fournisseur (prochaine facture estimée, moyenne par mois, provision : « prête pour … » ou « il manquera … ») ; en Store sans Plus, ce que Plus apporte et un seul bouton ✦ ;
-  - « Importer une facture » : un ou plusieurs PDF (texte lu sur le téléphone par pdf.js ; avec plusieurs PDF, les plus anciens vont dans l'historique et la plus récente est à vérifier), ou des photos page par page (ML Kit, « + Page suivante », page tournée remise droite) ;
+  - « Importer une facture » : un ou plusieurs PDF (texte lu sur le téléphone par pdf.js ; avec plusieurs PDF, les plus anciens vont dans l'historique et la plus récente est à vérifier), ou des photos page par page (ML Kit, « + Page suivante », page tournée remise droite ; plusieurs factures photographiées d'un coup sont séparées de la même façon) ;
   - la facture lue : champs modifiables, comparaison avec l'an dernier, et trois effets à cocher : le prélèvement (ou « à payer ») dans « À venir » à la place du frais fixe estimé ce mois-là, la prochaine facture estimée, la provision (créer, ou payer la facture avec) ;
   - détail d'un fournisseur : provision, factures en barres avec la prochaine estimée, moyenne par mois, consommation sur 12 mois, prix moyen, liste (toucher pour supprimer).
 - **Bourse** (Perso seulement) : cours Yahoo et CoinGecko via le relais, courbe 1J. Comptée une fois dans l'épargne, comme une ligne automatique (« dont Bourse » sur l'Accueil et dans Épargne).
@@ -157,6 +157,13 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 31/10
+- **Factures d'eau en photos** (lecture envoyée par Benoît : 3 factures, recto et verso, 6 photos d'un coup ; « rien n'est bon ») :
+  - plusieurs factures photographiées d'un coup sont séparées (`factSplitPages` : une page rejoint la facture qui a sa date, sinon son montant à payer ; une autre date = une autre facture ; une page sans rien suit la précédente) ; comme pour plusieurs PDF, les plus anciennes vont dans l'historique (`factToHistory`) et la plus récente est à vérifier ; marche aussi avec les photos dans le désordre ;
+  - dates mal lues corrigées (`factDateFix` : « O04/03 », « 02/11I2026 », « 02/1 1/2026 », « 0408/2026 », « 202s ») ;
+  - fournisseur : nom en tête sur deux lignes séparées (« RÉGION » … « MINIÈRE ») et créancier du TIP mal lu (« SVOM … MINIERE- TIP ») ;
+  - type : « notre site Internet » ne fait plus une facture internet ; l'eau est reconnue sans « m3 » (« consommation d'eau », « eau potable ») ;
+  - consommation : plus le « 3 » de « (m3) » ; « deau » accepté ; période : plus la date de la facture elle-même ;
+  - test `tests/t96.py` avec 3 fausses factures d'eau qui reproduisent ces erreurs.
 - **`PASSATION.md`** à la racine : le dossier de passation (projet, liens, architecture, avancement, tests à faire, pistes, méthode), pour reprendre le projet dans un autre abonnement Claude. C'est une photo au 31/10 : `CLAUDE.md` et `JOURNAL.md` font foi.
 - **Tests dans le dépôt** (`tests/`, « ok » de Benoît) : les 15 tests Playwright à jour (import, Compte, liquide, Bourse, tickets, hors ligne, À venir, foyer, Dépenses), le relais local, `run.sh` et un mode d'emploi. Chemins rendus relatifs ; données toutes fictives (relevés inventés, factures EDF inventées) ; les tests qui lisaient de vrais relevés, factures ou tickets sont restés hors du dépôt. 
 - **Réorganisation, étapes 3 et 4 : Dépenses et finitions** :

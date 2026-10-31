@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="31/10 20:42" />
+  <meta name="build" content="31/10 21:40" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -7944,7 +7944,12 @@
 
     // ----- Lecture d'une facture (texte du PDF, ou des photos lues par ML Kit) -----
     var FACT_FOURS=[["EDF","elec"],["Engie","gaz"],["TotalEnergies","elec"],["Total Direct Energie","elec"],["Eni","gaz"],["Vattenfall","elec"],["ekWateur","elec"],["Mint Energie","elec"],["OHM Energie","elec"],["Octopus Energy","elec"],["Enercoop","elec"],["Alpiq","elec"],["Planete OUI","elec"],["Veolia","eau"],["Saur","eau"],["Suez","eau"],["Eau de Paris","eau"],["Bouygues Telecom","net"],["RED by SFR","net"],["SFR","net"],["Sosh","net"],["Orange","net"],["Free Mobile","net"],["Free","net"]];
-    function factDate(s){ var m=/(\d{1,2}) ?[\/.\-] ?(\d{1,2}) ?[\/.\-] ?(\d{4}|\d{2})(?!\d)/.exec(s||""); if(!m) return ""; var y=m[3].length===2?2000+(+m[3]):+m[3], mo=+m[2], d=+m[1]; if(d<1||d>31||mo<1||mo>12||y<2000||y>2099) return ""; return y+"-"+(mo<10?"0":"")+mo+"-"+(d<10?"0":"")+d; }
+    // dates mal lues sur une photo : « O04/03/2025 », « 02/11I2026 », « 02/1 1/2026 », « 0408/2026 », « 03/11/202s »
+    function factDateFix(s){
+      return String(s||"").replace(/[Oo](?=\d)/g, "0").replace(/(\d)[Il|](?=\d)/g, "$1/").replace(/(\/\d) (\d\/)/g, "$1$2")
+        .replace(/(^|[^\d\/])(\d{2})(\d{2})\/(\d{4})(?!\d)/g, "$1$2/$3/$4").replace(/(\d{1,2}\/\d{1,2}\/20\d)[sS](?![\w])/g, function(x, a){ return a+"5"; });
+    }
+    function factDate(s){ var m=/(\d{1,2}) ?[\/.\-] ?(\d{1,2}) ?[\/.\-] ?(\d{4}|\d{2})(?!\d)/.exec(factDateFix(s)); if(!m) return ""; var y=m[3].length===2?2000+(+m[3]):+m[3], mo=+m[2], d=+m[1]; if(d<1||d>31||mo<1||mo>12||y<2000||y>2099) return ""; return y+"-"+(mo<10?"0":"")+mo+"-"+(d<10?"0":"")+d; }
     // montants d'une ligne (« 183,55 », « 1 234,56 ») ; une suite de chiffres (« N° 32 394 240 173 183,55 ») n'est pas un millier
     function factAmts(s){
       var r=[], m, re=/(\d{1,3}(?:[   ]\d{3})?|\d+) ?, ?(\d{2})(?!\d)/g;
@@ -7961,6 +7966,7 @@
         for(var j=1;j<=2 && i+j<lines.length;j++){ a=factAmts(lines[i+j]); if(a.length) return a[a.length-1]; } }
       return null;
     }
+    var FACT_PAYRE=/montant\s+total\s+[àa]\s+payer|net\s+[àa]\s+payer|total\s+[àa]\s+payer|montant\s+[àa]\s+(?:payer|r[ée]gler)|somme\s+[àa]\s+payer|reste\s+[àa]\s+payer/i;
     function titleCase(s){ return String(s||"").toLowerCase().replace(/(^|[\s\-'’])([a-zà-ÿ])/g, function(x, a, b){ return a+b.toUpperCase(); }); }
     function parseBill(text){
       var T=String(text||"").replace(/[  ]/g," "), lines=T.split("\n").map(function(l){ return l.trim(); }).filter(Boolean), flat=lines.join("\n"), low=flat.toLowerCase();
@@ -7968,14 +7974,15 @@
       // fournisseur : les grands fournisseurs, sinon le créancier du TIP, sinon le nom en tête de la facture
       var nl=" "+norm(flat.replace(/[0-9]/g," "))+" ";
       for(var i=0;i<FACT_FOURS.length;i++){ var nf=norm(FACT_FOURS[i][0]); if(nl.indexOf(" "+nf+" ")>=0 || (nf.indexOf(" ")<0 && nl.indexOf(" "+nf.replace(/ /g,"")+" ")>=0)){ r.four=FACT_FOURS[i][0]; r.fourSure=true; r.type=FACT_FOURS[i][1]; break; } }
-      var crN=""; if(!r.four){ m=/cr[ée]ancier\s*:\s*([^\n]+)/i.exec(flat); if(m){ var cr=m[1].replace(/\s+-\s*tip\b.*$/i,"").replace(/^(?:sivom|siaep|syndicat|sm|sie)\s+/i,"").trim(); if(/[a-zà-ÿ]{3,}/i.test(cr)){ r.four=titleCase(cr); crN=norm(cr); } } }
+      var crN=""; if(!r.four){ m=/cr[ée]ancier\s*:\s*([^\n]+)/i.exec(flat); if(m){ var cr=m[1].replace(/\s*-\s*tip\b.*$/i,"").replace(/[\s\-]+$/,"").replace(/^(?:s\s?i?\s?v\s?o\s?m|siaep|syndicat|sm|sie)\s+/i,"").trim(); if(/[a-zà-ÿ]{3,}/i.test(cr)){ r.four=titleCase(cr); crN=norm(cr); } } }
       if(!r.four || crN){
         var stop=/factur|r[ée]f[ée]rence|adresse|occupant|contrat|client|madame|monsieur|\bm\.|\bmme\b|centre|\brue\b|avenue|route|chemin|t[ée]l|e-?mail|page|rappeler|service|horaires/i;
         for(var j=0;j<Math.min(lines.length, 10);j++){
           var w=lines[j].split(/\s{2,}/)[0];
           if(/\d/.test(w) || stop.test(w) || !/^[A-ZÀ-Ý][A-ZÀ-Ý '’\-]{3,30}$/.test(w)) continue;
-          var nx=(lines[j+1]||"").split(/\s{2,}/)[0];
-          if(/^[A-ZÀ-Ý][A-ZÀ-Ý'’\-]{3,20}$/.test(nx) && !stop.test(nx)) w+=" "+nx;
+          // la suite du nom, en capitales, une ou deux lignes plus bas (« RÉGION » … « MINIÈRE »)
+          for(var jn=1;jn<=2;jn++){ var nx=(lines[j+jn]||"").split(/\s{2,}/)[0];
+            if(/^[A-ZÀ-Ý][A-ZÀ-Ý'’\-]{3,20}$/.test(nx) && !stop.test(nx) && (!crN || crN.indexOf(norm(w+" "+nx))>=0)){ w+=" "+nx; break; } }
           if(!crN || crN.indexOf(norm(w))>=0) r.four=titleCase(w); break;
         }
       }
@@ -7983,8 +7990,8 @@
       if(r.type==="autre" || !r.fourSure){
         if(/\bkwh\b/.test(low) && /[ée]lectricit/.test(low)) r.type="elec";
         else if(/\bgaz\b/.test(low) && /\bkwh\b/.test(low)) r.type="gaz";
-        else if(/\bm ?[3³]\b/.test(low) && /\beau\b|assainissement/.test(low)) r.type="eau";
-        else if(/\b(box|fibre|internet|forfait mobile|ligne fixe)\b/.test(low)) r.type="net";
+        else if((/\bm ?[3³]\b/.test(low) || /consommation\s+d['’ ]?eau|eau\s+potable/.test(low)) && /\beau\b|assainissement/.test(low)) r.type="eau";
+        else if(/\b(box|fibre|forfait mobile|ligne fixe)\b/.test(low) || /(?:abonnement|acc[eè]s|offre)\s+internet/.test(low)) r.type="net";
       }
       // date de la facture
       r.date=factDateAfter(flat, /factur\w*(?:\s+r[ée]elle|\s+n°\s*\S+)?\s+(?:du|en date du|[ée]mise le)\s*:?\s*/i, 20) ||
@@ -7992,7 +7999,7 @@
       // montant à payer (et prélèvement : « Le montant de 183,55€ sera prélevé le 12/11/2025 »)
       m=/montant\s+de\s+(\d[\d ]*,\d\d)\s*€?\s*sera\s+pr[ée]lev[ée]\s+(?:le|à partir du|vers le)\s*:?\s*([^\n]{0,14})/i.exec(flat);
       if(m){ r.montant=factAmts(m[1])[0]; r.prelev=factDate(m[2]); }
-      if(r.montant==null) r.montant=factLabelAmt(lines, /montant\s+total\s+[àa]\s+payer|net\s+[àa]\s+payer|total\s+[àa]\s+payer|montant\s+[àa]\s+(?:payer|r[ée]gler)|somme\s+[àa]\s+payer|reste\s+[àa]\s+payer/i);
+      if(r.montant==null) r.montant=factLabelAmt(lines, FACT_PAYRE);
       if(r.montant==null) r.montant=factLabelAmt(lines, /montant\s+total(?!\s*(?:ht|hors))|total\s+(?:de\s+)?(?:la|votre)\s+facture|total\s+facture\s+ttc|montant\s+ttc|total\s+ttc/i);
       if(!r.prelev) r.prelev=factDateAfter(flat, /(?:sera\s+)?pr[ée]lev[ée]\s+(?:le|à partir du|vers le)\s*:?\s*/i, 40) || factDateAfter(flat, /date\s+(?:du|de)\s+pr[ée]l[èe]vement\s*:?\s*/i, 30);
       if(!r.prelev && /[àa]\s+payer\s+[àa]\s+r[ée]ception|tip\s*sepa|payfip|[àa]\s+r[ée]gler\s+avant|date\s+limite\s+de\s+paiement|[àa]\s+payer\s+avant/i.test(flat)){
@@ -8003,9 +8010,10 @@
       // période de consommation
       m=/consommation\s+du\s+([^\n]{6,12}?)\s+au\s+([^\n]{6,12})/i.exec(flat);
       if(m && factDate(m[1])){ r.du=factDate(m[1]); r.au=factDate(m[2]); }
-      else if(r.date){ var re=/\bdu\s+(\d{1,2}\/\d{1,2}\/\d{2,4})/gi, d0=""; while((m=re.exec(flat))){ var dd=factDate(m[1]); if(dd && dd<=r.date && (!d0 || dd<d0)) d0=dd; } if(d0){ r.du=d0; r.au=r.date; } }
+      else if(r.date){ var re=/\bdu\s+(\d{1,2}\/\d{1,2}\/\d{2,4})/gi, d0=""; while((m=re.exec(flat))){ var dd=factDate(m[1]); if(dd && dd<r.date && (!d0 || dd<d0)) d0=dd; } if(d0){ r.du=d0; r.au=r.date; } }
       // consommation : kWh (électricité, gaz) ou m³ (eau)
-      if(r.type==="eau"){ m=/consommation\s+(?:d['’]eau|factur[ée]e|totale\s+relev[ée]e)\s*(?:\(m\s?[3³]\))?[^\d\n]{0,30}(\d{1,5})(?!\d|[.,]\d)/i.exec(flat); if(m) r.conso=+m[1]; }
+      if(r.type==="eau") lines.some(function(l){ var c=/consommation\s+(?:d['’ ]?eau|factur[ée]e?|totale\s+relev[ée]e)[ \t]*(?:\(m\s?[3³]\))?[^\d]{0,30}?(\d{1,5})(?!\d|[.,]\d)/i.exec(l);
+        if(!c || /m\s?$/i.test(l.slice(0, c.index+c[0].length-c[1].length))) return false; r.conso=+c[1]; return true; });
       else if(r.type==="elec" || r.type==="gaz"){
         m=/total\s+consommation[^\n]*?\)?\s+(\d{1,3}(?: \d{3})?|\d+)\s+\d[\d ]*,\d\d\s*$/im.exec(flat);
         if(!m) m=/consommation[^\n]{0,60}?(\d{1,3}(?: \d{3})?|\d+)\s*kwh/i.exec(flat);
@@ -8407,16 +8415,43 @@
       function fin(){
         if(!got.length){ state.factDraft=null; state.view="factures"; render(); uiToast("Aucune facture lisible dans ces PDF"); return; }
         got.sort(function(a,b){ return a.p.date<b.p.date?-1:1; });
-        var last=got.pop(), n=0, dupl=0, al=store.read("factAlias", {})||{};
-        got.forEach(function(g){ var p=g.p; if(al[norm(p.four)]) p.four=al[norm(p.four)]; var S=factSeries(), same=S.filter(function(s){ return s.key===factKey(p); })[0]; if(same) p.four=same.four;
-          if(factDup(p)){ dupl++; return; }
-          var f={ id:Date.now()+n, four:p.four, type:p.type, date:p.date, montant:p.montant, src:"pdf" }; ["prelev","due","du","au","next"].forEach(function(k){ if(p[k]) f[k]=p[k]; }); if(p.aPayer){ f.aPayer=true; delete f.prelev; } if(p.conso>0) f.conso=p.conso; if(p.regul) f.regul=true;
-          factures.push(f); n++; });
-        if(n) persistFactures();
+        var last=got.pop(), H=factToHistory(got, "pdf");
         factOpenDraft([last.r.text], "pdf", last.r.n, [{ t:last.r.text, res:null }]);
-        uiToast((n?n+" facture"+(n>1?"s":"")+" plus ancienne"+(n>1?"s":"")+" ajoutée"+(n>1?"s":"")+" à l'historique · ":"")+(dupl?dupl+" déjà là · ":"")+(bad?bad+" illisible"+(bad>1?"s":"")+" · ":"")+"vérifie la plus récente");
+        uiToast(factHistMsg(H, bad));
       }
       step();
+    }
+    // Factures plus anciennes (plusieurs PDF, ou plusieurs factures en photos) : directement dans l'historique
+    function factToHistory(list, src){
+      var n=0, dupl=0, al=store.read("factAlias", {})||{};
+      list.forEach(function(g){ var p=g.p; if(al[norm(p.four)]) p.four=al[norm(p.four)]; var S=factSeries(), same=S.filter(function(s){ return s.key===factKey(p); })[0]; if(same) p.four=same.four;
+        if(factDup(p)){ dupl++; return; }
+        var f={ id:Date.now()+n, four:p.four, type:p.type, date:p.date, montant:p.montant, src:src }; ["prelev","due","du","au","next"].forEach(function(k){ if(p[k]) f[k]=p[k]; }); if(p.aPayer){ f.aPayer=true; delete f.prelev; } if(p.conso>0) f.conso=p.conso; if(p.regul) f.regul=true;
+        factures.push(f); n++; });
+      if(n) persistFactures();
+      return { n:n, dupl:dupl };
+    }
+    function factHistMsg(H, bad){ var n=H.n; return (n?n+" facture"+(n>1?"s":"")+" plus ancienne"+(n>1?"s":"")+" ajoutée"+(n>1?"s":"")+" à l'historique · ":"")+(H.dupl?H.dupl+" déjà là · ":"")+(bad?bad+" illisible"+(bad>1?"s":"")+" · ":"")+"vérifie la plus récente"; }
+    // Montant à payer d'une page (en centimes), 0 s'il n'y est pas
+    function factPayAmt(t){
+      var lines=String(t||"").replace(/[  ]/g," ").split("\n").map(function(l){ return l.trim(); }).filter(Boolean), flat=lines.join("\n");
+      var m=/montant\s+de\s+(\d[\d ]*,\d\d)\s*€?\s*sera\s+pr[ée]lev[ée]/i.exec(flat); if(m){ var a=factAmts(m[1])[0]; if(a>0) return Math.round(a*100); }
+      var v=factLabelAmt(lines, FACT_PAYRE); return v>0 ? Math.round(v*100) : 0;
+    }
+    // Photos de plusieurs factures prises d'un coup (recto, verso…) : une page rejoint la facture qui a sa date,
+    // sinon celle qui a son montant à payer ; une page avec une autre date commence une nouvelle facture ;
+    // une page sans date ni montant suit la précédente.
+    function factSplitPages(texts){
+      var G=[];
+      texts.forEach(function(t, i){
+        var d=parseBill(t).date||"", a=factPayAmt(t), g=null;
+        if(d) g=G.filter(function(x){ return x.d===d; })[0]||null;
+        if(!g && a) g=G.filter(function(x){ return x.a===a && (!d || !x.d); })[0]||null;
+        if(!g && !d) g=G[G.length-1]||null;
+        if(!g){ g={ d:d, a:a, idx:[] }; G.push(g); }
+        if(!g.d) g.d=d; if(!g.a) g.a=a; g.idx.push(i);
+      });
+      return G;
     }
     function factFromPhotos(files, add){
       var prev=add && state.factDraft && !state.factDraft.busy ? state.factDraft : null;
@@ -8427,10 +8462,20 @@
         if(i>=files.length){
           if(prev){ prev.pages=prev.pages.concat(texts); prev.raws=(prev.raws||[]).concat(raws); prev.n+=files.length; prev.busy=false; factReparse(prev); render(); return; }
           if(!texts.join("").replace(/\s/g,"").length){ state.factDraft=null; state.view="factures"; render(); uiToast("Rien de lisible sur la photo : réessaie, bien à plat et éclairée"); return; }
+          var G=texts.length>1 ? factSplitPages(texts) : null;
+          if(G && G.length>1){
+            // plusieurs factures : les plus anciennes dans l'historique, la plus récente à vérifier
+            var bills=G.map(function(g){ var tx=g.idx.map(function(k){ return texts[k]; }); return { tx:tx, rw:g.idx.map(function(k){ return raws[k]; }), p:parseBill(tx.join("\n")) }; });
+            var ok=bills.filter(function(b){ return b.p.date && b.p.montant>0; }), bad=bills.length-ok.length;
+            if(ok.length){ ok.sort(function(a,b){ return a.p.date<b.p.date?-1:1; });
+              var last=ok.pop(), H=factToHistory(ok, "photo");
+              factOpenDraft(last.tx, "photo", last.tx.length, last.rw);
+              uiToast(factHistMsg(H, bad)); return; }
+          }
           factOpenDraft(texts, "photo", files.length, raws); return;
         }
         var sm=document.getElementById("fctmsg"); if(sm && files.length>1) sm.textContent="Lecture de la page "+(i+1)+"/"+files.length+"…";
-        ocrBillPage(files[i]).then(function(r){ texts.push(r.t||""); raws.push(r); i++; step(); }).catch(function(){ texts.push(""); i++; step(); });
+        ocrBillPage(files[i]).then(function(r){ texts.push(r.t||""); raws.push(r); i++; step(); }).catch(function(){ texts.push(""); raws.push({ t:"", res:null }); i++; step(); });
       }
       step();
     }
