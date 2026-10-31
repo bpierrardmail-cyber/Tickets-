@@ -1,0 +1,63 @@
+!Option:AutoSwitch
+!Account
+NCompte chèques
+TBank
+^
+NLivret A
+TBank
+^
+!Clear:AutoSwitch
+!Account
+NCompte chèques
+TBank
+^
+!Type:Bank
+D01/09/26
+T1 250,00
+PSolde d'ouverture
+L[Compte chèques]
+^
+D03/09/26
+T-54,20
+PLeclerc
+LAlimentation:Courses
+^
+D05/09/26
+T-120,00
+PVirement vers livret
+L[Livret A]
+^
+D10/09/26
+T-75,40
+PSuper U
+LAlimentation:Courses
+SAlimentation:Courses
+$-60,40
+SMaison:Entretien
+$-15,00
+^
+D15/09/26
+T-29,99
+PFree Mobile
+LTéléphone
+^
+D28/09/26
+T1 980,00
+PSalaire
+LSalaire
+^
+!Account
+NLivret A
+TBank
+^
+!Type:Bank
+D01/09/26
+T3 000,00
+POpening Balance
+L[Livret A]
+^
+D05/09/26
+T120,00
+PVirement depuis chèques
+L[Compte chèques]
+^

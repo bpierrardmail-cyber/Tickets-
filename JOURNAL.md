@@ -65,6 +65,8 @@ Après chaque modification, dans le même commit :
 - Empreinte native, Bilan PDF, geste retour.
 - Widgets (Scan, Solde, Commun, Mois, Foyer, Bourse), masqués par défaut.
 
+**Tests** : `tests/` (Playwright, données fictives), `sh tests/run.sh`.
+
 **Import d'un relevé** (roue du compte) : OFX/QFX, QIF, CSV lus sur le téléphone, aperçu à cocher, import en une fois, annulable. Détails dans `CLAUDE.md`.
 
 **Version Store** : `PLUS_FEATURES = widgets, foyer, avancee, factures` (« factures » = importer et suivre ses factures ; le reste d'À venir est gratuit). L'achat de Plus n'est pas encore branché. L'import de relevé est gratuit pour l'instant.
@@ -155,6 +157,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 31/10
+- **Tests dans le dépôt** (`tests/`, « ok » de Benoît) : les 15 tests Playwright à jour (import, Compte, liquide, Bourse, tickets, hors ligne, À venir, foyer, Dépenses), le relais local, `run.sh` et un mode d'emploi. Chemins rendus relatifs ; données toutes fictives (relevés inventés, factures EDF inventées) ; les tests qui lisaient de vrais relevés, factures ou tickets sont restés hors du dépôt. Aussi : fichier de passation pour reprendre le projet dans un autre abonnement Claude (donné à Benoît, pas dans le dépôt).
 - **Réorganisation, étapes 3 et 4 : Dépenses et finitions** :
   - Articles et Analyse réunis dans l'onglet **Dépenses** : Tickets · Produits · Budgets · Analyse (`depSubs`, `depView`, `depTabsHTML`, vue `tickets`) ; la puce 🧾 Tickets de l'Accueil y mène ; la galerie est la ligne « Photos des tickets » de Tickets (plus dans le menu) ;
   - barre du bas : Accueil · Dépenses · Compte · À venir · Commun · Bourse ;

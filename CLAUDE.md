@@ -24,6 +24,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 | `wrangler.jsonc` | Config du Worker ; déployé par Workers Builds à chaque push sur `main`. |
 | `app-android/` | Appli Android Capacitor 7, code natif dans `native/`. **Perso** : charge la β en ligne (`server.url`) et en garde une copie pour marcher sans réseau (`TkOfflineClient`). **Store** : la β est dans l'APK (copiée à la compilation avec pdf.js et `insee.json`), mises à jour par le Store. |
 | `.github/workflows/apk-beta.yml` | Compile deux APK (Perso et Store) quand `app-android/**` ou `beta/**` change ; publiés dans la release `apk-beta`. |
+| `tests/` | Tests Playwright (Python) avec données fictives, relais local, `run.sh` ; mode d'emploi dans `tests/README.md`. |
 
 ## Code de `beta/index.html`
 
@@ -133,7 +134,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 
 ## Tests
 
-Il n'y a pas de tests dans le dépôt. Ceux qui ont servi sont des scripts Playwright en Python :
+Les tests sont dans `tests/` (mode d'emploi : `tests/README.md`) : `sh tests/run.sh` les lance tous, `python3 tests/t95.py` un seul. Ajouter un test pour chaque nouvelle fonction, **toujours avec des données inventées** (le dépôt est public). Les tests qui utilisaient de vraies données (relevés BoursoBank, factures, vrais tickets) ne sont pas dans le dépôt. Principe :
 - l'appli Store se teste en servant une copie de `beta/` (+ pdf.js, `insee.json`) sur `https://localhost/` par une route, avec l'identifiant `TicketsApp/store` et un faux `window.Capacitor` : aucune requête ne doit partir ailleurs ;
 - Chromium sans interface, viewport 412×900 ;
 - données injectées dans localStorage puis `reload()` ;

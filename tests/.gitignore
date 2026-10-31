@@ -1,0 +1,6 @@
+# Sorties des tests
+/*.png
+offline/
+relais-local/w_*.js
+relais-local/srv.log
+__pycache__/
