@@ -75,6 +75,12 @@ Après chaque modification, dans le même commit :
 
 - **Réorganisation de l'appli** (31/10) : il trouve l'organisation et l'accès aux fonctions peu clairs. Plan proposé dans la maquette « Tickets — Plan de l'appli » : un onglet = une question, chaque chose à un seul endroit, sous-onglets visibles au lieu de « Configuration », ✦ partout pareil (on voit la fonction, seul le bouton demande Plus). Onglets proposés : Accueil · Dépenses (Articles + Analyse) · Compte (Opérations · Virements · Épargne · Graphiques, roue du compte) · À venir (ex Factures, ouvert à tous : 12 mois · Frais fixes · Provisions gratuits, Factures ✦, Projection ✦) · Commun (parts seulement) · Bourse. En 4 étapes, À venir d'abord (sa question : les provisions dans Factures). Décidé le 31/10 : nom « À venir », 12 mois gratuits. **Les 4 étapes sont intégrées (31/10).** À essayer par Benoît sur son téléphone ; à revoir selon ses retours.
 
+- **Plusieurs factures en photos (ou PDF) : écran de contrôle** (demande du 31/10 : afficher le nombre de pages lues sur le nombre de photos, dire laquelle est la plus récente, pouvoir contrôler les plus anciennes). Maquette montrée le 31/10, **en attente de son accord** :
+  - en haut : « 6 photos · 6 lues · 3 factures trouvées » (en jaune « 5 lues » avec « Photo 4 illisible · Reprendre / Ignorer ») ;
+  - la liste des factures trouvées (date, photos, m³, montant, case à cocher) ; la plus récente marquée « LA PLUS RÉCENTE » et vérifiée dessous comme aujourd'hui ; une facture lue sur une seule page marquée « À VÉRIFIER » ;
+  - toucher une ancienne ouvre ses champs (fournisseur, montant, date, consommation, paiement, période, « Copier la lecture », Précédente / Suivante, « Ne pas la garder » / OK) ;
+  - rien n'est enregistré avant « Appliquer · 3 factures » (aujourd'hui les anciennes vont tout de suite dans l'historique) ; même écran pour plusieurs PDF.
+
 - **Sans réseau** (31/10) : à essayer par Benoît en mode avion avec les nouveaux APK.
   - Perso : installer le nouvel APK, l'ouvrir une fois avec du réseau (la copie s'enregistre), puis en mode avion.
   - Store : l'appli de test repart vide (ses données étaient rattachées à l'adresse en ligne) ; pour garder ses essais, faire une sauvegarde avant et la restaurer après.
