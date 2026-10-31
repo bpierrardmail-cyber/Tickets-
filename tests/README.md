@@ -55,7 +55,7 @@ node tests/relais-local/server.mjs relais
 | t93 | Foyer : droits sur l'onglet À venir, selon Commun ou À venir. Utilise `foyer_base.py` (relais local, verrou, invitation par QR code). |
 | t94 | Compte en sous-onglets, roue du compte, graphiques touchables. |
 | t95 | Onglet Dépenses (Tickets · Produits · Budgets · Analyse), menu allégé, projection dans À venir, Plus visible. |
-| t96 | Factures d'eau en photos : 3 factures (recto et verso) prises d'un coup, avec les erreurs de lecture du téléphone ; la plus récente à vérifier, les autres dans l'historique, même dans le désordre. |
+| t96 | Plusieurs factures d'un coup : 3 factures d'eau en photos (recto et verso, avec les erreurs de lecture du téléphone, aussi dans le désordre) et 3 PDF dont un sans texte. Écran de contrôle « 6 photos · 6 lues », la plus récente, fiche d'une ancienne (Précédente / Suivante), décocher, photo illisible puis « Reprendre », rien d'enregistré avant « Appliquer ». La partie PDF a besoin de pdf.js (voir t90). |
 
 **À savoir**
 - t76 contient deux vérifications qui dépendent de la date du jour (« Hier », « habituellement le 28 ») : elles peuvent échouer certains jours sans que l'appli soit en cause.

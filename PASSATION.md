@@ -1,6 +1,6 @@
 # Tickets : dossier de passation
 
-*État au 31/10/2026. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
+*État au 31/10/2026, 23 h 50. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
 
 > **À Claude qui reprend le projet**
 >
@@ -141,7 +141,8 @@ Les maquettes (canevas « Tickets — Plan de l'appli » et autres) sont des art
   - roue du compte : modifier, solde reporté, **import d'un relevé** OFX, QIF ou CSV lu sur le téléphone, annuler le dernier import.
 - **À venir**, sous-onglets 12 mois · Frais fixes · Provisions · Factures :
   - 12 mois : les 12 prochains mois, « À payer bientôt », et ✦ « Tes comptes dans 12 mois » (projection et simulateur) ;
-  - Factures (✦ en Store) : import de factures PDF ou photos, et estimation de la prochaine facture selon la saison.
+  - Factures (✦ en Store) : import de factures PDF ou photos, et estimation de la prochaine facture selon la saison ;
+  - plusieurs factures d'un coup (plusieurs PDF, ou plusieurs factures en photos, recto et verso, même dans le désordre) : un écran de contrôle « 6 photos · 6 lues · 3 factures trouvées » liste les factures ; la plus récente est vérifiée en entier, les plus anciennes se contrôlent une par une ou se décochent ; une photo illisible se reprend ; rien n'est enregistré avant « Appliquer ».
 - **Commun** : part de chacun dans le commun, en %, et parts propres à chaque frais ; frais communs du mois ; produits partagés.
 - **Bourse** (Perso seulement) : cours Yahoo et CoinGecko via le relais. Elle compte une fois dans l'épargne.
 - **Menu** : Foyer partagé, Personnes, Sauvegarder · Exporter en PDF, Réglages.
@@ -159,6 +160,12 @@ Fait et poussé le 31/10 :
    - étape 2 : Compte en sous-onglets, avec la roue du compte ;
    - étape 3 : l'onglet Dépenses ;
    - étape 4 : finitions (menu allégé, Projection dans À venir, présentation des fonctions Plus au lieu des écrans verrouillés).
+4. **Factures d'eau en photos**, d'après une vraie lecture envoyée par Benoît (3 factures, 6 photos) :
+   - les factures prises d'un coup sont séparées ;
+   - les dates mal lues par le téléphone sont réparées ;
+   - le fournisseur écrit sur deux lignes est retrouvé ;
+   - « site Internet » ne fait plus une facture internet.
+5. **Écran de contrôle de plusieurs factures**, à sa demande : nombre de pages lues sur le nombre de photos, « LA PLUS RÉCENTE », contrôle des plus anciennes, « Reprendre » une photo illisible, rien d'enregistré avant « Appliquer ». Même écran pour plusieurs PDF.
 
 **À faire valider par Benoît sur son téléphone :**
 - la nouvelle navigation, et les retours éventuels ;
@@ -166,9 +173,9 @@ Fait et poussé le 31/10 :
   - Perso : l'ouvrir une fois avec le réseau, puis passer en mode avion ;
   - Store : l'appli repart vide, donc faire une sauvegarde avant et la restaurer après ;
 - l'import de relevé avec ses exports BoursoBank (OFX, QIF, CSV) ;
-- la lecture des factures d'eau en photo : il enverra « Copier la lecture ».
+- les factures d'eau en photo : réimporter ses 6 photos d'un coup, après avoir supprimé l'ancienne mauvaise facture si elle a été enregistrée ; en cas de souci, il enverra « Copier la lecture ».
 
-**Tests automatiques** : les 16 tests de `tests/` passent, sauf deux vérifications de t76 qui dépendent du jour. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
+**Tests automatiques** : les 16 tests de `tests/` passent (t96 couvre l'écran de contrôle), sauf deux vérifications de t76 qui dépendent du jour. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
 
 ---
 

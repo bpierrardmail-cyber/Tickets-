@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="31/10 21:40" />
+  <meta name="build" content="31/10 23:48" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -234,6 +234,28 @@
     .fct-cmp{ margin-top:12px; padding:11px 13px; border-radius:14px; border:1px solid rgba(79,214,160,.35); background:rgba(79,214,160,.08); font-size:13px; line-height:1.45; }
     .fct-cmp b{ color:var(--accent); }
     .ocr-raw{ background:none; border:0; padding:0; font:inherit; color:var(--accent); text-decoration:underline; cursor:pointer; }
+    /* plusieurs factures lues d'un coup (photos ou PDF) */
+    .fsum{ display:flex; align-items:center; gap:12px; } .fsum .ic{ font-size:20px; font-weight:800; color:var(--accent); width:22px; text-align:center; flex:0 0 22px; }
+    .fsumc.wn{ border-color:rgba(230,180,80,.45); } .fsumc.wn .ic{ color:#e6b450; }
+    .fsum b{ font-size:16px; } .fsum small{ display:block; color:var(--ink-soft); font-size:13px; margin-top:2px; }
+    .fbad{ display:flex; align-items:center; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); font-size:13px; }
+    .fbad .t{ flex:1; min-width:0; } .fbad b{ color:#e6b450; } .fbad small{ color:var(--ink-soft); font-size:12.5px; }
+    .fbad .btn{ width:auto; flex:0 0 auto; padding:8px 12px; font-size:13px; margin:0; }
+    .fbills{ padding:4px 10px !important; }
+    .fbill{ display:flex; align-items:center; gap:10px; padding:11px 4px; border-top:1px solid var(--line); cursor:pointer; }
+    .fbill:first-child{ border-top:0; }
+    .fbill input{ width:22px; height:22px; flex:0 0 22px; margin:0; accent-color:var(--accent); }
+    .fbill .bt{ flex:1; min-width:0; } .fbill .bt b{ font-size:14.5px; } .fbill .bt small{ display:block; color:var(--ink-soft); font-size:12px; margin-top:2px; line-height:1.35; }
+    .fbill .am{ font-weight:700; font-size:14.5px; white-space:nowrap; } .fbill .ch{ color:var(--ink-soft); font-size:18px; }
+    .fbill.off .bt, .fbill.off .am{ opacity:.45; text-decoration:line-through; }
+    .fbill.cur{ background:rgba(79,214,160,.07); border:1px solid rgba(79,214,160,.35); border-radius:12px; padding:11px 10px; margin:4px 0; cursor:default; }
+    .fpill{ display:inline-block; padding:2px 8px; border-radius:999px; font-size:10.5px; font-weight:800; letter-spacing:.03em; vertical-align:2px; margin-left:4px; background:var(--accent-dim); color:var(--accent); white-space:nowrap; }
+    .fpill.wn{ background:rgba(230,180,80,.16); color:#e6b450; }
+    .fnote{ font-size:12.5px; color:var(--ink-soft); line-height:1.45; margin:10px 6px 0; }
+    .fold .fo-h{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; } .fold .fo-h b{ font-size:18px; }
+    .fold .row2{ display:flex; gap:8px; } .fold .row2>div{ flex:1; min-width:0; }
+    .fold .chips .chip{ padding:9px 10px; }
+    .fold-nav{ display:flex; justify-content:space-between; margin-top:8px; } .fold-nav button{ background:none; border:0; color:var(--ink-soft); font:inherit; font-size:13px; padding:6px 2px; cursor:pointer; }
     .chk{ display:flex; align-items:center; gap:10px; width:100%; margin-top:8px; padding:11px 12px; border-radius:13px; font:inherit; text-align:left; cursor:pointer; }
     .chk.bad{ background:rgba(224,164,88,.14); border:1px solid rgba(224,164,88,.45); color:#f0c38a; }
     .chk.ok{ background:rgba(79,214,160,.12); border:1px solid rgba(79,214,160,.4); color:var(--accent); }
@@ -8384,7 +8406,9 @@
       factImgIn=document.createElement("input"); factImgIn.type="file"; factImgIn.accept="image/*"; factImgIn.multiple=true; factImgIn.style.display="none"; factImgIn.id="factimg";
       document.body.appendChild(factPdfIn); document.body.appendChild(factImgIn);
       factPdfIn.onchange=function(ev){ var fs=ev.target.files ? [].slice.call(ev.target.files) : []; ev.target.value=""; if(fs.length===1) factFromPdf(fs[0]); else if(fs.length) factFromPdfs(fs); };
-      factImgIn.onchange=function(ev){ var fs=ev.target.files ? [].slice.call(ev.target.files) : []; ev.target.value=""; if(fs.length) factFromPhotos(fs, !!factImgIn._add); factImgIn._add=false; };
+      factImgIn.onchange=function(ev){ var fs=ev.target.files ? [].slice.call(ev.target.files) : []; ev.target.value="";
+        if(factImgIn._retake){ var rk=factImgIn._retake; factImgIn._retake=0; if(fs.length) factRetakeRead(fs[0], rk); return; }
+        if(fs.length) factFromPhotos(fs, !!factImgIn._add); factImgIn._add=false; };
     }
     function factImportChooser(){
       if(!canUse("factures")){ factPlusAsk(); return; }
@@ -8406,18 +8430,17 @@
     // Plusieurs PDF : les factures plus anciennes vont directement dans l'historique, la plus récente est à vérifier
     function factFromPdfs(files){
       factBusy("Lecture des PDF : 1/"+files.length+"…");
-      var got=[], i=0, bad=0;
+      var got=[], i=0, bad=[];
       function step(){
         if(i>=files.length) return fin();
         var sm=document.getElementById("fctmsg"); if(sm) sm.textContent="Lecture des PDF : "+(i+1)+"/"+files.length+"…";
-        readPdfText(files[i]).then(function(r){ var p=parseBill(r.text); if(p.montant>0 && p.date) got.push({ p:p, r:r }); else bad++; i++; step(); }).catch(function(){ bad++; i++; step(); });
+        var k=i;
+        readPdfText(files[i]).then(function(r){ if(r.text.replace(/\s/g,"").length>=80) got.push({ p:parseBill(r.text), r:r, k:k }); else bad.push(k+1); i++; step(); }).catch(function(){ bad.push(k+1); i++; step(); });
       }
       function fin(){
         if(!got.length){ state.factDraft=null; state.view="factures"; render(); uiToast("Aucune facture lisible dans ces PDF"); return; }
-        got.sort(function(a,b){ return a.p.date<b.p.date?-1:1; });
-        var last=got.pop(), H=factToHistory(got, "pdf");
-        factOpenDraft([last.r.text], "pdf", last.r.n, [{ t:last.r.text, res:null }]);
-        uiToast(factHistMsg(H, bad));
+        if(got.length===1 && !bad.length){ factOpenDraft([got[0].r.text], "pdf", got[0].r.n, [{ t:got[0].r.text, res:null }]); return; }
+        factMultiOpen("pdf", got.map(function(g){ return { tx:[g.r.text], rw:[{ t:g.r.text, res:null }], p:g.p, pages:[g.k+1], n:g.r.n }; }), files.length, bad, null);
       }
       step();
     }
@@ -8431,7 +8454,6 @@
       if(n) persistFactures();
       return { n:n, dupl:dupl };
     }
-    function factHistMsg(H, bad){ var n=H.n; return (n?n+" facture"+(n>1?"s":"")+" plus ancienne"+(n>1?"s":"")+" ajoutée"+(n>1?"s":"")+" à l'historique · ":"")+(H.dupl?H.dupl+" déjà là · ":"")+(bad?bad+" illisible"+(bad>1?"s":"")+" · ":"")+"vérifie la plus récente"; }
     // Montant à payer d'une page (en centimes), 0 s'il n'y est pas
     function factPayAmt(t){
       var lines=String(t||"").replace(/[  ]/g," ").split("\n").map(function(l){ return l.trim(); }).filter(Boolean), flat=lines.join("\n");
@@ -8453,6 +8475,45 @@
       });
       return G;
     }
+    // Photos lues : une page est « lue » s'il y a assez de texte ; plusieurs factures (ou une photo illisible) → écran de contrôle
+    function factPhotosDone(texts, raws){
+      var ok=[], bad=[]; texts.forEach(function(t, k){ if(String(t||"").replace(/\s/g,"").length>=60) ok.push(k); else bad.push(k+1); });
+      if(!ok.length){ state.factDraft=null; state.view="factures"; render(); uiToast(texts.length>1?"Rien de lisible sur ces photos : réessaie, bien à plat et éclairées":"Rien de lisible sur la photo : réessaie, bien à plat et éclairée"); return; }
+      var tx=ok.map(function(k){ return texts[k]; }), G=tx.length>1 ? factSplitPages(tx) : [{ idx:[0] }];
+      if(G.length<2 && !bad.length){ factOpenDraft(tx, "photo", tx.length, ok.map(function(k){ return raws[k]; })); return; }
+      var items=G.map(function(g){ var ks=g.idx.map(function(j){ return ok[j]; }), t2=ks.map(function(k){ return texts[k]; });
+        return { tx:t2, rw:ks.map(function(k){ return raws[k]; }), p:parseBill(t2.join("\n")), pages:ks.map(function(k){ return k+1; }) }; });
+      factMultiOpen("photo", items, texts.length, bad, { texts:texts, raws:raws });
+    }
+    // Plusieurs factures lues : la plus récente (date) est vérifiée en entier, les autres sont listées au-dessus,
+    // à contrôler une par une ; rien n'est enregistré avant « Appliquer ». Une facture lue sur moins de pages
+    // que les autres, ou sans date ni montant, est « à vérifier ».
+    function factMultiOpen(kind, items, total, bad, all){
+      var maxP=0; items.forEach(function(b){ if(b.pages.length>maxP) maxP=b.pages.length; });
+      var dated=items.filter(function(b){ return b.p.date && b.p.montant>0; }).sort(function(a,b){ return a.p.date<b.p.date?-1:1; });
+      var last=dated.length ? dated[dated.length-1] : items[items.length-1];
+      var others=items.filter(function(b){ return b!==last; }).sort(function(a,b){ return (a.p.date||"")<(b.p.date||"")?-1:1; });
+      var al=store.read("factAlias", {})||{};
+      others.forEach(function(o){ o.keep=true; o.check=o.pages.length<maxP || !o.p.date || !(o.p.montant>0); if(o.p.four && al[norm(o.p.four)]) o.p.four=al[norm(o.p.four)]; });
+      factOpenDraft(last.tx, kind, last.n||last.tx.length, last.rw, { kind:kind, total:total, read:total-bad.length, bad:bad, others:others, pages:last.pages, all:all||null });
+    }
+    function factPhotosTxt(ns, kind){ var a=(ns||[]).slice(); if(kind==="pdf") return "PDF "+a.join(", "); if(a.length<2) return "photo "+(a[0]||"");
+      var l=a.pop(); return "photos "+a.join(", ")+" et "+l; }
+    // factures plus anciennes gardées, de la même série, comme des factures déjà là (estimation, comparaison)
+    function factDraftOthers(d, key){
+      if(!d.multi) return [];
+      var out=[]; d.multi.others.forEach(function(o, i){ var q=o.p; if(!o.keep || !q.date || !(q.montant>0) || factKey(q)!==key) return;
+        out.push({ id:"_o"+i, four:q.four, type:q.type, date:q.date, montant:q.montant, conso:q.conso, du:q.du, au:q.au, prelev:q.aPayer?"":q.prelev, next:q.next, regul:q.regul, aPayer:q.aPayer }); });
+      return out;
+    }
+    // Reprendre une photo illisible : elle est relue, puis tout est regroupé à nouveau
+    function factRetake(k){ factInputs(); factImgIn._retake=k; factImgIn._add=false; factImgIn.click(); }
+    function factRetakeRead(file, k){
+      var d=state.factDraft; if(!d || !d.multi || !d.multi.all) return;
+      var A=d.multi.all; d.busy=true; d.msg="Lecture de la photo "+k+"…"; render();
+      ocrBillPage(file).then(function(r){ A.texts[k-1]=r.t||""; A.raws[k-1]=r; factPhotosDone(A.texts, A.raws); })
+        .catch(function(){ d.busy=false; render(); uiToast("Photo illisible : réessaie, bien à plat et éclairée"); });
+    }
     function factFromPhotos(files, add){
       var prev=add && state.factDraft && !state.factDraft.busy ? state.factDraft : null;
       if(!prev) factBusy(files.length>1?"Lecture de la page 1/"+files.length+"…":"Lecture de la page…");
@@ -8461,18 +8522,7 @@
       function step(){
         if(i>=files.length){
           if(prev){ prev.pages=prev.pages.concat(texts); prev.raws=(prev.raws||[]).concat(raws); prev.n+=files.length; prev.busy=false; factReparse(prev); render(); return; }
-          if(!texts.join("").replace(/\s/g,"").length){ state.factDraft=null; state.view="factures"; render(); uiToast("Rien de lisible sur la photo : réessaie, bien à plat et éclairée"); return; }
-          var G=texts.length>1 ? factSplitPages(texts) : null;
-          if(G && G.length>1){
-            // plusieurs factures : les plus anciennes dans l'historique, la plus récente à vérifier
-            var bills=G.map(function(g){ var tx=g.idx.map(function(k){ return texts[k]; }); return { tx:tx, rw:g.idx.map(function(k){ return raws[k]; }), p:parseBill(tx.join("\n")) }; });
-            var ok=bills.filter(function(b){ return b.p.date && b.p.montant>0; }), bad=bills.length-ok.length;
-            if(ok.length){ ok.sort(function(a,b){ return a.p.date<b.p.date?-1:1; });
-              var last=ok.pop(), H=factToHistory(ok, "photo");
-              factOpenDraft(last.tx, "photo", last.tx.length, last.rw);
-              uiToast(factHistMsg(H, bad)); return; }
-          }
-          factOpenDraft(texts, "photo", files.length, raws); return;
+          factPhotosDone(texts, raws); return;
         }
         var sm=document.getElementById("fctmsg"); if(sm && files.length>1) sm.textContent="Lecture de la page "+(i+1)+"/"+files.length+"…";
         ocrBillPage(files[i]).then(function(r){ texts.push(r.t||""); raws.push(r); i++; step(); }).catch(function(){ texts.push(""); raws.push({ t:"", res:null }); i++; step(); });
@@ -8480,9 +8530,17 @@
       step();
     }
     // Brouillon de la facture lue : champs modifiables, effets à cocher
-    function factOpenDraft(pages, src, n, raws){
-      var d={ busy:false, pages:pages, src:src, n:n, raws:raws||[], edited:{} };
+    function factOpenDraft(pages, src, n, raws, multi){
+      var d={ busy:false, pages:pages, src:src, n:n, raws:raws||[], edited:{}, multi:multi||null };
       factReparse(d);
+      // les plus anciennes : même fournisseur et même type que la plus récente quand elles n'en ont pas ;
+      // nouveau fournisseur : le nom le mieux écrit (avec ses accents) parmi les factures lues
+      if(d.multi){
+        var nb=norm(d.p.four), acc=function(x){ return (String(x||"").match(/[À-ÿ]/g)||[]).length; };
+        if(!factSeries().some(function(x){ return x.key===factKey(d.p); })) d.multi.others.forEach(function(o){ if(norm(o.p.four)===nb && acc(o.p.four)>acc(d.p.four)){ d.p.four=o.p.four; d.raw0=o.p.four; } });
+        d.multi.others.forEach(function(o){ var q=o.p; if(q.type==="autre" && d.p.type!=="autre") q.type=d.p.type;
+          if(!q.four || norm(q.four)===norm(d.p.four)) q.four=d.p.four; });
+      }
       state.factDraft=d; state.view="factlue"; render(); window.scrollTo(0,0);
     }
     function factReparse(d){
@@ -8521,6 +8579,7 @@
       out.push({ k:"frais", on:!dup && !past, t:p.aPayer?"À payer : "+fmtK(amt):"Prélèvement de "+fmtK(amt)+(p.prelev?" le "+ddmm(p.prelev):""), s:sub });
       // 2. la prochaine facture, estimée
       var tmp={ key:key, four:p.four, type:p.type, bills:[] }; factures.forEach(function(f){ if(factKey(f)===key && f.id!==d.id) tmp.bills.push(f); });
+      factDraftOthers(d, key).forEach(function(b){ tmp.bills.push(b); });
       tmp.bills.push({ id:"_new", four:p.four, type:p.type, date:p.date||t, montant:amt, conso:p.conso, du:p.du, au:p.au, prelev:p.prelev, next:p.next, regul:p.regul });
       tmp.bills.sort(function(a,b){ return a.date<b.date?-1:1; }); tmp.last=tmp.bills[tmp.bills.length-1];
       if(tmp.last.id==="_new"){
@@ -8540,11 +8599,12 @@
       if(!canUse("factures")){ state.view="factures"; state.avnSub="fact"; return renderFactures(); }
       var d=state.factDraft, ro=fyRO();
       if(!d){ state.view="factures"; return renderFactures(); }
-      var h=header(true, "Facture");
+      var h=header(true, d.multi && d.multi.others.length && !d.busy ? "Factures lues" : "Facture");
       if(d.busy){ h+='<section class="paper"><div class="scanbox"><span id="fctmsg">'+esc(d.msg||"Lecture…")+'</span><div class="progress"><i style="width:60%"></i></div></div></section>'; app.innerHTML=h; setNav("factures", true); bindBack(function(){ state.factDraft=null; state.view="factures"; render(); }); return; }
       var p=d.p, ty=factType(p.type), sameS=factSeries().filter(function(s){ return s.key===factKey(p); })[0];
       if(!d.opt){ d.opt={}; factEffects(d).forEach(function(o){ d.opt[o.k]=o.on; }); }
       var eff=factEffects(d), dup=factDup(p);
+      if(d.multi) h+=factMultiHTML(d);
       h+='<section class="paper fct-form">';
       if(dup) h+='<div class="ech warn" style="margin:0 0 10px">Cette facture est déjà dans tes factures.</div>';
       h+='<div class="center" style="font-size:11px;color:var(--accent);margin-bottom:8px">'+(d.src==="pdf"?"Lu dans le PDF":"Lu sur le téléphone")+' · '+d.n+' page'+(d.n>1?'s':'')+' · vérifie les montants · <button type="button" class="ocr-raw" id="fctRaw">Copier la lecture</button></div>';
@@ -8559,7 +8619,8 @@
       if(ty.u) h+='<label class="f" for="fp-conso">Consommation ('+ty.u+')</label><input class="f" id="fp-conso" inputmode="decimal" value="'+esc(p.conso!=null?String(p.conso):"")+'">';
       h+='<label class="f" for="fp-next">Prochaine facture (facultatif)</label><input class="f" id="fp-next" type="date" value="'+esc(p.next||"")+'">';
       // comparaison avec l'an dernier
-      if(sameS && p.date){ var b0=null; sameS.bills.forEach(function(b){ if(!b.regul && Math.abs(isoDays(b.date, isoAddDays(p.date, -365)))<=45) b0=b; });
+      var cmpB=(sameS?sameS.bills:[]).concat(factDraftOthers(d, factKey(p)));
+      if(cmpB.length && p.date){ var b0=null; cmpB.forEach(function(b){ if(!b.regul && Math.abs(isoDays(b.date, isoAddDays(p.date, -365)))<=45) b0=b; });
         if(b0){ var ev=(b0.conso && p.conso) ? Math.round((p.conso/b0.conso-1)*100) : null;
           h+='<div class="fct-cmp"><b>Par rapport à l\'an dernier</b><br>Même période : '+esc(fmtK(b0.montant))+(b0.conso&&ty.u?' pour '+b0.conso+' '+ty.u:'')+'.'+(ev!=null?' Ta consommation a '+(ev<0?'baissé':'augmenté')+' de '+Math.abs(ev)+' %.':'')+'</div>'; } }
       h+='</section>';
@@ -8569,7 +8630,8 @@
         var ppl=uniquePersons(), whoL=['Commun'].concat(ppl);
         h+='<label class="f" style="margin-top:12px">Pour</label><div class="chips" id="fp-who">'+whoL.map(function(w){ return '<button type="button" class="chip'+(d.who===w?' on':'')+'" data-v="'+esc(w)+'">'+esc(w)+'</button>'; }).join("")+'</div>';
         if(comptes.length>1) h+='<label class="f">Compte</label><div class="chips" id="fp-acct"><button type="button" class="chip'+(!d.acct?' on':'')+'" data-v="">Auto</button>'+comptes.filter(function(a){ return a.key!=="__tickets"; }).map(function(a){ return '<button type="button" class="chip'+(d.acct===a.key?' on':'')+'" data-v="'+esc(a.key)+'">'+esc(a.nom)+'</button>'; }).join("")+'</div>';
-        h+='</section><div class="ui-stack"><button type="button" class="btn primary" id="fctApply">Appliquer</button><button type="button" class="btn ghost" id="fctOnly">Garder seulement la facture</button></div>';
+        var nK=1+(d.multi ? d.multi.others.filter(function(o){ return o.keep; }).length : 0);
+        h+='</section><div class="ui-stack"><button type="button" class="btn primary" id="fctApply">Appliquer'+(nK>1?' · '+nK+' factures':'')+'</button><button type="button" class="btn ghost" id="fctOnly">Garder seulement '+(nK>1?'les factures':'la facture')+'</button></div>';
       }
       app.innerHTML=h; setNav("factures", true);
       bindBack(function(){ state.factDraft=null; state.view="factures"; render(); window.scrollTo(0,0); });
@@ -8589,16 +8651,80 @@
       var rw=document.getElementById("fctRaw"); if(rw) rw.onclick=function(){ state.ocrRaw={ eng:(d.src==="pdf"?"PDF":"photos"), diag:"facture", parts:d.raws&&d.raws.length?d.raws:d.pages.map(function(t){ return { t:t, res:null }; }) }; ocrRawSheet(); };
       var pg=document.getElementById("fctPage"); if(pg) pg.onclick=function(){ rd(); factInputs(); factImgIn._add=true; factImgIn.click(); };
       var ap=document.getElementById("fctApply"); if(ap) ap.onclick=function(){ rd(); factApply(d, true); };
+      if(d.multi){
+        [].forEach.call(document.querySelectorAll(".fbill[data-i]"), function(r){ r.onclick=function(ev){ if(ev.target && ev.target.tagName==="INPUT") return; rd(); factOldSheet(d, +r.getAttribute("data-i")); }; });
+        [].forEach.call(document.querySelectorAll(".fbill input[data-i]"), function(c){ c.onchange=function(){ rd(); d.multi.others[+c.getAttribute("data-i")].keep=c.checked; render(); }; });
+        [].forEach.call(document.querySelectorAll("[data-retake]"), function(b){ b.onclick=function(){ rd(); factRetake(+b.getAttribute("data-retake")); }; });
+        var bo=document.getElementById("fbadOff"); if(bo) bo.onclick=function(){ rd(); d.multi.badOff=true; render(); };
+      }
       var on=document.getElementById("fctOnly"); if(on) on.onclick=function(){ rd(); factApply(d, false); };
+    }
+    function factMultiHTML(d){
+      var M=d.multi, pdf=M.kind==="pdf", K=M.others.length+1, okAll=!M.bad.length || M.badOff, h='';
+      var unit=pdf ? "PDF" : "photo"+(M.total>1?"s":""), lu=pdf ? (M.read>1?"lus":"lu") : (M.read>1?"lues":"lue");
+      h+='<section class="paper fsumc'+(okAll?'':' wn')+'"><div class="fsum"><span class="ic">'+(M.bad.length?'!':'✓')+'</span><div><b>'+M.total+' '+unit+' · '+M.read+' '+lu+'</b><small>'+K+' facture'+(K>1?'s':'')+' trouvée'+(K>1?'s':'')+'</small></div></div>';
+      if(M.bad.length && !M.badOff){
+        M.bad.forEach(function(k){ h+='<div class="fbad"><span class="t"><b>'+(pdf?'PDF ':'Photo ')+k+' illisible</b><br><small>'+(pdf?'pas de texte : prends ses pages en photo':'floue, trop sombre ou coupée')+'</small></span>'+(pdf?'':'<button type="button" class="btn ghost" data-retake="'+k+'">📷 Reprendre</button>')+'</div>'; });
+        h+='<div style="text-align:right;margin-top:8px"><button type="button" class="ocr-raw" id="fbadOff">Ignorer</button></div>';
+      }
+      h+='</section>';
+      if(!M.others.length) return h;
+      var p=d.p, ty=factType(p.type);
+      function sub(q, pages){ var t=factType(q.type); return factPhotosTxt(pages, M.kind)+(q.conso>0&&t.u?' · '+q.conso+' '+t.u:'')+(q.aPayer?' · à payer à réception':''); }
+      h+='<section class="paper fbills">';
+      M.others.forEach(function(o, i){ var q=o.p;
+        h+='<div class="fbill'+(o.keep?'':' off')+'" data-i="'+i+'"><input type="checkbox" data-i="'+i+'"'+(o.keep?' checked':'')+' aria-label="Garder cette facture"><div class="bt"><b>'+(q.date?esc(ddmmyy(q.date)):'Date ?')+'</b>'+(o.check?' <span class="fpill wn">À VÉRIFIER</span>':'')+'<small>'+esc(sub(q, o.pages))+'</small></div><span class="am">'+(q.montant>0?esc(fmtK(q.montant)):'—')+'</span><span class="ch">›</span></div>'; });
+      h+='<div class="fbill cur"><div class="bt"><b>'+(p.date?esc(ddmmyy(p.date)):'Date ?')+'</b> <span class="fpill">LA PLUS RÉCENTE</span><small>'+esc(sub(p, M.pages))+' · vérifiée ci-dessous</small></div><span class="am">'+(Number(p.montant)>0?esc(fmtK(Number(p.montant))):'—')+'</span></div>';
+      h+='</section>';
+      var nk=M.others.filter(function(o){ return o.keep; }).length;
+      h+='<div class="fnote">'+(nk>1?'Les '+nk+' plus anciennes iront':(nk?'La plus ancienne ira':'Aucune plus ancienne n\'ira'))+' dans l\'historique. Touche une facture pour la vérifier ou la corriger ; décoche-la pour ne pas la garder. Rien n\'est enregistré avant « Appliquer ».</div>';
+      h+='<div class="bsec-h">La plus récente'+(p.date?' · '+esc(ddmmyy(p.date)):'')+'</div><div style="height:10px"></div>';
+      return h;
+    }
+    // Contrôle d'une facture plus ancienne : ses champs, « Copier la lecture », Précédente / Suivante
+    function factOldSheet(d, i){
+      var M=d.multi, o=M && M.others[i]; if(!o) return;
+      var p=o.p, ty=factType(p.type), K=M.others.length+1, pdf=M.kind==="pdf";
+      var h='<div class="fold"><div class="fo-h"><b>Facture'+(p.date?' du '+esc(ddmmyy(p.date)):'')+'</b><span class="fpill">'+(i+1)+' sur '+K+'</span></div>';
+      h+='<div style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 2px">'+esc(capFirst(factPhotosTxt(o.pages, M.kind)))+' · '+(pdf?'lu dans le PDF':'lue sur le téléphone')+' · <button type="button" class="ocr-raw" id="foRaw">Copier la lecture</button></div>';
+      h+='<label class="f" for="fo-four">Fournisseur</label><input class="f" id="fo-four" value="'+esc(p.four||"")+'">';
+      h+='<div class="row2"><div><label class="f" for="fo-mt">Montant (€)</label><input class="f" id="fo-mt" inputmode="decimal" value="'+esc(p.montant!=null?String(p.montant).replace(".",","):"")+'" placeholder="0,00"></div><div><label class="f" for="fo-date">Date</label><input class="f" id="fo-date" type="date" value="'+esc(p.date||"")+'"></div></div>';
+      if(ty.u) h+='<label class="f" for="fo-conso">Consommation ('+ty.u+')</label><input class="f" id="fo-conso" inputmode="decimal" value="'+esc(p.conso!=null?String(p.conso):"")+'">';
+      h+='<label class="f">Paiement</label><div class="chips" id="fo-pay"><button type="button" class="chip'+(!p.aPayer?' on':'')+'" data-v="prel">Prélèvement</button><button type="button" class="chip'+(p.aPayer?' on':'')+'" data-v="apayer">À payer moi-même</button></div>';
+      h+='<div class="row2"><div><label class="f" for="fo-du">Consommé du</label><input class="f" id="fo-du" type="date" value="'+esc(p.du||"")+'"></div><div><label class="f" for="fo-au">au</label><input class="f" id="fo-au" type="date" value="'+esc(p.au||"")+'"></div></div>';
+      h+='<div class="ui-err" style="display:none"></div><div class="fnote" style="margin:10px 2px">Va dans l\'historique : elle sert aux moyennes et à l\'estimation, sans rien changer à tes comptes.</div>';
+      h+='<div class="ui-actions"><button type="button" class="btn ghost" id="foNo">Ne pas la garder</button><button type="button" class="btn primary" id="foOk">OK</button></div>';
+      h+='<div class="fold-nav"><button type="button" id="foPrev"'+(i>0?'':' style="visibility:hidden"')+'>‹ Précédente</button><button type="button" id="foNext">Suivante ›</button></div></div>';
+      var s=uiSheet(h), gone=false;
+      function rd(){ var g=function(id){ var e=s.q("#"+id); return e ? e.value : null; }, v;
+        v=g("fo-four"); if(v!==null) p.four=v.trim();
+        v=g("fo-mt"); if(v!==null){ var a=num(v); p.montant=a>0 ? a : null; }
+        ["date","du","au"].forEach(function(k){ var x=g("fo-"+k); if(x!==null) p[k]=x; });
+        v=g("fo-conso"); if(v!==null) p.conso=v.trim()==="" ? null : num(v); }
+      function err(m){ var e=s.q(".ui-err"); e.textContent=m||""; e.style.display=m?"":"none"; }
+      function end(){ gone=true; s.close(); render(); }
+      [].forEach.call(s.qa("#fo-pay .chip"), function(b){ b.onclick=function(){ [].forEach.call(s.qa("#fo-pay .chip"), function(x){ x.className="chip"; }); b.className="chip on"; p.aPayer=b.getAttribute("data-v")==="apayer"; }; });
+      s.q("#foRaw").onclick=function(){ state.ocrRaw={ eng:(pdf?"PDF":"photos"), diag:"facture", parts:o.rw && o.rw.length ? o.rw : o.tx.map(function(t){ return { t:t, res:null }; }) }; ocrRawSheet(); };
+      s.q("#foNo").onclick=function(){ rd(); o.keep=false; end(); };
+      s.q("#foOk").onclick=function(){ rd(); if(!p.date){ err("Indique la date de la facture"); return; } if(!(p.montant>0)){ err("Indique le montant de la facture"); return; } o.keep=true; o.check=false; end(); };
+      s.q("#foPrev").onclick=function(){ rd(); end(); factOldSheet(d, i-1); };
+      s.q("#foNext").onclick=function(){ rd(); end(); if(i+1<M.others.length) factOldSheet(d, i+1); else { var f=document.querySelector(".fct-form"); if(f && f.scrollIntoView) f.scrollIntoView({ block:"start" }); } };
+      s.dismiss(function(){ if(gone) return; rd(); render(); });
     }
     function factApply(d, withEff){
       var p=d.p, amt=Number(p.montant)||0;
       if(!(amt>0)){ uiToast("Indique le montant de la facture"); var e=document.getElementById("fp-mt"); if(e) e.focus(); return; }
-      if(factDup(p)){ uiToast("Cette facture est déjà dans tes factures"); state.factDraft=null; state.factKey=factKey(p); state.view="factserie"; render(); return; }
       if(!p.date){ uiToast("Indique la date de la facture"); return; }
+      // plusieurs factures : les plus anciennes gardées vont dans l'historique (date et montant obligatoires)
+      var hist=null;
+      if(d.multi){ var kept=d.multi.others.filter(function(o){ return o.keep; });
+        for(var ki=0;ki<kept.length;ki++){ var ko=kept[ki]; if(!ko.p.date || !(ko.p.montant>0)){ uiToast("Vérifie la facture "+(ko.p.date?"du "+ddmmyy(ko.p.date):"des "+factPhotosTxt(ko.pages, d.multi.kind))+" : date et montant"); factOldSheet(d, d.multi.others.indexOf(ko)); return; } }
+        hist=factToHistory(kept.map(function(o){ return { p:o.p }; }), d.multi.kind==="pdf" ? "pdf" : "photo"); }
+      var histTxt=hist && hist.n ? " + "+hist.n+" plus ancienne"+(hist.n>1?"s":"")+" dans l'historique" : "";
+      if(factDup(p)){ uiToast("Cette facture est déjà dans tes factures"+histTxt); state.factDraft=null; state.factKey=factKey(p); state.view="factserie"; render(); return; }
       if(!p.four) p.four=factType(p.type).l;
       if(d.edited.four && d.raw0 && norm(d.raw0)!==norm(p.four)){ var al=store.read("factAlias", {})||{}; al[norm(d.raw0)]=p.four; store.write("factAlias", al); }
-      var key=factKey(p), id=Date.now(), m=factPayMonth(p), o=withEff ? (d.opt||{}) : {}, made=[];
+      var key=factKey(p), id=Date.now()+(hist ? hist.n+10 : 0), m=factPayMonth(p), o=withEff ? (d.opt||{}) : {}, made=[];
       var f={ id:id, four:p.four, type:p.type, date:p.date, montant:amt, src:d.src };
       ["prelev","due","du","au","next"].forEach(function(k){ if(p[k]) f[k]=p[k]; }); if(p.aPayer){ f.aPayer=true; delete f.prelev; }
       if(p.conso>0) f.conso=p.conso; if(p.regul) f.regul=true;
@@ -8629,7 +8755,7 @@
       }
       factures.push(f); persistFactures(); persistFrais();
       state.factDraft=null; state.factKey=key; state.view="factserie"; render(); window.scrollTo(0,0);
-      uiToast("Facture ajoutée"+(made.length?" · "+made.join(", "):""));
+      uiToast("Facture ajoutée"+histTxt+(made.length?" · "+made.join(", "):""));
     }
     function backupData(){
       var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","factures","factAlias","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"];
