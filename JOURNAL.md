@@ -16,10 +16,10 @@ Après chaque modification, dans le même commit :
 
 ---
 
-## État actuel (28/10/2026)
+## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `28/10 10:47`, environ 8 800 lignes.
+- β web : `beta/index.html`, étiquette `31/10 08:31`, environ 9 300 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`.
 
 **Onglets**
@@ -30,10 +30,17 @@ Après chaque modification, dans le même commit :
   - s'ouvre sur la **liste des opérations du mois**, comme un relevé de banque : solde estimé, Entrées / Sorties / Fin de mois, filtres Tout · Entrées · Sorties · À venir, recherche (nom ou montant, avec le total), bloc « À venir » avec un rond pour marquer « fait », puis les opérations par jour (le plus récent en haut) avec le solde du soir, et le report en bas ;
   - les graphiques d'avant sont sur la page « Graphiques » (bouton), en plein écran ;
   - plusieurs comptes par personne, sur une rangée qui défile (la carte des comptes garde la même hauteur) ;
-  - page Configuration par compte (provisions, épargne, **Importer un relevé**, « Annuler le dernier import ») ;
+  - page Configuration par compte (provisions, toujours gratuites ; épargne ; **Importer un relevé** ; « Annuler le dernier import ») ;
   - bouton « Liquide » ;
   - rien avant le début du suivi ;
   - mois à venir = solde prévu.
+- **Factures** (Tickets Plus dans la version Store) :
+  - les 12 prochains mois : frais fixes, factures reçues ou estimées, échéances des provisions ; un mois en jaune s'il manquera de l'argent dans une provision ; toucher un mois donne le détail ;
+  - « À payer bientôt » (30 jours, tous comptes) ;
+  - une carte par fournisseur (prochaine facture estimée, moyenne par mois, provision : « prête pour … » ou « il manquera … »), puis les provisions sans facture ;
+  - « Importer une facture » : un ou plusieurs PDF (texte lu sur le téléphone par pdf.js ; avec plusieurs PDF, les plus anciens vont dans l'historique et la plus récente est à vérifier), ou des photos page par page (ML Kit, « + Page suivante », page tournée remise droite) ;
+  - la facture lue : champs modifiables, comparaison avec l'an dernier, et trois effets à cocher : le prélèvement (ou « à payer ») dans « À venir » à la place du frais fixe estimé ce mois-là, la prochaine facture estimée, la provision (créer, ou payer la facture avec) ;
+  - détail d'un fournisseur : provision, factures en barres avec la prochaine estimée, moyenne par mois, consommation sur 12 mois, prix moyen, liste (toucher pour supprimer).
 - **Bourse** (Perso seulement) : cours Yahoo et CoinGecko via le relais, courbe 1J. Comptée une fois dans l'épargne, comme une ligne automatique (« dont Bourse » sur l'Accueil et dans Épargne).
 - **Analyse** :
   - graphiques Mois, Répartition, Récurrentes et Qui a payé ;
@@ -78,13 +85,14 @@ Après chaque modification, dans le même commit :
     - sans nouvel APK : partage de la photo (+ consigne aussi copiée dans le presse-papiers) et champ « Colle la réponse de l'IA » ;
     - avec un nouvel APK : Tickets apparaît dans « Partager » de l'appli IA, la réponse revient sans copier-coller.
     Limites à dire à l'utilisateur : la photo part chez le fournisseur de l'IA qu'il a choisi ; 3 ou 4 gestes de plus ; lire la réponse avec souplesse (une IA ne respecte pas toujours le format). En plus de la lecture actuelle, pas à la place.
-  - **Importer ses factures** (idée de Benoît le 31/10, maquette « Tickets — Importer une facture » ; Benoît : effets « à cocher », oui pour la page « Mes factures ») : PDF (texte lu sur le téléphone, plusieurs pages) ou photos page par page (« + Page suivante »). On en tire fournisseur, montant, date de prélèvement ou « à payer à réception », période, consommation (kWh, m³), prix, prochaine facture. Effets proposés, à cocher : le prélèvement exact dans « À venir » (à la place de l'estimation du frais fixe), la prochaine facture estimée (même période l'an dernier corrigée de l'évolution de la consommation), une provision qui lisse les factures de l'année ; page « Mes factures » (factures par période, 12 mois, prix, prochaine). Essai sur de vraies factures : les PDF EDF donnent ces informations à coup sûr par des règles simples ; les factures d'eau papier sont lisibles mais certaines photos sont tournées (à remettre droites). Jamais de vraies factures dans le dépôt.
-  - **Page « Mes factures »** = l'accueil des factures, des provisions et du prévisionnel (Benoît, 31/10 : « il faudrait réunir la partie prévisionnel déjà présente ») : les 12 prochains mois (frais fixes + factures reçues ou estimées, alerte s'il manque dans une provision), « À payer bientôt », une carte par facture avec sa provision (de côté, mensualité, « prête pour … » ou « il manquera … »), boutons Importer une facture et + Provision. Elle reprendrait la page Provisions actuelle (Compte › Configuration) ; le graphique « 12 à venir » du Commun et les « prochains mois » de l'Analyse avancée y seraient réunis. Maquette : écran 1 du canevas. Décidé le 31/10 : **un onglet « Factures »** (entre Compte et Analyse ; 7 onglets en Perso, 6 en Store, écran 6) et **une option Tickets Plus** (`PLUS_FEATURES` + "factures" ; écran d'accès comme l'Analyse avancée, écran 7). Pour ne rien retirer aux gratuits, les provisions restent aussi dans Compte › Configuration. Foyer : l'onglet aura ses droits (Masqué / Lecture / Modif.) ; les provisions y seraient rattachées (aujourd'hui à Compte dans `FY_KEY_TAB`). En attente de « tu peux intégrer ».
+  - ~~Importer ses factures~~ et ~~onglet Factures~~ : faits le 31/10 (voir État actuel). Notes de l'étude : PDF (texte lu sur le téléphone, plusieurs pages) ou photos page par page (« + Page suivante »). On en tire fournisseur, montant, date de prélèvement ou « à payer à réception », période, consommation (kWh, m³), prix, prochaine facture. Effets proposés, à cocher : le prélèvement exact dans « À venir » (à la place de l'estimation du frais fixe), la prochaine facture estimée (même période l'an dernier corrigée de l'évolution de la consommation), une provision qui lisse les factures de l'année ; page « Mes factures » (factures par période, 12 mois, prix, prochaine). Essai sur de vraies factures : les PDF EDF donnent ces informations à coup sûr par des règles simples ; les factures d'eau papier sont lisibles mais certaines photos sont tournées (à remettre droites). Jamais de vraies factures dans le dépôt.
+  - Page « Mes factures » (étude) : les 12 prochains mois (frais fixes + factures reçues ou estimées, alerte s'il manque dans une provision), « À payer bientôt », une carte par facture avec sa provision (de côté, mensualité, « prête pour … » ou « il manquera … »), boutons Importer une facture et + Provision. Elle reprendrait la page Provisions actuelle (Compte › Configuration) ; le graphique « 12 à venir » du Commun et les « prochains mois » de l'Analyse avancée y seraient réunis. Maquette : écran 1 du canevas. Décidé le 31/10 : **un onglet « Factures »** (entre Compte et Analyse ; 7 onglets en Perso, 6 en Store, écran 6) et **une option Tickets Plus** (`PLUS_FEATURES` + "factures" ; écran d'accès comme l'Analyse avancée, écran 7). Pour ne rien retirer aux gratuits, les provisions restent aussi dans Compte › Configuration. Foyer : l'onglet aura ses droits (Masqué / Lecture / Modif.) ; les provisions y seraient rattachées (aujourd'hui à Compte dans `FY_KEY_TAB`). Intégré le 31/10.
   - **Retrait au distributeur** scanné : le proposer comme « argent liquide » plutôt qu'en dépense (Benoît : « on verra après »).
 - À surveiller : l'option « Ajouter au foyer » (verser ses anciennes données en rejoignant) sera retirée si personne ne s'en sert.
 
 ## Décisions de Benoît
 
+- **31/10** : onglet « Factures » intégré (« tu peux intégrer ») : Plus dans la version Store ; les provisions passent de l'onglet Compte à l'onglet Factures pour les droits du foyer (elles restent visibles et gratuites dans Compte › Configuration).
 - **31/10** : « Mes factures » sera un onglet, réservé à Tickets Plus dans la version Store.
 - **31/10** : import de factures : effets proposés « à cocher » ; une page « Mes factures » qui sert d'accueil aux provisions et réunit le prévisionnel.
 - **28/10** : « Lire avec mon IA » (partage vers l'IA déjà sur le téléphone, réponse collée dans Tickets) ajouté à la liste des améliorations ; la lecture par une IA en ligne payée par nous reste de côté.
@@ -130,6 +138,15 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 31/10
+- **Onglet Factures** (intégré à la demande de Benoît, d'après la maquette « Tickets — Importer une facture ») :
+  - nouvel onglet entre Compte et Bourse ; `PLUS_FEATURES` + "factures" (écran Tickets Plus dans la version Store, provisions gratuites dans Compte › Configuration) ;
+  - données : `factures` (une facture : fournisseur, type, date, montant, prélèvement ou « à payer », période, consommation, prochaine facture, régularisation) et `factAlias` (nom de fournisseur corrigé à la main, réutilisé) ; frais fixes créés par une facture : `fact` (clé de la série), `factNom`, `est` (estimée), `aPayer` ; provision liée : `fact` ;
+  - lecture (`parseBill`) : grands fournisseurs, sinon créancier du TIP ou nom en tête ; « Le montant de … sera prélevé le … », « Montant total à payer », « Facture du / réelle du », « Prochaine facture vers le », « Consommation du … au … », « Total Consommation … kWh », « … m3 » ; essai sur les 8 factures EDF (PDF) et 3 factures d'eau (photos) de Benoît : tout est retrouvé ;
+  - estimation de la prochaine facture (`factEstimate`) : avec au moins 3 factures et leur consommation, part fixe + prix × consommation attendue (celle de l'an dernier à la même période, corrigée de l'évolution) ; sinon même période l'an dernier ; sinon moyenne des dernières. Sur les factures EDF : ≈ 75 € pour fin décembre (147,89 € l'an dernier, consommation −65 %) ; eau : ≈ 162 € en mai ;
+  - PDF : pdf.js 6.2.108 (version « legacy ») chargé depuis jsDelivr à la première facture ; un PDF sans texte (scan) → proposer les photos ;
+  - ML Kit : une page tournée d'un quart de tour ou à l'envers est remise droite (`mlkitRows` n'ignore plus les grands angles) ; si la lecture est trop courte, la photo est relue tournée ;
+  - foyer : onglet Factures dans les droits ; `factures` synchronisées (seulement si l'onglet est visible) ; provisions et factures se modifient avec l'onglet Factures ; les membres qui avaient Compte reçoivent Factures avec les mêmes droits (une fois, `fyCfg.factMig`) ;
+  - même facture importée deux fois : signalée, pas ajoutée.
 - **Mes factures** : maquette de la page qui réunit factures, provisions et prévisionnel (écran 1 du canevas « Tickets — Importer une facture »). Rien de changé dans l'appli.
 - **Import de factures** : étudié sur les factures de Benoît (EDF en PDF, eau en photos) et maquette « Tickets — Importer une facture » (chiffres d'exemple) ; ajouté aux améliorations prévues. Rien de changé dans l'appli.
 
