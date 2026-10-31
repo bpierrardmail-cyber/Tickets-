@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="31/10 20:22" />
+  <meta name="build" content="31/10 20:42" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -1202,8 +1202,7 @@
       h+=grp([ row("foyer","👨‍👩‍👧",fyT,fyS),
                fyFull ? row("persons","👥","Personnes",plist.length+" personne"+(plist.length>1?"s":"")) : "",
                !fyM ? row("backup","💾","Sauvegarder",bk.label,(bk.days===null || bk.days>=7)?"var(--coral)":"var(--accent)") : "" ]);
-      h+=grp([ row("pdf","📄","Exporter en PDF","bilan"),
-               row("gallery","🖼️","Galerie","photos des tickets") ]);
+      h+=grp([ row("pdf","📄","Exporter en PDF","bilan") ]);
       h+=grp([ row("settings","⚙️","Réglages",[fyFull?"devise":"", "code", !fyM?"restaurer":""].filter(function(x){ return x; }).join(", "),"",true) ]);
       h+='<div class="dr-foot"><span class="beta-tag">Version β · '+esc((document.querySelector('meta[name=build]')||{}).content||'')+(capNative()?(EDITION==="store"?' · appli Store':' · appli Perso'):' · navigateur'+(EDITION==="store"?' (Store)':''))+'</span></div>';
       h+='</div>';
@@ -3110,20 +3109,21 @@
       '<div class="navscanrow"><button id="navscan" type="button">Scan</button></div>'+
       '<div class="navtabs">'+
         '<button class="navi" type="button" data-view="list">Accueil</button>'+
-        '<button class="navi" type="button" data-view="articles">Articles</button>'+
-        '<button class="navi" type="button" data-view="communes">Commun</button>'+
+        '<button class="navi" type="button" data-view="depenses">Dépenses</button>'+
         '<button class="navi" type="button" data-view="compte">Compte</button>'+
         '<button class="navi" type="button" data-view="factures">À venir</button>'+
+        '<button class="navi" type="button" data-view="communes">Commun</button>'+
         (FEAT.bourse?'<button class="navi" type="button" data-view="bourse">Bourse</button>':'')+
-        '<button class="navi" type="button" data-view="analyse">Analyse</button>'+
       '</div>';
     document.body.appendChild(navEl);
     [].forEach.call(navEl.querySelectorAll(".navi"), function(b){
-      b.onclick=function(){ var v=b.getAttribute("data-view"); if(v==="list"){ state.listSub=null; state.catFilter=null; } if(v==="analyse") state.histMonth=null; state.artFrom=null; if(v==="articles"){ state.artSel=null; state.artSub=null; } if(v==="analyse") state.anSub=null; if(v==="communes") state.comSub=null; if(v==="bourse") state.bSub=null; state.view=v; render(); window.scrollTo(0,0); };
+      b.onclick=function(){ var v=b.getAttribute("data-view"); if(v==="depenses") v=depView(); if(v==="list"){ state.listSub=null; state.catFilter=null; } if(v==="analyse") state.histMonth=null; state.artFrom=null; if(v==="articles"){ state.artSel=null; state.artSub=null; } if(v==="analyse") state.anSub=null; if(v==="communes") state.comSub=null; if(v==="bourse") state.bSub=null; state.view=v; render(); window.scrollTo(0,0); };
     });
     document.getElementById("navscan").onclick=function(){ openScanChooser(); };
     function setNav(active, show){
-      var scanHere = active==="list" || (fyRole()==="edit" && !fyTabOn(fyCfg,"list") && active===fyFirstTab());   // foyer : scanner depuis son premier onglet
+      var raw=active;
+      if(active==="articles" || active==="analyse" || active==="tickets") active="depenses";   // Dépenses = Tickets · Produits · Budgets · Analyse
+      var scanHere = raw==="list" || raw==="tickets" || (fyRole()==="edit" && !fyTabOn(fyCfg,"list") && raw===fyFirstTab());   // foyer : scanner depuis son premier onglet
       navEl.className = "nav" + (show ? "" : " hidden") + (scanHere ? "" : " noscan");
       [].forEach.call(navEl.querySelectorAll(".navi"), function(b){
         if(b.getAttribute("data-view")===active) b.classList.add("on"); else b.classList.remove("on");
@@ -3141,6 +3141,18 @@
     }
     var VIEW_TITLES={ import:"Import", avancee:"Analyse avancée", list:"Accueil", form:"Ticket", articles:"Articles", produits:"Produits & catégories", graph:"Analyse", history:"Analyse", analyse:"Analyse", month:"Analyse", artDetail:"Articles", communes:"Commun", compte:"Compte", bourse:"Bourse", gallery:"Galerie", photo:"Photo", patrimoine:"Patrimoine", provisions:"Provisions", bilan:"Bilan", foyer:"Foyer partagé" };
     function capFirst(t){ t=String(t||""); return t.charAt(0).toUpperCase()+t.slice(1); }
+    // Onglet Dépenses : Tickets (vue « tickets ») · Produits et Budgets (vue « articles ») · Analyse (vue « analyse »)
+    // Foyer : Produits et Budgets suivent les droits de l'ancien onglet Articles, Analyse ceux d'Analyse ; Tickets est toujours là.
+    function depSubs(){ var m=fyMember() ? fyCfg : null, out=[["tickets","Tickets"]];
+      if(!m || fyTabOn(m, "articles")){ out.push(["produits","Produits"]); out.push(["budgets","Budgets"]); }
+      if(!m || fyTabOn(m, "analyse")) out.push(["analyse","Analyse"]);
+      return out; }
+    function depView(){ var s=state.depSub||"tickets"; if(!depSubs().some(function(x){ return x[0]===s; })) s="tickets"; state.depSub=s;
+      if(s==="analyse"){ state.histMonth=null; state.anSub=null; return "analyse"; } if(s==="tickets"){ state.catFilter=null; return "tickets"; } state.artSel=null; state.artSub=null; return "articles"; }
+    function depCur(){ return state.view==="tickets" ? "tickets" : (state.view==="analyse" ? "analyse" : (state.depSub==="budgets" ? "budgets" : "produits")); }
+    function depTabsHTML(){ var cur=depCur();
+      return '<div class="avtabs" role="tablist">'+depSubs().map(function(x){ var on=x[0]===cur; return '<button type="button" role="tab" class="dpsub'+(on?' on':'')+'" aria-selected="'+on+'" data-dp="'+x[0]+'">'+x[1]+'</button>'; }).join("")+'</div>'; }
+    function wireDepTabs(){ [].forEach.call(document.querySelectorAll(".avtabs .dpsub"), function(b){ b.onclick=function(){ state.depSub=b.getAttribute("data-dp"); state.view=depView(); state.artFrom=null; render(); window.scrollTo(0,0); }; }); }
     function header(back, title){
       var b = back ? '<button class="hback" id="hback" type="button" aria-label="Retour">‹</button>' : '';
       var lb=store.read("lastBackup", null), bkOld=!fyMember() && (!lb || (Date.now()-new Date(lb).getTime())>=7*86400000);
@@ -3221,6 +3233,7 @@
       if(state.view==="foyer") return renderFoyer();
       if(state.view==="form") return renderForm();
       if(state.view==="articles") return renderArticles();
+      if(state.view==="tickets") return renderList();
       if(state.view==="produits") return renderProduits();
       if(state.view==="graph" || state.view==="history") state.view="analyse";
       if(state.view==="analyse") return renderAnalyse();
@@ -3693,6 +3706,8 @@
       return h+pagerHTML("home", pages.map(function(p){ return '<div class="hgrid">'+p+'</div>'; }), { cls:"bleed14" });
     }
     function renderList(){
+      if(state.view==="list" && state.listSub==="tickets"){ state.listSub=null; state.view="tickets"; state.depSub="tickets"; }   // la page Tickets est dans Dépenses
+      var depMode=(state.view==="tickets");
       pvLockMe=fyMember(); pvMemo=null;
       var curM = monthKey(todayISO());
       var month = (state.months&&state.months.list)||curM;
@@ -3903,10 +3918,11 @@
         }
       }
       // Page « Tickets » : la liste du mois (recherche, filtres) sur une page à part
-      var tkPage=(state.listSub==="tickets"), tkH='';
-      if(tkPage) tkH=header(true, "Tickets")+pvBarHTML()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>'+
+      var tkPage=depMode, tkH='';
+      if(tkPage) tkH=header(false, "Dépenses")+depTabsHTML()+pvBarHTML()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>'+
         '<section class="paper cacc" style="padding:4px 14px 10px"><div class="dtot" style="padding:12px 2px 6px"><span>'+mois.length+' ticket'+(mois.length>1?'s':'')+'</span><span class="v" style="color:var(--ink)">'+fmtK(totalMois)+'</span></div>'+
-        (tSub?'<div class="dgs" style="margin:0 2px 8px">'+tSub+'</div>':'')+tB+'</section>';
+        (tSub?'<div class="dgs" style="margin:0 2px 8px">'+tSub+'</div>':'')+tB+'</section>'+
+        '<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="gogallery"><span class="t"><span class="tic">🖼️</span> Photos des tickets<small>la galerie</small></span><span class="ch">›</span></div></div></section>';
       var hOpen=state.homeOpen||{};
       function hGrp(key, open, title, n, v, sub, body, id){
         return '<div class="dgrp'+(open?' open':'')+'" data-g="'+key+'"><div class="dgh"'+(id?' id="'+id+'"':'')+'><span class="t">'+title+(n?'<small>'+n+'</small>':'')+'</span><span class="v">'+v+'</span><span class="chev">›</span></div>'+
@@ -3919,7 +3935,7 @@
       if(tkPage) h=tkH; else h=h.slice(0, hCut);   // sous les graphiques : plus rien (Saisie est en haut, Galerie dans le menu)
 
       app.innerHTML = h;
-      if(tkPage) bindBack(function(){ state.listSub=null; state.catFilter=null; render(); window.scrollTo(0,0); });
+      if(tkPage) wireDepTabs();
 
       var manual2=document.getElementById("manual2"); if(manual2) manual2.onclick=newDraft;
       var gogallery=document.getElementById("gogallery"); if(gogallery) gogallery.onclick=function(){ state.view="gallery"; render(); };
@@ -3985,7 +4001,7 @@
       [].forEach.call(document.querySelectorAll(".catrow"), function(row){ row.onclick=function(){ state.catFilter=row.getAttribute("data-cat"); state.listSub="tickets"; render(); window.scrollTo(0,0); }; });   // une catégorie → ses tickets du mois
       var cc=document.getElementById("catclear"); if(cc) cc.onclick=function(){ state.catFilter=null; render(); };
       wireMonthNav(month, curM, "list");
-      setNav("list", true);
+      setNav(depMode ? "tickets" : "list", true);
     }
 
     function artRow(a){
@@ -4363,17 +4379,20 @@
       // sous-pages (la bulle du bas suit le graphique) : Par famille, Produits du mois, Prix suivis, Par magasin
       var ASUB={ fam:"Par famille", prods:"Produits du mois", prix:"Prix suivis", mags:"Par magasin" };
       var aSub=(ASUB[state.artSub] && D.famKeys.length) ? state.artSub : null;
-      var h=header(!!aSub, aSub?ASUB[aSub]:"")+pvBarHTML()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabelOf(month))), month, curM)+'</div>';
-      if(!D.famKeys.length) h+=tabTools([["artprod","⚙︎ Produits & catégories"],["budEdit",artBudLbl()]]);
-      if(!D.famKeys.length){
+      var budOnly=(!aSub && state.depSub==="budgets");
+      var h=(aSub ? header(true, ASUB[aSub]) : header(false, "Dépenses")+depTabsHTML())+pvBarHTML()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabelOf(month))), month, curM)+'</div>';
+      // Produits : réglage des produits ; Budgets : fixer les budgets (les budgets ne dépendent pas des articles rangés)
+      var artTools=budOnly ? [["budEdit",artBudLbl()]] : [["artprod","⚙︎ Produits & catégories"]];
+      if(!D.famKeys.length && !budOnly) h+=tabTools(artTools);
+      if(!D.famKeys.length && !budOnly){
         h+='<section class="paper cacc" style="padding:18px 16px"><div class="center muted" style="font-size:12.5px;line-height:1.5">Aucun article rangé ce mois-ci.<br>Scanne un ticket et classe ses lignes par produit.</div>'+(!artProdOn()?'<div class="center" style="margin-top:12px"><button type="button" class="anfx" id="artProdBtn">＋ Produits partagés</button><div class="muted" style="font-size:11px;margin-top:6px">Les produits partagés sont masqués</div></div>':'')+'</section>';
       } else {
         // Articles = ce que j'achète et à quel prix : Mes produits (du mois), Hausses, Moins cher (12 derniers mois)
-        var TABS=[["prod","Mes produits"],["hausse","Hausses"],["mag","Magasins"],["fam","Familles"],["bud","Budgets"]];
-        var mode=state.artChart||store.read("artChartDef","prod"); if(!TABS.some(function(x){ return x[0]===mode; })) mode="prod";
+        var TABS=budOnly ? [["bud","Budgets"]] : [["prod","Mes produits"],["hausse","Hausses"],["mag","Magasins"],["fam","Familles"]];   // Budgets : son sous-onglet de Dépenses
+        var mode=budOnly ? "bud" : (state.artChart||store.read("artChartDef","prod")); if(!TABS.some(function(x){ return x[0]===mode; })) mode="prod";
         var apOn=artProdOn(), apAny=state.entries.some(function(e){ return (e.articles||[]).some(function(a){ return a.commun; }); });
         var AH=artHistory(month);
-        var chart=(apAny?'<button type="button" class="anfx anfx-corner'+(apOn?' on':'')+'" id="artProdBtn" aria-pressed="'+apOn+'">'+(apOn?'✓':'＋')+' Produits partagés</button>':'')+chartTabsHTML(TABS, mode, "artChartDef", "prod").replace('<div class="cch-tabs">','<div class="cch-tabs wrap2">')+'<div class="cch cch-top">';
+        var chart=(apAny?'<button type="button" class="anfx anfx-corner'+(apOn?' on':'')+'" id="artProdBtn" aria-pressed="'+apOn+'">'+(apOn?'✓':'＋')+' Produits partagés</button>':'')+(budOnly ? '' : chartTabsHTML(TABS, mode, "artChartDef", "prod").replace('<div class="cch-tabs">','<div class="cch-tabs wrap2">'))+'<div class="cch cch-top">';
         function evoTxt(x){ return Math.abs(x)>=0.5 ? ' <small style="color:'+(x>0?'var(--coral)':'var(--accent)')+';font-weight:700">'+(x>0?'▲ +':'▼ ')+String(Math.round(x*10)/10).replace(".",",")+' %</small>' : ''; }
         function line(P, sub, right, rightCol){ return '<div class="bar-row artclk" data-fam="'+esc(P.fam)+'" data-name="'+esc(P.name)+'" style="margin:10px 2px;cursor:pointer"><div class="bar-top"><span class="bl">'+esc(P.name)+' <small class="muted">'+sub+'</small></span><span class="bv"'+(rightCol?' style="color:'+rightCol+'"':'')+'>'+right+'</span></div></div>'; }
         var heroO;
@@ -4417,7 +4436,7 @@
             stats:[ {l:"Magasin principal", v:(sl2[0]?esc(sl2[0].name):"—"), d:(sl2[0]?Math.round(sl2[0].sum/(smT||1)*100)+" % des achats":"")}, {l:"Le plus fréquenté", v:(top2?esc(top2.name):"—"), d:(top2?top2.nT+" passage"+(top2.nT>1?"s":""):"")}, {l:"Panier moyen", v:fmtS(smN?smT/smN:0), d:"par passage"} ] };
         }
         chart+='</div>';
-        if(!aSub) h+=tabTools([["artprod","⚙︎ Produits & catégories"],["budEdit",artBudLbl()]]);
+        if(!aSub) h+=tabTools(artTools);
         if(!aSub){ var ho={ label:heroO.label, big:(heroO.big==null?0:heroO.big), sub:heroO.sub, extra:chart, stats:heroO.stats }, hh=tabHero(ho);
           if(heroO.big==null) hh=hh.replace(/<div class="dash-big"[^>]*>[\s\S]*?<\/div>/, '<div class="dash-big" style="margin-top:6px;color:var(--ink)">'+esc(heroO.bigTxt)+'</div>');
           h+=hh; }
@@ -4448,7 +4467,7 @@
             h+='<div class="dgrp'+(mo2[x.name]?' open':'')+'" data-g="'+esc(x.name)+'" data-k="mag"><div class="dgh"><i class="cdot" style="background:'+["#7c9cf4","#e0a458","#4fd6a0","#c78bd6","#5bc0d4","#e88fb0","#9bd35e","#d4a05b"][ix%8]+';margin:0"></i><span class="t">'+esc(x.name)+'<em class="ds">'+x.nT+' passage'+(x.nT>1?'s':'')+' · '+x.nA+' article'+(x.nA>1?'s':'')+'</em></span><span class="v">'+fmtK(x.sum)+'</span><span class="chev">›</span></div><div class="dgb">'+body+'</div></div>'; });
           h+='</section>'; }
       }
-      if(!aSub && D.famKeys.length){ var bm=state.artChart||store.read("artChartDef","prod"), bb;
+      if(!aSub && !budOnly && D.famKeys.length){ var bm=state.artChart||store.read("artChartDef","prod"), bb;
         if(bm==="prod"){ var np=AH.list.filter(function(P){ return P.nMonth>0; }).length; bb=["prods","🛒","Produits du mois · "+np, fmtK(D.grand)]; }
         else if(bm==="hausse"){ bb=["prix","📈","Prix suivis · "+AH.list.filter(function(P){ return P.nBuy>=2; }).length, ""]; }
         else if(bm==="mag"){ bb=["mags","🏪","Par magasin · "+Object.keys(AH.storesMonth).length, fmtK(D.grand)]; }
@@ -4473,6 +4492,7 @@
       var ap=document.getElementById("artprod"); if(ap) ap.onclick=function(){ state.prodFrom="articles"; state.view="produits"; render(); window.scrollTo(0,0); };
       if(D.famKeys.length && !aSub) wireHeroSwipe(state.artChart||store.read("artChartDef","prod"), ["prod","hausse","mag","fam"], function(k){ state.artChart=k; });
       wireMonthNav(month, curM, "articles");
+      if(!aSub) wireDepTabs();
       setNav("articles", true);
     }
 
@@ -6083,7 +6103,7 @@
       chart+='</div>'; chart=fxBtn+chart; hero.extra=chart;
       var nSub=(state.anSub==="mois");   // sous-page « Par mois »
       if((state.anSub==="rec" || state.anSub==="pay" || state.anSub==="repi") && recPage===null) state.anSub=null;
-      var h=header(nSub || recPage!==null, nSub?"Par mois":recPageTitle)+pvBarHTML()+(nSub || recPage!==null?'':tabTools([["goAvancee","✦ Analyse avancée"+(canUse("avancee")?"":" · Plus")]])+tabHero(hero));
+      var h=(nSub || recPage!==null ? header(true, nSub?"Par mois":recPageTitle) : header(false, "Dépenses")+depTabsHTML())+pvBarHTML()+(nSub || recPage!==null?'':tabTools([["goAvancee","✦ Analyse avancée"+(canUse("avancee")?"":" · Plus")]])+tabHero(hero));
       if(recPage!==null){
         app.innerHTML=h+recPage;
         bindBack(function(){ state.anSub=null; state.recSel=null; state.paySel=null; state.repSel=null; render(); window.scrollTo(0,0); });
@@ -6101,7 +6121,7 @@
       if(nSub) h+='</section>';
       app.innerHTML=h;
       if(nSub) bindBack(function(){ state.anSub=null; render(); window.scrollTo(0,0); });
-      var gav=document.getElementById("goAvancee"); if(gav) gav.onclick=function(){ state.view="avancee"; state.avSub=state.avSub||"vue"; render(); window.scrollTo(0,0); };
+      var gav=document.getElementById("goAvancee"); if(gav) gav.onclick=function(){ state.view="avancee"; state.avSub="vue"; state.avFrom=null; render(); window.scrollTo(0,0); };
       var agm=document.getElementById("anGoMois"); if(agm) agm.onclick=function(){ state.anSub="mois"; render(); window.scrollTo(0,0); };
       wireChartDefaults();
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.anChart=bt.getAttribute("data-m"); store.write("anChart", state.anChart); render(); }; });
@@ -6119,6 +6139,7 @@
       [].forEach.call(document.querySelectorAll(".anlist .bar-row.clk"), function(row){ row.onclick=function(){ state.histMonth=row.getAttribute("data-month"); state.view="month"; render(); window.scrollTo(0,0); }; });
       var aOn=document.querySelector(".thero .cch-tabs button.on"); if(aOn && aOn.parentNode){ var atb=aOn.parentNode; atb.scrollLeft=Math.max(0, aOn.offsetLeft-(atb.clientWidth-aOn.offsetWidth)/2); }
       if(!nSub) wireHeroSwipe(mode, TABS.map(function(x){ return x[0]; }), function(k){ state.anChart=k; store.write("anChart", k); });
+      wireDepTabs();
       setNav("analyse", true);
     }
     // ---------- Analyse avancée (Tickets Plus) ----------
@@ -6261,17 +6282,21 @@
     function avCard(title, right, body, cls){ return '<section class="paper avc'+(cls?' '+cls:'')+'"><div class="avt"><span>'+title+'</span>'+(right?'<small>'+right+'</small>':'')+'</div>'+body+'</section>'; }
     function avRow(n, sub, v, cls){ return '<div class="avr"><span class="n">'+n+(sub?'<small>'+sub+'</small>':'')+'</span><span class="v'+(cls?' '+cls:'')+'">'+v+'</span></div>'; }
     function renderAvancee(){
-      var curM=monthKey(todayISO()), sub=state.avSub||"vue";
-      var SUBS=[["vue","Vue d'ensemble"],["proj","Projection"],["sim","Simuler"]];
-      var h=header(true, "Analyse avancée")+pvBarHTML();
-      h+='<div class="avseg">'+SUBS.map(function(x){ return '<button type="button" data-s="'+x[0]+'"'+(x[0]===sub?' class="on"':'')+'>'+x[1]+'</button>'; }).join("")+'</div>';
+      // Vue d'ensemble depuis Dépenses › Analyse ; Projection et Simuler depuis À venir (state.avFrom="factures")
+      var fromAv=(state.avFrom==="factures"), curM=monthKey(todayISO()), sub=state.avSub||"vue";
+      if(fromAv && sub==="vue") sub="proj"; if(!fromAv) sub="vue"; state.avSub=sub;
+      var SUBS=fromAv ? [["proj","Projection"],["sim","Simuler"]] : [];
+      var h=header(true, fromAv ? "Dans 12 mois" : "Analyse avancée")+pvBarHTML();
+      if(SUBS.length) h+='<div class="avseg">'+SUBS.map(function(x){ return '<button type="button" data-s="'+x[0]+'"'+(x[0]===sub?' class="on"':'')+'>'+x[1]+'</button>'; }).join("")+'</div>';
       if(!canUse("avancee")){
-        h+='<div class="avlock-wrap"><div class="avblur">'+avCard("Mon inflation · 12 mois","",'<div class="avbig up">+6,8 %</div><div style="height:90px"></div>','avhero')+avCard("Cette année contre l'an dernier","",'<div style="height:110px"></div>')+avCard("À surveiller","",'<div style="height:110px"></div>')+'</div>'+
-           '<div class="avlock"><div style="font-size:30px">✦</div><h3>Analyse avancée</h3><p>Comprends où va ton argent sur toute l\'année, calculé sur ton téléphone : rien n\'est envoyé.</p><ul><li>Ton inflation réelle, produit par produit</li><li>Cette année contre l\'an dernier</li><li>Alertes : hausses, abonnements, dépenses inhabituelles</li><li>Projection de fin d\'année et simulateur « et si… ? »</li><li>Pistes d\'économies chiffrées</li></ul><button type="button" class="btn primary" id="avBuy">Débloquer avec Tickets Plus</button><button type="button" class="btn ghost" id="avLater" style="margin-top:8px">Plus tard</button></div></div>';
-        app.innerHTML=h; wireAv(); setNav("analyse", true); return;
+        h+='<section class="fct-teaser"><h3>'+(fromAv?"Tes comptes dans 12 mois":"Analyse avancée")+'</h3><p>Calculé sur ton téléphone : rien n\'est envoyé.</p><ul>'+(fromAv?
+             '<li>Ce qu\'il restera sur tes comptes et ton épargne, mois par mois</li><li>Simuler : « et si je dépensais moins en… ? »</li>':
+             '<li>Ton inflation réelle, produit par produit</li><li>Cette année contre l\'an dernier</li><li>Alertes : hausses, abonnements, dépenses inhabituelles</li><li>Pistes d\'économies chiffrées</li>')+'</ul>'+
+           '<button type="button" class="fct-plus" id="avBuy">✦ Débloquer avec Tickets Plus</button></section>';
+        app.innerHTML=h; wireAv(); setNav(fromAv ? "factures" : "analyse", true); return;
       }
       var D=avData();
-      if(!D.hasData){ h+='<section class="paper avc"><div class="center muted" style="font-size:12.5px;line-height:1.5;padding:16px 4px">Pas encore assez de tickets pour une analyse.<br>Scanne quelques mois de tickets et reviens ici.</div></section>'; app.innerHTML=h; wireAv(); setNav("analyse", true); return; }
+      if(!D.hasData){ h+='<section class="paper avc"><div class="center muted" style="font-size:12.5px;line-height:1.5;padding:16px 4px">Pas encore assez de tickets pour une analyse.<br>Scanne quelques mois de tickets et reviens ici.</div></section>'; app.innerHTML=h; wireAv(); setNav(state.avFrom==="factures" ? "factures" : "analyse", true); return; }
       if(sub==="vue"){
         // inflation
         var I=D.infl, ins=avInsee(), ib='';
@@ -6333,7 +6358,7 @@
         h+=avCard("Et si… ?", "", sb, "avhero");
         h+='<div class="muted" style="font-size:11px;margin:4px 6px 10px;line-height:1.45">Base : l\'évolution moyenne de '+(Ps.ok?"tes comptes":"ton compte")+' ces 3 derniers mois ('+(Ps.netB>=0?'+':'−')+fmtK(Math.abs(Ps.netB))+' / mois sur le compte). Tickets ≈ '+fmtK(D.tkAvg)+' / mois.</div>';
       }
-      app.innerHTML=h; wireAv(); setNav("analyse", true);
+      app.innerHTML=h; wireAv(); setNav(state.avFrom==="factures" ? "factures" : "analyse", true);
       if(sub==="sim") avSimUpdate();
     }
     function avSimUpdate(){
@@ -6388,11 +6413,10 @@
       paint();
     }
     function wireAv(){
-      bindBack(function(){ state.view="analyse"; render(); window.scrollTo(0,0); });
+      bindBack(function(){ var f=state.avFrom; state.avFrom=null; state.view=(f==="factures" ? "factures" : "analyse"); render(); window.scrollTo(0,0); });
       [].forEach.call(document.querySelectorAll(".avseg button[data-s]"), function(b){ b.onclick=function(){ state.avSub=b.getAttribute("data-s"); render(); window.scrollTo(0,0); }; });
       [].forEach.call(document.querySelectorAll(".avper button"), function(b){ b.onclick=function(){ var y=window.scrollY; state.avPer=b.getAttribute("data-p"); store.write("avPer", state.avPer); render(); window.scrollTo(0,y); }; });
       var bu=document.getElementById("avBuy"); if(bu) bu.onclick=function(){ uiChoice("Tickets Plus", "L'analyse avancée fait partie de Tickets Plus. L'achat de Plus arrivera bientôt dans l'appli.", [{ l:"D'accord", fn:function(){} }]); };
-      var la=document.getElementById("avLater"); if(la) la.onclick=function(){ state.view="analyse"; render(); window.scrollTo(0,0); };
       var pdf=document.getElementById("avPdf"); if(pdf) pdf.onclick=function(){ var cm=monthKey(todayISO()); state.bilanFrom=cm.slice(0,4)+"-01"; state.bilanTo=cm; state.bilanMonth=cm; state.view="bilan"; render(); window.scrollTo(0,0); };
       var ia=document.getElementById("avIA"); if(ia) ia.onclick=avOpenIA;
       var ial=document.getElementById("avInflAll"); if(ial) ial.onclick=function(){ var L=avData().infl.all;
@@ -7486,7 +7510,7 @@
       h+='</section>';
       app.innerHTML=h;
       setNav(null,false);
-      bindBack(function(){ state.view="list"; render(); });
+      bindBack(function(){ state.view="tickets"; state.depSub="tickets"; render(); });
       [].forEach.call(document.querySelectorAll(".gimg"), function(el){ el.onclick=function(){ state.photoId=el.getAttribute("data-id"); state.view="photo"; render(); }; });
       [].forEach.call(document.querySelectorAll(".gdel"), function(b){ b.onclick=function(){ var id=b.getAttribute("data-id"); if(!window.confirm("Supprimer la photo de ce ticket ?\n(le ticket est conservé)")) return; delPhotoFor(id); }; });
     }
@@ -8226,10 +8250,12 @@
       if(!fraisCommuns.length && !provisions.length && !factures.length) h+='<div class="empty">Ajoute tes frais fixes (loyer, abonnements…) et tes provisions : les 12 prochains mois se remplissent tout seuls.</div>';
       var bts=(!ro ? '<button type="button" class="btn primary" id="fctImp">'+(plus?'':'<span class="avplus">✦</span> ')+'Importer une facture</button>' : '')+(avCanFrais() ? '<button type="button" class="btn" id="avAddFrais">+ Frais fixe</button>' : '');
       if(bts) h+='<div class="fct-btns">'+bts+'</div>';
+      if(!fyMember() || fyTabOn(fyCfg, "analyse")) h+='<section class="paper cacc" style="margin-top:12px"><div class="cacc-sec"><div class="cacc-h" id="avProj"><span class="t"><span class="tic">📈</span> '+(canUse("avancee")?'':'<span class="avplus">✦</span> ')+'Tes comptes dans 12 mois<small>projection et simulateur « et si… ? »</small></span><span class="ch">›</span></div></div></section>';
       app.innerHTML=h; setNav("factures", true); wireAvTabs();
       [].forEach.call(document.querySelectorAll(".fct-col"), function(b){ b.onclick=function(){ state.factSel=b.getAttribute("data-m"); render(); }; });
       var bi=document.getElementById("fctImp"); if(bi) bi.onclick=factImportChooser;
       var bf=document.getElementById("avAddFrais"); if(bf) bf.onclick=addFraisCommun;
+      var bpj=document.getElementById("avProj"); if(bpj) bpj.onclick=function(){ state.view="avancee"; state.avSub="proj"; state.avFrom="factures"; render(); window.scrollTo(0,0); };
     }
 
     // ----- Une série en détail -----
@@ -8702,8 +8728,8 @@
     var FY_KEYS={ entries:"id", virements:"id", fraisCommuns:"id", epargne:"id", provisions:"id", factures:"id", bourse:"id", comptes:"key", personnes:"nom",
       argentMois:2, liquideMois:2, soldeInit:2, budgets:1, budgetsP:2, appris:1, familleDe:1, communParts:0, cats:0, familles:0, produits:0, devise:0 };
     var FY_OWNER_ONLY={ bourse:1 };   // la Bourse se gère depuis le téléphone du propriétaire (cours mis à jour en continu)
-    var FY_TABS=[{v:"list",l:"Accueil"},{v:"articles",l:"Articles"},{v:"communes",l:"Commun"},{v:"compte",l:"Compte"},{v:"factures",l:"À venir"}].concat(FEAT.bourse?[{v:"bourse",l:"Bourse"}]:[]).concat([{v:"analyse",l:"Analyse"}]);
-    var FY_SUB={ import:"compte", avancee:"analyse", epargne:"compte", form:"list", gallery:"list", photo:"list", produits:"articles", artDetail:"articles", comptedet:"compte", patrimoine:"compte", provisions:"factures", factlue:"factures", factserie:"factures", month:"analyse", graph:"analyse", history:"analyse" };
+    var FY_TABS=[{v:"list",l:"Accueil"},{v:"articles",l:"Dépenses : produits"},{v:"analyse",l:"Dépenses : analyse"},{v:"compte",l:"Compte"},{v:"factures",l:"À venir"},{v:"communes",l:"Commun"}].concat(FEAT.bourse?[{v:"bourse",l:"Bourse"}]:[]);
+    var FY_SUB={ tickets:"list", import:"compte", avancee:"analyse", epargne:"compte", form:"list", gallery:"list", photo:"list", produits:"articles", artDetail:"articles", comptedet:"compte", patrimoine:"compte", provisions:"factures", factlue:"factures", factserie:"factures", month:"analyse", graph:"analyse", history:"analyse" };
     var FY_SEP="\u001f", FY_SKIP={};
     function fyRole(){ return fyCfg ? fyCfg.role : null; }
     function fyMember(){ return !!fyCfg && fyCfg.role!=="owner"; }
@@ -9208,7 +9234,7 @@
       document.body.classList.toggle("fy-mem", fyMember());
     }
     function fyNavFilter(){
-      [].forEach.call(navEl.querySelectorAll(".navi"), function(b){ var v=b.getAttribute("data-view"); b.style.display=(fyMember() && !(v==="factures" ? avTabOn(fyCfg) : fyTabOn(fyCfg, v)))?"none":""; });
+      [].forEach.call(navEl.querySelectorAll(".navi"), function(b){ var v=b.getAttribute("data-view"); b.style.display=(fyMember() && !(v==="depenses" ? true : (v==="factures" ? avTabOn(fyCfg) : fyTabOn(fyCfg, v))))?"none":""; });
     }
     function fyViewGuard(){
       if(!fyMember() || !FY_SUB) return;

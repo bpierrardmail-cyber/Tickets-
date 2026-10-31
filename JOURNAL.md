@@ -19,15 +19,20 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `31/10 20:22`, environ 9 700 lignes.
+- β web : `beta/index.html`, étiquette `31/10 20:42`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
 
 **Onglets**
 - **Accueil** : graphiques choisis par l'utilisateur (⚙ Choisir, appui long pour changer, déplacer ou masquer), grande carte du haut au choix. Pastilles ✍️ Saisie et 🧾 Tickets. Filtre par personne en haut à droite. Rien sous les graphiques.
-- **Articles** : produits et prix (Mes produits, Hausses, Magasins, Familles, Budgets). Fiche produit avec tous les achats. Bouton « Produits partagés ».
-- **Commun** : parts du commun en % et parts propres à chaque frais. Graphique Mois (6, 12, 12 à venir, Tout). Bandeau des personnes. Les frais communs du mois y sont à voir ; ils se modifient dans À venir › Frais fixes.
+- Barre du bas : **Accueil · Dépenses · Compte · À venir · Commun · Bourse** (pas de Bourse en Store). Chaque onglet a ses sous-onglets en boutons sous le titre ; ✦ = Plus, on voit la fonction et seul le bouton demande Plus.
+- **Dépenses** : 4 sous-onglets **Tickets · Produits · Budgets · Analyse** ;
+  - Tickets : la liste du mois (recherche, calendrier) et « Photos des tickets » (la galerie) ;
+  - Produits : produits et prix (Mes produits, Hausses, Magasins, Familles), fiche produit avec tous les achats ;
+  - Budgets : budgets par catégorie ;
+  - Analyse : graphiques Mois, Répartition, Récurrentes et Qui a payé, bouton « + Frais fixes », détail d'un mois, bouton ✦ Analyse avancée (inflation perso INSEE, année / an dernier, alertes, reste à vivre, résumé pour une IA).
+- **Commun** : parts du commun en % et parts propres à chaque frais, bouton « Produits partagés ». Graphique Mois (6, 12, 12 à venir, Tout). Bandeau des personnes. Les frais communs du mois y sont à voir ; ils se modifient dans À venir › Frais fixes.
 - **Compte** : 4 sous-onglets **Opérations · Virements · Épargne · Graphiques**, et la **roue du compte** en haut à droite (modifier le compte, solde reporté, importer un relevé, annuler le dernier import, compte principal, supprimer) ;
   - Opérations : la **liste des opérations du mois**, comme un relevé de banque : solde estimé, Entrées / Sorties / Fin de mois, filtres Tout · Entrées · Sorties · À venir, recherche (nom ou montant, avec le total), bloc « À venir » avec un rond pour marquer « fait », puis les opérations par jour (le plus récent en haut) avec le solde du soir, et le report en bas ;
   - Graphiques : les 6 graphiques (Ce mois, Dépenses, Solde, Entrées-sorties, Épargne, Provisions), touchables (une barre ouvre Virements ou les Opérations filtrées) ;
@@ -38,20 +43,15 @@ Après chaque modification, dans le même commit :
   - mois à venir = solde prévu.
 - **À venir** (ex Factures, ouvert à tous ; seule la partie Factures est dans Tickets Plus en Store) : sous-onglets **12 mois · Frais fixes · Provisions · Factures** ;
   - Frais fixes : tous (communs et perso), comme l'ancienne page de Commun ; Provisions : l'ancienne page de Compte › Configuration ;
-  - les 12 prochains mois : frais fixes, factures reçues ou estimées, échéances des provisions ; un mois en jaune s'il manquera de l'argent dans une provision ; toucher un mois donne le détail ;
+  - les 12 prochains mois : frais fixes, factures reçues ou estimées, échéances des provisions ; un mois en jaune s'il manquera de l'argent dans une provision ; toucher un mois donne le détail ; en dessous, ✦ « Tes comptes dans 12 mois » (projection et simulateur, ex Analyse avancée) ;
   - « À payer bientôt » (30 jours, tous comptes) ;
   - Factures : une carte par fournisseur (prochaine facture estimée, moyenne par mois, provision : « prête pour … » ou « il manquera … ») ; en Store sans Plus, ce que Plus apporte et un seul bouton ✦ ;
   - « Importer une facture » : un ou plusieurs PDF (texte lu sur le téléphone par pdf.js ; avec plusieurs PDF, les plus anciens vont dans l'historique et la plus récente est à vérifier), ou des photos page par page (ML Kit, « + Page suivante », page tournée remise droite) ;
   - la facture lue : champs modifiables, comparaison avec l'an dernier, et trois effets à cocher : le prélèvement (ou « à payer ») dans « À venir » à la place du frais fixe estimé ce mois-là, la prochaine facture estimée, la provision (créer, ou payer la facture avec) ;
   - détail d'un fournisseur : provision, factures en barres avec la prochaine estimée, moyenne par mois, consommation sur 12 mois, prix moyen, liste (toucher pour supprimer).
 - **Bourse** (Perso seulement) : cours Yahoo et CoinGecko via le relais, courbe 1J. Comptée une fois dans l'épargne, comme une ligne automatique (« dont Bourse » sur l'Accueil et dans Épargne).
-- **Analyse** :
-  - graphiques Mois, Répartition, Récurrentes et Qui a payé ;
-  - bouton « + Frais fixes » ;
-  - détail d'un mois ;
-  - **Analyse avancée** (Plus) : inflation perso (INSEE), année / an dernier, alertes, reste à vivre, projection, simulateur, résumé pour une IA.
 
-**Menu** : 3 blocs sans titres et sans défilement. Foyer partagé, Personnes, Sauvegarder · Exporter en PDF, Galerie · Réglages (devise, code et empreinte, restaurer une sauvegarde).
+**Menu** : 3 blocs sans titres et sans défilement. Foyer partagé, Personnes, Sauvegarder · Exporter en PDF, Réglages (devise, code et empreinte, restaurer une sauvegarde).
 
 **Foyer partagé**
 - Invitation par QR code. Copies chiffrées sur le relais, que le relais ne peut pas lire. Code + empreinte obligatoires.
@@ -71,7 +71,7 @@ Après chaque modification, dans le même commit :
 
 ## En cours / à reprendre
 
-- **Réorganisation de l'appli** (31/10) : il trouve l'organisation et l'accès aux fonctions peu clairs. Plan proposé dans la maquette « Tickets — Plan de l'appli » : un onglet = une question, chaque chose à un seul endroit, sous-onglets visibles au lieu de « Configuration », ✦ partout pareil (on voit la fonction, seul le bouton demande Plus). Onglets proposés : Accueil · Dépenses (Articles + Analyse) · Compte (Opérations · Virements · Épargne · Graphiques, roue du compte) · À venir (ex Factures, ouvert à tous : 12 mois · Frais fixes · Provisions gratuits, Factures ✦, Projection ✦) · Commun (parts seulement) · Bourse. En 4 étapes, À venir d'abord (sa question : les provisions dans Factures). Décidé le 31/10 : nom « À venir », 12 mois gratuits. **Étapes 1 (À venir) et 2 (Compte) intégrées le 31/10.** Suite : étape 3 (Dépenses : Articles et Analyse réunis), maquette d'abord.
+- **Réorganisation de l'appli** (31/10) : il trouve l'organisation et l'accès aux fonctions peu clairs. Plan proposé dans la maquette « Tickets — Plan de l'appli » : un onglet = une question, chaque chose à un seul endroit, sous-onglets visibles au lieu de « Configuration », ✦ partout pareil (on voit la fonction, seul le bouton demande Plus). Onglets proposés : Accueil · Dépenses (Articles + Analyse) · Compte (Opérations · Virements · Épargne · Graphiques, roue du compte) · À venir (ex Factures, ouvert à tous : 12 mois · Frais fixes · Provisions gratuits, Factures ✦, Projection ✦) · Commun (parts seulement) · Bourse. En 4 étapes, À venir d'abord (sa question : les provisions dans Factures). Décidé le 31/10 : nom « À venir », 12 mois gratuits. **Les 4 étapes sont intégrées (31/10).** À essayer par Benoît sur son téléphone ; à revoir selon ses retours.
 
 - **Sans réseau** (31/10) : à essayer par Benoît en mode avion avec les nouveaux APK.
   - Perso : installer le nouvel APK, l'ouvrir une fois avec du réseau (la copie s'enregistre), puis en mode avion.
@@ -103,6 +103,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **31/10** : étapes 3 et 4 de la réorganisation intégrées sans maquette (« tu peux passer à la 3 et aux autres ») : onglet Dépenses, finitions.
 - **31/10** : étape 2 de la réorganisation intégrée (« tu peux y aller ») : Compte en sous-onglets, roue du compte, import seulement dans la roue.
 - **31/10** : étape 1 de la réorganisation intégrée (« tu peux intégrer ») : onglet À venir.
 - **31/10** : réorganisation de l'appli : l'onglet Factures s'appellera « À venir » ; dans la version Store, les 12 prochains mois y sont gratuits (seules les factures, et leurs estimations, sont dans Plus).
@@ -154,6 +155,14 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 31/10
+- **Réorganisation, étapes 3 et 4 : Dépenses et finitions** :
+  - Articles et Analyse réunis dans l'onglet **Dépenses** : Tickets · Produits · Budgets · Analyse (`depSubs`, `depView`, `depTabsHTML`, vue `tickets`) ; la puce 🧾 Tickets de l'Accueil y mène ; la galerie est la ligne « Photos des tickets » de Tickets (plus dans le menu) ;
+  - barre du bas : Accueil · Dépenses · Compte · À venir · Commun · Bourse ;
+  - Analyse avancée : la vue d'ensemble seule depuis Dépenses › Analyse ; Projection et Simuler passent dans À venir › 12 mois (« Tes comptes dans 12 mois », retour vers À venir) ;
+  - sans Plus (Store) : la présentation de la fonction et un seul bouton ✦, au lieu de l'écran flouté ;
+  - foyer : droits « Dépenses : produits » et « Dépenses : analyse » ; Dépenses toujours visible (Tickets suit l'Accueil) ;
+  - Produits partagés reste dans Commun (c'est « qui paie quoi », pas une dépense) ;
+  - Produits n'a que « Produits & catégories », Budgets que « Fixer des budgets » ; Budgets marche aussi quand aucun article n'est rangé (les budgets suivent les catégories des tickets).
 - **Réorganisation, étape 2 : Compte** (d'après la maquette) :
   - sous-onglets Opérations · Virements · Épargne · Graphiques (`state.cptPage` : null, `es`, `ep`, `graph` ; la vue `comptedet` revient à `compte`) ; plus de bouton retour ni de page « Configuration » ;
   - roue du compte (`cptWheel`, `#cptGear`) : modifier, solde reporté, importer un relevé, annuler le dernier import, compte principal, supprimer (`acctMenuItems`) ; cachée en consultation sans import ;
