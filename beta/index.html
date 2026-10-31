@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="31/10 15:26" />
+  <meta name="build" content="31/10 19:58" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -175,6 +175,18 @@
     .f-mrow input.f{ flex:1; min-width:0; }
     .f-thumb{ flex:0 0 48px; width:48px; height:48px; padding:0; border-radius:10px; border:1px solid var(--line2); background:#e9e6dd; overflow:hidden; cursor:pointer; }
     .f-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+    /* À venir (ex Factures) : sous-onglets 12 mois · Frais fixes · Provisions · Factures */
+    .avtabs{ display:flex; gap:6px; margin:2px 0 12px; }
+    .avtabs button{ flex:1; min-width:0; height:38px; padding:0 4px; border-radius:12px; border:1px solid var(--line2); background:var(--card); color:var(--ink-soft); font:inherit; font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
+    .avtabs button.on{ background:var(--accent); border-color:var(--accent); color:#0e0f14; font-weight:700; }
+    .avplus{ color:#f2c76b; } .avtabs button.on .avplus{ color:#0e0f14; }
+    .cfx-r{ display:flex; align-items:center; gap:10px; padding:9px 2px; border-top:1px solid var(--line); font-size:13.5px; cursor:pointer; }
+    .cfx-r .n{ flex:1; min-width:0; } .cfx-r small{ display:block; margin-top:1px; font-size:11.5px; color:var(--ink-soft); }
+    .cfx-r .a{ flex:0 0 auto; font-variant-numeric:tabular-nums; font-weight:600; }
+    .fct-teaser{ padding:18px; border-radius:20px; background:var(--card); border:1px solid var(--line); }
+    .fct-teaser h3{ margin:0 0 8px; font-size:18px; } .fct-teaser p{ margin:0 0 8px; font-size:13.5px; line-height:1.5; color:var(--ink-soft); }
+    .fct-teaser ul{ margin:0; padding-left:20px; font-size:13.5px; line-height:1.75; color:var(--ink-soft); }
+    .fct-plus{ width:100%; margin-top:12px; height:50px; border-radius:14px; border:0; background:#f2c76b; color:#0e0f14; font:inherit; font-size:15px; font-weight:700; cursor:pointer; }
     /* Factures */
     .fct-h{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:600; }
     .fct-h small{ font-size:11px; letter-spacing:0; text-transform:none; font-weight:400; }
@@ -3101,7 +3113,7 @@
         '<button class="navi" type="button" data-view="articles">Articles</button>'+
         '<button class="navi" type="button" data-view="communes">Commun</button>'+
         '<button class="navi" type="button" data-view="compte">Compte</button>'+
-        '<button class="navi" type="button" data-view="factures">Factures</button>'+
+        '<button class="navi" type="button" data-view="factures">À venir</button>'+
         (FEAT.bourse?'<button class="navi" type="button" data-view="bourse">Bourse</button>':'')+
         '<button class="navi" type="button" data-view="analyse">Analyse</button>'+
       '</div>';
@@ -3221,7 +3233,7 @@
       if(state.view==="gallery") return renderGallery();
       if(state.view==="photo") return renderPhoto();
       if(state.view==="patrimoine") return renderPatrimoine();
-      if(state.view==="provisions") return renderProvisions();
+      if(state.view==="provisions"){ state.view="factures"; state.avSub="prov"; }   // la page Provisions est dans À venir
       if(state.view==="factures") return renderFactures();
       if(state.view==="factlue") return renderFactLue();
       if(state.view==="factserie") return renderFactSerie();
@@ -4675,6 +4687,8 @@
       return { monthData:monthData, D:D, me:me, ppl:ppl, CP:CP, persoOf:persoOf, pctOf:pctOf, fPct:fPct, communShareOf:communShareOf, effPct:effPct, shareOf:shareOf, partOf:partOf };
     }
     function renderCommunes(){
+      if(state.view!=="factures" && state.comSub==="frais"){ state.comSub=null; state.view="factures"; state.avSub="frais"; return renderFactures(); }
+      var avMode=(state.view==="factures");   // À venir › Frais fixes : la même page, dans l'onglet À venir
       var curM = monthKey(todayISO());
       var month = (state.months&&state.months.communes)||curM;
       var monthLabel = monthLabelOf(month);
@@ -4759,10 +4773,10 @@
       }
       hst.push({l:"Total foyer", v:fmtS(D.fraisTot+prodV), d:(prodOn?"fixes + partagés":"frais fixes")});
       var myPc=pctOf(me);
-      var cSub=state.comSub; if(cSub!=="frais" && cSub!=="prod") cSub=null;   // sous-pages : frais fixes (communs + perso), produits partagés
-      var h=header(!!cSub, cSub==="frais"?"Frais fixes":(cSub==="prod"?"Produits partagés":""))+(cSub?'':pvBarHTML())+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>';
+      var cSub=avMode ? "frais" : state.comSub; if(cSub!=="frais" && cSub!=="prod") cSub=null;   // sous-pages : frais fixes (dans À venir), produits partagés
+      var h=(avMode ? header(false, "À venir")+avTabsHTML("frais") : header(!!cSub, cSub==="prod"?"Produits partagés":"")+(cSub?'':pvBarHTML()))+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>';
       var myEff=effPct(me);
-      if(!cSub) h+=tabTools([["addfrais","＋ Frais fixe"],["comParts","⚙︎ Parts"]]);
+      if(!cSub) h+=tabTools([["comParts","⚙︎ Parts"]]);
       var cwEff=cw?effPct(cw):0;
       chart='<button type="button" class="anfx anfx-corner'+(prodOn?' on':'')+'" id="comProdBtn" aria-pressed="'+prodOn+'">'+(prodOn?'✓':'＋')+' Produits partagés</button>'+chart;
       if(!cSub) h+=tabHero(cw ? { label:(cMe?"Ta part ce mois ("+esc(me)+")":"Part de "+esc(cw)+" ce mois"), big:partOf(cw), sub:(cwEff>0?"frais perso + "+pctTxt(cwEff)+" du commun"+(prodOn?"":" (sans produits partagés)"):"frais perso seulement (0 % du commun)"), extra:chart, stats:hst }
@@ -4802,9 +4816,10 @@
         pW.forEach(function(w){ var it=D.byP[w].items; allIt=allIt.concat(it); pTot+=persoOf(w);
           pBody+='<div class="dsub"><span>'+esc(w)+(w===me?' · toi':'')+'</span><span>'+fmtK(persoOf(w))+'</span></div>'+fraisRows(it); });
         gp=grp("perso", COLP, "Frais perso · "+pW.length+" personnes", nb(allIt.length,"frais","frais")+" · "+paidCount(allIt)+" payé"+(paidCount(allIt)>1?"s":"")+" sur "+allIt.length, pTot, pBody); }
-      // Une ligne « Frais fixes » (communs + perso, détaillés dans sa page) et une ligne « Produits partagés »
-      var fxAll=ci.slice(); ppl.forEach(function(w){ if(D.byP[w]) fxAll=fxAll.concat(D.byP[w].items); });
-      var rowsMain='<div class="cacc-sec"><div class="cacc-h comGo" data-sub="frais"><span class="t"><span class="tic">🏠</span> Frais fixes · '+fxAll.length+'<small>'+(fxAll.length?paidCount(fxAll)+"/"+fxAll.length+" payé"+(paidCount(fxAll)>1?"s":""):"aucun")+'</small></span><span class="v">'+fmtK(D.fraisTot)+'</span><span class="ch">›</span></div></div>'+
+      // Les frais communs du mois (à voir ; ils se modifient dans À venir › Frais fixes) et une ligne « Produits partagés »
+      var fcRows=ci.slice().sort(function(a,b){ return fraisMontant(b,month)-fraisMontant(a,month); }).map(function(f){ var dn=fraisDone(f, month);
+        return '<div class="cfx-r avgo"><span class="n">'+(dn?'<span style="color:var(--accent)">✓</span> ':'')+esc(f.label)+(f.split?'<small>chacun sa part</small>':'')+'</span><span class="a">'+fmtK(fraisMontant(f, month))+'</span></div>'; }).join("");
+      var rowsMain='<div class="cacc-sec"><div class="cacc-h avgo"><span class="t"><span class="tic">🏠</span> Frais communs · '+ci.length+'<small>'+(ci.length?paidCount(ci)+"/"+ci.length+" payé"+(paidCount(ci)>1?"s":"")+" · à modifier dans À venir":"à ajouter dans À venir › Frais fixes")+'</small></span><span class="v">'+fmtK(D.commun)+'</span><span class="ch">›</span></div>'+(fcRows?'<div style="padding:0 14px 10px">'+fcRows+'</div>':'')+'</div>'+
         '<div class="cacc-sec"><div class="cacc-h comGo" data-sub="prod"><span class="t"><span class="tic">🛒</span> Produits partagés<small>'+G.prod.sub+'</small></span><span class="v">'+fmtK(G.prod.val)+'</span><span class="ch">›</span></div></div>';
       var subBody=cSub==="frais" ? gSec(G.commun)+(G.perso?gSec(G.perso):'') : (cSub==="prod" ? gSec(G.prod) : '');
       var skM=(state.months&&state.months.communes)||monthKey(todayISO()), skL=(cSub==="frais") ? fraisCommuns.filter(function(f){ return f.skipMonths && f.skipMonths[skM]; }) : [];
@@ -4816,8 +4831,10 @@
       }
 
       app.innerHTML=h;
-      if(cSub) bindBack(function(){ state.comSub=null; render(); window.scrollTo(0,0); });
+      if(cSub && !avMode) bindBack(function(){ state.comSub=null; render(); window.scrollTo(0,0); });
+      if(avMode) wireAvTabs();
       [].forEach.call(document.querySelectorAll(".comGo"), function(r){ r.onclick=function(){ state.comSub=r.getAttribute("data-sub"); render(); window.scrollTo(0,0); }; });
+      [].forEach.call(document.querySelectorAll(".avgo"), function(r){ r.onclick=function(){ state.view="factures"; state.avSub="frais"; render(); window.scrollTo(0,0); }; });
       wireChartDefaults();
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.comChart=bt.getAttribute("data-m"); store.write("comChart", state.comChart); render(); }; });
       var cOn=document.querySelector(".cch-tabs button.on"); if(cOn && cOn.parentNode){ var tb=cOn.parentNode; tb.scrollLeft=Math.max(0, cOn.offsetLeft-(tb.clientWidth-cOn.offsetWidth)/2); }
@@ -4839,7 +4856,7 @@
       [].forEach.call(document.querySelectorAll(".entry"), function(node){ node.onclick=function(){ editEntry(node.getAttribute("data-id")); }; });
       wireMonthNav(month, curM, "communes");
       if(!cSub) wireComSwipe(cm, MODES.map(function(x){ return x[0]; }));
-      setNav("communes", true);
+      setNav(avMode ? "factures" : "communes", true);
     }
 
     // Montant arrondi à l'euro, séparateur de milliers fin (pour les graphiques)
@@ -7805,7 +7822,7 @@
     function renderProvisions(){
       var curM=monthKey(todayISO());
       var month=(state.months&&state.months.provisions)||curM;
-      var h=header("list")+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabelOf(month))), month, curM)+'</div>%%HERO%%<div>';
+      var h=header(false, "À venir")+avTabsHTML("prov")+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabelOf(month))), month, curM)+'</div>%%HERO%%<div>';
       if(!provisions.length){ h+='<div class="empty">Aucune provision.<br>Crée une enveloppe pour tes frais annuels (taxe foncière, assurance, eau…) : tu mets un montant de côté chaque mois, le solde monte tout seul.</div>'; }
       var total=0, overTot=0, provLater=0;
       var prG=byOwner(provisions);
@@ -7869,8 +7886,7 @@
       h+='<div class="muted" style="font-size:11px;margin:10px 4px 0;line-height:1.5">Le solde monte tout seul du montant mensuel. Enregistre un prélèvement quand la facture est payée.</div>';
       h+='</div>';
       app.innerHTML=h;
-      setNav(null,false);
-      bindBack(function(){ state.provSel=null; state.view=state.provFrom||"compte"; state.provFrom=null; render(); });
+      setNav("factures", true); wireAvTabs();
       var ap=document.getElementById("addprov"); if(ap) ap.onclick=addProvision;
       wireMonthNav(month, curM, "provisions");
       [].forEach.call(document.querySelectorAll(".pvcol"), function(c){ c.onclick=function(){ state.provSel=c.getAttribute("data-m"); render(); }; });
@@ -8144,22 +8160,55 @@
       return out;
     }
 
-    // ----- Onglet Factures -----
+    // ----- Onglet À venir : 12 mois · Frais fixes · Provisions · Factures (Tickets Plus dans la version Store) -----
+    // Foyer : 12 mois, Provisions et Factures suivent les droits de l'onglet À venir (« factures »), Frais fixes ceux de Commun.
+    function avTabOn(m){ return fyTabOn(m, "factures") || fyTabOn(m, "communes"); }
+    function avSubs(){ var m=fyMember() ? fyCfg : null, fOn=!m || fyTabOn(m, "factures"), cOn=!m || fyTabOn(m, "communes"), out=[];
+      if(fOn) out.push(["mois","12 mois"]); if(cOn) out.push(["frais","Frais fixes"]); if(fOn){ out.push(["prov","Provisions"]); out.push(["fact","Factures"]); }
+      return out; }
+    function avSub(){ var L=avSubs(), s=state.avSub||"mois"; if(!L.some(function(x){ return x[0]===s; })) s=L.length ? L[0][0] : "mois"; return s; }
+    function avTabsHTML(cur){ var L=avSubs(); if(L.length<2) return '';
+      return '<div class="avtabs" role="tablist">'+L.map(function(x){ var on=x[0]===cur; return '<button type="button" role="tab" aria-selected="'+on+'" data-av="'+x[0]+'"'+(on?' class="on"':'')+'>'+x[1]+(x[0]==="fact" && !canUse("factures")?' <span class="avplus">✦</span>':'')+'</button>'; }).join("")+'</div>'; }
+    function wireAvTabs(){ [].forEach.call(document.querySelectorAll(".avtabs button"), function(b){ b.onclick=function(){ state.avSub=b.getAttribute("data-av"); render(); window.scrollTo(0,0); }; }); }
+    function factPlusAsk(){ uiChoice("Tickets Plus", "Importer tes factures (PDF ou photos), le prélèvement exact et la prochaine facture estimée font partie de Tickets Plus. L'achat de Plus arrivera bientôt dans l'appli.", [{ l:"D'accord", fn:function(){} }]); }
+    function avCanFrais(){ return !fyMember() || (fyCfg.role==="edit" && fyTabOn(fyCfg, "communes") && fyTabEd("communes")); }
     function renderFactures(){
-      var curM=monthKey(todayISO());
-      var h=header(false, "Factures");
-      if(!canUse("factures")){
-        h+='<div class="avlock-wrap"><div class="avblur"><section class="paper" style="height:240px"></section><section class="paper" style="height:150px;margin-top:12px"></section><section class="paper" style="height:110px;margin-top:12px"></section></div>'+
-           '<div class="avlock"><div style="font-size:30px">✦</div><h3>Mes factures</h3><p>Tes factures, tes provisions et les 12 prochains mois au même endroit. Tout est lu et calculé sur ton téléphone : rien n\'est envoyé.</p>'+
-           '<ul><li>Importer une facture : PDF ou photos</li><li>Le prélèvement exact dans « À venir »</li><li>La prochaine facture estimée</li><li>Provisions : prête à temps ou il manquera</li><li>Les 12 prochains mois en un coup d\'œil</li></ul>'+
-           '<button type="button" class="btn primary" id="fctBuy">Débloquer avec Tickets Plus</button><button type="button" class="btn ghost" id="fctLater" style="margin-top:8px">Plus tard</button>'+
-           '<div class="muted" style="font-size:12px;margin-top:10px">Tes provisions restent gratuites, dans Compte › Configuration.</div></div></div>';
-        app.innerHTML=h; setNav("factures", true);
-        document.getElementById("fctBuy").onclick=function(){ uiChoice("Tickets Plus", "Les factures font partie de Tickets Plus. L'achat de Plus arrivera bientôt dans l'appli.", [{ l:"D'accord", fn:function(){} }]); };
-        document.getElementById("fctLater").onclick=function(){ state.view="compte"; render(); };
+      var sub=avSub(); state.avSub=sub;
+      if(sub==="frais") return renderCommunes();
+      if(sub==="prov") return renderProvisions();
+      var curM=monthKey(todayISO()), ro=fyRO(), plus=canUse("factures");
+      var h=header(false, "À venir")+avTabsHTML(sub);
+      if(sub==="fact"){
+        if(!plus){
+          h+='<section class="fct-teaser"><h3>Tes factures, lues sur ton téléphone</h3><p>Électricité, gaz, eau, internet : un PDF de ton espace client ou une photo par page. Rien n\'est envoyé.</p>'+
+             '<ul><li>Le prélèvement exact dans « À venir »</li><li>La prochaine facture estimée, selon la saison</li><li>La provision qui lisse tes factures</li><li>Ta consommation et ton prix par kWh ou m³</li></ul>'+
+             '<button type="button" class="fct-plus" id="fctBuy">✦ Importer une facture avec Tickets Plus</button></section>'+
+             '<div class="muted" style="font-size:12.5px;line-height:1.45;text-align:center;margin:12px 4px">Les 12 mois, les frais fixes et les provisions restent gratuits.</div>';
+          app.innerHTML=h; setNav("factures", true); wireAvTabs();
+          document.getElementById("fctBuy").onclick=factPlusAsk;
+          return;
+        }
+        var S=factSeries();
+        if(!S.length) h+='<div class="empty">Importe une facture d\'électricité, d\'eau, de gaz ou d\'internet : en PDF, ou en photos page par page.<br>L\'appli en tire le prélèvement, la prochaine facture et ce qu\'il faut mettre de côté.</div>';
+      S.slice().sort(function(a,b){ return (a.next||"9")<(b.next||"9")?-1:1; }).forEach(function(s){
+        var est=s.next?factEstimate(s, s.next):0, ty=factType(s.type), cat=catIcon(ty.l+" "+s.four), when=s.next?(isoDays(todayISO(), s.next)<=60?"vers le "+ddmm(s.next):MOIS_NOMS[+s.next.slice(5,7)-1]):"";
+        var pv=s.prov, pa=null; if(pv && s.next) pa=factProvAt(pv, factPayIso(s, s.next), est);
+        h+='<button type="button" class="fct-card'+(pa && pa.manque>0.5?' warn':'')+'" data-k="'+esc(s.key)+'"><span class="fct-top"><span class="fct-ic" style="background:'+hexA(cat.col,.16)+'">'+ty.ic+'</span>'+
+           '<span class="fct-n"><b>'+esc(s.four||ty.l)+'</b><small>'+esc(ty.l+' · '+factRythLabel(s.ryth)+' · '+fmtK(factMonthly(s))+'/mois en moyenne')+'</small></span>'+
+           '<span class="fct-v"><b>'+(est?'≈ '+esc(fctE(est)):'—')+'</b><small>'+esc(when)+'</small></span></span>';
+        if(pv){ var w=est>0?Math.min(100, pa.bal/est*100):0;
+          h+='<span class="fct-bar"><i style="width:'+w.toFixed(0)+'%"></i></span><span class="fct-s">Provision : '+esc(fmtK(provBalance(pv, curM)))+' de côté · +'+esc(fmtK(mensuelAt(pv, curM)))+'/mois · '+(pa.manque>0.5?'<span class="fct-warn">il manquera '+esc(fmtK(pa.manque))+'</span>':'<span class="fct-ok">prête pour '+esc(MOIS_NOMS[+s.next.slice(5,7)-1])+'</span>')+'</span>'; }
+        else if(s.ryth>=2) h+='<span class="fct-s">Pas de provision · '+esc(fmtK(Math.ceil(factMonthly(s))))+'/mois la lisserait</span>';
+        h+='</button>';
+      });
+        if(!ro) h+='<div class="ui-stack" style="margin-top:4px"><button type="button" class="btn primary" id="fctImp">Importer une facture</button></div>';
+        app.innerHTML=h; setNav("factures", true); wireAvTabs();
+        [].forEach.call(document.querySelectorAll(".fct-card[data-k]"), function(b){ b.onclick=function(){ state.factKey=b.getAttribute("data-k"); state.view="factserie"; render(); window.scrollTo(0,0); }; });
+        var bi=document.getElementById("fctImp"); if(bi) bi.onclick=factImportChooser;
         return;
       }
-      var Y=factYear(), sel=state.factSel && Y.some(function(t){ return t.mk===state.factSel; }) ? state.factSel : curM, S=factSeries(), ro=fyRO();
+      // 12 mois : frais fixes, factures reçues (ou estimées) et échéances des provisions
+      var Y=factYear(), sel=state.factSel && Y.some(function(t){ return t.mk===state.factSel; }) ? state.factSel : curM;
       var T=Y.filter(function(t){ return t.mk===sel; })[0], tot=T.base+T.real+T.est, fact=T.real+T.est, mi=+sel.split("-")[1]-1;
       h+='<section class="paper fct-hero"><div class="fct-h"><span>Les 12 prochains mois</span><small>sorties prévues</small></div>';
       h+='<div class="fct-read"><b>'+esc(capFirst(MOIS_NOMS[mi]))+(sel.slice(0,4)!==curM.slice(0,4)?' '+sel.slice(0,4):'')+' : '+esc(fmtK(tot))+' prévus</b><br>Frais fixes '+esc(fmtK(T.base))+(fact>0.004?' · factures '+esc(fmtK(fact))+' ('+T.items.map(function(x){ return esc(x.n)+' '+(x.est?'≈ '+esc(fctE(x.v)):esc(fmtK(x.v))); }).join(", ")+')':'')+
@@ -8174,44 +8223,18 @@
           h+='<div class="ops-r av"><span class="ops-ic k-f">'+opsIco("f")+'</span><span class="ops-t"><b>'+esc(f.label)+'</b><small>'+esc((x.d?(x.d<10?"0":"")+x.d+"/"+x.m.slice(5,7):(x.m===curM?"ce mois-ci":capFirst(MOIS_NOMS[+x.m.slice(5,7)-1])))+(tag?' · '+tag:(f.fact?' · prélèvement':' · frais fixe')))+'</small></span><b class="ops-a">'+(f.est?'≈ −'+esc(fctE(x.v)):opsAmt(-x.v))+'</b></div>'; });
         h+='</section>';
       }
-      // factures et provisions
-      var provTot=0; provisions.forEach(function(p){ if(!p.startMonth || p.startMonth<=curM) provTot+=provBalance(p, curM); });
-      h+='<div class="bsec-h">Factures et provisions'+(provisions.length?'<small>De côté : <b style="color:#c78bd6">'+esc(fmtK(provTot))+'</b></small>':'')+'</div><div style="height:10px"></div>';
-      if(!S.length && !provisions.length) h+='<div class="empty">Importe une facture d\'électricité, d\'eau, de gaz ou d\'internet : en PDF, ou en photos page par page.<br>L\'appli en tire le prélèvement, la prochaine facture et ce qu\'il faut mettre de côté.</div>';
-      S.slice().sort(function(a,b){ return (a.next||"9")<(b.next||"9")?-1:1; }).forEach(function(s){
-        var est=s.next?factEstimate(s, s.next):0, ty=factType(s.type), cat=catIcon(ty.l+" "+s.four), when=s.next?(isoDays(todayISO(), s.next)<=60?"vers le "+ddmm(s.next):MOIS_NOMS[+s.next.slice(5,7)-1]):"";
-        var pv=s.prov, pa=null; if(pv && s.next) pa=factProvAt(pv, factPayIso(s, s.next), est);
-        h+='<button type="button" class="fct-card'+(pa && pa.manque>0.5?' warn':'')+'" data-k="'+esc(s.key)+'"><span class="fct-top"><span class="fct-ic" style="background:'+hexA(cat.col,.16)+'">'+ty.ic+'</span>'+
-           '<span class="fct-n"><b>'+esc(s.four||ty.l)+'</b><small>'+esc(ty.l+' · '+factRythLabel(s.ryth)+' · '+fmtK(factMonthly(s))+'/mois en moyenne')+'</small></span>'+
-           '<span class="fct-v"><b>'+(est?'≈ '+esc(fctE(est)):'—')+'</b><small>'+esc(when)+'</small></span></span>';
-        if(pv){ var w=est>0?Math.min(100, pa.bal/est*100):0;
-          h+='<span class="fct-bar"><i style="width:'+w.toFixed(0)+'%"></i></span><span class="fct-s">Provision : '+esc(fmtK(provBalance(pv, curM)))+' de côté · +'+esc(fmtK(mensuelAt(pv, curM)))+'/mois · '+(pa.manque>0.5?'<span class="fct-warn">il manquera '+esc(fmtK(pa.manque))+'</span>':'<span class="fct-ok">prête pour '+esc(MOIS_NOMS[+s.next.slice(5,7)-1])+'</span>')+'</span>'; }
-        else if(s.ryth>=2) h+='<span class="fct-s">Pas de provision · '+esc(fmtK(Math.ceil(factMonthly(s))))+'/mois la lisserait</span>';
-        h+='</button>';
-      });
-      provisions.forEach(function(p){
-        if(p.fact && S.some(function(s){ return s.key===p.fact; })) return;
-        if(p.startMonth && p.startMonth>curM) return;
-        var ec=provEcheance(p, curM), bal=provBalance(p, curM), warn=ec && ec.prevu && ec.manque>=0.005;
-        h+='<button type="button" class="fct-card prov'+(warn?' warn':'')+'" data-p="'+esc(p.id)+'"><span class="fct-top"><span class="fct-ic" style="background:rgba(199,139,214,.16)">'+catIcon(p.nom).e+'</span>'+
-           '<span class="fct-n"><b>'+esc(p.nom)+'</b><small>Provision'+(ec?' · facture en '+esc(MOIS_NOMS[+ec.due.split("-")[1]-1]):'')+'</small></span>'+
-           '<span class="fct-v"><b>'+(ec && ec.prevu?esc(fmtK(ec.prevu)):esc(fmtK(bal)))+'</b><small>'+(ec && ec.prevu?'prévue':'de côté')+'</small></span></span>';
-        if(ec){ var g=ec.prevu||ec.proj||1; h+='<span class="fct-bar"><i style="width:'+Math.min(100, bal/g*100).toFixed(0)+'%"></i></span>'; }
-        h+='<span class="fct-s">'+esc(fmtK(bal))+' de côté · +'+esc(fmtK(mensuelAt(p, curM)))+'/mois'+(ec && ec.prevu?' · '+(warn?'<span class="fct-warn">il manquera '+esc(fmtK(ec.manque))+'</span>':'<span class="fct-ok">prête à temps</span>'):'')+'</span></button>';
-      });
-      if(!ro) h+='<div class="fct-btns"><button type="button" class="btn primary" id="fctImp">Importer une facture</button><button type="button" class="btn" id="fctProv">+ Provision</button></div>';
-      if(provisions.length) h+='<div class="ui-stack" style="margin-top:8px"><button type="button" class="btn ghost" id="fctAllProv">Toutes les provisions ›</button></div>';
-      app.innerHTML=h; setNav("factures", true);
+      if(!fraisCommuns.length && !provisions.length && !factures.length) h+='<div class="empty">Ajoute tes frais fixes (loyer, abonnements…) et tes provisions : les 12 prochains mois se remplissent tout seuls.</div>';
+      var bts=(!ro ? '<button type="button" class="btn primary" id="fctImp">'+(plus?'':'<span class="avplus">✦</span> ')+'Importer une facture</button>' : '')+(avCanFrais() ? '<button type="button" class="btn" id="avAddFrais">+ Frais fixe</button>' : '');
+      if(bts) h+='<div class="fct-btns">'+bts+'</div>';
+      app.innerHTML=h; setNav("factures", true); wireAvTabs();
       [].forEach.call(document.querySelectorAll(".fct-col"), function(b){ b.onclick=function(){ state.factSel=b.getAttribute("data-m"); render(); }; });
-      [].forEach.call(document.querySelectorAll(".fct-card[data-k]"), function(b){ b.onclick=function(){ state.factKey=b.getAttribute("data-k"); state.view="factserie"; render(); window.scrollTo(0,0); }; });
-      [].forEach.call(document.querySelectorAll(".fct-card[data-p]"), function(b){ b.onclick=function(){ if(!state.months) state.months={}; state.months.provisions=null; state.provFrom="factures"; state.view="provisions"; render(); window.scrollTo(0,0); }; });
       var bi=document.getElementById("fctImp"); if(bi) bi.onclick=factImportChooser;
-      var bp=document.getElementById("fctProv"); if(bp) bp.onclick=addProvision;
-      var ba=document.getElementById("fctAllProv"); if(ba) ba.onclick=function(){ if(!state.months) state.months={}; state.months.provisions=null; state.provFrom="factures"; state.view="provisions"; render(); window.scrollTo(0,0); };
+      var bf=document.getElementById("avAddFrais"); if(bf) bf.onclick=addFraisCommun;
     }
 
     // ----- Une série en détail -----
     function renderFactSerie(){
+      if(!canUse("factures")){ state.view="factures"; state.avSub="fact"; return renderFactures(); }
       var S=factSeries(), s=S.filter(function(x){ return x.key===state.factKey; })[0];
       if(!s){ state.view="factures"; return renderFactures(); }
       var curM=monthKey(todayISO()), ty=factType(s.type), est=s.next?factEstimate(s, s.next):0, ro=fyRO();
@@ -8330,7 +8353,7 @@
       factImgIn.onchange=function(ev){ var fs=ev.target.files ? [].slice.call(ev.target.files) : []; ev.target.value=""; if(fs.length) factFromPhotos(fs, !!factImgIn._add); factImgIn._add=false; };
     }
     function factImportChooser(){
-      if(!canUse("factures")){ uiToast("Les factures font partie de Tickets Plus"); return; }
+      if(!canUse("factures")){ factPlusAsk(); return; }
       factInputs();
       uiChoice("Importer une facture", "Elle est lue sur ton téléphone : rien n'est envoyé.", [
         { l:"Un ou plusieurs PDF (espace client)", primary:true, fn:function(){ factPdfIn.click(); } },
@@ -8443,6 +8466,7 @@
       return out;
     }
     function renderFactLue(){
+      if(!canUse("factures")){ state.view="factures"; state.avSub="fact"; return renderFactures(); }
       var d=state.factDraft, ro=fyRO();
       if(!d){ state.view="factures"; return renderFactures(); }
       var h=header(true, "Facture");
@@ -8678,7 +8702,7 @@
     var FY_KEYS={ entries:"id", virements:"id", fraisCommuns:"id", epargne:"id", provisions:"id", factures:"id", bourse:"id", comptes:"key", personnes:"nom",
       argentMois:2, liquideMois:2, soldeInit:2, budgets:1, budgetsP:2, appris:1, familleDe:1, communParts:0, cats:0, familles:0, produits:0, devise:0 };
     var FY_OWNER_ONLY={ bourse:1 };   // la Bourse se gère depuis le téléphone du propriétaire (cours mis à jour en continu)
-    var FY_TABS=[{v:"list",l:"Accueil"},{v:"articles",l:"Articles"},{v:"communes",l:"Commun"},{v:"compte",l:"Compte"},{v:"factures",l:"Factures"}].concat(FEAT.bourse?[{v:"bourse",l:"Bourse"}]:[]).concat([{v:"analyse",l:"Analyse"}]);
+    var FY_TABS=[{v:"list",l:"Accueil"},{v:"articles",l:"Articles"},{v:"communes",l:"Commun"},{v:"compte",l:"Compte"},{v:"factures",l:"À venir"}].concat(FEAT.bourse?[{v:"bourse",l:"Bourse"}]:[]).concat([{v:"analyse",l:"Analyse"}]);
     var FY_SUB={ import:"compte", avancee:"analyse", epargne:"compte", form:"list", gallery:"list", photo:"list", produits:"articles", artDetail:"articles", comptedet:"compte", patrimoine:"compte", provisions:"factures", factlue:"factures", factserie:"factures", month:"analyse", graph:"analyse", history:"analyse" };
     var FY_SEP="\u001f", FY_SKIP={};
     function fyRole(){ return fyCfg ? fyCfg.role : null; }
@@ -8689,7 +8713,7 @@
     function fyEdTabs(m){ if(!m || m.role==="owner") return FY_TABS.map(function(t){ return t.v; }); if(m.role!=="edit") return [];
       if(Array.isArray(m.ed)) return m.ed; return m.tabs ? m.tabs.slice() : FY_TABS.map(function(t){ return t.v; }); }
     function fyTabEd(t){ return !fyMember() || fyEdTabs(fyCfg).indexOf(t)>=0; }   // ce téléphone peut-il modifier cet onglet ?
-    function fyCurTab(){ var v=state.view; return FY_SUB[v]||v; }
+    function fyCurTab(){ var v=state.view; if(v==="factures" && avSub()==="frais") return "communes"; return FY_SUB[v]||v; }   // À venir › Frais fixes : droits de Commun
     // lecture seule : membre en consultation, ou onglet affiché en lecture
     function fyRO(){ if(!fyCfg || !fyMember()) return false; if(fyCfg.role==="view") return true; var t=fyCurTab(); if(t==="foyer" || t==="bilan") return false; return !fyTabEd(t==="form"?"list":t); }
     function fyTabOn(m, t){ return !m || !m.tabs || t==="list" || m.tabs.indexOf(t)>=0; }   // l'Accueil (personnel) est toujours là
@@ -9184,13 +9208,13 @@
       document.body.classList.toggle("fy-mem", fyMember());
     }
     function fyNavFilter(){
-      [].forEach.call(navEl.querySelectorAll(".navi"), function(b){ b.style.display=(fyMember() && !fyTabOn(fyCfg, b.getAttribute("data-view")))?"none":""; });
+      [].forEach.call(navEl.querySelectorAll(".navi"), function(b){ var v=b.getAttribute("data-view"); b.style.display=(fyMember() && !(v==="factures" ? avTabOn(fyCfg) : fyTabOn(fyCfg, v)))?"none":""; });
     }
     function fyViewGuard(){
       if(!fyMember() || !FY_SUB) return;
       var v=state.view; if(v==="foyer" || v==="bilan") return;
       if(v==="form" || v==="photo"){ if((fyCfg.role==="edit" && fyTabEd("list")) || state.draftRO || v==="photo") return; state.view=fyFirstTab(); state.draft=null; return; }   // modification : saisir ; consultation : voir un ticket
-      var tb=FY_SUB[v]||v; if(!fyTabOn(fyCfg, tb)) state.view=fyFirstTab();
+      var tb=FY_SUB[v]||v; if(!(v==="factures" ? avTabOn(fyCfg) : fyTabOn(fyCfg, tb))) state.view=fyFirstTab();
     }
     function fyRoStrip(){
       if(!fyRO()) return;

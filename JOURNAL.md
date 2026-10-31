@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `31/10 15:26`, environ 9 700 lignes.
+- β web : `beta/index.html`, étiquette `31/10 19:58`, environ 9 700 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -27,19 +27,20 @@ Après chaque modification, dans le même commit :
 **Onglets**
 - **Accueil** : graphiques choisis par l'utilisateur (⚙ Choisir, appui long pour changer, déplacer ou masquer), grande carte du haut au choix. Pastilles ✍️ Saisie et 🧾 Tickets. Filtre par personne en haut à droite. Rien sous les graphiques.
 - **Articles** : produits et prix (Mes produits, Hausses, Magasins, Familles, Budgets). Fiche produit avec tous les achats. Bouton « Produits partagés ».
-- **Commun** : parts du commun en % et parts propres à chaque frais. Frais fixes « en entier » ou « chacun sa part », frais retirés pour un mois. Graphique Mois (6, 12, 12 à venir, Tout). Bandeau des personnes.
+- **Commun** : parts du commun en % et parts propres à chaque frais. Graphique Mois (6, 12, 12 à venir, Tout). Bandeau des personnes. Les frais communs du mois y sont à voir ; ils se modifient dans À venir › Frais fixes.
 - **Compte** :
   - s'ouvre sur la **liste des opérations du mois**, comme un relevé de banque : solde estimé, Entrées / Sorties / Fin de mois, filtres Tout · Entrées · Sorties · À venir, recherche (nom ou montant, avec le total), bloc « À venir » avec un rond pour marquer « fait », puis les opérations par jour (le plus récent en haut) avec le solde du soir, et le report en bas ;
   - les graphiques d'avant sont sur la page « Graphiques » (bouton), en plein écran ;
   - plusieurs comptes par personne, sur une rangée qui défile (la carte des comptes garde la même hauteur) ;
-  - page Configuration par compte (provisions, toujours gratuites ; épargne ; **Importer un relevé** ; « Annuler le dernier import ») ;
+  - page Configuration par compte (épargne ; **Importer un relevé** ; « Annuler le dernier import » ; la ligne Provisions ouvre À venir › Provisions) ;
   - bouton « Liquide » ;
   - rien avant le début du suivi ;
   - mois à venir = solde prévu.
-- **Factures** (Tickets Plus dans la version Store) :
+- **À venir** (ex Factures, ouvert à tous ; seule la partie Factures est dans Tickets Plus en Store) : sous-onglets **12 mois · Frais fixes · Provisions · Factures** ;
+  - Frais fixes : tous (communs et perso), comme l'ancienne page de Commun ; Provisions : l'ancienne page de Compte › Configuration ;
   - les 12 prochains mois : frais fixes, factures reçues ou estimées, échéances des provisions ; un mois en jaune s'il manquera de l'argent dans une provision ; toucher un mois donne le détail ;
   - « À payer bientôt » (30 jours, tous comptes) ;
-  - une carte par fournisseur (prochaine facture estimée, moyenne par mois, provision : « prête pour … » ou « il manquera … »), puis les provisions sans facture ;
+  - Factures : une carte par fournisseur (prochaine facture estimée, moyenne par mois, provision : « prête pour … » ou « il manquera … ») ; en Store sans Plus, ce que Plus apporte et un seul bouton ✦ ;
   - « Importer une facture » : un ou plusieurs PDF (texte lu sur le téléphone par pdf.js ; avec plusieurs PDF, les plus anciens vont dans l'historique et la plus récente est à vérifier), ou des photos page par page (ML Kit, « + Page suivante », page tournée remise droite) ;
   - la facture lue : champs modifiables, comparaison avec l'an dernier, et trois effets à cocher : le prélèvement (ou « à payer ») dans « À venir » à la place du frais fixe estimé ce mois-là, la prochaine facture estimée, la provision (créer, ou payer la facture avec) ;
   - détail d'un fournisseur : provision, factures en barres avec la prochaine estimée, moyenne par mois, consommation sur 12 mois, prix moyen, liste (toucher pour supprimer).
@@ -66,11 +67,11 @@ Après chaque modification, dans le même commit :
 
 **Import d'un relevé** (menu et Compte › Configuration) : OFX/QFX, QIF, CSV lus sur le téléphone, aperçu à cocher, import en une fois, annulable. Détails dans `CLAUDE.md`.
 
-**Version Store** : `PLUS_FEATURES = widgets, foyer, avancee, factures`. L'achat de Plus n'est pas encore branché. L'import de relevé est gratuit pour l'instant.
+**Version Store** : `PLUS_FEATURES = widgets, foyer, avancee, factures` (« factures » = importer et suivre ses factures ; le reste d'À venir est gratuit). L'achat de Plus n'est pas encore branché. L'import de relevé est gratuit pour l'instant.
 
 ## En cours / à reprendre
 
-- **Réorganisation de l'appli** (31/10, à valider par Benoît, rien de changé) : il trouve l'organisation et l'accès aux fonctions peu clairs. Plan proposé dans la maquette « Tickets — Plan de l'appli » : un onglet = une question, chaque chose à un seul endroit, sous-onglets visibles au lieu de « Configuration », ✦ partout pareil (on voit la fonction, seul le bouton demande Plus). Onglets proposés : Accueil · Dépenses (Articles + Analyse) · Compte (Opérations · Virements · Épargne · Graphiques, roue du compte) · À venir (ex Factures, ouvert à tous : 12 mois · Frais fixes · Provisions gratuits, Factures ✦, Projection ✦) · Commun (parts seulement) · Bourse. En 4 étapes, À venir d'abord (sa question : les provisions dans Factures). Décidé le 31/10 : nom « À venir », 12 mois gratuits. Maquette de l'étape 1 (12 mois, Frais fixes, Provisions, Factures ✦ en Store sans Plus, Commun après) sur le même canevas : en attente de « tu peux intégrer ».
+- **Réorganisation de l'appli** (31/10) : il trouve l'organisation et l'accès aux fonctions peu clairs. Plan proposé dans la maquette « Tickets — Plan de l'appli » : un onglet = une question, chaque chose à un seul endroit, sous-onglets visibles au lieu de « Configuration », ✦ partout pareil (on voit la fonction, seul le bouton demande Plus). Onglets proposés : Accueil · Dépenses (Articles + Analyse) · Compte (Opérations · Virements · Épargne · Graphiques, roue du compte) · À venir (ex Factures, ouvert à tous : 12 mois · Frais fixes · Provisions gratuits, Factures ✦, Projection ✦) · Commun (parts seulement) · Bourse. En 4 étapes, À venir d'abord (sa question : les provisions dans Factures). Décidé le 31/10 : nom « À venir », 12 mois gratuits. **Étape 1 (À venir) intégrée le 31/10.** Suite : étape 2 (Compte : sous-onglets Opérations · Virements · Épargne · Graphiques, roue du compte), maquette d'abord.
 
 - **Sans réseau** (31/10) : à essayer par Benoît en mode avion avec les nouveaux APK.
   - Perso : installer le nouvel APK, l'ouvrir une fois avec du réseau (la copie s'enregistre), puis en mode avion.
@@ -102,6 +103,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **31/10** : étape 1 de la réorganisation intégrée (« tu peux intégrer ») : onglet À venir.
 - **31/10** : réorganisation de l'appli : l'onglet Factures s'appellera « À venir » ; dans la version Store, les 12 prochains mois y sont gratuits (seules les factures, et leurs estimations, sont dans Plus).
 - **31/10** : estimation des factures selon la saison (l'hiver consomme plus), pour les deux applis.
 - **31/10** : l'appli doit marcher sans réseau. La version Store est une appli standard : entièrement dans l'APK, mises à jour par le Store comme les autres applis, aucune connexion nécessaire pour l'usage normal. La version Perso reste chargée en ligne (corrections tout de suite) avec une copie gardée pour marcher sans réseau.
@@ -151,7 +153,15 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 31/10
-- **Étape 1 (À venir)** : maquette ajoutée au canevas « Tickets — Plan de l'appli ». Rien de changé dans l'appli.
+- **Réorganisation, étape 1 : onglet À venir** (d'après la maquette) :
+  - l'onglet Factures devient « À venir », ouvert à tous, avec 4 sous-onglets (`state.avSub` : `mois`, `frais`, `prov`, `fact` ; `avTabsHTML`, `wireAvTabs`) ;
+  - Frais fixes = l'ancienne page Frais fixes de Commun (`renderCommunes` en mode À venir) ; Provisions = l'ancienne page Provisions (`renderProvisions`, la vue `provisions` y mène) ;
+  - Commun : plus de « + Frais fixe » ; une section « Frais communs » à voir, qui ouvre À venir › Frais fixes ; une barre du graphique y mène aussi ;
+  - Compte › Configuration › Provisions et le graphique Provisions ouvrent À venir › Provisions ;
+  - version Store sans Plus : 12 mois, Frais fixes et Provisions gratuits ; Factures montre ce que Plus apporte, seul le bouton demande Plus (`factPlusAsk`) ; plus d'écran bloquant ;
+  - foyer : l'onglet À venir apparaît si le membre a À venir ou Commun ; ses Frais fixes suivent les droits de Commun (`fyCurTab`), le reste ceux d'À venir (`avSubs`, `avTabOn`). Rien n'est ouvert en plus à un membre ;
+  - essais : onglets, 4 sous-onglets, liens depuis Commun et Compte, Store sans Plus, deux membres aux droits différents.
+- **Étape 1 (À venir)** : maquette ajoutée au canevas « Tickets — Plan de l'appli ».
 - **Plan de l'appli** : maquette « Tickets — Plan de l'appli » (aujourd'hui / proposé / ce qui bouge / étapes, écrans Compte et À venir). Rien de changé dans l'appli.
 - **Estimation des factures selon la saison** (Benoît : l'estimation EDF de décembre, ≈ 75 €, baissait alors que l'hiver arrive) : l'ancien calcul prenait l'an dernier à la même période (854 kWh) et lui appliquait la baisse vue sur la dernière facture (−65 % en septembre-octobre, avec du soleil pour les panneaux) ; or l'an dernier la consommation avait baissé de l'automne à l'hiver (changement chez Benoît). Maintenant (`factEstInfo`) :
   - avec au moins 4 factures sur 8 mois ou plus dans les 12 derniers mois, le **profil du foyer** est appris (`factProfil`) : consommation par jour ≈ niveau × (1 + A·cos), au plus haut mi-janvier, les factures récentes comptant plus ; A est appris (fort avec des panneaux solaires, négatif avec une clim) ;
