@@ -17,7 +17,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 
 | Chemin | Rôle |
 |---|---|
-| `beta/index.html` | **L'appli** (≈ 6 800 lignes) : HTML + CSS + JS dans un seul fichier. Servie par GitHub Pages (`/Tickets-/beta/`). |
+| `beta/index.html` | **L'appli** (≈ 9 700 lignes) : HTML + CSS + JS dans un seul fichier. Servie par GitHub Pages (`/Tickets-/beta/`). |
 | `index.html`, `sw.js`, `manifest.webmanifest` | Ancienne version stable à la racine + service worker (réseau d'abord). |
 | `relais/cours-worker.js` | Worker Cloudflare : cours Yahoo / CoinGecko (`/search`, `/quote`, `/chart`, `/crypto/*`), inflation INSEE (`/inflation`) et routage `/foyer`. |
 | `relais/foyer.js` | Foyer partagé : un Durable Object SQLite par foyer (classe `Foyer`). |
