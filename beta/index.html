@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="31/10 09:19" />
+  <meta name="build" content="31/10 15:26" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -7996,27 +7996,89 @@
     function factNextDate(s){ var L=s.last; if(L.next && L.next>L.date) return L.next; return L.date ? isoAddMonths(L.date, s.ryth) : ""; }
     // Montant d'une facture à venir : même période l'an dernier, corrigée de l'évolution de la consommation ;
     // avec au moins 3 factures et leur consommation, montant = part fixe + prix × consommation attendue.
-    function factEstimate(s, iso){
-      var B=s.bills.filter(function(b){ return b.montant>0 && !b.regul && b.date; }); if(!B.length) return 0;
+    // Saison : l'hiver consomme plus (éclairage, chauffage, moins de soleil pour les panneaux). Profil simple, sans données
+    // extérieures : 1 + A·cos(…), au plus haut mi-janvier. A est appris sur les factures du foyer (factProfil) ;
+    // à défaut, selon l'énergie (0 = pas de saison, ex. l'eau).
+    var FACT_SAISON={ elec:0.35, gaz:0.6 };
+    function factSaison(type, d1, d2){ return factSaisonA(FACT_SAISON[type]||0, d1, d2); }
+    function factSaisonA(A, d1, d2){
+      if(!A || !d1 || !d2 || d2<=d1) return 1;
+      var n=isoDays(d1, d2), t0=new Date(d1+"T12:00:00").getTime(), sum=0, k=0;
+      for(var i=0;i<=n;i+=3){ var t=new Date(t0+i*86400000), doy=Math.round((t-new Date(t.getFullYear(), 0, 1, 12))/86400000)+1; sum+=1+A*Math.cos(2*Math.PI*(doy-15)/365); k++; }
+      return sum/k;
+    }
+    // période couverte par une facture : du → au, sinon depuis la facture d'avant, sinon le rythme
+    function factPeriode(s, b){
+      if(b.du && b.au && b.au>b.du) return [b.du, b.au];
+      var i=s.bills.indexOf(b), pv=i>0 ? s.bills[i-1] : null;
+      if(pv && pv.date && b.date && pv.date<b.date) return [pv.date, b.date];
+      return b.date ? [isoAddMonths(b.date, -(s.ryth||1)), b.date] : null;
+    }
+    // Profil du foyer, appris sur les factures des 12 derniers mois (au moins 4, sur 8 mois ou plus) : consommation par jour
+    // ≈ niveau × (1 + A·cos(…)), les factures récentes comptant plus. Avec des panneaux solaires, l'écart hiver / été est
+    // bien plus fort que d'habitude : il est appris ici. null s'il y a trop peu de factures.
+    function factProfil(s, B){
+      var L=B[B.length-1], pL=factPeriode(s, L); if(!pL) return null;
+      var rows=[], first=pL[0];
+      B.forEach(function(b){ var p=b.conso>0 ? factPeriode(s, b) : null; if(!p) return; var age=isoDays(p[1], pL[1]), n=isoDays(p[0], p[1]);
+        if(age<0 || age>335 || n<10) return; rows.push({ p:p, y:Math.log(b.conso/n), w:Math.pow(0.5, age/180) }); if(p[0]<first) first=p[0]; });
+      if(rows.length<4 || isoDays(first, pL[1])<240) return null;
+      var best=null;
+      for(var i=-30;i<=45;i++){ var A=i/50, sw=0, sm=0, e=0, fs=rows.map(function(r){ return Math.log(factSaisonA(A, r.p[0], r.p[1])); });
+        rows.forEach(function(r, j){ sw+=r.w; sm+=r.w*(r.y-fs[j]); }); var m=sm/sw;
+        rows.forEach(function(r, j){ e+=r.w*Math.pow(r.y-fs[j]-m, 2); });
+        if(!best || e<best.e) best={ A:A, lvl:Math.exp(m), e:e }; }
+      return best;
+    }
+    // Facture estimée à la date iso. Avec la consommation : le profil du foyer selon la saison ; sinon la consommation par jour
+    // de la dernière facture, corrigée de la saison et mêlée à l'an dernier à la même période (corrigé de l'évolution) si la
+    // consommation a peu changé d'une année sur l'autre ; puis le prix (part fixe + prix du kWh) tiré des factures.
+    // Sans consommation : l'an dernier, sinon la moyenne des dernières.
+    function factEstInfo(s, iso){
+      var B=s.bills.filter(function(b){ return b.montant>0 && !b.regul && b.date; }); if(!B.length) return { v:0, how:"" };
       function near(d, tol){ var best=null, bd=1e9; B.forEach(function(b){ var x=Math.abs(isoDays(b.date, d)); if(x<=tol && x<bd){ bd=x; best=b; } }); return best; }
       var L=B[B.length-1], Lp=L.conso ? near(isoAddDays(L.date, -365), 45) : null;
       var r=(Lp && Lp.conso && L.conso) ? Math.max(0.3, Math.min(3, L.conso/Lp.conso)) : 1;
       var b0=near(isoAddDays(iso, -365), 45); if(b0===L) r=1;   // l'an dernier, c'est déjà la dernière facture : l'évolution y est
-      var C=B.filter(function(b){ return b.conso>0; }).slice(-8);
-      var cEst=(b0 && b0.conso) ? b0.conso*r : (L.conso||0);
-      if(C.length>=3 && cEst>0){
-        var n=C.length, mx=0, my=0; C.forEach(function(b){ mx+=b.conso; my+=b.montant; }); mx/=n; my/=n;
-        var sxx=0, sxy=0; C.forEach(function(b){ sxx+=(b.conso-mx)*(b.conso-mx); sxy+=(b.conso-mx)*(b.montant-my); });
-        if(sxx>0){ var k=sxy/sxx, a=my-k*mx; if(k>0) return Math.round(Math.max(Math.min.apply(null, C.map(function(b){ return b.montant; }))*0.5, a+k*cEst)); }
+      var cS=0, cY=0, wY=0, dL=0, dT=0, pL=factPeriode(s, L), P=null;
+      if(L.conso>0 && pL){
+        var st=isoAddMonths(iso, -(s.ryth||1)); if(pL[1]>st && pL[1]<iso) st=pL[1];
+        dL=Math.max(1, isoDays(pL[0], pL[1])); dT=Math.max(1, isoDays(st, iso));
+        P=factProfil(s, B);
+        cS=P ? P.lvl*factSaisonA(P.A, st, iso)*dT : L.conso/dL*dT*factSaison(s.type, st, iso)/factSaison(s.type, pL[0], pL[1]);
       }
-      if(b0) return Math.round(b0.montant*(0.35+0.65*r));
-      var l3=B.slice(-3); return Math.round(l3.reduce(function(t,b){ return t+b.montant; },0)/l3.length);
+      if(b0 && b0.conso && !P){ cY=b0.conso*r; wY=cS>0 ? (b0===L ? 0.5 : 0.5*Math.max(0, 1-Math.abs(Math.log(r))/Math.LN2)) : 1; }
+      var cEst=cS>0 ? cS*(1-wY)+cY*wY : cY, how=P ? "profil" : (cS>0 ? (wY>0.05 ? "mix" : "saison") : "");
+      if(cEst>0){
+        var C=B.filter(function(b){ return b.conso>0; }).slice(-8);
+        if(C.length>=3){
+          var n=C.length, mx=0, my=0; C.forEach(function(b){ mx+=b.conso; my+=b.montant; }); mx/=n; my/=n;
+          var sxx=0, sxy=0; C.forEach(function(b){ sxx+=(b.conso-mx)*(b.conso-mx); sxy+=(b.conso-mx)*(b.montant-my); });
+          if(sxx>0){ var k=sxy/sxx, a=my-k*mx; if(k>0) return { v:Math.round(Math.max(Math.min.apply(null, C.map(function(b){ return b.montant; }))*0.5, a+k*cEst)), how:how||"an", b0:b0 }; }
+        }
+        // peu de factures : environ un tiers fixe (selon la durée), le reste selon la consommation
+        if(cS>0) return { v:Math.round(L.montant*(0.35*(dT/dL)+0.65*cEst/L.conso)), how:how, b0:b0 };
+      }
+      if(b0) return { v:Math.round(b0.montant*(0.35+0.65*r)), how:"an", b0:b0 };
+      var l3=B.slice(-3); return { v:Math.round(l3.reduce(function(t,b){ return t+b.montant; },0)/l3.length), how:"" };
+    }
+    function factEstimate(s, iso){ return factEstInfo(s, iso).v; }
+    // Prochaine facture estimée déjà dans « À venir » : elle suit l'estimation du moment (calcul amélioré, factures ajoutées)
+    function factEstRefresh(){
+      if(fyMember() || !factures.length) return;
+      var S={}, ch=false; factSeries().forEach(function(s){ S[s.key]=s; });
+      fraisCommuns.forEach(function(f){ var s=f.est && f.fact && f.month ? S[f.fact] : null; if(!s || !s.next || fraisDone(f, f.month)) return;
+        var v=factEstimate(s, s.next); if(v>0 && Math.abs(v-(Number(f.montant)||0))>=1){ f.montant=v; ch=true; } });
+      if(ch) persistFrais();
     }
     function fctE(n){ return String(Math.round(Number(n)||0)).replace(/\B(?=(\d{3})+(?!\d))/g, " ")+" "+curSym(); }   // un montant estimé : à l'euro près
     function factEstWhy(s, iso){
-      var b0=null; s.bills.forEach(function(b){ if(!b.regul && b.date && Math.abs(isoDays(b.date, isoAddDays(iso, -365)))<=45) b0=b; });
-      return b0 ? "L'an dernier à la même période : "+fmtK(b0.montant)+(b0.conso && s.last.conso && s.last!==b0 ? ", corrigé de l'évolution de ta consommation" : "")+"."
-                : "D'après tes dernières factures.";
+      var e=factEstInfo(s, iso), sz=!!FACT_SAISON[s.type];
+      if(e.how==="profil") return "D'après tes factures des 12 derniers mois, selon la saison.";
+      if(e.how==="saison") return sz ? "D'après ta dernière facture, corrigée de la saison." : "D'après ta consommation par jour sur ta dernière facture.";
+      if(e.how==="mix") return (sz ? "D'après ta dernière facture corrigée de la saison" : "D'après ta dernière facture")+", et l'an dernier à la même période ("+fmtK(e.b0.montant)+").";
+      if(e.how==="an" && e.b0) return "L'an dernier à la même période : "+fmtK(e.b0.montant)+(e.b0.conso && s.last.conso && s.last!==e.b0 ? ", corrigé de l'évolution de ta consommation" : "")+".";
+      return "D'après tes dernières factures.";
     }
     function factMonthly(s){
       var B=s.bills.filter(function(b){ return b.montant>0 && !b.regul; }); if(!B.length) return 0; var n=Math.max(1, Math.round(12/s.ryth));
@@ -8365,7 +8427,7 @@
       out.push({ k:"frais", on:!dup && !past, t:p.aPayer?"À payer : "+fmtK(amt):"Prélèvement de "+fmtK(amt)+(p.prelev?" le "+ddmm(p.prelev):""), s:sub });
       // 2. la prochaine facture, estimée
       var tmp={ key:key, four:p.four, type:p.type, bills:[] }; factures.forEach(function(f){ if(factKey(f)===key && f.id!==d.id) tmp.bills.push(f); });
-      tmp.bills.push({ id:"_new", four:p.four, type:p.type, date:p.date||t, montant:amt, conso:p.conso, prelev:p.prelev, next:p.next, regul:p.regul });
+      tmp.bills.push({ id:"_new", four:p.four, type:p.type, date:p.date||t, montant:amt, conso:p.conso, du:p.du, au:p.au, prelev:p.prelev, next:p.next, regul:p.regul });
       tmp.bills.sort(function(a,b){ return a.date<b.date?-1:1; }); tmp.last=tmp.bills[tmp.bills.length-1];
       if(tmp.last.id==="_new"){
         tmp.ryth=factRythme(tmp); tmp.next=factNextDate(tmp); tmp.offset=p.prelev&&p.date?Math.max(0, isoDays(p.date, p.prelev)):0;
@@ -9542,6 +9604,7 @@
     });
     try{ if(ensureBourseEp()) persistEpargne(); }catch(e){}
     fyInit();
+    try{ factEstRefresh(); }catch(e){}
     render();
     if(store.read("askName", false) && !mainAcct().payer && !fyCfg) setTimeout(function(){ if(!document.getElementById("lockscreen")) fyWelcome(); }, 500);
     initPhotos();

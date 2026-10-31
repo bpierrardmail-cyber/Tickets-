@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `31/10 09:19`, environ 9 700 lignes.
+- β web : `beta/index.html`, étiquette `31/10 15:26`, environ 9 700 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -100,6 +100,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **31/10** : estimation des factures selon la saison (l'hiver consomme plus), pour les deux applis.
 - **31/10** : l'appli doit marcher sans réseau. La version Store est une appli standard : entièrement dans l'APK, mises à jour par le Store comme les autres applis, aucune connexion nécessaire pour l'usage normal. La version Perso reste chargée en ligne (corrections tout de suite) avec une copie gardée pour marcher sans réseau.
 - **31/10** : onglet « Factures » intégré (« tu peux intégrer ») : Plus dans la version Store ; les provisions passent de l'onglet Compte à l'onglet Factures pour les droits du foyer (elles restent visibles et gratuites dans Compte › Configuration).
 - **31/10** : « Mes factures » sera un onglet, réservé à Tickets Plus dans la version Store.
@@ -147,6 +148,13 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 31/10
+- **Estimation des factures selon la saison** (Benoît : l'estimation EDF de décembre, ≈ 75 €, baissait alors que l'hiver arrive) : l'ancien calcul prenait l'an dernier à la même période (854 kWh) et lui appliquait la baisse vue sur la dernière facture (−65 % en septembre-octobre, avec du soleil pour les panneaux) ; or l'an dernier la consommation avait baissé de l'automne à l'hiver (changement chez Benoît). Maintenant (`factEstInfo`) :
+  - avec au moins 4 factures sur 8 mois ou plus dans les 12 derniers mois, le **profil du foyer** est appris (`factProfil`) : consommation par jour ≈ niveau × (1 + A·cos), au plus haut mi-janvier, les factures récentes comptant plus ; A est appris (fort avec des panneaux solaires, négatif avec une clim) ;
+  - sinon : la dernière facture par jour, corrigée d'une saison type (`FACT_SAISON` : électricité 0,35, gaz 0,6, eau 0), mêlée à l'an dernier corrigé seulement si la consommation a peu changé ;
+  - puis le prix (part fixe + prix du kWh) tiré des factures, comme avant ;
+  - texte sous l'estimation : « D'après tes factures des 12 derniers mois, selon la saison. » ;
+  - la prochaine facture estimée déjà dans « À venir » suit le nouveau calcul à l'ouverture (`factEstRefresh`, pas chez un membre du foyer, pas si elle est cochée « fait »).
+  Sur les factures EDF de Benoît : ≈ 108 € fin décembre (l'hiver dernier : 104,86 € pour décembre-mars), puis ≈ 121 € en février, 93 € en avril, 58 € en juin, 46 € en août. Eau : inchangée (≈ 154 à 158 €). Essais sur des foyers fictifs (chauffage électrique, sans saison, clim, gaz) : à quelques euros près.
 - **Sans réseau** (Benoît n'avait pas pu ouvrir l'appli sans réseau ; l'appli Android chargeait la β en ligne et s'arrêtait sur « Pas de connexion ») :
   - **Store** : la β est copiée dans l'APK à la compilation, avec pdf.js (`./pdfjs/`) et l'inflation INSEE du moment (`insee.json`, prise au relais par la compilation) ; plus de `server.url`. Dans la page, `appLocal()` : ni vérification de version, ni service worker, ni Tesseract. Essai (appli servie sur `https://localhost`) : onglets, Analyse avancée, facture PDF, scan : aucune requête hors de l'APK ;
   - **Perso** : `TkOfflineClient` (natif) sert la page depuis le réseau avec un délai court, en garde une copie, et la sert sans réseau ou si le chargement échoue (même adresse, mêmes données). Le nouvel APK s'annonce `TkOff/1` : la page retire alors le service worker et ses copies, devenus inutiles ;
