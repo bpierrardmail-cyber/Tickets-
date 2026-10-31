@@ -78,12 +78,14 @@ Après chaque modification, dans le même commit :
     - sans nouvel APK : partage de la photo (+ consigne aussi copiée dans le presse-papiers) et champ « Colle la réponse de l'IA » ;
     - avec un nouvel APK : Tickets apparaît dans « Partager » de l'appli IA, la réponse revient sans copier-coller.
     Limites à dire à l'utilisateur : la photo part chez le fournisseur de l'IA qu'il a choisi ; 3 ou 4 gestes de plus ; lire la réponse avec souplesse (une IA ne respecte pas toujours le format). En plus de la lecture actuelle, pas à la place.
-  - **Importer ses factures** (idée de Benoît le 31/10, maquette « Tickets — Importer une facture » montrée, en attente de son avis) : PDF (texte lu sur le téléphone, plusieurs pages) ou photos page par page (« + Page suivante »). On en tire fournisseur, montant, date de prélèvement ou « à payer à réception », période, consommation (kWh, m³), prix, prochaine facture. Effets proposés, à cocher : le prélèvement exact dans « À venir » (à la place de l'estimation du frais fixe), la prochaine facture estimée (même période l'an dernier corrigée de l'évolution de la consommation), une provision qui lisse les factures de l'année ; page « Mes factures » (factures par période, 12 mois, prix, prochaine). Essai sur de vraies factures : les PDF EDF donnent ces informations à coup sûr par des règles simples ; les factures d'eau papier sont lisibles mais certaines photos sont tournées (à remettre droites). Jamais de vraies factures dans le dépôt.
+  - **Importer ses factures** (idée de Benoît le 31/10, maquette « Tickets — Importer une facture » ; Benoît : effets « à cocher », oui pour la page « Mes factures ») : PDF (texte lu sur le téléphone, plusieurs pages) ou photos page par page (« + Page suivante »). On en tire fournisseur, montant, date de prélèvement ou « à payer à réception », période, consommation (kWh, m³), prix, prochaine facture. Effets proposés, à cocher : le prélèvement exact dans « À venir » (à la place de l'estimation du frais fixe), la prochaine facture estimée (même période l'an dernier corrigée de l'évolution de la consommation), une provision qui lisse les factures de l'année ; page « Mes factures » (factures par période, 12 mois, prix, prochaine). Essai sur de vraies factures : les PDF EDF donnent ces informations à coup sûr par des règles simples ; les factures d'eau papier sont lisibles mais certaines photos sont tournées (à remettre droites). Jamais de vraies factures dans le dépôt.
+  - **Page « Mes factures »** = l'accueil des factures, des provisions et du prévisionnel (Benoît, 31/10 : « il faudrait réunir la partie prévisionnel déjà présente ») : les 12 prochains mois (frais fixes + factures reçues ou estimées, alerte s'il manque dans une provision), « À payer bientôt », une carte par facture avec sa provision (de côté, mensualité, « prête pour … » ou « il manquera … »), boutons Importer une facture et + Provision. Elle reprendrait la page Provisions actuelle (Compte › Configuration) ; le graphique « 12 à venir » du Commun et les « prochains mois » de l'Analyse avancée y seraient réunis. Maquette : écran 1 du canevas. À décider : où on l'ouvre, et ce qui reste gratuit.
   - **Retrait au distributeur** scanné : le proposer comme « argent liquide » plutôt qu'en dépense (Benoît : « on verra après »).
 - À surveiller : l'option « Ajouter au foyer » (verser ses anciennes données en rejoignant) sera retirée si personne ne s'en sert.
 
 ## Décisions de Benoît
 
+- **31/10** : import de factures : effets proposés « à cocher » ; une page « Mes factures » qui sert d'accueil aux provisions et réunit le prévisionnel.
 - **28/10** : « Lire avec mon IA » (partage vers l'IA déjà sur le téléphone, réponse collée dans Tickets) ajouté à la liste des améliorations ; la lecture par une IA en ligne payée par nous reste de côté.
 - **28/10** : « Copier la lecture » sous un ticket scanné, pour envoyer à Claude ce que le téléphone a lu. Le retrait au distributeur → liquide : plus tard.
 - **28/10** : appui long sur un ticket → Ouvrir / Supprimer, suppression annulable.
@@ -127,6 +129,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 31/10
+- **Mes factures** : maquette de la page qui réunit factures, provisions et prévisionnel (écran 1 du canevas « Tickets — Importer une facture »). Rien de changé dans l'appli.
 - **Import de factures** : étudié sur les factures de Benoît (EDF en PDF, eau en photos) et maquette « Tickets — Importer une facture » (chiffres d'exemple) ; ajouté aux améliorations prévues. Rien de changé dans l'appli.
 
 ### 28/10
