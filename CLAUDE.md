@@ -142,7 +142,7 @@ Le réseau étant souvent restreint dans les environnements de Claude, bloquer t
 
 ## Encore à décider (ne pas trancher seul)
 
-- Répartition gratuit / Plus et prix de Plus (décidé le 31/10 : le futur onglet « Factures » sera dans Plus).
+- Répartition gratuit / Plus et prix de Plus (décidé le 31/10 : l'onglet Factures, futur « À venir », est ouvert à tous ; ses 12 prochains mois, frais fixes et provisions sont gratuits, les factures et leurs estimations dans Plus — pas encore fait, voir JOURNAL.md « Réorganisation »).
 - Nom définitif de l'appli et identifiant Store.
 - Type de compte Google Play.
 - Lecture des tickets par une IA (mise de côté le 28/10/2026) : en ligne seulement en option Plus, avec accord. Prévue plus tard : « Lire avec mon IA » (l'IA déjà sur le téléphone, par le partage Android) ; voir JOURNAL.md, « Améliorations prévues ».

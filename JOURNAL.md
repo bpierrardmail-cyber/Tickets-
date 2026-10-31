@@ -70,7 +70,7 @@ Après chaque modification, dans le même commit :
 
 ## En cours / à reprendre
 
-- **Réorganisation de l'appli** (31/10, à valider par Benoît, rien de changé) : il trouve l'organisation et l'accès aux fonctions peu clairs. Plan proposé dans la maquette « Tickets — Plan de l'appli » : un onglet = une question, chaque chose à un seul endroit, sous-onglets visibles au lieu de « Configuration », ✦ partout pareil (on voit la fonction, seul le bouton demande Plus). Onglets proposés : Accueil · Dépenses (Articles + Analyse) · Compte (Opérations · Virements · Épargne · Graphiques, roue du compte) · À venir (ex Factures, ouvert à tous : 12 mois · Frais fixes · Provisions gratuits, Factures ✦, Projection ✦) · Commun (parts seulement) · Bourse. En 4 étapes, À venir d'abord (sa question : les provisions dans Factures). À décider par lui : les 12 mois gratuits dans la version Store, le nom « À venir ».
+- **Réorganisation de l'appli** (31/10, à valider par Benoît, rien de changé) : il trouve l'organisation et l'accès aux fonctions peu clairs. Plan proposé dans la maquette « Tickets — Plan de l'appli » : un onglet = une question, chaque chose à un seul endroit, sous-onglets visibles au lieu de « Configuration », ✦ partout pareil (on voit la fonction, seul le bouton demande Plus). Onglets proposés : Accueil · Dépenses (Articles + Analyse) · Compte (Opérations · Virements · Épargne · Graphiques, roue du compte) · À venir (ex Factures, ouvert à tous : 12 mois · Frais fixes · Provisions gratuits, Factures ✦, Projection ✦) · Commun (parts seulement) · Bourse. En 4 étapes, À venir d'abord (sa question : les provisions dans Factures). Décidé le 31/10 : nom « À venir », 12 mois gratuits. Maquette de l'étape 1 (12 mois, Frais fixes, Provisions, Factures ✦ en Store sans Plus, Commun après) sur le même canevas : en attente de « tu peux intégrer ».
 
 - **Sans réseau** (31/10) : à essayer par Benoît en mode avion avec les nouveaux APK.
   - Perso : installer le nouvel APK, l'ouvrir une fois avec du réseau (la copie s'enregistre), puis en mode avion.
@@ -102,6 +102,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **31/10** : réorganisation de l'appli : l'onglet Factures s'appellera « À venir » ; dans la version Store, les 12 prochains mois y sont gratuits (seules les factures, et leurs estimations, sont dans Plus).
 - **31/10** : estimation des factures selon la saison (l'hiver consomme plus), pour les deux applis.
 - **31/10** : l'appli doit marcher sans réseau. La version Store est une appli standard : entièrement dans l'APK, mises à jour par le Store comme les autres applis, aucune connexion nécessaire pour l'usage normal. La version Perso reste chargée en ligne (corrections tout de suite) avec une copie gardée pour marcher sans réseau.
 - **31/10** : onglet « Factures » intégré (« tu peux intégrer ») : Plus dans la version Store ; les provisions passent de l'onglet Compte à l'onglet Factures pour les droits du foyer (elles restent visibles et gratuites dans Compte › Configuration).
@@ -150,6 +151,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 31/10
+- **Étape 1 (À venir)** : maquette ajoutée au canevas « Tickets — Plan de l'appli ». Rien de changé dans l'appli.
 - **Plan de l'appli** : maquette « Tickets — Plan de l'appli » (aujourd'hui / proposé / ce qui bouge / étapes, écrans Compte et À venir). Rien de changé dans l'appli.
 - **Estimation des factures selon la saison** (Benoît : l'estimation EDF de décembre, ≈ 75 €, baissait alors que l'hiver arrive) : l'ancien calcul prenait l'an dernier à la même période (854 kWh) et lui appliquait la baisse vue sur la dernière facture (−65 % en septembre-octobre, avec du soleil pour les panneaux) ; or l'an dernier la consommation avait baissé de l'automne à l'hiver (changement chez Benoît). Maintenant (`factEstInfo`) :
   - avec au moins 4 factures sur 8 mois ou plus dans les 12 derniers mois, le **profil du foyer** est appris (`factProfil`) : consommation par jour ≈ niveau × (1 + A·cos), au plus haut mi-janvier, les factures récentes comptant plus ; A est appris (fort avec des panneaux solaires, négatif avec une clim) ;
