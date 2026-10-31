@@ -78,6 +78,7 @@ Après chaque modification, dans le même commit :
     - sans nouvel APK : partage de la photo (+ consigne aussi copiée dans le presse-papiers) et champ « Colle la réponse de l'IA » ;
     - avec un nouvel APK : Tickets apparaît dans « Partager » de l'appli IA, la réponse revient sans copier-coller.
     Limites à dire à l'utilisateur : la photo part chez le fournisseur de l'IA qu'il a choisi ; 3 ou 4 gestes de plus ; lire la réponse avec souplesse (une IA ne respecte pas toujours le format). En plus de la lecture actuelle, pas à la place.
+  - **Importer ses factures** (idée de Benoît le 31/10, maquette « Tickets — Importer une facture » montrée, en attente de son avis) : PDF (texte lu sur le téléphone, plusieurs pages) ou photos page par page (« + Page suivante »). On en tire fournisseur, montant, date de prélèvement ou « à payer à réception », période, consommation (kWh, m³), prix, prochaine facture. Effets proposés, à cocher : le prélèvement exact dans « À venir » (à la place de l'estimation du frais fixe), la prochaine facture estimée (même période l'an dernier corrigée de l'évolution de la consommation), une provision qui lisse les factures de l'année ; page « Mes factures » (factures par période, 12 mois, prix, prochaine). Essai sur de vraies factures : les PDF EDF donnent ces informations à coup sûr par des règles simples ; les factures d'eau papier sont lisibles mais certaines photos sont tournées (à remettre droites). Jamais de vraies factures dans le dépôt.
   - **Retrait au distributeur** scanné : le proposer comme « argent liquide » plutôt qu'en dépense (Benoît : « on verra après »).
 - À surveiller : l'option « Ajouter au foyer » (verser ses anciennes données en rejoignant) sera retirée si personne ne s'en sert.
 
@@ -124,6 +125,9 @@ Après chaque modification, dans le même commit :
 ---
 
 ## Historique (le plus récent en haut)
+
+### 31/10
+- **Import de factures** : étudié sur les factures de Benoît (EDF en PDF, eau en photos) et maquette « Tickets — Importer une facture » (chiffres d'exemple) ; ajouté aux améliorations prévues. Rien de changé dans l'appli.
 
 ### 28/10
 - **Lecture par une IA** : étudiée puis mise de côté ; l'idée « Lire avec mon IA » (l'IA déjà sur le téléphone, via le partage) est ajoutée aux améliorations prévues (voir En cours). Rien de changé dans l'appli.
