@@ -9,7 +9,7 @@ Après chaque modification, dans le même commit :
 
 ### Reprendre le travail ailleurs
 - **Claude Code ouvert sur le dépôt** : rien à faire, `CLAUDE.md` est lu automatiquement et renvoie vers ce journal.
-- **Autre conversation Claude** : demander « Lis CLAUDE.md puis JOURNAL.md du dépôt GitHub bpierrardmail-cyber/Tickets- ». Si l'accès à GitHub n'est pas branché, donner les liens directs :
+- **Autre abonnement ou conversation Claude** : joindre `PASSATION.md` (vue d'ensemble, liens, avancement, pistes ; https://raw.githubusercontent.com/bpierrardmail-cyber/Tickets-/main/PASSATION.md), ou demander « Lis CLAUDE.md puis JOURNAL.md du dépôt GitHub bpierrardmail-cyber/Tickets- ». Si l'accès à GitHub n'est pas branché, donner les liens directs :
   - https://raw.githubusercontent.com/bpierrardmail-cyber/Tickets-/main/CLAUDE.md
   - https://raw.githubusercontent.com/bpierrardmail-cyber/Tickets-/main/JOURNAL.md
 - Si le dépôt devient privé, ces liens ne marchent plus : joindre les deux fichiers à la conversation.
@@ -157,7 +157,8 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 31/10
-- **Tests dans le dépôt** (`tests/`, « ok » de Benoît) : les 15 tests Playwright à jour (import, Compte, liquide, Bourse, tickets, hors ligne, À venir, foyer, Dépenses), le relais local, `run.sh` et un mode d'emploi. Chemins rendus relatifs ; données toutes fictives (relevés inventés, factures EDF inventées) ; les tests qui lisaient de vrais relevés, factures ou tickets sont restés hors du dépôt. Aussi : fichier de passation pour reprendre le projet dans un autre abonnement Claude (donné à Benoît, pas dans le dépôt).
+- **`PASSATION.md`** à la racine : le dossier de passation (projet, liens, architecture, avancement, tests à faire, pistes, méthode), pour reprendre le projet dans un autre abonnement Claude. C'est une photo au 31/10 : `CLAUDE.md` et `JOURNAL.md` font foi.
+- **Tests dans le dépôt** (`tests/`, « ok » de Benoît) : les 15 tests Playwright à jour (import, Compte, liquide, Bourse, tickets, hors ligne, À venir, foyer, Dépenses), le relais local, `run.sh` et un mode d'emploi. Chemins rendus relatifs ; données toutes fictives (relevés inventés, factures EDF inventées) ; les tests qui lisaient de vrais relevés, factures ou tickets sont restés hors du dépôt. 
 - **Réorganisation, étapes 3 et 4 : Dépenses et finitions** :
   - Articles et Analyse réunis dans l'onglet **Dépenses** : Tickets · Produits · Budgets · Analyse (`depSubs`, `depView`, `depTabsHTML`, vue `tickets`) ; la puce 🧾 Tickets de l'Accueil y mène ; la galerie est la ligne « Photos des tickets » de Tickets (plus dans le menu) ;
   - barre du bas : Accueil · Dépenses · Compte · À venir · Commun · Bourse ;
