@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `31/10 19:58`, environ 9 700 lignes.
+- β web : `beta/index.html`, étiquette `31/10 20:05`, environ 9 700 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -154,13 +154,14 @@ Après chaque modification, dans le même commit :
 
 ### 31/10
 - **Réorganisation, étape 1 : onglet À venir** (d'après la maquette) :
-  - l'onglet Factures devient « À venir », ouvert à tous, avec 4 sous-onglets (`state.avSub` : `mois`, `frais`, `prov`, `fact` ; `avTabsHTML`, `wireAvTabs`) ;
+  - l'onglet Factures devient « À venir », ouvert à tous, avec 4 sous-onglets (`state.avnSub` : `mois`, `frais`, `prov`, `fact` ; `avTabsHTML`, `wireAvTabs`) ;
   - Frais fixes = l'ancienne page Frais fixes de Commun (`renderCommunes` en mode À venir) ; Provisions = l'ancienne page Provisions (`renderProvisions`, la vue `provisions` y mène) ;
   - Commun : plus de « + Frais fixe » ; une section « Frais communs » à voir, qui ouvre À venir › Frais fixes ; une barre du graphique y mène aussi ;
   - Compte › Configuration › Provisions et le graphique Provisions ouvrent À venir › Provisions ;
   - version Store sans Plus : 12 mois, Frais fixes et Provisions gratuits ; Factures montre ce que Plus apporte, seul le bouton demande Plus (`factPlusAsk`) ; plus d'écran bloquant ;
   - foyer : l'onglet À venir apparaît si le membre a À venir ou Commun ; ses Frais fixes suivent les droits de Commun (`fyCurTab`), le reste ceux d'À venir (`avSubs`, `avTabOn`). Rien n'est ouvert en plus à un membre ;
   - essais : onglets, 4 sous-onglets, liens depuis Commun et Compte, Store sans Plus, deux membres aux droits différents.
+  - corrigé dans la foulée : le sous-onglet d'À venir partageait sa mémoire avec celui de l'Analyse avancée (qui s'ouvrait alors sur « Simuler ») ; il a maintenant la sienne (`state.avnSub`).
 - **Étape 1 (À venir)** : maquette ajoutée au canevas « Tickets — Plan de l'appli ».
 - **Plan de l'appli** : maquette « Tickets — Plan de l'appli » (aujourd'hui / proposé / ce qui bouge / étapes, écrans Compte et À venir). Rien de changé dans l'appli.
 - **Estimation des factures selon la saison** (Benoît : l'estimation EDF de décembre, ≈ 75 €, baissait alors que l'hiver arrive) : l'ancien calcul prenait l'an dernier à la même période (854 kWh) et lui appliquait la baisse vue sur la dernière facture (−65 % en septembre-octobre, avec du soleil pour les panneaux) ; or l'an dernier la consommation avait baissé de l'automne à l'hiver (changement chez Benoît). Maintenant (`factEstInfo`) :

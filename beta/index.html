@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="31/10 19:58" />
+  <meta name="build" content="31/10 20:05" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -3233,7 +3233,7 @@
       if(state.view==="gallery") return renderGallery();
       if(state.view==="photo") return renderPhoto();
       if(state.view==="patrimoine") return renderPatrimoine();
-      if(state.view==="provisions"){ state.view="factures"; state.avSub="prov"; }   // la page Provisions est dans À venir
+      if(state.view==="provisions"){ state.view="factures"; state.avnSub="prov"; }   // la page Provisions est dans À venir
       if(state.view==="factures") return renderFactures();
       if(state.view==="factlue") return renderFactLue();
       if(state.view==="factserie") return renderFactSerie();
@@ -4687,7 +4687,7 @@
       return { monthData:monthData, D:D, me:me, ppl:ppl, CP:CP, persoOf:persoOf, pctOf:pctOf, fPct:fPct, communShareOf:communShareOf, effPct:effPct, shareOf:shareOf, partOf:partOf };
     }
     function renderCommunes(){
-      if(state.view!=="factures" && state.comSub==="frais"){ state.comSub=null; state.view="factures"; state.avSub="frais"; return renderFactures(); }
+      if(state.view!=="factures" && state.comSub==="frais"){ state.comSub=null; state.view="factures"; state.avnSub="frais"; return renderFactures(); }
       var avMode=(state.view==="factures");   // À venir › Frais fixes : la même page, dans l'onglet À venir
       var curM = monthKey(todayISO());
       var month = (state.months&&state.months.communes)||curM;
@@ -4834,7 +4834,7 @@
       if(cSub && !avMode) bindBack(function(){ state.comSub=null; render(); window.scrollTo(0,0); });
       if(avMode) wireAvTabs();
       [].forEach.call(document.querySelectorAll(".comGo"), function(r){ r.onclick=function(){ state.comSub=r.getAttribute("data-sub"); render(); window.scrollTo(0,0); }; });
-      [].forEach.call(document.querySelectorAll(".avgo"), function(r){ r.onclick=function(){ state.view="factures"; state.avSub="frais"; render(); window.scrollTo(0,0); }; });
+      [].forEach.call(document.querySelectorAll(".avgo"), function(r){ r.onclick=function(){ state.view="factures"; state.avnSub="frais"; render(); window.scrollTo(0,0); }; });
       wireChartDefaults();
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.comChart=bt.getAttribute("data-m"); store.write("comChart", state.comChart); render(); }; });
       var cOn=document.querySelector(".cch-tabs button.on"); if(cOn && cOn.parentNode){ var tb=cOn.parentNode; tb.scrollLeft=Math.max(0, cOn.offsetLeft-(tb.clientWidth-cOn.offsetWidth)/2); }
@@ -8166,14 +8166,14 @@
     function avSubs(){ var m=fyMember() ? fyCfg : null, fOn=!m || fyTabOn(m, "factures"), cOn=!m || fyTabOn(m, "communes"), out=[];
       if(fOn) out.push(["mois","12 mois"]); if(cOn) out.push(["frais","Frais fixes"]); if(fOn){ out.push(["prov","Provisions"]); out.push(["fact","Factures"]); }
       return out; }
-    function avSub(){ var L=avSubs(), s=state.avSub||"mois"; if(!L.some(function(x){ return x[0]===s; })) s=L.length ? L[0][0] : "mois"; return s; }
+    function avSub(){ var L=avSubs(), s=state.avnSub||"mois"; if(!L.some(function(x){ return x[0]===s; })) s=L.length ? L[0][0] : "mois"; return s; }
     function avTabsHTML(cur){ var L=avSubs(); if(L.length<2) return '';
       return '<div class="avtabs" role="tablist">'+L.map(function(x){ var on=x[0]===cur; return '<button type="button" role="tab" aria-selected="'+on+'" data-av="'+x[0]+'"'+(on?' class="on"':'')+'>'+x[1]+(x[0]==="fact" && !canUse("factures")?' <span class="avplus">✦</span>':'')+'</button>'; }).join("")+'</div>'; }
-    function wireAvTabs(){ [].forEach.call(document.querySelectorAll(".avtabs button"), function(b){ b.onclick=function(){ state.avSub=b.getAttribute("data-av"); render(); window.scrollTo(0,0); }; }); }
+    function wireAvTabs(){ [].forEach.call(document.querySelectorAll(".avtabs button"), function(b){ b.onclick=function(){ state.avnSub=b.getAttribute("data-av"); render(); window.scrollTo(0,0); }; }); }
     function factPlusAsk(){ uiChoice("Tickets Plus", "Importer tes factures (PDF ou photos), le prélèvement exact et la prochaine facture estimée font partie de Tickets Plus. L'achat de Plus arrivera bientôt dans l'appli.", [{ l:"D'accord", fn:function(){} }]); }
     function avCanFrais(){ return !fyMember() || (fyCfg.role==="edit" && fyTabOn(fyCfg, "communes") && fyTabEd("communes")); }
     function renderFactures(){
-      var sub=avSub(); state.avSub=sub;
+      var sub=avSub(); state.avnSub=sub;
       if(sub==="frais") return renderCommunes();
       if(sub==="prov") return renderProvisions();
       var curM=monthKey(todayISO()), ro=fyRO(), plus=canUse("factures");
@@ -8234,7 +8234,7 @@
 
     // ----- Une série en détail -----
     function renderFactSerie(){
-      if(!canUse("factures")){ state.view="factures"; state.avSub="fact"; return renderFactures(); }
+      if(!canUse("factures")){ state.view="factures"; state.avnSub="fact"; return renderFactures(); }
       var S=factSeries(), s=S.filter(function(x){ return x.key===state.factKey; })[0];
       if(!s){ state.view="factures"; return renderFactures(); }
       var curM=monthKey(todayISO()), ty=factType(s.type), est=s.next?factEstimate(s, s.next):0, ro=fyRO();
@@ -8466,7 +8466,7 @@
       return out;
     }
     function renderFactLue(){
-      if(!canUse("factures")){ state.view="factures"; state.avSub="fact"; return renderFactures(); }
+      if(!canUse("factures")){ state.view="factures"; state.avnSub="fact"; return renderFactures(); }
       var d=state.factDraft, ro=fyRO();
       if(!d){ state.view="factures"; return renderFactures(); }
       var h=header(true, "Facture");
