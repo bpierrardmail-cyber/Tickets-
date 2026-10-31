@@ -70,6 +70,8 @@ Après chaque modification, dans le même commit :
 
 ## En cours / à reprendre
 
+- **Réorganisation de l'appli** (31/10, à valider par Benoît, rien de changé) : il trouve l'organisation et l'accès aux fonctions peu clairs. Plan proposé dans la maquette « Tickets — Plan de l'appli » : un onglet = une question, chaque chose à un seul endroit, sous-onglets visibles au lieu de « Configuration », ✦ partout pareil (on voit la fonction, seul le bouton demande Plus). Onglets proposés : Accueil · Dépenses (Articles + Analyse) · Compte (Opérations · Virements · Épargne · Graphiques, roue du compte) · À venir (ex Factures, ouvert à tous : 12 mois · Frais fixes · Provisions gratuits, Factures ✦, Projection ✦) · Commun (parts seulement) · Bourse. En 4 étapes, À venir d'abord (sa question : les provisions dans Factures). À décider par lui : les 12 mois gratuits dans la version Store, le nom « À venir ».
+
 - **Sans réseau** (31/10) : à essayer par Benoît en mode avion avec les nouveaux APK.
   - Perso : installer le nouvel APK, l'ouvrir une fois avec du réseau (la copie s'enregistre), puis en mode avion.
   - Store : l'appli de test repart vide (ses données étaient rattachées à l'adresse en ligne) ; pour garder ses essais, faire une sauvegarde avant et la restaurer après.
@@ -148,6 +150,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 31/10
+- **Plan de l'appli** : maquette « Tickets — Plan de l'appli » (aujourd'hui / proposé / ce qui bouge / étapes, écrans Compte et À venir). Rien de changé dans l'appli.
 - **Estimation des factures selon la saison** (Benoît : l'estimation EDF de décembre, ≈ 75 €, baissait alors que l'hiver arrive) : l'ancien calcul prenait l'an dernier à la même période (854 kWh) et lui appliquait la baisse vue sur la dernière facture (−65 % en septembre-octobre, avec du soleil pour les panneaux) ; or l'an dernier la consommation avait baissé de l'automne à l'hiver (changement chez Benoît). Maintenant (`factEstInfo`) :
   - avec au moins 4 factures sur 8 mois ou plus dans les 12 derniers mois, le **profil du foyer** est appris (`factProfil`) : consommation par jour ≈ niveau × (1 + A·cos), au plus haut mi-janvier, les factures récentes comptant plus ; A est appris (fort avec des panneaux solaires, négatif avec une clim) ;
   - sinon : la dernière facture par jour, corrigée d'une saison type (`FACT_SAISON` : électricité 0,35, gaz 0,6, eau 0), mêlée à l'an dernier corrigé seulement si la consommation a peu changé ;
