@@ -136,8 +136,8 @@ Les maquettes (canevas « Tickets — Plan de l'appli » et autres) sont des art
   - Produits : prix, hausses, magasins, familles ;
   - Budgets : budgets par catégorie ;
   - Analyse : graphiques et ✦ Analyse avancée (inflation perso INSEE, comparaison avec l'an dernier, alertes, pistes d'économies, résumé à coller dans une IA).
-- **Compte**, sous-onglets Opérations · Virements · Épargne · Graphiques, plus la roue du compte :
-  - Opérations : la liste du mois comme un relevé de banque ;
+- **Compte**, sous-onglets Opérations · Épargne · Graphiques, plus la roue du compte :
+  - Opérations : la liste du mois comme un relevé de banque, avec « ＋ Ajouter » (virement reçu ou envoyé, frais fixe, ticket) ;
   - roue du compte : modifier, solde reporté, **import d'un relevé** OFX, QIF ou CSV lu sur le téléphone, annuler le dernier import.
 - **À venir**, sous-onglets 12 mois · Frais fixes · Provisions · Factures :
   - 12 mois : les 12 prochains mois, « À payer bientôt », et ✦ « Tes comptes dans 12 mois » (projection et simulateur) ;

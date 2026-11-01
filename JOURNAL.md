@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `01/11 10:25`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `01/11 10:39`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -33,7 +33,7 @@ Après chaque modification, dans le même commit :
   - Budgets : budgets par catégorie ;
   - Analyse : graphiques Mois, Répartition, Récurrentes et Qui a payé, bouton « + Frais fixes », détail d'un mois, bouton ✦ Analyse avancée (inflation perso INSEE, année / an dernier, alertes, reste à vivre, résumé pour une IA).
 - **Commun** : parts du commun en % et parts propres à chaque frais, bouton « Produits partagés ». Graphique Mois (6, 12, 12 à venir, Tout). Bandeau des personnes. Les frais communs du mois y sont à voir ; ils se modifient dans À venir › Frais fixes.
-- **Compte** : 4 sous-onglets **Opérations · Virements · Épargne · Graphiques**, et la **roue du compte** en haut à droite (modifier le compte, solde reporté, importer un relevé, annuler le dernier import, compte principal, supprimer) ;
+- **Compte** : 3 sous-onglets **Opérations · Épargne · Graphiques** (bouton « ＋ Ajouter » dans Opérations : virement reçu ou envoyé, frais fixe, ticket), et la **roue du compte** en haut à droite (modifier le compte, solde reporté, importer un relevé, annuler le dernier import, compte principal, supprimer) ;
   - Opérations : la **liste des opérations du mois**, comme un relevé de banque : solde estimé, Entrées / Sorties / Fin de mois, filtres Tout · Entrées · Sorties · À venir, recherche (nom ou montant, avec le total), bloc « À venir » avec un rond pour marquer « fait », puis les opérations par jour (le plus récent en haut) avec le solde du soir, et le report en bas ;
   - Graphiques : les 6 graphiques (Ce mois, Dépenses, Solde, Entrées-sorties, Épargne, Provisions), touchables (une barre ouvre Virements ou les Opérations filtrées) ;
   - plusieurs comptes par personne, sur une rangée qui défile (la carte des comptes garde la même hauteur) ;
@@ -107,6 +107,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **01/11** : l'onglet Virements de Compte est retiré ; un bouton « ＋ Ajouter » (virement reçu, envoyé, frais fixe, ticket) va dans l'écran Opérations.
 - **31/10** : écran de contrôle de plusieurs factures (photos ou PDF) intégré d'après la maquette (« tu peux intégrer ») : nombre de pages lues sur le nombre de photos, « LA PLUS RÉCENTE », contrôle des plus anciennes, rien d'enregistré avant « Appliquer » ; et mettre à jour `PASSATION.md`.
 - **31/10** : étapes 3 et 4 de la réorganisation intégrées sans maquette (« tu peux passer à la 3 et aux autres ») : onglet Dépenses, finitions.
 - **31/10** : étape 2 de la réorganisation intégrée (« tu peux y aller ») : Compte en sous-onglets, roue du compte, import seulement dans la roue.
@@ -160,6 +161,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 01/11
+- **Compte : plus d'onglet Virements, bouton « ＋ Ajouter » dans les Opérations** (idée de Benoît, « va y ») : la page Virements faisait doublon (les virements sont dans les Opérations, jour par jour, et s'y modifient ; le graphique entrées-sorties est dans Graphiques). Sous-onglets : **Opérations · Épargne · Graphiques**. « ＋ Ajouter », à côté de la recherche, propose Virement reçu, Virement envoyé (le sens déjà choisi), Frais fixe, Ticket (sur ce compte) ; caché en consultation. Les liens des graphiques vers les virements ouvrent les Opérations filtrées (Reçu → Entrées, Envoyé → Sorties, À faire → À venir). Recherche : « Nom ou montant ». Tests t94 et t76 mis à jour.
 - **Facture d'eau pas dans les comptes** (« pas prise en compte dans les comptes, ni dans les frais fixes ») : rien n'était cassé à l'enregistrement (« Appliquer » la met bien dans À venir et le compte, vérifié) ; elle a dû être gardée sans ses effets (« Garder seulement la facture »), et rien ne permettait de rattraper. Maintenant :
   - dans le détail du fournisseur, un bandeau « Pas dans tes comptes · Facture du … · Ajouter » pour une facture récente qui n'y est pas (prélèvement de ce mois ou plus tard, sinon facture de moins de 75 jours) ;
   - la fiche d'une facture dit « ✓ Dans tes comptes : À venir de novembre », ou propose « Ajouter à mes comptes » ;

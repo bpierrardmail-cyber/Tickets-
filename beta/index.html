@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 10:25" />
+  <meta name="build" content="01/11 10:39" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -651,6 +651,8 @@
     .ops-f::-webkit-scrollbar{ display:none; }
     .ops-f button{ flex:0 0 auto; min-height:42px; padding:0 13px; border-radius:21px; border:1px solid var(--line2); background:var(--card); color:var(--ink); font:inherit; font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap; }
     .ops-f button.on{ background:var(--ink); color:var(--bg0); border-color:var(--ink); }
+    .ops-qrow{ display:flex; gap:8px; margin-top:10px; } .ops-qrow .ops-q{ flex:1; min-width:0; margin-top:0; }
+    .ops-add{ flex:0 0 auto; padding:0 14px; border-radius:14px; border:1px dashed rgba(79,214,160,.55); background:transparent; color:var(--accent); font:inherit; font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap; }
     .ops-q{ display:flex; align-items:center; gap:10px; min-height:48px; padding:0 14px; margin-top:10px; background:var(--card); border:1px solid var(--line); border-radius:14px; color:var(--ink-soft); }
     .ops-q input{ flex:1; min-width:0; height:46px; background:transparent; border:0; outline:none; color:var(--ink); font:inherit; font-size:16px; }
     .ops-q input::placeholder{ color:var(--ink-soft); opacity:.8; }
@@ -1629,13 +1631,13 @@
       if(idx>=1 && idx<=linkable.length) return linkable[idx-1].id;
       return null;
     }
-    function addVirement(){
+    function addVirement(sens){
       var hasEp=epargne.some(function(c){ return !c.bourseLink; });
-      uiForm({ title:"Nouveau virement", fields:[
+      uiForm({ title:sens==="out"?"Virement envoyé":(sens==="in"?"Virement reçu":"Nouveau virement"), fields:[
         {key:"label", label:"Libellé", placeholder:"Salaire, virement sortant…", required:true},
         {key:"note", label:"Description (optionnel)"},
         {key:"montant", label:"Montant", type:"money", required:true},
-        {key:"sens", label:"Sens", type:"seg", value:"in", options:SENS_OPTS},
+        {key:"sens", label:"Sens", type:"seg", value:(sens==="out"?"out":"in"), options:SENS_OPTS},
         {key:"ep", label:"Compte épargne lié", type:"select", value:"", options:epargneOptions(), hidden:!hasEp, help:"Le montant y est retiré (entrée) ou versé (sortie) automatiquement."},
         dayField(null, "Jour (facultatif)", "Range le virement dans la liste du compte. Vide : le jour où tu le coches « fait ».")
       ]}, function(r){
@@ -5398,7 +5400,7 @@
       if(!CMODES.some(function(x){ return x[0]===cmode; })) cmode="mois";
       // sous-onglet : Opérations (null) · Virements (es) · Épargne (ep) · Graphiques (graph) ; les anciennes pages y mènent
       var page=state.cptPage||null;
-      if(page==="dep"){ state.cptF="out"; page=null; } else if(page && ["es","ep","graph"].indexOf(page)<0) page=null;
+      if(page==="dep"){ state.cptF="out"; page=null; } else if(page && ["ep","graph"].indexOf(page)<0) page=null;   // ancienne page Virements (es) → Opérations
       state.cptPage=page; if(state.view==="comptedet") state.view="compte";
       var graphV=(page==="graph");
       var gearOn=!!acct && person!=="__tickets" && (!fyRO() || impCan());
@@ -5429,8 +5431,8 @@
       var hero={ label:(multi?esc(acct.nom):"Solde du compte")+(futur?" · fin "+esc(monthLabelOf(month))+" prévue":" (banque estimée)"), big:soldeBanque, color:(soldeBanque<0?"var(--coral)":"var(--ink)"), sub:(futur?"Prévu, tout ce qui est planifié compris, sans le liquide":"Estimé, sans le liquide")+(pvCpt>0.004?" · dont provisions "+fmtK(pvCpt)+", disponible "+fmtK(soldeBanque-pvCpt):"") };
       if(cmode==="mois"){
         var steps=[{l:"Report", v:reporte, t:"base", k:"report"}];
-        if(virIn) steps.push({l:"Reçu", v:virIn, k:"es"});
-        if(virOut) steps.push({l:"Envoyé", v:virOut, k:"es"});
+        if(virIn) steps.push({l:"Reçu", v:virIn, k:"in"});
+        if(virOut) steps.push({l:"Envoyé", v:virOut, k:"out"});
         if(paidTotal) steps.push({l:"Tickets", v:-paidTotal, k:"dep"});
         if(fraisTotal) steps.push({l:"Frais fixes", v:-fraisTotal, k:"dep"});
         if(liqV) steps.push({l:"Liquide", v:liqV, k:"res"});
@@ -5470,7 +5472,7 @@
       hero.stats=[
         { l:"Report", v:fmtS(reporte), d:"du mois dernier", go:"es" },
         { l:"Fin de mois", v:fmtS(soldeFin), c:(soldeFin<0?"var(--coral)":""), d:"prévu", go:"res" },
-        vTodo.length ? { l:"À faire", v:signS(vTodoSum), d:vTodo.length+" virement"+(vTodo.length>1?"s":""), go:"es" } : { l:"À faire", v:"Rien", d:"virements faits", go:"es" }
+        vTodo.length ? { l:"À faire", v:signS(vTodoSum), d:vTodo.length+" virement"+(vTodo.length>1?"s":""), go:"av" } : { l:"À faire", v:"Rien", d:"virements faits", go:"es" }
       ];
       // les trois encadrés reprennent le graphique affiché
       try{
@@ -5596,7 +5598,7 @@
       if(multi) h+=acctPagerHTML(person, month);
       else h+='<div class="acc-chips"><div class="acc-scroll">'+comptes.map(function(a){ return '<button type="button" data-acct="'+esc(a.key)+'" class="on">'+esc(a.nom)+'</button>'; }).join("")+
          '</div><div class="acc-fixed"><button type="button" data-acct="__add" class="add" aria-label="Ajouter un compte">＋ Compte</button></div></div>';
-      h+='<div class="avtabs" role="tablist">'+[["","Opérations"],["es","Virements"],["ep","Épargne"],["graph","Graphiques"]].map(function(x){ var on=(x[0]||null)===page; return '<button type="button" role="tab" class="cpsub'+(on?' on':'')+'" aria-selected="'+on+'" data-cp="'+x[0]+'">'+x[1]+'</button>'; }).join("")+'</div>';
+      h+='<div class="avtabs" role="tablist">'+[["","Opérations"],["ep","Épargne"],["graph","Graphiques"]].map(function(x){ var on=(x[0]||null)===page; return '<button type="button" role="tab" class="cpsub'+(on?' on':'')+'" aria-selected="'+on+'" data-cp="'+x[0]+'">'+x[1]+'</button>'; }).join("")+'</div>';
       if(!page){
         // le haut : solde estimé, entrées / sorties passées, fin de mois prévue ; Graphiques et Configuration
         O=cptOps(person, month);
@@ -5611,7 +5613,8 @@
            '<button type="button" class="hstat" data-f="av"><span>Fin de mois</span><b'+(soldeFin<0?' style="color:var(--coral)"':'')+'>'+opsAmtS(soldeFin)+'</b></button></div></section>';
         var chips=[["tout","Tout"],["in","Entrées"],["out","Sorties"],["av","À venir"+(O.todo.length?" · "+O.todo.length:"")]];
         h+='<div class="ops-f" role="group" aria-label="Filtrer les opérations">'+chips.map(function(c){ return '<button type="button" data-f="'+c[0]+'"'+(cf===c[0]?' class="on"':'')+' aria-pressed="'+(cf===c[0])+'">'+c[1]+'</button>'; }).join("")+'</div>'+
-           '<label class="ops-q">'+opsIco("q")+'<input id="opsQ" type="search" enterkeyhint="search" autocomplete="off" aria-label="Rechercher une opération" placeholder="Rechercher : nom ou montant" value="'+esc(state.cptQ||"")+'"></label>'+
+           '<div class="ops-qrow"><label class="ops-q">'+opsIco("q")+'<input id="opsQ" type="search" enterkeyhint="search" autocomplete="off" aria-label="Rechercher une opération" placeholder="Nom ou montant" value="'+esc(state.cptQ||"")+'"></label>'+
+           (fyRO() || preStart ? '' : '<button type="button" id="opsAdd" class="ops-add" aria-label="Ajouter une opération">＋ Ajouter</button>')+'</div>'+
            '<div id="opsBody">'+(preStart ? '<div class="ops-empty">Compte suivi à partir de '+esc(monthLabelOf(aStart))+' : rien avant.</div>' : opsBodyHTML(O, cx))+'</div>';
       }
       else if(graphV){
@@ -5642,7 +5645,8 @@
         var rp=document.getElementById("opsReport"); if(rp && !fyRO()) rp.onclick=openReport;
       }
       // aller à un sous-onglet (les anciennes pages : Dépenses → Opérations filtrées sur les sorties, Solde → Opérations)
-      function goSub(k){ if(k==="dep"){ state.cptF="out"; k=null; } else if(k!=="es" && k!=="ep" && k!=="graph") k=null; state.cptPage=k; state.view="compte"; render(); window.scrollTo(0,0); }
+      // (Virements n'est plus une page : ses liens mènent aux Opérations, filtrées sur les entrées, les sorties ou « À venir »)
+      function goSub(k){ var F={ dep:"out", out:"out", "in":"in", av:"av", es:"tout" }; if(F[k]){ state.cptF=F[k]; k=null; } else if(k!=="ep" && k!=="graph") k=null; state.cptPage=k; state.view="compte"; render(); window.scrollTo(0,0); }
       function cptWheel(){
         var a=acctByKey(person); if(!a) return;
         var ro=fyRO(), items=ro ? [] : acctMenuItems(a), ch=items.slice(0,1);
@@ -5657,7 +5661,15 @@
       var gear=document.getElementById("cptGear"); if(gear) gear.onclick=cptWheel;
       [].forEach.call(document.querySelectorAll(".avtabs .cpsub"), function(b){ b.onclick=function(){ goSub(b.getAttribute("data-cp")||null); }; });
       if(!page){
-        [].forEach.call(document.querySelectorAll(".ops-f button, .ops-sum .hstat"), function(b){ b.onclick=function(){ var k=b.getAttribute("data-f"); state.cptF=(b.classList.contains("hstat") && state.cptF===k) ? "tout" : k; render(); }; });
+        // « ＋ Ajouter » : virement reçu ou envoyé, frais fixe, ticket ; il arrive dans la liste du mois affiché
+        var oa=document.getElementById("opsAdd"); if(oa) oa.onclick=function(){
+          var ch=[];
+          if(person!=="__tickets"){ ch.push({ l:"⬇️ Virement reçu", fn:function(){ addVirement("in"); } }); ch.push({ l:"⬆️ Virement envoyé", fn:function(){ addVirement("out"); } }); ch.push({ l:"📅 Frais fixe", fn:addFraisCommun }); }
+          ch.push({ l:"🧾 Ticket", fn:function(){ newDraft(); var ac=acctByKey(person);   // sur ce compte
+            if(ac && person!=="__tickets"){ state.draft.compte=person; if(ac.payer) state.draft.payePar=ac.payer; render(); } } });
+          uiChoice("Ajouter", esc((multi||person!=="__tickets" ? (acct?acct.nom+" · ":"") : "")+capFirst(monthLabelOf(month))), ch.map(function(c){ c.primary=false; return c; }));
+        };
+        [].forEach.call(document.querySelectorAll(".ops-f button[data-f], .ops-sum .hstat"), function(b){ b.onclick=function(){ var k=b.getAttribute("data-f"); state.cptF=(b.classList.contains("hstat") && state.cptF===k) ? "tout" : k; render(); }; });
         var qi=document.getElementById("opsQ"); if(qi && !preStart) qi.addEventListener("input", function(){ state.cptQ=qi.value; var ob=document.getElementById("opsBody"); if(ob){ ob.innerHTML=opsBodyHTML(O, cx); wireOps(); } });
         wireOps();
       }

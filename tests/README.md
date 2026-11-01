@@ -53,7 +53,7 @@ node tests/relais-local/server.mjs relais
 | t90 | Hors ligne : l'appli Store servie en `https://localhost` sans aucune requête ailleurs ; l'appli Perso sans service worker. |
 | t92 | Onglet À venir : 12 mois · Frais fixes · Provisions · Factures, et Store sans Plus. Utilise `donnees/edf_fictif.json`. |
 | t93 | Foyer : droits sur l'onglet À venir, selon Commun ou À venir. Utilise `foyer_base.py` (relais local, verrou, invitation par QR code). |
-| t94 | Compte en sous-onglets, roue du compte, graphiques touchables. |
+| t94 | Compte : 3 sous-onglets (Opérations · Épargne · Graphiques), « ＋ Ajouter » (virement reçu ou envoyé, frais fixe, ticket), roue du compte, graphiques touchables. |
 | t95 | Onglet Dépenses (Tickets · Produits · Budgets · Analyse), menu allégé, projection dans À venir, Plus visible. |
 | t98 | Factures d'un fournisseur : « 3 factures » sur sa carte ; toucher une facture la modifie (le « à payer » suit) ; appui long → Modifier / Supprimer ; suppression annulable ; renommer toutes ses factures ou seulement celle-ci ; supprimer tout un fournisseur (carte ou détail), provision gardée, « Annuler ». |
 | t99 | Facture gardée sans ses effets : « Pas dans tes comptes · Ajouter » dans le détail du fournisseur et dans sa fiche ; l'ajout la met dans « À venir » du compte, à la place du frais fixe qui l'estimait ; les factures passées ne sont pas proposées. |

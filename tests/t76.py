@@ -35,7 +35,7 @@ with sync_playwright() as p:
     top=norm(pg.locator(".ops-sum").inner_text()); print("  haut :", top.replace("\n"," | "))
     check("1 527,58" in top.replace("\n","") or "1 527,58" in top, "solde estimé 1 527,58 €")
     check("+2 230 €" in top and "−1 115 €" in top and "1 385 €" in top, "Entrées +2 230 · Sorties −1 115 · Fin de mois 1 385")
-    check(pg.evaluate("()=>[].map.call(document.querySelectorAll('.avtabs .cpsub'), b=>b.textContent)")==["Opérations","Virements","Épargne","Graphiques"] and pg.locator("#cptGear").count()==1 and pg.locator('.cptGo[data-page="cfg"]').count()==0, "sous-onglets Opérations · Virements · Épargne · Graphiques et roue du compte")
+    check(pg.evaluate("()=>[].map.call(document.querySelectorAll('.avtabs .cpsub'), b=>b.textContent)")==["Opérations","Épargne","Graphiques"] and pg.locator("#cptGear").count()==1 and pg.locator('.cptGo[data-page="cfg"]').count()==0, "sous-onglets Opérations · Épargne · Graphiques et roue du compte")
     check(pg.locator(".thero .cch-tabs").count()==0, "plus de graphique sur la page principale")
     t=body(); print("  liste :", t[:900].replace("\n"," | "))
     av=norm(pg.locator(".ops-av").inner_text())
