@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `01/11 10:39`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `01/11 10:52`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -161,6 +161,11 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 01/11
+- **Une facture payée par une provision** (« pouvoir mettre une facture dans les provisions, ex. l'eau de ce mois ») :
+  - provision : « + Prélèvement (facture payée) » propose d'abord les factures importées récentes (moins de 120 jours, pas encore payées par une provision ; celles de son fournisseur ou de son type, « Eau », en premier), puis « Autre montant… » (l'ancien formulaire) ;
+  - détail d'un fournisseur sans provision : « Lier » une provision qui existe (elle suit ce fournisseur), qui propose de payer sa dernière facture ;
+  - fiche d'une facture : « ✓ Payée par la provision « Eau » » ou « Payer avec une provision » ; la liste marque « payée par « Eau » » ;
+  - le prélèvement est mis le mois où la facture est payée (prélèvement, sinon date limite, sinon date), lié à la facture (`f.prId`, `provPayBill`), et la provision suit ce fournisseur (`p.fact`) pour les prochaines ; supprimer la facture retire le prélèvement. Test `t100`.
 - **Compte : plus d'onglet Virements, bouton « ＋ Ajouter » dans les Opérations** (idée de Benoît, « va y ») : la page Virements faisait doublon (les virements sont dans les Opérations, jour par jour, et s'y modifient ; le graphique entrées-sorties est dans Graphiques). Sous-onglets : **Opérations · Épargne · Graphiques**. « ＋ Ajouter », à côté de la recherche, propose Virement reçu, Virement envoyé (le sens déjà choisi), Frais fixe, Ticket (sur ce compte) ; caché en consultation. Les liens des graphiques vers les virements ouvrent les Opérations filtrées (Reçu → Entrées, Envoyé → Sorties, À faire → À venir). Recherche : « Nom ou montant ». Tests t94 et t76 mis à jour.
 - **Facture d'eau pas dans les comptes** (« pas prise en compte dans les comptes, ni dans les frais fixes ») : rien n'était cassé à l'enregistrement (« Appliquer » la met bien dans À venir et le compte, vérifié) ; elle a dû être gardée sans ses effets (« Garder seulement la facture »), et rien ne permettait de rattraper. Maintenant :
   - dans le détail du fournisseur, un bandeau « Pas dans tes comptes · Facture du … · Ajouter » pour une facture récente qui n'y est pas (prélèvement de ce mois ou plus tard, sinon facture de moins de 75 jours) ;

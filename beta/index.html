@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 10:39" />
+  <meta name="build" content="01/11 10:52" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -7809,8 +7809,41 @@
         persistProvisions(); render();
       }, {ok:"Supprimer", danger:true});
     }
+    // Factures qu'une provision peut payer : pas déjà payées par une provision, de moins de 120 jours ;
+    // celles de son fournisseur (ou de son type : « Eau ») d'abord, puis les plus récentes
+    function provBillsFor(p){
+      var lim=isoAddDays(todayISO(), -120), nm=norm(p.nom||"");
+      function mine(f){ return (p.fact && factKey(f)===p.fact) || norm(factType(f.type).l)===nm || (nm && norm(f.four||"").indexOf(nm)>=0) ? 0 : 1; }
+      return factures.filter(function(f){ return !f.prId && Number(f.montant)>0 && (f.date||"")>=lim; })
+        .sort(function(a,b){ return mine(a)-mine(b) || (a.date<b.date?1:-1); }).slice(0, 4);
+    }
+    function provOfBill(f){ var r=null; if(f && f.prId) provisions.forEach(function(p){ if((p.prelevements||[]).some(function(x){ return String(x.id)===String(f.prId); })) r=p; }); return r; }
+    // La facture est payée par la provision : un prélèvement du montant, le mois où elle est payée ; la provision suit ce fournisseur
+    function provPayBill(p, f){
+      var m=(f.prelev||f.due||f.date||todayISO()).slice(0,7), mt=Math.round((Number(f.montant)||0)*100)/100;
+      function go(){
+        if(!p.prelevements) p.prelevements=[];
+        var pr={ id:Date.now(), month:m, montant:mt, label:"Facture "+(f.four||"")+" du "+ddmm(f.date) };
+        p.prelevements.push(pr); f.prId=pr.id; if(!p.fact) p.fact=factKey(f);
+        persistProvisions(); persistFactures(); render(); uiToast("Facture payée par « "+p.nom+" » · "+fmtK(mt));
+      }
+      var dispo=provState(p, m).bal;
+      if(mt>dispo+0.004) uiConfirm("Cette facture dépasse la provision de <b>"+fmt(mt-dispo)+"</b> (disponible : "+fmt(dispo)+").<br>Le surplus sera pris sur le total des provisions.", go, { ok:"Valider" });
+      else go();
+    }
+    // choisir la provision qui paie une facture
+    function provChooseFor(f){
+      if(!provisions.length){ uiToast("Aucune provision : crée-la dans À venir › Provisions"); return; }
+      var k=factKey(f), L=provisions.slice().sort(function(a,b){ return (a.fact===k?0:1)-(b.fact===k?0:1); });
+      uiChoice("Payer avec une provision", esc((f.four||"")+" · "+ddmmyy(f.date)+" · "+fmtK(f.montant)), L.map(function(p){ return { l:p.nom+" · "+fmtK(provBalance(p, monthKey(todayISO())))+" de côté", primary:false, fn:function(){ provPayBill(p, f); } }; }));
+    }
     function addPrelevement(id){
       var p=provisions.filter(function(x){ return String(x.id)===String(id); })[0]; if(!p) return;
+      var bl=provBillsFor(p);
+      if(bl.length) uiChoice("Facture payée · "+p.nom, "Une facture importée, ou un autre montant ?", bl.map(function(f){ return { l:(f.four||factType(f.type).l)+" · "+ddmmyy(f.date)+" · "+fmtK(f.montant), primary:false, fn:function(){ provPayBill(p, f); } }; }).concat([{ l:"Autre montant…", primary:false, fn:function(){ addPrelevementForm(p); } }]));
+      else addPrelevementForm(p);
+    }
+    function addPrelevementForm(p){
       var dm=(state.months&&state.months.provisions)||monthKey(todayISO());
       uiForm({ title:"Facture payée · "+p.nom, fields:[
         {key:"label", label:"Libellé", placeholder:"Facture novembre"},
@@ -8362,7 +8395,7 @@
         h+='<section class="paper fct-pv"><div class="fct-top"><span class="fct-n"><b>Provision « '+esc(s.prov.nom)+' »</b><small>'+esc(fmtK(provBalance(s.prov, curM)))+' de côté · +'+esc(fmtK(mensuelAt(s.prov, curM)))+'/mois</small></span>'+
            (pa?'<span class="fct-v"><b class="'+(pa.manque>0.5?'fct-warn':'fct-ok')+'">'+(pa.manque>0.5?'il manquera '+esc(fmtK(pa.manque)):'prête')+'</b><small>pour la prochaine</small></span>':'')+'</div></section>';
       } else if(!ro){ var mm=Math.ceil(factMonthly(s));
-        h+='<section class="paper fct-pv"><div class="fct-top"><span class="fct-n"><b>Pas de provision</b><small>'+esc(fmtK(mm))+'/mois lisseraient tes factures</small></span><button type="button" class="btn ghost" id="fsProv" style="flex:0 0 auto;padding:10px 14px">Créer</button></div></section>';
+        h+='<section class="paper fct-pv"><div class="fct-top"><span class="fct-n"><b>Pas de provision</b><small>'+esc(fmtK(mm))+'/mois lisseraient tes factures</small></span>'+(provisions.length?'<button type="button" class="btn ghost" id="fsLink" style="flex:0 0 auto;padding:10px 12px">Lier</button>':'')+'<button type="button" class="btn ghost" id="fsProv" style="flex:0 0 auto;padding:10px 14px">Créer</button></div></section>';
       }
       // graphique des factures
       var B=s.bills.slice(-8), mx=1; B.forEach(function(b){ mx=Math.max(mx, b.montant||0); }); mx=Math.max(mx, est);
@@ -8382,12 +8415,19 @@
       // la liste
       h+='<div class="bsec-h">Factures<small>'+s.bills.length+'</small></div><section class="paper fct-list">';
       s.bills.slice().reverse().forEach(function(b){
-        h+='<button type="button" class="fct-row" data-id="'+esc(b.id)+'"><span class="fct-n"><b>'+esc(ddmmyy(b.date))+(b.regul?' · régularisation':'')+'</b><small>'+esc((b.du?ddmm(b.du)+' → '+ddmm(b.au||b.date):'')+(b.conso&&ty.u?(b.du?' · ':'')+b.conso+' '+ty.u:'')+(b.aPayer?(b.du||b.conso?' · ':'')+'à payer':(b.prelev?(b.du||b.conso?' · ':'')+'prélevée le '+ddmm(b.prelev):''))+(factFraisFor(b)?' · dans tes comptes':''))+'</small></span><b class="ops-a">'+esc(fmtK(b.montant||0))+'</b></button>';
+        h+='<button type="button" class="fct-row" data-id="'+esc(b.id)+'"><span class="fct-n"><b>'+esc(ddmmyy(b.date))+(b.regul?' · régularisation':'')+'</b><small>'+esc((b.du?ddmm(b.du)+' → '+ddmm(b.au||b.date):'')+(b.conso&&ty.u?(b.du?' · ':'')+b.conso+' '+ty.u:'')+(b.aPayer?(b.du||b.conso?' · ':'')+'à payer':(b.prelev?(b.du||b.conso?' · ':'')+'prélevée le '+ddmm(b.prelev):''))+(factFraisFor(b)?' · dans tes comptes':'')+(provOfBill(b)?' · payée par « '+provOfBill(b).nom+' »':''))+'</small></span><b class="ops-a">'+esc(fmtK(b.montant||0))+'</b></button>';
       });
       h+='</section>';
       if(!ro) h+='<button type="button" class="btn primary" id="fsImp" style="margin-top:12px">Importer une facture</button><button type="button" class="btn ghost" id="fsDel" style="margin-top:10px;color:var(--coral)">Supprimer « '+esc(s.four||ty.l)+' » et '+(s.bills.length>1?'ses '+s.bills.length+' factures':'sa facture')+'</button>';
       app.innerHTML=h; setNav("factures", true);
       bindBack(function(){ state.view="factures"; render(); window.scrollTo(0,0); });
+      // lier une provision qui existe déjà (ex. « Eau ») ; elle paie alors la dernière facture si elle ne l'est pas
+      var lk=document.getElementById("fsLink"); if(lk) lk.onclick=function(){
+        uiChoice("Lier une provision", "Elle suivra les factures de « "+esc(s.four)+" » et les paiera.", provisions.map(function(p){ return { l:p.nom+(p.fact&&p.fact!==s.key?" (liée à une autre)":""), primary:false, fn:function(){
+          p.fact=s.key; persistProvisions(); var L=s.last;
+          if(L && !L.prId && (L.date||"")>=isoAddDays(todayISO(), -120)) uiConfirm("Payer la facture du "+ddmmyy(L.date)+" (<b>"+fmtK(L.montant)+"</b>) avec « "+esc(p.nom)+" » ?", function(){ provPayBill(p, L); }, { ok:"Payer", onNo:function(){ render(); } });
+          else { render(); uiToast("« "+p.nom+" » suit maintenant « "+s.four+" »"); } } }; }));
+      };
       var cp=document.getElementById("fsProv"); if(cp) cp.onclick=function(){ factCreateProv(s); render(); uiToast("Provision « "+factProvName(s)+" » créée"); };
       var im=document.getElementById("fsImp"); if(im) im.onclick=factImportChooser;
       var dl=document.getElementById("fsDel"); if(dl) dl.onclick=function(){ factSeriesDelete(s.key); };
@@ -8472,6 +8512,9 @@
       h+='<label class="f">Paiement</label><div class="chips" id="fe-pay"><button type="button" class="chip'+(!pay?' on':'')+'" data-v="prel">Prélèvement</button><button type="button" class="chip'+(pay?' on':'')+'" data-v="apayer">À payer moi-même</button></div>';
       h+='<div class="row2">'+dt("fe-prel", pay?"À payer avant le":"Prélevé le", pay?f.due:f.prelev)+(ty.u?'<div><label class="f" for="fe-conso">Consommation ('+ty.u+')</label><input class="f" id="fe-conso" inputmode="decimal" value="'+esc(f.conso!=null?String(f.conso):"")+'"></div>':'')+'</div>';
       h+='<div class="row2">'+dt("fe-du", "Consommé du", f.du)+dt("fe-au", "au", f.au)+'</div>';
+      var pv0=provOfBill(f);
+      if(pv0) h+='<div class="fnote" style="margin:10px 2px 0">✓ Payée par la provision « '+esc(pv0.nom)+' ».</div>';
+      else if(provisions.length) h+='<button type="button" class="btn ghost" id="fePrv" style="margin-top:12px">Payer avec une provision</button>';
       var fr0=factFraisFor(f);
       if(fr0) h+='<div class="fnote" style="margin:10px 2px 0">✓ Dans tes comptes : « À venir » de '+esc(monthLabelOf(fr0.month||factPayMonth(f)))+'.</div>';
       else if(factCanAdd(f)) h+='<button type="button" class="btn ghost" id="feAcc" style="margin-top:12px">Ajouter à mes comptes (« À venir » de '+esc(monthLabelOf(factPayMonth(f)))+')</button>';
@@ -8482,6 +8525,7 @@
       function err(m){ var e=s.q(".ui-err"); e.textContent=m||""; e.style.display=m?"":"none"; }
       s.q("#feDel").onclick=function(){ s.close(); factDeleteUndo(f); };
       var fa=s.q("#feAcc"); if(fa) fa.onclick=function(){ s.close(); factAddToAccounts(f, true); };
+      var fp=s.q("#fePrv"); if(fp) fp.onclick=function(){ s.close(); provChooseFor(f); };
       s.q("#feOk").onclick=function(){
         var g=function(id){ var e=s.q("#"+id); return e ? e.value.trim() : ""; };
         var four=g("fe-four"), amt=num(g("fe-mt")), date=g("fe-date"), d2=g("fe-prel"), cs=g("fe-conso"), du=g("fe-du"), au=g("fe-au");
