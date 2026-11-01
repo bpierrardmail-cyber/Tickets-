@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `01/11 09:54`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `01/11 10:01`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -160,6 +160,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 01/11
+- **Supprimer un fournisseur (groupe de factures)** : appui long sur sa carte (À venir › Factures) → Ouvrir / Supprimer « EDF » (8 factures), ou bouton en bas de son détail ; confirmation avec le nombre de factures, puis « Annuler » pendant quelques secondes (`factSeriesDelete`). Partent avec lui : ses factures, leurs prélèvements à venir, l'estimation de la prochaine ; sa provision est gardée (l'argent mis de côté reste), seulement détachée. Le nombre de factures est sur chaque carte. Test t98 complété.
 - **Factures d'un fournisseur : modifier, supprimer, nombre de factures** (demande de Benoît, capture à l'appui) :
   - carte du fournisseur (À venir › Factures) : « 3 factures » ;
   - dans son détail, toucher une facture ouvre sa fiche (fournisseur, montant, date, paiement, prélevée le / à payer avant, m³ ou kWh, période ; Supprimer / Enregistrer, `factEditSheet`) ; appui long → Modifier / Supprimer (`onLongPress`, comme les tickets) ; suppression annulable (`factDeleteUndo`, avec son « à payer » ou prélèvement à venir et son paiement par la provision) ;

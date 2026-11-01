@@ -141,7 +141,7 @@ Les maquettes (canevas « Tickets — Plan de l'appli » et autres) sont des art
   - roue du compte : modifier, solde reporté, **import d'un relevé** OFX, QIF ou CSV lu sur le téléphone, annuler le dernier import.
 - **À venir**, sous-onglets 12 mois · Frais fixes · Provisions · Factures :
   - 12 mois : les 12 prochains mois, « À payer bientôt », et ✦ « Tes comptes dans 12 mois » (projection et simulateur) ;
-  - Factures (✦ en Store) : import de factures PDF ou photos, et estimation de la prochaine facture selon la saison ; dans le détail d'un fournisseur, toucher une facture pour la modifier, appui long pour la supprimer (annulable) ;
+  - Factures (✦ en Store) : import de factures PDF ou photos, et estimation de la prochaine facture selon la saison ; dans le détail d'un fournisseur, toucher une facture pour la modifier, appui long pour la supprimer (annulable) ; appui long sur la carte d'un fournisseur pour le supprimer avec ses factures (provision gardée) ;
   - plusieurs factures d'un coup (plusieurs PDF, ou plusieurs factures en photos, recto et verso, même dans le désordre) : un écran de contrôle « 6 photos · 6 lues · 3 factures trouvées » liste les factures ; la plus récente est vérifiée en entier, les plus anciennes se contrôlent une par une ou se décochent ; une photo illisible se reprend ; rien n'est enregistré avant « Appliquer ».
 - **Commun** : part de chacun dans le commun, en %, et parts propres à chaque frais ; frais communs du mois ; produits partagés.
 - **Bourse** (Perso seulement) : cours Yahoo et CoinGecko via le relais. Elle compte une fois dans l'épargne.

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 09:54" />
+  <meta name="build" content="01/11 10:01" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -8296,7 +8296,14 @@
       });
         if(!ro) h+='<div class="ui-stack" style="margin-top:4px"><button type="button" class="btn primary" id="fctImp">Importer une facture</button></div>';
         app.innerHTML=h; setNav("factures", true); wireAvTabs();
-        [].forEach.call(document.querySelectorAll(".fct-card[data-k]"), function(b){ b.onclick=function(){ state.factKey=b.getAttribute("data-k"); state.view="factserie"; render(); window.scrollTo(0,0); }; });
+        [].forEach.call(document.querySelectorAll(".fct-card[data-k]"), function(b){ var k=b.getAttribute("data-k");
+          function open(){ state.factKey=k; state.view="factserie"; render(); window.scrollTo(0,0); }
+          b.onclick=open;
+          // appui long : Ouvrir / Supprimer ce fournisseur et ses factures
+          onLongPress(b, function(){ var bl=factures.filter(function(x){ return factKey(x)===k; }); if(!bl.length) return; var nm=bl[bl.length-1].four||factType(bl[0].type).l;
+            var ch=[{ l:"Ouvrir", fn:open }]; if(!fyRO()) ch.push({ l:"🗑 Supprimer « "+nm+" » ("+bl.length+" facture"+(bl.length>1?"s":"")+")", danger:true, fn:function(){ factSeriesDelete(k); } });
+            uiChoice(nm, esc(bl.length+" facture"+(bl.length>1?"s":"")+" · "+factType(bl[0].type).l), ch); });
+        });
         var bi=document.getElementById("fctImp"); if(bi) bi.onclick=factImportChooser;
         return;
       }
@@ -8362,11 +8369,12 @@
         h+='<button type="button" class="fct-row" data-id="'+esc(b.id)+'"><span class="fct-n"><b>'+esc(ddmmyy(b.date))+(b.regul?' · régularisation':'')+'</b><small>'+esc((b.du?ddmm(b.du)+' → '+ddmm(b.au||b.date):'')+(b.conso&&ty.u?(b.du?' · ':'')+b.conso+' '+ty.u:'')+(b.aPayer?(b.du||b.conso?' · ':'')+'à payer':(b.prelev?(b.du||b.conso?' · ':'')+'prélevée le '+ddmm(b.prelev):'')))+'</small></span><b class="ops-a">'+esc(fmtK(b.montant||0))+'</b></button>';
       });
       h+='</section>';
-      if(!ro) h+='<button type="button" class="btn primary" id="fsImp" style="margin-top:12px">Importer une facture</button>';
+      if(!ro) h+='<button type="button" class="btn primary" id="fsImp" style="margin-top:12px">Importer une facture</button><button type="button" class="btn ghost" id="fsDel" style="margin-top:10px;color:var(--coral)">Supprimer « '+esc(s.four||ty.l)+' » et '+(s.bills.length>1?'ses '+s.bills.length+' factures':'sa facture')+'</button>';
       app.innerHTML=h; setNav("factures", true);
       bindBack(function(){ state.view="factures"; render(); window.scrollTo(0,0); });
       var cp=document.getElementById("fsProv"); if(cp) cp.onclick=function(){ factCreateProv(s); render(); uiToast("Provision « "+factProvName(s)+" » créée"); };
       var im=document.getElementById("fsImp"); if(im) im.onclick=factImportChooser;
+      var dl=document.getElementById("fsDel"); if(dl) dl.onclick=function(){ factSeriesDelete(s.key); };
       // toucher une facture : la modifier ; appui long : Modifier / Supprimer (comme les tickets)
       [].forEach.call(document.querySelectorAll(".fct-row"), function(b){
         function fOf(){ var id=b.getAttribute("data-id"); return factures.filter(function(x){ return String(x.id)===String(id); })[0]; }
@@ -8387,6 +8395,24 @@
       if(f.prId) provisions.forEach(function(p){ var pr=(p.prelevements||[]).filter(function(x){ return String(x.id)===String(f.prId); })[0]; if(pr){ p.prelevements=p.prelevements.filter(function(x){ return x!==pr; }); out.prP=p; out.pr=pr; persistProvisions(); } });
       persistFactures();
       return out;
+    }
+    // Supprimer un fournisseur : ses factures, leurs prélèvements à venir, l'estimation de la prochaine ;
+    // sa provision est gardée (l'argent mis de côté reste), seulement détachée
+    function factSeriesDelete(key){
+      var bl=factures.filter(function(x){ return factKey(x)===key; }); if(!bl.length) return;
+      var nm=bl[bl.length-1].four||factType(bl[0].type).l, n=bl.length, pv=provisions.filter(function(p){ return p.fact===key; });
+      uiConfirm("Supprimer « "+esc(nm)+" » et <b>"+(n>1?"ses "+n+" factures":"sa facture")+"</b> ?"+(pv.length?"<br><small>Sa provision « "+esc(pv[0].nom)+" » est gardée.</small>":""), function(){
+        var del=bl.map(function(f){ return factDelete(f); }), est=fraisCommuns.filter(function(x){ return x.fact===key && x.est; });
+        if(est.length){ fraisCommuns=fraisCommuns.filter(function(x){ return est.indexOf(x)<0; }); persistFrais(); }
+        pv.forEach(function(p){ delete p.fact; }); if(pv.length) persistProvisions();
+        var v0=state.view; state.view="factures"; state.avnSub="fact"; render(); window.scrollTo(0,0);
+        uiUndoToast("« "+nm+" » et "+(n>1?"ses "+n+" factures":"sa facture")+" supprimés", "Annuler", function(){
+          del.forEach(function(o){ factures.push(o.f); if(o.fr) fraisCommuns.push(o.fr); if(o.pr && o.prP){ if(!o.prP.prelevements) o.prP.prelevements=[]; o.prP.prelevements.push(o.pr); } });
+          est.forEach(function(x){ fraisCommuns.push(x); }); pv.forEach(function(p){ p.fact=key; });
+          persistFactures(); persistFrais(); persistProvisions();
+          state.view=v0; state.factKey=key; render(); uiToast("« "+nm+" » remis");
+        });
+      }, { title:"Supprimer un fournisseur", ok:"Supprimer", danger:true });
     }
     function factDeleteUndo(f){
       var v0=state.view, k0=state.factKey, o=factDelete(f); render();
