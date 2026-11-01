@@ -1,6 +1,6 @@
 # Tickets : dossier de passation
 
-*État au 01/11/2026, étiquette `01/11 21:32`. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
+*État au 01/11/2026, étiquette `01/11 21:42`. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
 
 > **À Claude qui reprend le projet**
 >
@@ -212,7 +212,7 @@ Fait et poussé le 31/10 :
   - Cela s'ajoute à la lecture actuelle, sans la remplacer. Aucun coût pour nous, rien ne passe par notre relais.
 - **Retrait au distributeur** scanné : le proposer comme argent liquide plutôt que comme dépense.
 - **Lecture des tickets** : pour chaque ticket mal lu, demander la photo et « Copier la lecture », puis corriger `mlkitRows` et `parseTicket`.
-- **Factures** : « Lire avec mon IA » aussi pour les factures (avec celle des tickets) ; enrichir le corpus `tests/donnees/factures_fictives.json` à chaque format raté.
+- **Factures** : table de lectures par fournisseur livrée avec l'appli (même format que `factAppris`), à remplir avec des libellés tirés de vraies factures (les guides en ligne n'en donnent presque pas) ; plus tard, partage volontaire par l'utilisateur de ce qui a été appris (nom du fournisseur et mots avant la valeur, sans montant ni date). « Lire avec mon IA » aussi pour les factures (avec celle des tickets) ; enrichir le corpus `tests/donnees/factures_fictives.json` à chaque format raté.
 - **Factures d'eau** : vérifier ce que ML Kit lit, quand Benoît enverra « Copier la lecture ».
 - **Import de relevé** : pistes possibles.
   - Lire les fichiers Grisbi (`.gsb`, du XML).

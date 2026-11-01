@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `01/11 21:32`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `01/11 21:42`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -171,6 +171,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 01/11
+- **Factures : libellés relevés en ligne** (« tu pourras ajouter les données de factures récupérées sur internet ? ») : les guides « comprendre ma facture » (EDF, Engie, TotalEnergies, Veolia, Suez, Saur, Bouygues, La Poste Mobile) donnent peu de libellés exacts et pas la mise en page ; les libellés trouvés vont dans la lecture générale plutôt que dans une table par fournisseur : « date limite de règlement » (= à payer, échéance), « facture éditée le », « date de fin d'engagement » écartée ; 3 factures inventées avec ces libellés ajoutées au corpus (12 lues sur 12). La table de lectures par fournisseur attend des libellés tirés de vraies factures.
 - **Factures : lecture générale et apprentissage par fournisseur** (« le système fonctionne mal, les utilisateurs ne pourront pas ou peu importer de facture » ; « OK pour 1 et 2 ») :
   - lecture générale : quand les règles ne trouvent pas la date ou le montant, chaque montant et chaque date reçoit une note selon les mots de sa ligne (ou de la ligne au-dessus si la valeur est seule) et le mieux noté l'emporte (`factGuessAmt`, `factAmtScore` : « à payer », « TTC », « total », « prélevé »… contre « HT », « TVA », « dont », « capital »… ; `factGuessDate`, `factDateScore` : « date de facture », « émise le », « Date : », « Le … » contre échéance, période, contrat, prochaine) ; prélèvement sur une ligne « prélèv… » (`factGuessPrelev`) ; toutes les dates d'une ligne avec leur position (`factDatesIdx` : chiffres, lettres, AAAA-MM-JJ) ; « Prélèvement à partir du » ; « Règlement à réception » = à payer ; « date limite de paiement » sans date (conditions générales) ne veut plus dire « à payer » ;
   - apprentissage : à « Appliquer », une date ou un montant corrigé est retenu pour ce fournisseur (nom lu à l'origine) : les 4 derniers mots avant la valeur, ou la ligne au-dessus (`factLearn`, `factAnchorOf`, clé `factAppris`, gardée sur le téléphone et dans la sauvegarde, pas synchronisée dans le foyer) ; la facture suivante est relue au même endroit (`factLearntApply`, prioritaire sur les règles) ; dans un import de plusieurs factures, corriger la plus récente remplit aussitôt les plus anciennes du même fournisseur (`factFillOthers`) ; message « lecture retenue pour … » ;

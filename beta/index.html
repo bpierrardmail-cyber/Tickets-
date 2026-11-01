@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 21:32" />
+  <meta name="build" content="01/11 21:42" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -8589,11 +8589,11 @@
     }
     function factDateScore(n){
       var s=0;
-      if(/ date de (?:la )?factur| facture du | factur\w* n | emise? le | edite le | date d emission | date de facturation | facture emise | invoice date /.test(n)) s+=5;
+      if(/ date de (?:la )?factur| facture du | factur\w* n | emise? le | editee? le | date d emission | date de facturation | facture emise | invoice date /.test(n)) s+=5;
       else { if(/ date /.test(n)) s+=3; if(/ factur/.test(n)) s+=2; if(/^ le $/.test(n)) s+=3; }
       if(/ echeance | avant le | limite | prelev| paiement | payable /.test(n)) s-=4;
       if(/ periode | consommation | releve | index | abonnement | au /.test(n)) s-=3;
-      if(/ contrat | souscri| depuis | naissance | mise en service | adhesion /.test(n)) s-=4;
+      if(/ contrat | souscri| depuis | naissance | mise en service | adhesion | engagement /.test(n)) s-=4;
       if(/ prochaine /.test(n)) s-=6;
       return s;
     }
@@ -8676,7 +8676,7 @@
         else if(/\b(box|fibre|forfait mobile|ligne fixe)\b/.test(low) || /(?:abonnement|acc[eè]s|offre)\s+internet/.test(low)) r.type="net";
       }
       // date de la facture
-      r.date=factDateAfter(flat, /factur\w*(?:\s+r[ée]elle|\s+n[°o]\.?\s*\S+)?\s+(?:du|en date du|[ée]mise le)\s*:?\s*/i, 20) ||
+      r.date=factDateAfter(flat, /factur\w*(?:\s+r[ée]elle|\s+n[°o]\.?\s*\S+)?\s+(?:du|en date du|[ée]mise le|[ée]dit[ée]e? le)\s*:?\s*/i, 20) ||
              factDateAfter(flat, /date\s+(?:de\s+(?:la\s+)?)?facture?\s*:?\s*/i, 20) || factDateAfter(flat, /date\s+d['’][ée]mission\s*:?\s*/i, 20);
       // montant à payer (et prélèvement : « Le montant de 183,55€ sera prélevé le 12/11/2025 »)
       m=/montant\s+de\s+(\d[\d ]*,\d\d)\s*€?\s*sera\s+pr[ée]lev[ée]\s+(?:le|à partir du|vers le)\s*:?\s*([^\n]{0,14})/i.exec(flat);
@@ -8685,8 +8685,8 @@
       if(r.montant==null) r.montant=factLabelAmt(lines, /montant\s+total(?!\s*(?:ht|hors))|total\s+(?:de\s+)?(?:la|votre)\s+facture|total\s+facture\s+ttc|montant\s+ttc|total\s+ttc/i);
       if(!r.prelev) r.prelev=factDateAfter(flat, /pr[ée]l[èe]vement\s+(?:le|à partir du|a partir du|du)\s*:?\s*/i, 30);
       if(!r.prelev) r.prelev=factDateAfter(flat, /(?:sera\s+)?pr[ée]lev[ée]e?s?\s+(?:sur\s+[^\n]{1,40}?\s+)?(?:le|à partir du|vers le)\s*:?\s*/i, 40) || factDateAfter(flat, /date\s+(?:du|de)\s+pr[ée]l[èe]vement\s*:?\s*/i, 30);
-      if(!r.prelev && /[àa]\s+payer\s+[àa]\s+r[ée]ception|r[èe]glement\s+[àa]\s+r[ée]ception|tip\s*sepa|payfip|[àa]\s+r[ée]gler\s+avant|date\s+limite\s+de\s+paiement\s*:?\s*(?:le\s+)?\d|[àa]\s+payer\s+avant/i.test(flat)){
-        r.aPayer=true; r.due=factDateAfter(flat, /(?:[àa]\s+(?:payer|r[ée]gler)\s+avant\s+le|date\s+limite\s+de\s+paiement)\s*:?\s*/i, 30);
+      if(!r.prelev && /[àa]\s+payer\s+[àa]\s+r[ée]ception|r[èe]glement\s+[àa]\s+r[ée]ception|tip\s*sepa|payfip|[àa]\s+r[ée]gler\s+avant|date\s+limite\s+de\s+(?:paiement|r[èe]glement)\s*:?\s*(?:le\s+)?\d|[àa]\s+payer\s+avant/i.test(flat)){
+        r.aPayer=true; r.due=factDateAfter(flat, /(?:[àa]\s+(?:payer|r[ée]gler)\s+avant\s+le|date\s+limite\s+de\s+(?:paiement|r[èe]glement))\s*:?\s*/i, 30);
       }
       r.next=factDateAfter(flat, /prochaine\s+facture[^\n\d]{0,20}/i, 30);
       r.regul=/paiements?\s+d[ée]j[àa]\s+effectu|d[ée]j[àa]\s+r[ée]gl[ée]s?\b|acomptes?\s+(?:d[ée]j[àa]\s+)?(?:vers|pay|r[ée]gl)|remboursement\s+en\s+votre\s+faveur/i.test(flat);
