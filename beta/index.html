@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 09:14" />
+  <meta name="build" content="01/11 09:42" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -184,7 +184,10 @@
     .cfx-r{ display:flex; align-items:center; gap:10px; padding:9px 2px; border-top:1px solid var(--line); font-size:13.5px; cursor:pointer; }
     .cfx-r .n{ flex:1; min-width:0; } .cfx-r small{ display:block; margin-top:1px; font-size:11.5px; color:var(--ink-soft); }
     .cfx-r .a{ flex:0 0 auto; font-variant-numeric:tabular-nums; font-weight:600; }
-    .cfx-sec .cfx-b{ display:none; } .cfx-sec.open .cfx-b{ display:block; }
+    .cfx-sec .cfx-b{ display:none; padding:0 14px 10px; } .cfx-sec.open .cfx-b{ display:block; }
+    .cfx-b .entry.ecomp{ background:none; border:0; border-top:1px solid var(--line); border-radius:0; margin:0; padding:10px 2px; box-shadow:none; }
+    .cfx-b .dsub{ display:flex; justify-content:space-between; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:12px 2px 4px; }
+    .cfx-b .cfx-go{ margin:8px 2px 0; padding-top:10px; border-top:1px solid var(--line); font-size:13px; color:var(--accent); cursor:pointer; }
     .cfx-sec .cacc-h{ cursor:pointer; } .cfx-sec .cacc-h .ch{ display:inline-block; transition:transform .2s; } .cfx-sec.open .cacc-h .ch{ transform:rotate(90deg); }
     .fct-teaser{ padding:18px; border-radius:20px; background:var(--card); border:1px solid var(--line); }
     .fct-teaser h3{ margin:0 0 8px; font-size:18px; } .fct-teaser p{ margin:0 0 8px; font-size:13.5px; line-height:1.5; color:var(--ink-soft); }
@@ -4878,9 +4881,13 @@
       // Les frais communs du mois (à voir ; ils se modifient dans À venir › Frais fixes) et une ligne « Produits partagés »
       var fcRows=ci.slice().sort(function(a,b){ return fraisMontant(b,month)-fraisMontant(a,month); }).map(function(f){ var dn=fraisDone(f, month);
         return '<div class="cfx-r avgo"><span class="n">'+(dn?'<span style="color:var(--accent)">✓</span> ':'')+esc(f.label)+(f.split?'<small>chacun sa part</small>':'')+'</span><span class="a">'+fmtK(fraisMontant(f, month))+'</span></div>'; }).join("");
-      var fcOpen=store.read("comFcOpen", true)!==false;   // la liste se replie en touchant le titre (choix gardé)
-      var rowsMain='<div class="cacc-sec'+(fcRows?' cfx-sec'+(fcOpen?' open':''):'')+'"><div class="cacc-h '+(fcRows?'cfx-h':'avgo')+'"'+(fcRows?' role="button" aria-expanded="'+fcOpen+'"':'')+'><span class="t"><span class="tic">🏠</span> Frais communs · '+ci.length+'<small>'+(ci.length?paidCount(ci)+"/"+ci.length+" payé"+(paidCount(ci)>1?"s":"")+" · à modifier dans À venir":"à ajouter dans À venir › Frais fixes")+'</small></span><span class="v">'+fmtK(D.commun)+'</span><span class="ch">›</span></div>'+(fcRows?'<div class="cfx-b" style="padding:0 14px 10px">'+fcRows+'</div>':'')+'</div>'+
-        '<div class="cacc-sec"><div class="cacc-h comGo" data-sub="prod"><span class="t"><span class="tic">🛒</span> Produits partagés<small>'+G.prod.sub+'</small></span><span class="v">'+fmtK(G.prod.val)+'</span><span class="ch">›</span></div></div>';
+      // Frais communs et Produits partagés : deux sections qui se replient de la même façon en touchant leur titre (choix gardé) ;
+      // dépliées, chacune montre son contenu et un lien vers sa page
+      var fcOpen=store.read("comFcOpen", true)!==false, ppOpen=store.read("comPpOpen", false)===true;
+      function fold(k, open, tic, title, sub, val, body){ return '<div class="cacc-sec cfx-sec'+(open?' open':'')+'" data-k="'+k+'"><div class="cacc-h cfx-h" role="button" aria-expanded="'+open+'"><span class="t"><span class="tic">'+tic+'</span> '+title+'<small>'+sub+'</small></span><span class="v">'+val+'</span><span class="ch">›</span></div><div class="cfx-b">'+body+'</div></div>'; }
+      var rowsMain=fold("fc", fcOpen, "🏠", "Frais communs · "+ci.length, ci.length?paidCount(ci)+"/"+ci.length+" payé"+(paidCount(ci)>1?"s":""):"aucun ce mois-ci", fmtK(D.commun),
+          fcRows+'<div class="clink avgo cfx-go"><span>'+(ci.length?'Modifier dans À venir › Frais fixes':'Ajouter dans À venir › Frais fixes')+'</span><span>›</span></div>')+
+        fold("pp", ppOpen, "🛒", "Produits partagés", G.prod.sub, fmtK(G.prod.val), G.prod.body);
       var subBody=cSub==="frais" ? gSec(G.commun)+(G.perso?gSec(G.perso):'') : (cSub==="prod" ? gSec(G.prod) : '');
       var skM=(state.months&&state.months.communes)||monthKey(todayISO()), skL=(cSub==="frais") ? fraisCommuns.filter(function(f){ return f.skipMonths && f.skipMonths[skM]; }) : [];
       if(skL.length) subBody+='<section class="paper cacc" style="padding:6px 14px 8px"><div class="muted" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin:6px 2px 2px">Retirés de '+esc(monthLabelOf(skM))+'</div>'+
@@ -4896,7 +4903,7 @@
       [].forEach.call(document.querySelectorAll(".comGo"), function(r){ r.onclick=function(){ state.comSub=r.getAttribute("data-sub"); render(); window.scrollTo(0,0); }; });
       [].forEach.call(document.querySelectorAll(".avgo"), function(r){ r.onclick=function(){ state.view="factures"; state.avnSub="frais"; render(); window.scrollTo(0,0); }; });
       // replier / déplier : la page est redessinée pour que la carte du haut reprenne la place libérée (fitHero)
-      [].forEach.call(document.querySelectorAll(".cfx-h"), function(hd){ hd.onclick=function(){ var op=!hd.parentNode.classList.contains("open"); store.write("comFcOpen", op); render(); }; });
+      [].forEach.call(document.querySelectorAll(".cfx-h"), function(hd){ hd.onclick=function(){ var g=hd.parentNode, op=!g.classList.contains("open"); store.write(g.getAttribute("data-k")==="pp"?"comPpOpen":"comFcOpen", op); render(); }; });
       wireChartDefaults();
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.comChart=bt.getAttribute("data-m"); store.write("comChart", state.comChart); render(); }; });
       var cOn=document.querySelector(".cch-tabs button.on"); if(cOn && cOn.parentNode){ var tb=cOn.parentNode; tb.scrollLeft=Math.max(0, cOn.offsetLeft-(tb.clientWidth-cOn.offsetWidth)/2); }

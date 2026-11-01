@@ -166,7 +166,7 @@ Fait et poussé le 31/10 :
    - le fournisseur écrit sur deux lignes est retrouvé ;
    - « site Internet » ne fait plus une facture internet.
 5. **Écran de contrôle de plusieurs factures**, à sa demande : nombre de pages lues sur le nombre de photos, « LA PLUS RÉCENTE », contrôle des plus anciennes, « Reprendre » une photo illisible, rien d'enregistré avant « Appliquer ». Même écran pour plusieurs PDF.
-6. **Accueil** : la page des petits graphiques (« 3 / 8 ») est gardée même quand l'appli se redessine au démarrage. **Commun** : la liste des frais communs se replie, et le graphique reprend alors sa place (01/11).
+6. **Accueil** : la page des petits graphiques (« 3 / 8 ») est gardée même quand l'appli se redessine au démarrage. **Commun** : Frais communs et Produits partagés se replient de la même façon en touchant leur titre, et le graphique reprend alors sa place ; « Modifier dans À venir » dans la liste des frais communs (01/11).
 
 **À faire valider par Benoît sur son téléphone :**
 - la nouvelle navigation, et les retours éventuels ;
