@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 20:38" />
+  <meta name="build" content="01/11 20:41" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -5708,8 +5708,8 @@
         chart+=compteLineSVG(epRows, month, "#7c9cf4")+'<div class="cch-note">Total de tes comptes épargne'+(hasB?' (pointillés : dont Bourse)':'')+', '+cRangeNote(epRows.map(function(r){ return r.m; }))+'</div>'+cRangeSeg();
       } else {
         var pRows=six.map(function(m){ return { m:m, lbl:mShort(m), v:provAt(m) }; }), p0=pRows[pRows.length-2].v, p1=pRows[pRows.length-1].v;
-        hero={ label:"Provisions mises de côté", big:p1, color:"var(--ink)", sub:(p1-p0>=0?"+":"")+fmtK(p1-p0)+" vs mois précédent" };
-        chart+=compteBarsSVG(pRows, month, "#c78bd6")+'<div class="cch-note">Total mis de côté dans tes provisions, sur 6 mois</div>';
+        hero={ label:"Total provisions", big:p1, color:"var(--ink)", sub:(p1-p0>=0?"+":"")+fmtK(p1-p0)+" vs mois précédent" };
+        chart+=compteBarsSVG(pRows, month, "#c78bd6")+'<div class="cch-note">Total provisions, sur 6 mois</div>';
       }
       chart+='</div>';
       var liqBtn=(liqHas && (cmode==="mois" || cmode==="solde")) ? '<button type="button" class="anfx'+(liqOn?' on':'')+'" id="cptLiqBtn" aria-pressed="'+liqOn+'">'+(liqOn?'✓':'＋')+' Liquide</button>' : '';
@@ -8470,7 +8470,7 @@
         h=h.replace("%%HERO%%", provisions.length?tabHero({ label:"Total provisions", big:total, color:(total<0?"var(--coral)":"var(--ink)"), sub:(overTot>0?"Dépassements déduits : −"+fmtK(overTot):""), extra:provChartHTML(month, curM, PY),
           stats:st })+provListHTML(month, curM, PL)+'<div class="bsec-h">Enveloppes</div><div style="height:10px"></div>':"");
       })();
-      h+='<hr class="rule" style="display:none"><div class="leader total" style="display:none"><span class="lbl">Total provisionné</span><span class="fill"></span><span class="val" style="color:'+(total<0?"#f4796b":"#4fd6a0")+'">'+fmt(total)+'</span></div>';
+      h+='<hr class="rule" style="display:none"><div class="leader total" style="display:none"><span class="lbl">Total provisions</span><span class="fill"></span><span class="val" style="color:'+(total<0?"#f4796b":"#4fd6a0")+'">'+fmt(total)+'</span></div>';
       h+='<div class="muted" style="font-size:11px;margin:10px 4px 0;line-height:1.5">Le solde monte tout seul du montant mensuel. Enregistre un prélèvement quand la facture est payée.</div>';
       h+='</div>';
       app.innerHTML=h;
