@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `01/11 14:55`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `01/11 15:17`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -34,6 +34,7 @@ Après chaque modification, dans le même commit :
   - Analyse : graphiques Mois, Répartition, Récurrentes et Qui a payé, bouton « + Frais fixes », détail d'un mois, bouton ✦ Analyse avancée (inflation perso INSEE, année / an dernier, alertes, reste à vivre, résumé pour une IA).
 - **Commun** : parts du commun en % et parts propres à chaque frais, bouton « Produits partagés ». Graphique Mois (6, 12, 12 à venir, Tout). Bandeau des personnes. Les frais communs du mois y sont à voir ; ils se modifient dans À venir › Frais fixes.
 - **Compte** : 3 sous-onglets **Opérations · Épargne · Graphiques** (bouton « ＋ Ajouter » dans Opérations : virement reçu ou envoyé, frais fixe, ticket), et la **roue du compte** en haut à droite (modifier le compte, solde reporté, importer un relevé, annuler le dernier import, compte principal, supprimer) ;
+  - Opérations : « ＋ Ajouter › ↻ Reprendre des virements » du mois d'avant (mois suivant, un mois, une période ou chaque mois ; les virements « chaque mois » se créent seuls, 12 mois à l'avance) ;
   - Opérations : la **liste des opérations du mois**, comme un relevé de banque : solde estimé, Entrées / Sorties / Fin de mois, filtres Tout · Entrées · Sorties · À venir, recherche (nom ou montant, avec le total), bloc « À venir » avec un rond pour marquer « fait », puis les opérations par jour (le plus récent en haut) avec le solde du soir, et le report en bas ;
   - Graphiques : les 6 graphiques (Ce mois, Dépenses, Solde, Entrées-sorties, Épargne, Provisions), touchables (une barre ouvre Virements ou les Opérations filtrées) ;
   - plusieurs comptes par personne, sur une rangée qui défile (la carte des comptes garde la même hauteur) ;
@@ -110,6 +111,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **01/11** : reprendre des virements du mois d'avant (mois suivant, un mois, une période, chaque mois), d'après la maquette (« tu peux intégrer »).
 - **01/11** : graphique des provisions avec les factures prévues, d'après la maquette (« tu peux intégrer ») : onglets De côté / Avec les factures prévues, liste des factures prévues avec ce qui manquera.
 - **01/11** : provisions reliées aux frais fixes, au Commun et aux comptes, d'après la maquette (« va y ») : la mise de côté est un frais fixe relié, une facture payée par une provision va dans le compte et sort de la provision en un seul geste, sans compter deux fois dans les parts.
 - **01/11** : l'onglet Virements de Compte est retiré ; un bouton « ＋ Ajouter » (virement reçu, envoyé, frais fixe, ticket) va dans l'écran Opérations.
@@ -166,6 +168,12 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 01/11
+- **Reprendre des virements du mois d'avant** (« reprendre des virements du mois dernier et choisir : mois suivant, un mois précis, une période ou récurrent » ; maquette puis « tu peux intégrer ») :
+  - Compte › Opérations, « ＋ Ajouter › ↻ Reprendre des virements d'octobre » (le mois avant celui affiché) : on coche les virements (ceux déjà vus le mois d'avant sont cochés d'office, ceux déjà dans le mois visé sont signalés), puis **Mois suivant**, **Un mois**, **Une période** (de… à…) ou **Chaque mois** (à partir de…, avec ou sans fin) ; au même jour, à venir, à cocher « fait » ; un virement vers un livret le reste ;
+  - toucher un virement ouvre maintenant un petit menu : Modifier, « ↻ Reprendre ce virement » (et « Pas encore passé » s'il est fait) ;
+  - « Chaque mois » = une série (`virRec`) : l'appli crée le virement de chaque mois jusqu'à 12 mois à l'avance (« ↻ chaque mois » dans la liste) ; toucher l'un d'eux : modifier ce mois-ci seulement, modifier à partir de ce mois, retirer seulement ce mois (pas recréé, annulable), arrêter à partir de ce mois ;
+  - import d'un relevé : un virement déjà dans l'appli et laissé de côté devient « fait », au jour du relevé (annulé avec l'import), comme les frais fixes.
+  - Test `t103`.
 - **Factures : ce qui restera dans la provision** (« eau prête pour mai, mais il restera combien ») : la carte du fournisseur dit « prête pour mai · il restera 28 € » (ou « il manquera X en mai »), son détail « prête · il restera 28 € après celle de mai ». Le calcul (`factProvAt`) suit maintenant la projection des provisions : les factures prévues d'ici là sont déjà retirées. Test `t102` complété.
 - **Provisions : graphique « Avec les factures prévues »** (« un bouton pour afficher un graphique où les factures prévues sont prises en compte, recalcul du solde » ; maquette puis « tu peux intégrer ») :
   - dans la carte du haut de À venir › Provisions, deux onglets : **De côté** (ce qui est mis de côté, moins les prélèvements enregistrés) et **Avec les factures prévues** (solde de chaque mois recalculé après les factures à venir ; légende Après factures · Facture prévue · Il manquera ; chiffres Factures prévues · Le plus bas · À compléter ; un total négatif est dit « pas assez de côté pour tout payer ») ; choix gardé avec ★ ;

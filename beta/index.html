@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 14:55" />
+  <meta name="build" content="01/11 15:17" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -1099,6 +1099,14 @@
     .ui-inp{ position:relative; }
     .ui-inp.money input{ padding-right:34px; font-family:var(--mono); font-variant-numeric:tabular-nums; }
     .ui-inp span{ position:absolute; right:13px; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none; }
+    .vr-list{ max-height:38vh; overflow-y:auto; border:1px solid var(--line); border-radius:14px; padding:0 10px; margin-top:6px; }
+    .vr-r{ display:flex; align-items:center; gap:10px; padding:9px 0; border-top:1px solid var(--line); cursor:pointer; }
+    .vr-r:first-child{ border-top:0; }
+    .vr-r input{ width:20px; height:20px; flex:0 0 20px; margin:0; accent-color:var(--accent); }
+    .vr-r .t{ flex:1; min-width:0; } .vr-r .t b{ display:block; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .vr-r .t small{ font-size:11.5px; color:var(--ink-soft); }
+    .vr-r .a{ font-weight:700; font-size:13.5px; white-space:nowrap; font-variant-numeric:tabular-nums; } .vr-r .a.pos{ color:var(--accent); }
+    .vr-r.off{ opacity:.5; }
+    #vrWhen button{ font-size:12px; padding:9px 2px; }
     .ui-seg{ display:flex; gap:4px; background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:4px; }
     .ui-seg button{ flex:1; border:0; background:transparent; color:var(--ink-soft); padding:10px 6px; border-radius:9px; font-size:14px; }
     .ui-seg button.on{ background:var(--accent); color:#0a130f; font-weight:700; }
@@ -1683,6 +1691,138 @@
         virements=virements.filter(function(x){ return String(x.id)!==String(id); });
         persistVirements(); render();
       }, {ok:"Supprimer", danger:true});
+    }
+    // ---------- Virements repris et récurrents ----------
+    // « Reprendre des virements » du mois d'avant : copies dans le mois suivant, un mois choisi, une période, ou « chaque mois ».
+    // Chaque mois = une série (clé virRec, gardée sur le téléphone du propriétaire) : l'appli crée elle-même le virement de chaque
+    // mois jusqu'à 12 mois à l'avance (v.rec = id de la série), à cocher « fait » quand il passe ; un mois déjà créé (s.made)
+    // n'est jamais recréé, même si son virement a été supprimé. Montant « à partir de » : s.amounts, comme les frais fixes.
+    var virRec = store.read("virRec", []);
+    function persistVirRec(){ store.write("virRec", virRec); }
+    function virRecById(id){ return id==null ? null : virRec.filter(function(x){ return String(x.id)===String(id); })[0]||null; }
+    function virRecAmt(r, m){ var best=null; for(var k in (r.amounts||{})){ if(k<=m && (best===null || k>best)) best=k; } return best!==null ? Number(r.amounts[best])||0 : Number(r.montant)||0; }
+    function virNewId(){ var mx=Date.now(); virements.forEach(function(v){ var n=Number(v.id); if(n>=mx) mx=n+1; }); virRec.forEach(function(r){ var n=Number(r.id); if(n>=mx) mx=n+1; }); return mx; }
+    function virCopy(v, m){
+      var c={ id:virNewId(), person:v.person, month:m, label:v.label||"Virement", note:(v.imp ? "" : (v.note||"")), montant:Number(v.montant)||0 };
+      var d=virDay(v); if(d) c.day=d;
+      if(v.epargneId){ c.epargneId=v.epargneId; c.epApplied=0; }
+      return c;
+    }
+    // le même virement (même nom, même montant) est déjà dans ce mois
+    function virHas(person, m, v){ var n=norm(v.label||""), a=Number(v.montant)||0; return virements.some(function(x){ return x!==v && x.person===person && x.month===m && norm(x.label||"")===n && Math.abs((Number(x.montant)||0)-a)<0.006; }); }
+    function virRecSync(){
+      if(fyMember() || !virRec.length) return;
+      var hz=monthKey(todayISO()), ch=false, i; for(i=0;i<11;i++) hz=nextMonthKey(hz);
+      virRec.forEach(function(r){
+        if(!r.made) r.made={};
+        if(!acctByKey(r.person)) return;
+        var end=(r.to && r.to<hz) ? r.to : hz, g=0;
+        for(var m=r.from; m && m<=end && g<240; m=nextMonthKey(m), g++){
+          if(r.made[m]) continue;
+          r.made[m]=1; ch=true;
+          if(virements.some(function(x){ return String(x.rec)===String(r.id) && x.month===m; })) continue;
+          var c={ id:virNewId(), person:r.person, month:m, label:r.label, note:r.note||"", montant:virRecAmt(r, m), rec:r.id };
+          if(r.day) c.day=r.day; if(r.epargneId){ c.epargneId=r.epargneId; c.epApplied=0; }
+          virements.push(c);
+        }
+      });
+      if(ch){ persistVirRec(); persistVirements(); }
+    }
+    // Reprendre des virements : ceux du mois d'avant le mois affiché (ou un seul, depuis sa fiche)
+    function virReprendre(person, month, one){
+      var src=one ? one.month : prevMonthKey(month), nx=nextMonthKey(src), p2=prevMonthKey(src);
+      var L=one ? [one] : virementsOf(person, src).filter(function(v){ return Math.abs(Number(v.montant)||0)>=0.005; });
+      if(!L.length){ uiToast("Aucun virement "+impDeMois(src)); return; }
+      L=L.slice().sort(function(a,b){ return (virDay(a)||32)-(virDay(b)||32); });
+      function seen(v){ var n=norm(v.label||""); return virements.some(function(x){ return x.person===person && x.month===p2 && norm(x.label||"")===n; }); }
+      var acc=acctByKey(person);
+      var h='<div class="sheet-title">'+(one ? 'Reprendre « '+esc(one.label||"Virement")+' »' : 'Reprendre des virements '+esc(impDeMois(src)))+'</div>'+
+        '<div class="ui-intro">'+(one ? esc(capFirst(monthLabelOf(src))) : 'Coche ceux à remettre')+(acc ? ' · '+esc(acc.nom) : '')+'</div><div class="vr-list">';
+      L.forEach(function(v, i){ var a=Number(v.montant)||0, rc=v.rec!=null && virRecById(v.rec), dup=virHas(person, nx, v), d=virDay(v);
+        var on=one ? !rc : (!rc && !dup && seen(v));
+        h+='<label class="vr-r'+(rc?' off':'')+'"><input type="checkbox" data-i="'+i+'"'+(on?' checked':'')+(rc?' disabled':'')+'><span class="t"><b>'+esc(v.label||"Virement")+'</b><small>'+(a>0?'reçu':'envoyé')+(v.epargneId?' · '+(a<0?'vers ':'depuis ')+esc(epNameOf(v.epargneId)):'')+(d?' · le '+(d===1?'1er':d):'')+(rc?' · ↻ déjà chaque mois':(dup?' · déjà en '+esc(MOIS_NOMS[+nx.slice(5,7)-1]):''))+'</small></span><b class="a'+(a>0?' pos':'')+'">'+esc(opsAmt(a))+'</b></label>'; });
+      h+='</div><label class="f" style="margin-top:12px">Les ajouter</label>'+
+        '<div class="ui-seg" id="vrWhen"><button type="button" data-v="next" class="on">Mois suivant</button><button type="button" data-v="one">Un mois</button><button type="button" data-v="per">Une période</button><button type="button" data-v="rec">Chaque mois</button></div>'+
+        '<div id="vr-one" style="display:none"><label class="f" for="vrM1">Mois</label><input class="f" type="month" id="vrM1" value="'+nx+'"></div>'+
+        '<div id="vr-per" style="display:none" class="row2"><div><label class="f" for="vrPF">De</label><input class="f" type="month" id="vrPF" value="'+nx+'"></div><div><label class="f" for="vrPT">À (inclus)</label><input class="f" type="month" id="vrPT" value="'+nextMonthKey(nextMonthKey(nx))+'"></div></div>'+
+        '<div id="vr-rec" style="display:none" class="row2"><div><label class="f" for="vrRF">À partir de</label><input class="f" type="month" id="vrRF" value="'+nx+'"></div><div><label class="f" for="vrRT">Jusqu\'à (vide = sans fin)</label><input class="f" type="month" id="vrRT" value=""></div></div>'+
+        '<div class="fnote" id="vrNote"></div><div class="ui-err" style="display:none"></div>'+
+        '<div class="ui-actions"><button type="button" class="btn ghost ui-cancel">Annuler</button><button type="button" class="btn primary" id="vrOk">Ajouter</button></div>';
+      var sh=uiSheet(h), mode="next", okM=/^[0-9]{4}-[0-9]{2}$/;
+      function val(id){ var e=sh.q("#"+id); return e ? String(e.value||"").trim() : ""; }
+      function picked(){ var o=[]; [].forEach.call(sh.qa('.vr-r input'), function(c){ if(c.checked && !c.disabled) o.push(L[+c.getAttribute("data-i")]); }); return o; }
+      function mShort(m){ return MOIS_NOMS[+m.slice(5,7)-1]+(m.slice(0,4)!==monthKey(todayISO()).slice(0,4)?" "+m.slice(0,4):""); }
+      function paint(){
+        var n=picked().length, t;
+        ["one","per","rec"].forEach(function(k){ sh.q("#vr-"+k).style.display=(mode===k)?"":"none"; });
+        if(mode==="next") t="en "+mShort(nx); else if(mode==="one") t=okM.test(val("vrM1"))?"en "+mShort(val("vrM1")):"";
+        else if(mode==="per") t=(okM.test(val("vrPF")) && okM.test(val("vrPT")))?"de "+mShort(val("vrPF"))+" à "+mShort(val("vrPT")):"";
+        else t="chaque mois";
+        sh.q("#vrOk").textContent=n ? "Ajouter "+n+" virement"+(n>1?"s":"")+(t?" · "+t:"") : "Ajouter";
+        sh.q("#vrOk").style.opacity=n?"":".45";
+        sh.q("#vrNote").textContent=(mode==="rec") ? "Ils arrivent dans « À venir » de chaque mois (jusqu'à 12 mois à l'avance), au même jour, à cocher « fait » quand ils passent. Montant modifiable mois par mois." : "Ils arrivent dans « À venir », au même jour, à cocher « fait » quand ils passent.";
+      }
+      [].forEach.call(sh.qa("#vrWhen button"), function(b){ b.onclick=function(){ [].forEach.call(sh.qa("#vrWhen button"), function(x){ x.className=""; }); b.className="on"; mode=b.getAttribute("data-v"); paint(); }; });
+      [].forEach.call(sh.qa('.vr-r input, input[type="month"]'), function(e){ e.addEventListener("change", paint); e.addEventListener("input", paint); });
+      sh.q(".ui-cancel").onclick=sh.close;
+      function err(m){ var e=sh.q(".ui-err"); e.textContent=m||""; e.style.display=m?"":"none"; }
+      sh.q("#vrOk").onclick=function(){
+        var P=picked(); if(!P.length){ err("Coche au moins un virement."); return; }
+        var months=[], made=0, skip=0, txt="";
+        if(mode==="next") months=[nx];
+        else if(mode==="one"){ if(!okM.test(val("vrM1"))){ err("Choisis le mois."); return; } months=[val("vrM1")]; }
+        else if(mode==="per"){ var a=val("vrPF"), b=val("vrPT"); if(!okM.test(a) || !okM.test(b)){ err("Choisis le premier et le dernier mois."); return; } if(b<a){ err("Le dernier mois est avant le premier."); return; }
+          for(var m=a, g=0; m<=b && g<120; m=nextMonthKey(m), g++) months.push(m); }
+        if(mode==="rec"){
+          var f=val("vrRF"), to=val("vrRT"); if(!okM.test(f)){ err("Choisis le premier mois."); return; } if(to && !okM.test(to)) to=""; if(to && to<f){ err("Le dernier mois est avant le premier."); return; }
+          P.forEach(function(v){ var r={ id:virNewId(), person:person, label:v.label||"Virement", note:(v.imp?"":(v.note||"")), montant:Number(v.montant)||0, from:f, made:{} };
+            var d=virDay(v); if(d) r.day=d; if(to) r.to=to; if(v.epargneId) r.epargneId=v.epargneId;
+            // un mois où il est déjà : pas de 2e virement
+            var hz=monthKey(todayISO()), i; for(i=0;i<11;i++) hz=nextMonthKey(hz);
+            for(var m=f, g=0; m<=(to && to<hz ? to : hz) && g<240; m=nextMonthKey(m), g++){ if(virHas(person, m, v)){ r.made[m]=1; skip++; } }
+            virRec.push(r); made++; });
+          persistVirRec(); virRecSync(); txt=" · à partir "+impDeMois(f)+(to?" jusqu'à "+mShort(to):"");
+        } else {
+          P.forEach(function(v){ months.forEach(function(m){ if(virHas(person, m, v)){ skip++; return; } var c=virCopy(v, m); c.person=person; virements.push(c); made++; }); });
+          persistVirements(); txt=months.length===1 ? " · "+mShort(months[0]) : " · "+months.length+" mois";
+        }
+        sh.close(); render();
+        uiToast((mode==="rec" ? made+" virement"+(made>1?"s":"")+" chaque mois" : made+" virement"+(made>1?"s":"")+" ajouté"+(made>1?"s":""))+txt+(skip?" · "+skip+" déjà là":""));
+      };
+      paint();
+    }
+    // Un virement d'une série : modifier à partir de ce mois, retirer un mois, arrêter
+    function virRecEdit(r, v){
+      var m=v.month, cur=virRecAmt(r, m);
+      uiForm({ title:"À partir de "+monthLabelOf(m), intro:"« "+esc(r.label)+" » chaque mois : ce mois-ci et les suivants (pas ceux déjà faits).", fields:[
+        {key:"label", label:"Libellé", value:r.label, required:true},
+        {key:"montant", label:"Montant", type:"money", value:Math.abs(cur), required:true},
+        {key:"sens", label:"Sens", type:"seg", value:(cur<0?"out":"in"), options:SENS_OPTS},
+        dayField(r.day||"", "Jour (facultatif)", "Range le virement dans la liste du compte.")
+      ]}, function(x){
+        var jd=dayRead(x); if(jd.err) return jd.err;
+        var nm=(x.sens==="out"?-1:1)*Math.abs(x.montant);
+        r.label=x.label||r.label; if(jd.v) r.day=jd.v; else delete r.day;
+        if(Math.abs(nm-cur)>0.001){ if(!r.amounts) r.amounts={}; r.amounts[m]=nm; }
+        virements.forEach(function(y){ if(String(y.rec)!==String(r.id) || y.month<m || y.done) return; y.label=r.label; y.montant=virRecAmt(r, y.month); if(r.day) y.day=r.day; else delete y.day; delete y.dayAuto; });
+        persistVirRec(); persistVirements(); render(); uiToast("« "+r.label+" » modifié à partir de "+monthLabelOf(m));
+      });
+    }
+    function virRecStop(r, m){
+      var later=virements.filter(function(y){ return String(y.rec)===String(r.id) && y.month>=m && !y.done; });
+      uiConfirm("Arrêter « "+esc(r.label)+" » à partir de "+esc(monthLabelOf(m))+" ?"+(later.length?"<br><small>"+(later.length>1?"Ses "+later.length+" virements à venir sont retirés.":"Son virement à venir est retiré.")+"</small>":""), function(){
+        virements=virements.filter(function(y){ return later.indexOf(y)<0; });
+        r.to=prevMonthKey(m); if(r.to<r.from) virRec=virRec.filter(function(x){ return x!==r; });
+        persistVirRec(); persistVirements(); render(); uiToast("« "+r.label+" » arrêté à partir de "+monthLabelOf(m));
+      }, { ok:"Arrêter", danger:true });
+    }
+    function virRemoveOne(v){
+      var i=virements.indexOf(v); if(i<0) return;
+      if(v.epargneId && v.done && v.epApplied) applyEp(v.epargneId, -(v.epApplied||0));
+      virements.splice(i, 1); persistVirements(); render();
+      uiUndoToast("« "+(v.label||"Virement")+" » retiré de "+monthLabelOf(v.month), "Annuler", function(){
+        if(v.epargneId && v.done && v.epApplied) applyEp(v.epargneId, v.epApplied);
+        virements.push(v); persistVirements(); render(); });
     }
     function computeDepensesMonth(person, month){
       var st0=acctStart(person); if(st0 && month<st0) return 0;
@@ -3281,6 +3421,7 @@
       fyViewGuard();
       syncBourseEpargne();
       try{ provFraisSync(); }catch(err){}
+      try{ virRecSync(); }catch(err){}
       if(state.view==="foyer") return renderFoyer();
       if(state.view==="form") return renderForm();
       if(state.view==="articles") return renderArticles();
@@ -5257,7 +5398,7 @@
       if(!a.main) ch.push({ l:"Supprimer", danger:true, fn:function(){
         var nv=virements.filter(function(v){ return v.person===a.key; }).length;
         uiConfirm("Supprimer « "+esc(a.nom)+" »"+(nv===1?" et son virement":(nv?" et ses "+nv+" virements":""))+" ?<br>Les tickets et frais rattachés à ce compte repasseront en automatique.", function(){
-          virements=virements.filter(function(v){ return v.person!==a.key; }); persistVirements();
+          virements=virements.filter(function(v){ return v.person!==a.key; }); persistVirements(); virRec=virRec.filter(function(r){ return r.person!==a.key; }); persistVirRec();
           state.entries.forEach(function(e){ if(e.compte===a.key) delete e.compte; }); persist();
           fraisCommuns.forEach(function(f){ if(f.compte===a.key) delete f.compte; }); persistFrais();
           delete liquideMois[a.key]; persistLiquide(); delete soldeInit[a.key]; persistSoldeInit();
@@ -5301,7 +5442,7 @@
         (fraisDone(f, month) ? R.done : R.todo).push(it); });
       virementsOf(person, month).forEach(function(v){ var a=Number(v.montant)||0; if(Math.abs(a)<0.005) return;
         var note=String(v.note||""); if(/relevé$/.test(note)) note="";
-        var it={ k:"v", id:v.id, d:virDay(v), n:v.label||"Virement", s:(a>0?"Virement reçu":"Virement envoyé")+(v.epargneId?" · "+(a<0?"vers ":"depuis ")+epNameOf(v.epargneId):"")+(note?" · "+note:""), a:a };
+        var it={ k:"v", id:v.id, d:virDay(v), n:v.label||"Virement", s:(a>0?"Virement reçu":"Virement envoyé")+(v.rec!=null && virRecById(v.rec)?" · ↻ chaque mois":"")+(v.epargneId?" · "+(a<0?"vers ":"depuis ")+epNameOf(v.epargneId):"")+(note?" · "+note:""), a:a };
         (v.done ? R.done : R.todo).push(it); });
       return R;
     }
@@ -5358,6 +5499,23 @@
       if(k==="t") return editEntry(id);
       if(fyRO()){ uiToast("En consultation seulement"); return; }
       function edit(){ if(k==="f") editFraisCommun(id, month); else editVirement(id); }
+      if(k==="v"){
+        var v=virements.filter(function(r){ return String(r.id)===String(id); })[0]; if(!v) return;
+        var r=v.rec!=null ? virRecById(v.rec) : null, ml=MOIS_NOMS[+month.slice(5, 7)-1], a=Number(v.montant)||0, d=virDay(v), Lv=[];
+        if(done) Lv.push({ l:"↩ Pas encore passé à la banque", fn:function(){ toggleVirementDone(id); uiToast("Remis dans « À venir »"); } });
+        if(r){
+          Lv.push({ l:"✎ Modifier ce mois-ci seulement", fn:edit });
+          Lv.push({ l:"✎ Modifier à partir de ce mois", fn:function(){ virRecEdit(r, v); } });
+          Lv.push({ l:"⏸ Retirer seulement en "+ml, fn:function(){ virRemoveOne(v); } });
+          Lv.push({ l:"⏹ Arrêter à partir de "+ml, danger:true, fn:function(){ virRecStop(r, month); } });
+        } else {
+          Lv.push({ l:"✎ Modifier", fn:edit });
+          Lv.push({ l:"↻ Reprendre ce virement", fn:function(){ virReprendre(v.person, nextMonthKey(v.month), v); } });
+        }
+        uiChoice((v.label||"Virement")+" · "+opsAmt(a), esc(r ? "Chaque mois depuis "+monthLabelOf(r.from)+(r.to?" jusqu'à "+monthLabelOf(r.to):"") : (done ? (d?"passé le "+(d===1?"1er":d)+" "+ml:"passé à la banque") : "à venir"+(d?" · le "+(d===1?"1er":d)+" "+ml:""))),
+          Lv.map(function(c){ if(c.primary==null) c.primary=false; return c; }));
+        return;
+      }
       if(!done) return edit();
       // déjà passé : le remettre dans « À venir » (décocher) ou ouvrir sa fiche
       var x=(k==="f" ? fraisCommuns : virements).filter(function(r){ return String(r.id)===String(id); })[0]; if(!x) return;
@@ -5690,7 +5848,9 @@
         // « ＋ Ajouter » : virement reçu ou envoyé, frais fixe, ticket ; il arrive dans la liste du mois affiché
         var oa=document.getElementById("opsAdd"); if(oa) oa.onclick=function(){
           var ch=[];
-          if(person!=="__tickets"){ ch.push({ l:"⬇️ Virement reçu", fn:function(){ addVirement("in"); } }); ch.push({ l:"⬆️ Virement envoyé", fn:function(){ addVirement("out"); } }); ch.push({ l:"📅 Frais fixe", fn:addFraisCommun }); }
+          if(person!=="__tickets"){ ch.push({ l:"⬇️ Virement reçu", fn:function(){ addVirement("in"); } }); ch.push({ l:"⬆️ Virement envoyé", fn:function(){ addVirement("out"); } });
+            if(virementsOf(person, prevMonthKey(month)).length) ch.push({ l:"↻ Reprendre des virements "+impDeMois(prevMonthKey(month)), fn:function(){ virReprendre(person, month); } });
+            ch.push({ l:"📅 Frais fixe", fn:addFraisCommun }); }
           ch.push({ l:"🧾 Ticket", fn:function(){ newDraft(); var ac=acctByKey(person);   // sur ce compte
             if(ac && person!=="__tickets"){ state.draft.compte=person; if(ac.payer) state.draft.payePar=ac.payer; render(); } } });
           uiChoice("Ajouter", esc((multi||person!=="__tickets" ? (acct?acct.nom+" · ":"") : "")+capFirst(monthLabelOf(month))), ch.map(function(c){ c.primary=false; return c; }));
@@ -7327,7 +7487,11 @@
       var paid=[], dayed=[];
       M.cards.concat(M.vir).forEach(function(L){ if(!L.on){ markPaid(L); dayVir(L); } }); M.prlv.forEach(function(g){ if(!g.on) g.occ.forEach(markPaid); });   // laissé de côté = c'est ce frais-là
       // déjà dans l'appli sans jour : le jour du relevé (pour la liste du compte)
-      function dayVir(L){ if(!L.vref) return; var v=virements.filter(function(x){ return String(x.id)===String(L.vref); })[0]; if(!v || dayFix(v.day, v.month)) return; v.day=+L.d.slice(8, 10); dayed.push({ t:"v", id:v.id }); }
+      function dayVir(L){ if(!L.vref) return; var v=virements.filter(function(x){ return String(x.id)===String(L.vref); })[0]; if(!v) return; var e={ t:"v", id:v.id, dy:0, dn:0 };
+        if(!v.done){ e.od=(v.day!=null ? v.day : null); v.day=+L.d.slice(8, 10); e.dy=1; v.done=true; e.dn=1; delete v.dayAuto;   // il est passé à la banque, ce jour-là
+          if(v.epargneId){ var dl=-(Number(v.montant)||0); applyEp(v.epargneId, dl); v.epApplied=dl; } }
+        else if(!dayFix(v.day, v.month)){ v.day=+L.d.slice(8, 10); e.dy=1; }
+        if(e.dy || e.dn) dayed.push(e); }
       function markPaid(L){ (L.refs || (L.ref ? [L.ref] : [])).forEach(function(R){ markOne(L, R); }); }
       function markOne(L, R){ if(!R || R.t!=="f") return; var f=fraisCommuns.filter(function(x){ return String(x.id)===String(R.id); })[0]; if(!f) return;
         if(fraisDone(f, R.m)){ if(!(f.doneDays && f.doneDays[R.m])){ if(!f.doneDays) f.doneDays={}; f.doneDays[R.m]=+L.d.slice(8, 10); dayed.push({ t:"f", id:f.id, m:R.m }); } return; }
@@ -7363,7 +7527,8 @@
         virements.forEach(function(v){ if(v.imp===L.id && v.epargneId && v.epApplied) applyEp(v.epargneId, -v.epApplied); });
         state.entries=state.entries.filter(function(e){ return e.imp!==L.id; });
         (L.paid||[]).forEach(function(pd){ fraisCommuns.forEach(function(f){ if(String(f.id)!==String(pd.id)) return; if(f.doneMonths) delete f.doneMonths[pd.m]; if(pd.dd && f.doneDays) delete f.doneDays[pd.m]; }); });
-        (L.dayed||[]).forEach(function(dd){ if(dd.t==="v") virements.forEach(function(v){ if(String(v.id)===String(dd.id)) delete v.day; });
+        (L.dayed||[]).forEach(function(dd){ if(dd.t==="v") virements.forEach(function(v){ if(String(v.id)!==String(dd.id)) return; if(dd.dy || dd.dy===undefined){ if(dd.od!=null) v.day=dd.od; else delete v.day; }
+            if(dd.dn){ if(v.epargneId && v.epApplied) applyEp(v.epargneId, -v.epApplied); v.epApplied=0; v.done=false; } });
           else fraisCommuns.forEach(function(f){ if(String(f.id)===String(dd.id) && f.doneDays) delete f.doneDays[dd.m]; }); });
         (L.moved||[]).forEach(function(mv){ state.entries.forEach(function(e){ if(String(e.id)===String(mv.id)){ if(mv.compte==null) delete e.compte; else e.compte=mv.compte; } }); });
         virements=virements.filter(function(v){ return v.imp!==L.id; });
@@ -9228,7 +9393,7 @@
       uiToast("Facture ajoutée"+histTxt+(made.length?" · "+made.join(", "):""));
     }
     function backupData(){
-      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","factures","factAlias","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"];
+      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"];
       var dump={ _app:"tickets", _version:1, _date:new Date().toISOString(), data:{} };
       keys.forEach(function(k){ var v=store.read(k, null); if(v!==null) dump.data[k]=v; });
       dump.photos = PHOTOS;
@@ -9263,7 +9428,7 @@
           if(!data || typeof data!=="object") throw new Error("format non reconnu");
           var n=(data.entries && data.entries.length) ? data.entries.length : 0;
           if(!window.confirm("Restaurer cette sauvegarde ?\n"+n+" ticket(s) vont REMPLACER les données actuelles.")) return;
-          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","soldeInit","provisions","factures","factAlias","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"].forEach(function(k){
+          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"].forEach(function(k){
             if(k in data) store.write(k, data[k]);
           });
           if(!("comptes" in data)) store.write("comptes", null);
