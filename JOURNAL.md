@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `01/11 10:01`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `01/11 10:25`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -160,6 +160,11 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 01/11
+- **Facture d'eau pas dans les comptes** (« pas prise en compte dans les comptes, ni dans les frais fixes ») : rien n'était cassé à l'enregistrement (« Appliquer » la met bien dans À venir et le compte, vérifié) ; elle a dû être gardée sans ses effets (« Garder seulement la facture »), et rien ne permettait de rattraper. Maintenant :
+  - dans le détail du fournisseur, un bandeau « Pas dans tes comptes · Facture du … · Ajouter » pour une facture récente qui n'y est pas (prélèvement de ce mois ou plus tard, sinon facture de moins de 75 jours) ;
+  - la fiche d'une facture dit « ✓ Dans tes comptes : À venir de novembre », ou propose « Ajouter à mes comptes » ;
+  - la liste marque « dans tes comptes » ;
+  - l'ajout (`factAddToAccounts`) crée son « à payer » ou prélèvement dans le mois, à la place du frais fixe qui l'estimait (ex. « Eau » 20 €) et de l'estimation de ce mois. Test `t99`.
 - **Supprimer un fournisseur (groupe de factures)** : appui long sur sa carte (À venir › Factures) → Ouvrir / Supprimer « EDF » (8 factures), ou bouton en bas de son détail ; confirmation avec le nombre de factures, puis « Annuler » pendant quelques secondes (`factSeriesDelete`). Partent avec lui : ses factures, leurs prélèvements à venir, l'estimation de la prochaine ; sa provision est gardée (l'argent mis de côté reste), seulement détachée. Le nombre de factures est sur chaque carte. Test t98 complété.
 - **Factures d'un fournisseur : modifier, supprimer, nombre de factures** (demande de Benoît, capture à l'appui) :
   - carte du fournisseur (À venir › Factures) : « 3 factures » ;

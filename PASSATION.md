@@ -141,7 +141,7 @@ Les maquettes (canevas « Tickets — Plan de l'appli » et autres) sont des art
   - roue du compte : modifier, solde reporté, **import d'un relevé** OFX, QIF ou CSV lu sur le téléphone, annuler le dernier import.
 - **À venir**, sous-onglets 12 mois · Frais fixes · Provisions · Factures :
   - 12 mois : les 12 prochains mois, « À payer bientôt », et ✦ « Tes comptes dans 12 mois » (projection et simulateur) ;
-  - Factures (✦ en Store) : import de factures PDF ou photos, et estimation de la prochaine facture selon la saison ; dans le détail d'un fournisseur, toucher une facture pour la modifier, appui long pour la supprimer (annulable) ; appui long sur la carte d'un fournisseur pour le supprimer avec ses factures (provision gardée) ;
+  - Factures (✦ en Store) : import de factures PDF ou photos, et estimation de la prochaine facture selon la saison ; dans le détail d'un fournisseur, toucher une facture pour la modifier, appui long pour la supprimer (annulable) ; appui long sur la carte d'un fournisseur pour le supprimer avec ses factures (provision gardée) ; une facture récente gardée sans ses effets est signalée « Pas dans tes comptes · Ajouter » ;
   - plusieurs factures d'un coup (plusieurs PDF, ou plusieurs factures en photos, recto et verso, même dans le désordre) : un écran de contrôle « 6 photos · 6 lues · 3 factures trouvées » liste les factures ; la plus récente est vérifiée en entier, les plus anciennes se contrôlent une par une ou se décochent ; une photo illisible se reprend ; rien n'est enregistré avant « Appliquer ».
 - **Commun** : part de chacun dans le commun, en %, et parts propres à chaque frais ; frais communs du mois ; produits partagés.
 - **Bourse** (Perso seulement) : cours Yahoo et CoinGecko via le relais. Elle compte une fois dans l'épargne.
@@ -176,7 +176,7 @@ Fait et poussé le 31/10 :
 - l'import de relevé avec ses exports BoursoBank (OFX, QIF, CSV) ;
 - les factures d'eau en photo : réimporter ses 6 photos d'un coup, après avoir supprimé l'ancienne mauvaise facture si elle a été enregistrée ; en cas de souci, il enverra « Copier la lecture ».
 
-**Tests automatiques** : les 18 tests de `tests/` passent (t96 : écran de contrôle des factures ; t97 : page gardée des petits graphiques ; t98 : modifier ou supprimer une facture). La date du navigateur est fixée au 30/10/2026 par `tests/horloge.py`, car les données inventées sont en octobre 2026. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
+**Tests automatiques** : les 19 tests de `tests/` passent (t96 : écran de contrôle des factures ; t97 : page gardée des petits graphiques ; t98 : modifier ou supprimer une facture ; t99 : mettre dans les comptes une facture gardée sans ses effets). La date du navigateur est fixée au 30/10/2026 par `tests/horloge.py`, car les données inventées sont en octobre 2026. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
 
 ---
 
@@ -235,7 +235,7 @@ Fait et poussé le 31/10 :
 5. **Tenir `JOURNAL.md` à jour dans le même commit** : une entrée datée en haut de l'Historique, plus Décisions, État actuel et En cours si nécessaire. Mettre aussi `CLAUDE.md` à jour si une notion technique change.
 6. **Commit en français**, préfixé « β » quand il touche la β, poussé directement sur `main`. Le push met en ligne la β et la Perso, et recompile les deux APK.
 7. **Tester** avec les tests de `tests/` (mode d'emploi dans `tests/README.md`) :
-   - `sh tests/run.sh` lance les 18 tests ; `python3 tests/t95.py` en lance un seul ;
+   - `sh tests/run.sh` lance les 19 tests ; `python3 tests/t95.py` en lance un seul ;
    - ce sont des scripts Playwright en Python : Chromium sans interface, écran de 412×900, données injectées dans localStorage, relais local (Node et `node:sqlite` sur `localhost:8787`) ;
    - aucune requête réseau extérieure pendant les tests ;
    - ajouter un test pour chaque nouvelle fonction, **toujours avec des données inventées**.

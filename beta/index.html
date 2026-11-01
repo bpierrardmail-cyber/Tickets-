@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 10:01" />
+  <meta name="build" content="01/11 10:25" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -236,6 +236,7 @@
     .fct-eff{ display:flex; gap:12px; align-items:flex-start; margin-top:8px; padding:12px; border-radius:14px; background:rgba(255,255,255,.04); cursor:pointer; }
     .fct-eff input{ width:20px; height:20px; flex:0 0 20px; margin:1px 0 0; accent-color:var(--accent); }
     .fct-eff span{ display:flex; flex-direction:column; gap:3px; } .fct-eff b{ font-size:14.5px; } .fct-eff small{ font-size:12.5px; line-height:1.4; color:var(--ink-soft); }
+    .fct-miss{ border-color:rgba(230,180,80,.45) !important; } .fct-miss .fct-n b{ color:#e6b450; }
     .fct-cmp{ margin-top:12px; padding:11px 13px; border-radius:14px; border:1px solid rgba(79,214,160,.35); background:rgba(79,214,160,.08); font-size:13px; line-height:1.45; }
     .fct-cmp b{ color:var(--accent); }
     .ocr-raw{ background:none; border:0; padding:0; font:inherit; color:var(--accent); text-decoration:underline; cursor:pointer; }
@@ -8341,6 +8342,9 @@
       if(!s){ state.view="factures"; return renderFactures(); }
       var curM=monthKey(todayISO()), ty=factType(s.type), est=s.next?factEstimate(s, s.next):0, ro=fyRO();
       var h=header(true, s.four||ty.l);
+      // une facture récente qui n'est pas dans les comptes (gardée sans ses effets) : on peut l'y mettre
+      if(!ro) s.bills.filter(factCanAdd).slice(-1).forEach(function(b){
+        h+='<section class="paper fct-miss"><div class="fct-top"><span class="fct-n"><b>Pas dans tes comptes</b><small>Facture du '+esc(ddmmyy(b.date))+' · '+esc(fmtK(b.montant))+(b.aPayer?' à payer':' prélevée'+(b.prelev?' le '+ddmm(b.prelev):''))+'</small></span><button type="button" class="btn primary" data-addacc="'+esc(b.id)+'" style="flex:0 0 auto;padding:10px 14px">Ajouter</button></div></section>'; });
       // provision
       if(s.prov){ var pa=s.next?factProvAt(s.prov, factPayIso(s, s.next), est):null;
         h+='<section class="paper fct-pv"><div class="fct-top"><span class="fct-n"><b>Provision « '+esc(s.prov.nom)+' »</b><small>'+esc(fmtK(provBalance(s.prov, curM)))+' de côté · +'+esc(fmtK(mensuelAt(s.prov, curM)))+'/mois</small></span>'+
@@ -8366,7 +8370,7 @@
       // la liste
       h+='<div class="bsec-h">Factures<small>'+s.bills.length+'</small></div><section class="paper fct-list">';
       s.bills.slice().reverse().forEach(function(b){
-        h+='<button type="button" class="fct-row" data-id="'+esc(b.id)+'"><span class="fct-n"><b>'+esc(ddmmyy(b.date))+(b.regul?' · régularisation':'')+'</b><small>'+esc((b.du?ddmm(b.du)+' → '+ddmm(b.au||b.date):'')+(b.conso&&ty.u?(b.du?' · ':'')+b.conso+' '+ty.u:'')+(b.aPayer?(b.du||b.conso?' · ':'')+'à payer':(b.prelev?(b.du||b.conso?' · ':'')+'prélevée le '+ddmm(b.prelev):'')))+'</small></span><b class="ops-a">'+esc(fmtK(b.montant||0))+'</b></button>';
+        h+='<button type="button" class="fct-row" data-id="'+esc(b.id)+'"><span class="fct-n"><b>'+esc(ddmmyy(b.date))+(b.regul?' · régularisation':'')+'</b><small>'+esc((b.du?ddmm(b.du)+' → '+ddmm(b.au||b.date):'')+(b.conso&&ty.u?(b.du?' · ':'')+b.conso+' '+ty.u:'')+(b.aPayer?(b.du||b.conso?' · ':'')+'à payer':(b.prelev?(b.du||b.conso?' · ':'')+'prélevée le '+ddmm(b.prelev):''))+(factFraisFor(b)?' · dans tes comptes':''))+'</small></span><b class="ops-a">'+esc(fmtK(b.montant||0))+'</b></button>';
       });
       h+='</section>';
       if(!ro) h+='<button type="button" class="btn primary" id="fsImp" style="margin-top:12px">Importer une facture</button><button type="button" class="btn ghost" id="fsDel" style="margin-top:10px;color:var(--coral)">Supprimer « '+esc(s.four||ty.l)+' » et '+(s.bills.length>1?'ses '+s.bills.length+' factures':'sa facture')+'</button>';
@@ -8375,6 +8379,7 @@
       var cp=document.getElementById("fsProv"); if(cp) cp.onclick=function(){ factCreateProv(s); render(); uiToast("Provision « "+factProvName(s)+" » créée"); };
       var im=document.getElementById("fsImp"); if(im) im.onclick=factImportChooser;
       var dl=document.getElementById("fsDel"); if(dl) dl.onclick=function(){ factSeriesDelete(s.key); };
+      [].forEach.call(document.querySelectorAll("[data-addacc]"), function(bt){ bt.onclick=function(){ var f=factures.filter(function(x){ return String(x.id)===bt.getAttribute("data-addacc"); })[0]; if(f) factAddToAccounts(f, true); }; });
       // toucher une facture : la modifier ; appui long : Modifier / Supprimer (comme les tickets)
       [].forEach.call(document.querySelectorAll(".fct-row"), function(b){
         function fOf(){ var id=b.getAttribute("data-id"); return factures.filter(function(x){ return String(x.id)===String(id); })[0]; }
@@ -8395,6 +8400,28 @@
       if(f.prId) provisions.forEach(function(p){ var pr=(p.prelevements||[]).filter(function(x){ return String(x.id)===String(f.prId); })[0]; if(pr){ p.prelevements=p.prelevements.filter(function(x){ return x!==pr; }); out.prP=p; out.pr=pr; persistProvisions(); } });
       persistFactures();
       return out;
+    }
+    // Facture ↔ comptes : son prélèvement (ou « à payer ») dans les frais fixes du mois
+    function factFraisFor(f){ return f && f.fraisId ? fraisCommuns.filter(function(x){ return String(x.id)===String(f.fraisId); })[0]||null : null; }
+    // peut aller dans les comptes : pas encore dedans, et pas déjà passée (prélèvement de ce mois ou plus tard, sinon facture de moins de 75 jours)
+    function factCanAdd(f){ if(!f || factFraisFor(f) || !(Number(f.montant)>0)) return false; var t=todayISO();
+      if(f.prelev) return f.prelev.slice(0,7)>=t.slice(0,7); return (f.date||"")>=isoAddDays(t, -75); }
+    function factAddToAccounts(f, toast){
+      var key=factKey(f), m=factPayMonth(f), amt=Math.round((Number(f.montant)||0)*100)/100;
+      // pour qui et quel compte : comme le dernier prélèvement de ce fournisseur, sinon son frais fixe, sinon Commun
+      var lf=null; fraisCommuns.forEach(function(x){ if(x.fact===key && !x.est) lf=x; }); var rf=factRecFrais(f), src=lf||rf;
+      var who=src ? ((src.personne||"").trim()||"Commun") : "Commun";
+      fraisCommuns=fraisCommuns.filter(function(x){ return !(x.fact===key && x.est && x.month===m); });   // l'estimation de ce mois-là
+      var jour=f.prelev ? +f.prelev.slice(8,10) : (f.due && f.due.slice(0,7)===m ? +f.due.slice(8,10) : 0);
+      var x={ id:Date.now()+Math.floor(Math.random()*1000), label:f.four+(f.aPayer?" · à payer":" · facture du "+ddmm(f.date)), montant:amt, personne:who, recurrent:false, month:m, fact:key, factNom:f.four };
+      if(jour) x.jour=jour; if(f.aPayer) x.aPayer=true;
+      if(who==="Commun" && src && src.split) x.split=true; else if(src && src.compte) x.compte=src.compte;
+      fraisCommuns.push(x); f.fraisId=x.id;
+      var repl=rf && fraisActif(rf, m);
+      if(repl){ if(!rf.skipMonths) rf.skipMonths={}; rf.skipMonths[m]=true; }   // à la place du frais fixe qui l'estimait
+      persistFrais(); persistFactures();
+      if(toast){ render(); var acc=(x.compte && acctByKey(x.compte))||mainAcct(); uiToast("Ajoutée à « À venir » de "+(acc?acc.nom:"ton compte")+" · "+monthLabelOf(m)+(repl?" (à la place de « "+rf.label+" »)":"")); }
+      return x;
     }
     // Supprimer un fournisseur : ses factures, leurs prélèvements à venir, l'estimation de la prochaine ;
     // sa provision est gardée (l'argent mis de côté reste), seulement détachée
@@ -8433,12 +8460,16 @@
       h+='<label class="f">Paiement</label><div class="chips" id="fe-pay"><button type="button" class="chip'+(!pay?' on':'')+'" data-v="prel">Prélèvement</button><button type="button" class="chip'+(pay?' on':'')+'" data-v="apayer">À payer moi-même</button></div>';
       h+='<div class="row2">'+dt("fe-prel", pay?"À payer avant le":"Prélevé le", pay?f.due:f.prelev)+(ty.u?'<div><label class="f" for="fe-conso">Consommation ('+ty.u+')</label><input class="f" id="fe-conso" inputmode="decimal" value="'+esc(f.conso!=null?String(f.conso):"")+'"></div>':'')+'</div>';
       h+='<div class="row2">'+dt("fe-du", "Consommé du", f.du)+dt("fe-au", "au", f.au)+'</div>';
+      var fr0=factFraisFor(f);
+      if(fr0) h+='<div class="fnote" style="margin:10px 2px 0">✓ Dans tes comptes : « À venir » de '+esc(monthLabelOf(fr0.month||factPayMonth(f)))+'.</div>';
+      else if(factCanAdd(f)) h+='<button type="button" class="btn ghost" id="feAcc" style="margin-top:12px">Ajouter à mes comptes (« À venir » de '+esc(monthLabelOf(factPayMonth(f)))+')</button>';
       h+='<div class="ui-err" style="display:none"></div>';
       h+='<div class="ui-actions"><button type="button" class="btn danger" id="feDel">Supprimer</button><button type="button" class="btn primary" id="feOk">Enregistrer</button></div></div>';
       var s=uiSheet(h);
       [].forEach.call(s.qa("#fe-pay .chip"), function(b){ b.onclick=function(){ [].forEach.call(s.qa("#fe-pay .chip"), function(x){ x.className="chip"; }); b.className="chip on"; pay=b.getAttribute("data-v")==="apayer"; var l=s.q('label[for="fe-prel"]'); if(l) l.textContent=pay?"À payer avant le":"Prélevé le"; }; });
       function err(m){ var e=s.q(".ui-err"); e.textContent=m||""; e.style.display=m?"":"none"; }
       s.q("#feDel").onclick=function(){ s.close(); factDeleteUndo(f); };
+      var fa=s.q("#feAcc"); if(fa) fa.onclick=function(){ s.close(); factAddToAccounts(f, true); };
       s.q("#feOk").onclick=function(){
         var g=function(id){ var e=s.q("#"+id); return e ? e.value.trim() : ""; };
         var four=g("fe-four"), amt=num(g("fe-mt")), date=g("fe-date"), d2=g("fe-prel"), cs=g("fe-conso"), du=g("fe-du"), au=g("fe-au");
