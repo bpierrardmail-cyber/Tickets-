@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 11:40" />
+  <meta name="build" content="01/11 12:36" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -1004,6 +1004,8 @@
     .pvread .l{ font-size:12px; color:var(--ink-soft); line-height:1.4; }
     .pvread .l b{ color:var(--ink); font-variant-numeric:tabular-nums; }
     .pvread .lg{ display:flex; gap:10px; font-size:10.5px; color:var(--muted); flex:0 0 auto; padding-top:2px; }
+    .pvread .lg.v{ flex-direction:column; gap:3px; }
+    .pvread .l .neg{ color:var(--coral); }
     .pvread .lg i{ display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px; vertical-align:-1px; }
     .pvcols{ display:flex; gap:4px; margin-top:22px; }
     .pvcol{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; cursor:pointer; }
@@ -8044,72 +8046,127 @@
       persistProvisions(); render();
     }
     // Projection d'une provision sur une suite de mois : solde de fin de mois, sorties (payées ou prévues), manque éventuel
-    function provProj(p, months, curM){
-      var res=[], prev=0, start=p.startMonth||curM;
-      months.forEach(function(mk){
-        var r={ bal:0, out:0, planned:0, est:false, short:0 };
-        if(mk<start){ res.push(r); prev=0; return; }
+    // Facture prévue d'une provision un mois donné (mois en cours ou futur, pas encore payée ce mois-là) : { amt, est, src, ref } ou null
+    //   1. son montant prévu (✎) le mois de son échéance ;
+    //   2. le fournisseur qu'elle suit : une facture reçue pas encore payée par elle, sinon la prochaine estimée (factEstimate) ;
+    //   3. sinon ce qu'elle a payé le même mois l'an dernier ;
+    //   échéance sans rien de tout ça : montant non indiqué (rien n'est retiré).
+    function provPlanned(p, mk, curM, rec, last){
+      if(rec>0.004) return null;
+      var echM=!!p.echeance && +mk.split("-")[1]===+p.echeance;
+      if(echM && Number(p.prevu)>0) return { amt:Number(p.prevu), est:false, src:"prevu" };
+      if(p.fact){ var fp=provFactPlan(p, curM, last); if(fp){ if(fp[mk]) return fp[mk]; if(!echM) return null; } }
+      var lm=(+mk.slice(0,4)-1)+mk.slice(4), ly=0; (p.prelevements||[]).forEach(function(pr){ if(pr.month===lm) ly+=Number(pr.montant)||0; });
+      if(ly>0.004) return { amt:Math.round(ly*100)/100, est:true, src:"ly", ref:lm };
+      return echM ? { amt:0, est:true, src:"unk" } : null;
+    }
+    // les factures à venir du fournisseur suivi par la provision, par mois de paiement (null : pas de suivi possible)
+    function provFactPlan(p, curM, last){
+      var mk="pf|"+p.id+"|"+curM+"|"+last; if(fsMemo[mk]!==undefined) return fsMemo[mk];
+      if(!fsMemo.fser) fsMemo.fser=factSeries();
+      var s=fsMemo.fser.filter(function(x){ return x.key===p.fact; })[0], out=null;
+      if(s){ out={}; var lim=isoAddDays(todayISO(), -120);
+        s.bills.forEach(function(b){ if(b.prId || !(Number(b.montant)>0) || (b.date||"")<lim) return; var m=b.prelev ? b.prelev.slice(0,7) : factPayMonth(b);
+          if(m<curM || m>last || (p.startMonth && m<p.startMonth)) return;
+          out[m]={ amt:Math.round(((out[m]?out[m].amt:0)+Number(b.montant))*100)/100, est:false, src:"recue", ref:b.date }; });
+        if(s.next){ var d=s.next, g=0;
+          while(g++<36){ var pm=factPayIso(s, d).slice(0,7); if(pm>last) break;
+            if(pm>=curM && !out[pm] && !(p.startMonth && pm<p.startMonth)){ var v=factEstimate(s, d); if(v>0) out[pm]={ amt:Math.round(v*100)/100, est:true, src:"fact", ref:d }; }
+            d=isoAddMonths(d, s.ryth||1); } }
+        if(!s.next && !Object.keys(out).length) out=null;
+      }
+      fsMemo[mk]=out; return out;
+    }
+    // Projection d'une provision mois par mois : solde de fin de mois (jamais sous 0), sorties (payées ou prévues),
+    // manque du mois (short) et manques cumulés (cum, pris sur le total des provisions).
+    // plan : compte aussi les factures prévues (provPlanned) ; sinon seulement les prélèvements enregistrés.
+    // Un mois futur : la projection part du mois en cours (pas de 0).
+    function provProj(p, months, curM, plan){
+      var start=p.startMonth||curM, last=months[months.length-1], run=[], mk=(months[0]>curM ? curM : months[0]), byM={}, prev=0, cum=0;
+      while(mk<=last){ run.push(mk); mk=nextMonthKey(mk); }
+      run.forEach(function(mk){
+        var r={ bal:0, out:0, planned:0, est:false, short:0, cum:0, src:"" };
+        if(mk<start){ byM[mk]=r; prev=0; return; }
         var rec=0; (p.prelevements||[]).forEach(function(pr){ if(pr.month===mk) rec+=Number(pr.montant)||0; });
         var bal;
-        if(mk<=curM) bal=provState(p, mk).bal;
-        else { bal=prev+(((p.skips||[]).indexOf(mk)<0)?mensuelAt(p, mk):0)-rec; if(bal<0){ r.short+=-bal; bal=0; } }
+        if(mk<=curM){ var st=provState(p, mk); bal=st.bal; cum=0; for(var k in st.over){ if(k<=mk) cum+=st.over[k]; } r.short=st.over[mk]||0; }
+        else { bal=prev+(((p.skips||[]).indexOf(mk)<0)?mensuelAt(p, mk):0)-rec; if(bal<0){ r.short+=-bal; cum+=-bal; bal=0; } }
         r.out=rec;
-        if(p.echeance && +mk.split("-")[1]===+p.echeance && !rec && mk>=curM){
-          var amt=Number(p.prevu)||0; if(!amt){ amt=bal; r.est=true; }
-          if(amt>bal){ r.short+=amt-bal; bal=0; } else bal-=amt;
-          r.planned=amt; r.out+=amt;
-        }
-        r.bal=bal; prev=bal; res.push(r);
+        if(plan && mk>=curM){ var pl=provPlanned(p, mk, curM, rec, last);
+          if(pl){ r.src=pl.src; r.ref=pl.ref; r.est=pl.est; r.planned=pl.amt; r.before=bal;
+            if(pl.amt>bal){ r.short+=pl.amt-bal; cum+=pl.amt-bal; bal=0; } else bal-=pl.amt;
+            r.out+=pl.amt; } }
+        r.bal=bal; r.cum=cum; prev=bal; byM[mk]=r;
       });
-      return res;
+      return months.map(function(m){ return byM[m]||{ bal:0, out:0, planned:0, est:false, short:0, cum:0, src:"" }; });
     }
     var MOIS3=["jan","fév","mar","avr","mai","jun","jul","aoû","sep","oct","nov","déc"];
-    function provYear(month, curM){
+    // Total des provisions sur 12 mois à partir de month ; net = solde moins les manques pris sur le total
+    function provYear(month, curM, plan){
       var months=[], mk=month; for(var i=0;i<12;i++){ months.push(mk); mk=nextMonthKey(mk); }
-      var tot=months.map(function(m){ return { mk:m, bal:0, out:0, short:0, planned:0, items:[] }; });
+      var tot=months.map(function(m){ return { mk:m, bal:0, out:0, short:0, planned:0, cum:0, net:0, items:[] }; });
       provisions.forEach(function(p){
-        provProj(p, months, curM).forEach(function(r,i){
-          var t=tot[i]; t.bal+=r.bal; t.out+=r.out; t.short+=r.short; t.planned+=r.planned;
-          if(r.out>0) t.items.push({ nom:p.nom, amt:r.out, planned:r.planned>0, est:r.est, short:r.short, mk:months[i] });
+        provProj(p, months, curM, plan).forEach(function(r,i){
+          var t=tot[i]; t.bal+=r.bal; t.out+=r.out; t.short+=r.short; t.planned+=r.planned; t.cum+=r.cum;
+          if(r.out>0.004 || r.src==="unk") t.items.push({ p:p, nom:p.nom, amt:r.out, planned:!!r.src, est:r.est, short:r.short, mk:months[i], src:r.src, ref:r.ref, after:r.bal, before:r.before });
         });
       });
+      tot.forEach(function(t){ t.net=t.bal-t.cum; });
       return tot;
     }
     function kShort(n){ n=Math.round(n); return n>=1000 ? (Math.round(n/100)/10).toString().replace(".",",")+"k" : String(n); }
-    function provChartHTML(month, curM){
-      var Y=provYear(month, curM), mx=0; Y.forEach(function(t){ mx=Math.max(mx, t.bal+t.out); }); if(!mx) mx=1;
+    // d'où vient le montant d'une facture prévue
+    function provSrcTxt(x){
+      if(x.src==="prevu") return "montant prévu de la provision (✎)";
+      if(x.src==="recue") return "facture reçue du "+ddmmyy(x.ref||"");
+      if(x.src==="fact") return "estimée d'après tes factures";
+      if(x.src==="ly") return "comme en "+monthLabelOf(x.ref);
+      if(x.src==="unk") return "montant non indiqué (✎ de la provision)";
+      return "";
+    }
+    function provChartMode(){ var m=state.provChart||store.read("provChartDef", "cote"); return m==="prevu" ? "prevu" : "cote"; }
+    function provChartHTML(month, curM, Y){
+      var mode=provChartMode(), plan=(mode==="prevu"), mx=0;
+      Y.forEach(function(t){ mx=Math.max(mx, Math.max(0, t.net)+t.out); }); if(!mx) mx=1;
       var sel=state.provSel && Y.some(function(t){ return t.mk===state.provSel; }) ? state.provSel : month;
       var H=118, cols='';
       Y.forEach(function(t,i){
-        var fut=t.mk>curM, on=t.mk===sel, mi=+t.mk.split("-")[1]-1;
-        var hb=t.bal>0?Math.max(2, t.bal/mx*H):0, ho=t.out>0?Math.max(3, t.out/mx*H):0;
+        var fut=t.mk>curM, on=t.mk===sel, mi=+t.mk.split("-")[1]-1, v=Math.max(0, t.net);
+        var hb=v>0?Math.max(2, v/mx*H):0, ho=t.out>0?Math.max(3, t.out/mx*H):0, pl=t.planned>0;
         var bars='<i style="bottom:0;height:'+hb+'px;background:#c78bd6;opacity:'+(fut?.5:1)+';border-radius:'+(ho?'2px':'4px 4px 2px 2px')+'"></i>';
-        if(ho){ var pl=t.planned>0 && t.mk>=curM;
-          bars+='<i style="bottom:'+(hb+2)+'px;height:'+ho+'px;border-radius:4px 4px 2px 2px;box-sizing:border-box;'+
-            (pl?'background:rgba(244,121,107,.16);border:1.5px dashed '+(t.short>0.5?'#e6b450':'#f4796b'):'background:rgba(244,121,107,.6)')+'"></i>'; }
+        if(ho) bars+='<i style="bottom:'+(hb+2)+'px;height:'+ho+'px;border-radius:4px 4px 2px 2px;box-sizing:border-box;'+
+            (pl?'background:rgba(244,121,107,.16);border:1.5px dashed '+(t.short>0.5?'#e6b450':'#f4796b'):'background:rgba(244,121,107,.6)')+'"></i>';
         var yr=(mi===0 && i>0)?'<span class="pvyr"><span>'+t.mk.split("-")[0]+'</span></span>':'';
-        var chip=t.out>0?'<span class="c" style="color:'+(t.short>0.5?'#e6b450':'var(--coral)')+'">'+(t.items.some(function(x){ return x.est; })?'~':'−')+kShort(t.out)+'</span>':'<span class="c"></span>';
+        var chip=t.out>0?'<span class="c" style="color:'+(t.short>0.5?'#e6b450':'var(--coral)')+'">'+(t.items.some(function(x){ return x.est && x.amt>0; })?'~':'−')+kShort(t.out)+'</span>':'<span class="c"></span>';
         cols+='<div class="pvcol'+(on?' on':'')+'" data-m="'+t.mk+'"><div class="pl" style="height:'+H+'px">'+yr+bars+'</div><span class="m">'+MOIS3[mi]+'</span>'+chip+'</div>';
       });
       var S=Y.filter(function(t){ return t.mk===sel; })[0], fin=capFirst(monthLabelOf(sel).replace(/ (\d{4})$/," $1"));
-      var det=!S.items.length?'<span class="muted">Aucun prélèvement</span>':
-        S.items.map(function(x){ return esc(x.nom)+' <b style="color:'+(x.short>0.5?'#e6b450':'var(--coral)')+'">'+(x.est?'≈ ':'')+'−'+fmtK(x.amt).replace(/^-/,"")+'</b>'+(x.short>0.5?' <span style="color:#e6b450">· manque '+fmtK(x.short)+'</span>':''); }).join('<br>');
-      var read='<div class="pvread"><div class="l">Fin '+esc(fin.charAt(0).toLowerCase()+fin.slice(1))+' : <b>'+fmtK(S.bal)+'</b>'+(S.mk>curM?' <span class="muted">(prévu)</span>':'')+'<br>'+det+'</div>'+
-        '<div class="lg"><span><i style="background:#c78bd6"></i>De côté</span><span><i style="border:1.5px dashed #f4796b;box-sizing:border-box"></i>Factures</span></div></div>';
-      return '<div class="pvch">'+read+'<div class="pvcols">'+cols+'</div></div>';
+      var its=S.items.filter(function(x){ return x.amt>0.004; });
+      var det=!its.length?'<span class="muted">'+(plan?'Aucune facture':'Aucun prélèvement')+'</span>':
+        its.map(function(x){ return esc(x.nom)+' <b style="color:'+(x.short>0.5?'#e6b450':'var(--coral)')+'">'+(x.est?'≈ ':'')+'−'+fmtK(x.amt).replace(/^-/,"")+'</b>'+(x.short>0.5?' <span style="color:#e6b450">· manque '+fmtK(x.short)+'</span>':(x.planned && x.src!=="prevu"?' <span class="muted">· '+esc(provSrcTxt(x))+'</span>':'')); }).join('<br>');
+      var read='<div class="pvread"><div class="l">Fin '+esc(fin.charAt(0).toLowerCase()+fin.slice(1))+' : <b'+(S.net<-0.004?' class="neg"':'')+'>'+fmtK(S.net)+'</b>'+(S.mk>curM?' <span class="muted">(prévu)</span>':'')+(S.net<-0.004?'<br><span style="color:var(--coral)">pas assez de côté pour tout payer</span>':'')+'<br>'+det+'</div>'+
+        '<div class="lg'+(plan?' v':'')+'">'+(plan?'<span><i style="background:#c78bd6"></i>Après factures</span><span><i style="border:1.5px dashed #f4796b;box-sizing:border-box"></i>Facture prévue</span><span><i style="border:1.5px dashed #e6b450;box-sizing:border-box"></i>Il manquera</span>':
+          '<span><i style="background:#c78bd6"></i>De côté</span><span><i style="background:rgba(244,121,107,.6)"></i>Payées</span>')+'</div></div>';
+      return chartTabsHTML([["cote","De côté"],["prevu","Avec les factures prévues"]], mode, "provChartDef", "cote")+'<div class="pvch">'+read+'<div class="pvcols">'+cols+'</div></div>';
     }
-    function provListHTML(month, curM){
-      var Y=provYear(month, curM), items=[]; Y.forEach(function(t){ items=items.concat(t.items); });
+    // Factures sur 12 mois : payées et prévues ; une enveloppe qui ne suffira pas propose sa nouvelle mise de côté
+    function provListHTML(month, curM, Y){
+      var items=[]; Y.forEach(function(t){ items=items.concat(t.items); });
       if(!items.length) return '';
-      var tot=items.reduce(function(a,x){ return a+x.amt; },0);
-      var h='<div class="bsec-h">Factures sur 12 mois<small>'+fmtK(tot).replace(/^/,"−")+'</small></div><section class="paper pvlist" style="margin-top:10px;padding:6px 14px">';
+      var tot=items.reduce(function(a,x){ return a+x.amt; },0), ro=fyRO();
+      var h='<div class="bsec-h">'+(items.some(function(x){ return x.planned; })?'Factures prévues sur 12 mois':'Factures sur 12 mois')+'<small>'+fmtK(tot).replace(/^/,"−")+'</small></div><section class="paper pvlist" style="margin-top:10px;padding:6px 14px">';
       items.forEach(function(x){
-        var mi=+x.mk.split("-")[1]-1, st;
+        var mi=+x.mk.split("-")[1]-1, st, more='';
         if(!x.planned) st='<span class="muted">payée</span>';
-        else if(x.short>0.5) st='<span style="color:#e6b450">⚠ il manquera '+fmtK(x.short)+'</span>';
-        else if(x.est) st='<span class="muted">montant non indiqué · tout le solde</span>';
-        else st='<span style="color:var(--accent)">✓ couverte</span>';
-        h+='<div class="row"><span class="d">'+MOIS3[mi]+'<small>'+x.mk.split("-")[0]+'</small></span><span class="n"><b>'+esc(x.nom)+'</b>'+st+'</span><span class="a">'+(x.est?'≈ ':'')+'−'+fmtK(x.amt).replace(/^-/,"")+'</span></div>';
+        else if(x.src==="unk") st='<span class="muted">'+esc(provSrcTxt(x))+'</span>';
+        else {
+          if(x.short>0.5){ st='<span style="color:#e6b450">⚠ il manquera '+fmtK(x.short)+(x.before!=null?' · '+fmtK(x.before)+' de côté':'')+'</span>';
+            var n=monthsBetween(month, x.mk), base=mensuelAt(x.p, x.mk);
+            if(n>0 && !ro){ var cs=Math.ceil(base+x.short/n); more='<button class="btn ghost prapply" type="button" data-id="'+esc(x.p.id)+'" data-v="'+cs+'" style="margin-top:5px;padding:5px 10px;font-size:11px">Passer à '+fmtK(cs)+' / mois</button>'; } }
+          else st='<span style="color:var(--accent)">✓ couverte'+(x.after>0.5?' · reste '+fmtK(x.after):'')+'</span>';
+          st+='<span class="muted" style="display:block;font-size:10.5px">'+esc(provSrcTxt(x))+'</span>';
+        }
+        h+='<div class="row"><span class="d">'+MOIS3[mi]+'<small>'+x.mk.split("-")[0]+'</small></span><span class="n"><b>'+esc(x.nom)+'</b>'+st+more+'</span><span class="a">'+(x.amt>0.004?(x.est?'≈ ':'')+'−'+fmtK(x.amt).replace(/^-/,""):'?')+'</span></div>';
       });
       return h+'</section>';
     }
@@ -8175,8 +8232,13 @@
       (function(){
         var mensTot=0, next=null;
         provisions.forEach(function(p){ if((p.skips||[]).indexOf(month)<0) mensTot+=mensuelAt(p, month); var ec=provEcheance(p, month); if(ec && (!next || ec.due<next.due)) next={due:ec.due, nom:p.nom}; });
-        h=h.replace("%%HERO%%", provisions.length?tabHero({ label:"Total mis de côté", big:total, color:(total<0?"var(--coral)":"var(--ink)"), sub:(overTot>0?"Dépassements déduits : −"+fmtK(overTot):""), extra:provChartHTML(month, curM),
-          stats:[ {l:"Enveloppes", v:String(provisions.length)}, {l:"Ce mois-ci", v:"+"+fmtS(mensTot)}, {l:"Échéance", keep:1, v:(next?esc(next.nom):"—"), d:(next?esc(monthLabelOf(next.due)):"")} ] })+provListHTML(month, curM)+'<div class="bsec-h">Enveloppes</div><div style="height:10px"></div>':"");
+        var plan=(provChartMode()==="prevu"), PY=provYear(month, curM, plan), PL=provYear(month, curM, true), st;
+        if(plan){ var fp=0, low=null, nS=0, sS=0, seen={};
+          PY.forEach(function(t){ t.items.forEach(function(x){ if(x.planned) fp+=x.amt; if(x.short>0.5){ sS+=x.short; if(!seen[x.p.id]){ seen[x.p.id]=1; nS++; } } }); if(!low || t.net<low.net) low=t; });
+          st=[ {l:"Factures prévues", v:(fp>0.004?"−"+fmtS(fp):"—"), c:(fp>0.004?"var(--coral)":"")}, {l:"Le plus bas", keep:1, v:fmtS(low.net), d:esc(MOIS3[+low.mk.split("-")[1]-1])}, {l:"À compléter", v:(nS?nS+" · "+fmtS(sS):"—"), c:(nS?"#e6b450":"")} ]; }
+        else st=[ {l:"Enveloppes", v:String(provisions.length)}, {l:"Ce mois-ci", v:"+"+fmtS(mensTot)}, {l:"Échéance", keep:1, v:(next?esc(next.nom):"—"), d:(next?esc(monthLabelOf(next.due)):"")} ];
+        h=h.replace("%%HERO%%", provisions.length?tabHero({ label:"Total mis de côté", big:total, color:(total<0?"var(--coral)":"var(--ink)"), sub:(overTot>0?"Dépassements déduits : −"+fmtK(overTot):""), extra:provChartHTML(month, curM, PY),
+          stats:st })+provListHTML(month, curM, PL)+'<div class="bsec-h">Enveloppes</div><div style="height:10px"></div>':"");
       })();
       h+='<hr class="rule" style="display:none"><div class="leader total" style="display:none"><span class="lbl">Total provisionné</span><span class="fill"></span><span class="val" style="color:'+(total<0?"#f4796b":"#4fd6a0")+'">'+fmt(total)+'</span></div>';
       h+='<div class="muted" style="font-size:11px;margin:10px 4px 0;line-height:1.5">Le solde monte tout seul du montant mensuel. Enregistre un prélèvement quand la facture est payée.</div>';
@@ -8186,6 +8248,8 @@
       var ap=document.getElementById("addprov"); if(ap) ap.onclick=addProvision;
       wireMonthNav(month, curM, "provisions");
       [].forEach.call(document.querySelectorAll(".pvcol"), function(c){ c.onclick=function(){ state.provSel=c.getAttribute("data-m"); render(); }; });
+      wireChartDefaults();
+      [].forEach.call(document.querySelectorAll(".thero .cch-tabs button"), function(bt){ bt.onclick=function(){ state.provChart=bt.getAttribute("data-m"); render(); }; });
       [].forEach.call(document.querySelectorAll(".predit"), function(b){ b.onclick=function(){ editProvision(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".prdel"), function(b){ b.onclick=function(){ delProvision(b.getAttribute("data-id")); }; });
       [].forEach.call(document.querySelectorAll(".prapply"), function(b){ b.onclick=function(){
@@ -8433,9 +8497,9 @@
           d=isoAddMonths(d, s.ryth); }
       });
       // échéances des provisions sans facture importée (taxe foncière, assurance…)
-      try{ var PY=provYear(cur, cur);
+      try{ var PY=provYear(cur, cur, true);
         PY.forEach(function(pt, i){ if(i>11) return; Y[i].short+=pt.short||0;
-          pt.items.forEach(function(x){ if(!x.planned) return; var p=provisions.filter(function(q){ return q.nom===x.nom; })[0]; if(p && p.fact) return;
+          pt.items.forEach(function(x){ if(!x.planned || !(x.amt>0.004)) return; var p=x.p; if(p && p.fact) return;
             var nn=norm(x.nom); if(fraisCommuns.some(function(f){ return f.prov==null && fraisActif(f, months[i]) && nn && norm(f.label).indexOf(nn)>=0; })) return;
             Y[i].est+=x.amt; Y[i].items.push({ n:x.nom, v:x.amt, est:true, prov:true }); }); });
       }catch(e){}

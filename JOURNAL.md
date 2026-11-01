@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `01/11 11:40`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `01/11 12:36`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -42,7 +42,7 @@ Après chaque modification, dans le même commit :
   - rien avant le début du suivi ;
   - mois à venir = solde prévu.
 - **À venir** (ex Factures, ouvert à tous ; seule la partie Factures est dans Tickets Plus en Store) : sous-onglets **12 mois · Frais fixes · Provisions · Factures** ;
-  - Frais fixes : tous (communs et perso), comme l'ancienne page de Commun, dont la mise de côté des provisions (« Provision · nom ») ; Provisions : l'ancienne page de Compte › Configuration, avec « Remplie par » et « facture pas encore retirée · Retirer » ;
+  - Frais fixes : tous (communs et perso), comme l'ancienne page de Commun, dont la mise de côté des provisions (« Provision · nom ») ; Provisions : l'ancienne page de Compte › Configuration, avec « Remplie par » et « facture pas encore retirée · Retirer », un graphique « De côté » / « Avec les factures prévues » et la liste des factures prévues sur 12 mois (ce qui manquera, « Passer à X € / mois ») ;
   - une facture payée par une provision va dans le compte et sort de la provision en un seul geste (virement du livret en option), hors parts du Commun ;
   - les 12 prochains mois : frais fixes, factures reçues ou estimées, échéances des provisions ; un mois en jaune s'il manquera de l'argent dans une provision ; toucher un mois donne le détail ; en dessous, ✦ « Tes comptes dans 12 mois » (projection et simulateur, ex Analyse avancée) ;
   - « À payer bientôt » (30 jours, tous comptes) ;
@@ -110,6 +110,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **01/11** : graphique des provisions avec les factures prévues, d'après la maquette (« tu peux intégrer ») : onglets De côté / Avec les factures prévues, liste des factures prévues avec ce qui manquera.
 - **01/11** : provisions reliées aux frais fixes, au Commun et aux comptes, d'après la maquette (« va y ») : la mise de côté est un frais fixe relié, une facture payée par une provision va dans le compte et sort de la provision en un seul geste, sans compter deux fois dans les parts.
 - **01/11** : l'onglet Virements de Compte est retiré ; un bouton « ＋ Ajouter » (virement reçu, envoyé, frais fixe, ticket) va dans l'écran Opérations.
 - **31/10** : écran de contrôle de plusieurs factures (photos ou PDF) intégré d'après la maquette (« tu peux intégrer ») : nombre de pages lues sur le nombre de photos, « LA PLUS RÉCENTE », contrôle des plus anciennes, rien d'enregistré avant « Appliquer » ; et mettre à jour `PASSATION.md`.
@@ -165,6 +166,11 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 01/11
+- **Provisions : graphique « Avec les factures prévues »** (« un bouton pour afficher un graphique où les factures prévues sont prises en compte, recalcul du solde » ; maquette puis « tu peux intégrer ») :
+  - dans la carte du haut de À venir › Provisions, deux onglets : **De côté** (ce qui est mis de côté, moins les prélèvements enregistrés) et **Avec les factures prévues** (solde de chaque mois recalculé après les factures à venir ; légende Après factures · Facture prévue · Il manquera ; chiffres Factures prévues · Le plus bas · À compléter ; un total négatif est dit « pas assez de côté pour tout payer ») ; choix gardé avec ★ ;
+  - montant d'une facture prévue (`provPlanned`) : le montant prévu de la provision (✎) le mois de son échéance ; sinon le fournisseur qu'elle suit (facture reçue pas encore payée par elle, puis prochaines estimées, `provFactPlan`) ; sinon ce qu'elle a payé le même mois l'an dernier ; une échéance sans rien de tout ça est « montant non indiqué » (plus « tout le solde ») ;
+  - liste « Factures prévues sur 12 mois » : ✓ couverte (· reste X) ou ⚠ il manquera X, d'où vient le montant, et « Passer à X € / mois » (à partir du mois suivant) ; les 12 mois d'À venir comptent aussi ces factures (mois en jaune) ;
+  - corrigé : en regardant un mois futur, le graphique repartait de 0 au lieu des sommes déjà de côté (« Fin décembre : 166 € » au lieu de 693 €). Test `t102`.
 - **Provisions reliées aux frais fixes, au Commun et aux comptes** (« il n'y a pas de lien entre une provision, les frais fixes et frais commun… ce n'est pas retiré des provisions quand j'ajoute la facture dans les comptes » ; maquette puis « va y ») :
   - la mise de côté de chaque mois est un **frais fixe « Provision · nom »** relié à la provision (étiquette « mise de côté », « vers Livret A » ou « reste sur Compte courant ») : il compte dans les parts du Commun et l'Analyse ; il sort du compte qui paie, sauf si l'argent de la provision reste sur ce compte ;
   - un ancien frais de même nom et même montant (« Eau 20 € », « Amazon 6 € ») est **relié au lieu de faire doublon**, et garde son passé ; s'il avait été retiré ce mois-ci par une facture, il revient ;
