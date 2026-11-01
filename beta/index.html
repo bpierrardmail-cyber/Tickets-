@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 17:27" />
+  <meta name="build" content="01/11 20:38" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -8467,7 +8467,7 @@
           PY.forEach(function(t){ t.items.forEach(function(x){ if(x.planned) fp+=x.amt; if(x.short>0.5){ sS+=x.short; if(!seen[x.p.id]){ seen[x.p.id]=1; nS++; } } }); if(!low || t.net<low.net) low=t; });
           st=[ {l:"Factures prévues", v:(fp>0.004?"−"+fmtS(fp):"—"), c:(fp>0.004?"var(--coral)":"")}, {l:"Le plus bas", keep:1, v:fmtS(low.net), d:esc(MOIS3[+low.mk.split("-")[1]-1])}, {l:"À compléter", v:(nS?nS+" · "+fmtS(sS):"—"), c:(nS?"#e6b450":"")} ]; }
         else st=[ {l:"Enveloppes", v:String(provisions.length)}, {l:"Ce mois-ci", v:"+"+fmtS(mensTot)}, {l:"Échéance", keep:1, v:(next?esc(next.nom):"—"), d:(next?esc(monthLabelOf(next.due)):"")} ];
-        h=h.replace("%%HERO%%", provisions.length?tabHero({ label:"Total mis de côté", big:total, color:(total<0?"var(--coral)":"var(--ink)"), sub:(overTot>0?"Dépassements déduits : −"+fmtK(overTot):""), extra:provChartHTML(month, curM, PY),
+        h=h.replace("%%HERO%%", provisions.length?tabHero({ label:"Total provisions", big:total, color:(total<0?"var(--coral)":"var(--ink)"), sub:(overTot>0?"Dépassements déduits : −"+fmtK(overTot):""), extra:provChartHTML(month, curM, PY),
           stats:st })+provListHTML(month, curM, PL)+'<div class="bsec-h">Enveloppes</div><div style="height:10px"></div>':"");
       })();
       h+='<hr class="rule" style="display:none"><div class="leader total" style="display:none"><span class="lbl">Total provisionné</span><span class="fill"></span><span class="val" style="color:'+(total<0?"#f4796b":"#4fd6a0")+'">'+fmt(total)+'</span></div>';

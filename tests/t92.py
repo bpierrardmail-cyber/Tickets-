@@ -49,7 +49,7 @@ with sync_playwright() as p:
     pg.locator('#nav .navi[data-view="factures"]').click(); pg.wait_for_timeout(300)
     pg.locator('.avtabs button[data-av="prov"]').click(); pg.wait_for_timeout(400)
     t=norm(pg.locator("#app").inner_text())
-    check(avon(pg)=="Provisions" and "Taxe foncière" in t and "Total mis de côté" in t and pg.locator("#addprov").count()==1, "Provisions : la page des provisions dans À venir")
+    check(avon(pg)=="Provisions" and "Taxe foncière" in t and "Total provisions" in t and pg.locator("#addprov").count()==1, "Provisions : la page des provisions dans À venir")
     pg.screenshot(path=os.path.join(SP,"t92_prov.png"), full_page=True)
     pg.locator('.avtabs button[data-av="fact"]').click(); pg.wait_for_timeout(400)
     t=norm(pg.locator("#app").inner_text())

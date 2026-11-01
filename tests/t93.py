@@ -39,7 +39,7 @@ with sync_playwright() as p:
     M.locator('#nav .navi[data-view="factures"]').click(); M.wait_for_timeout(500)
     t=M.locator("#app").inner_text()
     check(avtabs(M)==[] and "Loyer" in t and M.locator("#addfrais").count()==1, "Marie : seulement ses Frais fixes, modifiables (droits de Commun) %s"%avtabs(M))
-    check(M.locator(".pcard").count()==0 and "Total mis de côté" not in t and "Provision · Taxe foncière" in t, "Marie : pas la page des provisions, seulement leur mise de côté (un frais commun)")
+    check(M.locator(".pcard").count()==0 and "Total provisions" not in t and "Provision · Taxe foncière" in t, "Marie : pas la page des provisions, seulement leur mise de côté (un frais commun)")
     # Léa
     print("  Léa :", tabs(L))
     check("À venir" in tabs(L) and "Commun" not in tabs(L), "Léa : À venir sans Commun")
