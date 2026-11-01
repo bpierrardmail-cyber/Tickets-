@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 09:42" />
+  <meta name="build" content="01/11 09:54" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -3036,6 +3036,18 @@
         node.addEventListener("contextmenu", function(ev){ ev.preventDefault(); stop(); if(!fired){ fired=true; ticketMenu(node.getAttribute("data-id")); } });
         node.addEventListener("click", function(ev){ if(fired){ fired=false; ev.preventDefault(); ev.stopImmediatePropagation(); } }, true);   // l'appui long n'ouvre pas en plus le ticket
       });
+    }
+    // Appui long sur un élément (au doigt, ou clic droit) ; le toucher qui suit n'ouvre pas en plus l'élément
+    function onLongPress(node, fn){
+      if(node.getAttribute("data-lp")) return; node.setAttribute("data-lp", "1");
+      var t=null, x0=0, y0=0, fired=false;
+      function stop(){ if(t){ clearTimeout(t); t=null; } }
+      function fire(){ t=null; fired=true; try{ if(navigator.vibrate) navigator.vibrate(15); }catch(e){} fn(); }
+      node.addEventListener("touchstart", function(ev){ var p=ev.touches[0]; x0=p.clientX; y0=p.clientY; fired=false; stop(); t=setTimeout(fire, 520); }, { passive:true });
+      node.addEventListener("touchmove", function(ev){ var p=ev.touches[0]; if(Math.abs(p.clientX-x0)>10 || Math.abs(p.clientY-y0)>10) stop(); }, { passive:true });
+      node.addEventListener("touchend", stop); node.addEventListener("touchcancel", stop);
+      node.addEventListener("contextmenu", function(ev){ ev.preventDefault(); stop(); if(!fired){ fired=true; fn(); } });
+      node.addEventListener("click", function(ev){ if(fired){ fired=false; ev.preventDefault(); ev.stopImmediatePropagation(); } }, true);
     }
     function ticketMenu(id){
       var e=state.entries.filter(function(x){ return String(x.id)===String(id); })[0]; if(!e) return;
@@ -8275,7 +8287,7 @@
         var est=s.next?factEstimate(s, s.next):0, ty=factType(s.type), cat=catIcon(ty.l+" "+s.four), when=s.next?(isoDays(todayISO(), s.next)<=60?"vers le "+ddmm(s.next):MOIS_NOMS[+s.next.slice(5,7)-1]):"";
         var pv=s.prov, pa=null; if(pv && s.next) pa=factProvAt(pv, factPayIso(s, s.next), est);
         h+='<button type="button" class="fct-card'+(pa && pa.manque>0.5?' warn':'')+'" data-k="'+esc(s.key)+'"><span class="fct-top"><span class="fct-ic" style="background:'+hexA(cat.col,.16)+'">'+ty.ic+'</span>'+
-           '<span class="fct-n"><b>'+esc(s.four||ty.l)+'</b><small>'+esc(ty.l+' · '+factRythLabel(s.ryth)+' · '+fmtK(factMonthly(s))+'/mois en moyenne')+'</small></span>'+
+           '<span class="fct-n"><b>'+esc(s.four||ty.l)+'</b><small>'+esc(ty.l+' · '+s.bills.length+' facture'+(s.bills.length>1?'s':'')+' · '+factRythLabel(s.ryth)+' · '+fmtK(factMonthly(s))+'/mois en moyenne')+'</small></span>'+
            '<span class="fct-v"><b>'+(est?'≈ '+esc(fctE(est)):'—')+'</b><small>'+esc(when)+'</small></span></span>';
         if(pv){ var w=est>0?Math.min(100, pa.bal/est*100):0;
           h+='<span class="fct-bar"><i style="width:'+w.toFixed(0)+'%"></i></span><span class="fct-s">Provision : '+esc(fmtK(provBalance(pv, curM)))+' de côté · +'+esc(fmtK(mensuelAt(pv, curM)))+'/mois · '+(pa.manque>0.5?'<span class="fct-warn">il manquera '+esc(fmtK(pa.manque))+'</span>':'<span class="fct-ok">prête pour '+esc(MOIS_NOMS[+s.next.slice(5,7)-1])+'</span>')+'</span>'; }
@@ -8355,18 +8367,87 @@
       bindBack(function(){ state.view="factures"; render(); window.scrollTo(0,0); });
       var cp=document.getElementById("fsProv"); if(cp) cp.onclick=function(){ factCreateProv(s); render(); uiToast("Provision « "+factProvName(s)+" » créée"); };
       var im=document.getElementById("fsImp"); if(im) im.onclick=factImportChooser;
-      [].forEach.call(document.querySelectorAll(".fct-row"), function(b){ b.onclick=function(){ if(ro) return; var id=b.getAttribute("data-id"), f=factures.filter(function(x){ return String(x.id)===String(id); })[0]; if(!f) return;
-        uiChoice("Facture du "+ddmmyy(f.date), esc(s.four)+" · "+esc(fmtK(f.montant||0)), [{ l:"Supprimer cette facture", danger:true, fn:function(){ factDelete(f); } }, { l:"Annuler", fn:function(){} }]); }; });
+      // toucher une facture : la modifier ; appui long : Modifier / Supprimer (comme les tickets)
+      [].forEach.call(document.querySelectorAll(".fct-row"), function(b){
+        function fOf(){ var id=b.getAttribute("data-id"); return factures.filter(function(x){ return String(x.id)===String(id); })[0]; }
+        b.onclick=function(){ if(ro) return; var f=fOf(); if(f) factEditSheet(f); };
+        onLongPress(b, function(){ if(ro) return; var f=fOf(); if(!f) return;
+          uiChoice("Facture du "+ddmmyy(f.date), esc(s.four)+" · "+esc(fmtK(f.montant||0)), [{ l:"✎ Modifier", fn:function(){ factEditSheet(f); } }, { l:"🗑 Supprimer", danger:true, fn:function(){ factDeleteUndo(f); } }]); });
+      });
     }
     function factCreateProv(s){
       var p={ id:Date.now(), nom:factProvName(s), mensuel:Math.ceil(factMonthly(s)), soldeInitial:0, startMonth:monthKey(todayISO()), prelevements:[], fact:s.key };
       provisions.push(p); persistProvisions(); return p;
     }
+    // Supprimer une facture (et son prélèvement pas encore fait, et son paiement par la provision) ; renvoie de quoi la remettre
     function factDelete(f){
+      var out={ f:f, fr:null, prP:null, pr:null };
       factures=factures.filter(function(x){ return x!==f; });
-      if(f.fraisId){ var fr=fraisCommuns.filter(function(x){ return String(x.id)===String(f.fraisId); })[0]; if(fr && !fraisDone(fr, fr.month)){ fraisCommuns=fraisCommuns.filter(function(x){ return x!==fr; }); persistFrais(); } }
-      if(f.prId) provisions.forEach(function(p){ if(p.prelevements && p.prelevements.some(function(x){ return String(x.id)===String(f.prId); })){ p.prelevements=p.prelevements.filter(function(x){ return String(x.id)!==String(f.prId); }); persistProvisions(); } });
-      persistFactures(); render(); uiToast("Facture supprimée");
+      if(f.fraisId){ var fr=fraisCommuns.filter(function(x){ return String(x.id)===String(f.fraisId); })[0]; if(fr && !fraisDone(fr, fr.month)){ fraisCommuns=fraisCommuns.filter(function(x){ return x!==fr; }); out.fr=fr; persistFrais(); } }
+      if(f.prId) provisions.forEach(function(p){ var pr=(p.prelevements||[]).filter(function(x){ return String(x.id)===String(f.prId); })[0]; if(pr){ p.prelevements=p.prelevements.filter(function(x){ return x!==pr; }); out.prP=p; out.pr=pr; persistProvisions(); } });
+      persistFactures();
+      return out;
+    }
+    function factDeleteUndo(f){
+      var v0=state.view, k0=state.factKey, o=factDelete(f); render();
+      uiUndoToast("Facture du "+ddmmyy(f.date)+" supprimée", "Annuler", function(){
+        factures.push(o.f); persistFactures();
+        if(o.fr){ fraisCommuns.push(o.fr); persistFrais(); }
+        if(o.pr && o.prP){ if(!o.prP.prelevements) o.prP.prelevements=[]; o.prP.prelevements.push(o.pr); persistProvisions(); }
+        state.view=v0; state.factKey=k0; render(); uiToast("Facture remise");
+      });
+    }
+    // Modifier une facture déjà enregistrée ; son prélèvement à venir et son paiement par la provision suivent le montant
+    function factEditSheet(f){
+      var ty=factType(f.type), pay=!!f.aPayer;
+      function dt(id, lbl, v){ return '<div><label class="f" for="'+id+'">'+lbl+'</label><input class="f" id="'+id+'" type="date" value="'+esc(v||"")+'"></div>'; }
+      var h='<div class="fold"><div class="fo-h"><b>Facture du '+esc(ddmmyy(f.date))+'</b><span class="fpill">'+esc(ty.l)+'</span></div>';
+      h+='<label class="f" for="fe-four">Fournisseur</label><input class="f" id="fe-four" value="'+esc(f.four||"")+'">';
+      h+='<div class="row2"><div><label class="f" for="fe-mt">Montant (€)</label><input class="f" id="fe-mt" inputmode="decimal" value="'+esc(f.montant!=null?Number(f.montant).toFixed(2).replace(".",","):"")+'"></div>'+dt("fe-date", "Date", f.date)+'</div>';
+      h+='<label class="f">Paiement</label><div class="chips" id="fe-pay"><button type="button" class="chip'+(!pay?' on':'')+'" data-v="prel">Prélèvement</button><button type="button" class="chip'+(pay?' on':'')+'" data-v="apayer">À payer moi-même</button></div>';
+      h+='<div class="row2">'+dt("fe-prel", pay?"À payer avant le":"Prélevé le", pay?f.due:f.prelev)+(ty.u?'<div><label class="f" for="fe-conso">Consommation ('+ty.u+')</label><input class="f" id="fe-conso" inputmode="decimal" value="'+esc(f.conso!=null?String(f.conso):"")+'"></div>':'')+'</div>';
+      h+='<div class="row2">'+dt("fe-du", "Consommé du", f.du)+dt("fe-au", "au", f.au)+'</div>';
+      h+='<div class="ui-err" style="display:none"></div>';
+      h+='<div class="ui-actions"><button type="button" class="btn danger" id="feDel">Supprimer</button><button type="button" class="btn primary" id="feOk">Enregistrer</button></div></div>';
+      var s=uiSheet(h);
+      [].forEach.call(s.qa("#fe-pay .chip"), function(b){ b.onclick=function(){ [].forEach.call(s.qa("#fe-pay .chip"), function(x){ x.className="chip"; }); b.className="chip on"; pay=b.getAttribute("data-v")==="apayer"; var l=s.q('label[for="fe-prel"]'); if(l) l.textContent=pay?"À payer avant le":"Prélevé le"; }; });
+      function err(m){ var e=s.q(".ui-err"); e.textContent=m||""; e.style.display=m?"":"none"; }
+      s.q("#feDel").onclick=function(){ s.close(); factDeleteUndo(f); };
+      s.q("#feOk").onclick=function(){
+        var g=function(id){ var e=s.q("#"+id); return e ? e.value.trim() : ""; };
+        var four=g("fe-four"), amt=num(g("fe-mt")), date=g("fe-date"), d2=g("fe-prel"), cs=g("fe-conso"), du=g("fe-du"), au=g("fe-au");
+        if(!(amt>0)){ err("Indique le montant de la facture"); return; }
+        if(!date){ err("Indique la date de la facture"); return; }
+        var k0=factKey(f), oldAmt=Number(f.montant)||0, renamed=four && norm(four)!==norm(f.four||"");
+        var others=factures.filter(function(x){ return x!==f && factKey(x)===k0; });
+        function apply(all){
+          f.montant=amt; f.date=date;
+          if(pay){ f.aPayer=true; delete f.prelev; if(d2) f.due=d2; else delete f.due; } else { delete f.aPayer; delete f.due; if(d2) f.prelev=d2; else delete f.prelev; }
+          if(ty.u){ var c=cs==="" ? null : num(cs); if(c>0) f.conso=c; else delete f.conso; }
+          if(du) f.du=du; else delete f.du; if(au) f.au=au; else delete f.au;
+          if(Math.abs(amt-oldAmt)>0.004){
+            if(f.fraisId) fraisCommuns.forEach(function(x){ if(String(x.id)===String(f.fraisId) && !x.recurrent) x.montant=Math.round(amt*100)/100; });
+            if(f.prId) provisions.forEach(function(p){ (p.prelevements||[]).forEach(function(x){ if(String(x.id)===String(f.prId)) x.montant=amt; }); });
+          }
+          if(renamed){
+            var moved=all ? others.concat([f]) : [f];
+            moved.forEach(function(x){ x.four=four; });
+            var k1=factKey(f);
+            // ce qui suivait la série (provision, prélèvements, estimation) suit le nouveau nom
+            if(all){ provisions.forEach(function(p){ if(p.fact===k0) p.fact=k1; }); fraisCommuns.forEach(function(x){ if(x.fact===k0){ x.fact=k1; x.factNom=four; } });
+              var al=store.read("factAlias", {})||{}; al[k0.split("|")[1]]=four; store.write("factAlias", al); }   // les prochaines factures lues prendront ce nom
+            else if(f.fraisId) fraisCommuns.forEach(function(x){ if(String(x.id)===String(f.fraisId)){ x.fact=k1; x.factNom=four; } });
+          }
+          persistFactures(); persistFrais(); persistProvisions();
+          if(renamed && (all || !others.length)) state.factKey=factKey(f);
+          render(); uiToast(renamed && all ? (others.length+1)+" factures renommées « "+four+" »" : "Facture modifiée");
+        }
+        s.close();
+        if(renamed && others.length) uiChoice("Renommer en « "+four+" »", "Les autres factures de « "+esc(f.four||"")+" » aussi ?", [
+          { l:"Toutes ses factures ("+(others.length+1)+")", primary:true, fn:function(){ apply(true); } },
+          { l:"Seulement celle-ci", primary:false, fn:function(){ apply(false); } } ]);
+        else apply(false);
+      };
     }
 
     // ----- Importer une facture : PDF (texte lu sur le téléphone) ou photos page par page -----
@@ -8638,7 +8719,7 @@
       if(d.src==="photo") h+='<button type="button" class="btn ghost" id="fctPage" style="margin-bottom:10px">📷 + Page suivante</button>';
       h+='<label class="f" for="fp-four">Fournisseur</label><input class="f" id="fp-four" value="'+esc(p.four||"")+'">';
       h+='<label class="f">Type</label><div class="chips" id="fp-type">'+FACT_TYPES.map(function(t){ return '<button type="button" class="chip'+(p.type===t.v?' on':'')+'" data-v="'+t.v+'">'+esc(t.l)+'</button>'; }).join("")+'</div>';
-      h+='<label class="f" for="fp-mt">Montant (€)</label><input class="f" id="fp-mt" inputmode="decimal" value="'+esc(p.montant!=null?String(p.montant).replace(".",","):"")+'" placeholder="0,00">';
+      h+='<label class="f" for="fp-mt">Montant (€)</label><input class="f" id="fp-mt" inputmode="decimal" value="'+esc(p.montant!=null?Number(p.montant).toFixed(2).replace(".",","):"")+'" placeholder="0,00">';
       h+='<label class="f" for="fp-date">Date de la facture</label><input class="f" id="fp-date" type="date" value="'+esc(p.date||"")+'">';
       h+='<label class="f">Paiement</label><div class="chips" id="fp-pay"><button type="button" class="chip'+(!p.aPayer?' on':'')+'" data-v="prel">Prélèvement</button><button type="button" class="chip'+(p.aPayer?' on':'')+'" data-v="apayer">À payer moi-même</button></div>';
       h+=p.aPayer ? '<label class="f" for="fp-due">À payer avant le (facultatif)</label><input class="f" id="fp-due" type="date" value="'+esc(p.due||"")+'">'
@@ -8715,7 +8796,7 @@
       var h='<div class="fold"><div class="fo-h"><b>Facture'+(p.date?' du '+esc(ddmmyy(p.date)):'')+'</b><span class="fpill">'+(i+1)+' sur '+K+'</span></div>';
       h+='<div style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 2px">'+esc(capFirst(factPhotosTxt(o.pages, M.kind)))+' · '+(pdf?'lu dans le PDF':'lue sur le téléphone')+' · <button type="button" class="ocr-raw" id="foRaw">Copier la lecture</button></div>';
       h+='<label class="f" for="fo-four">Fournisseur</label><input class="f" id="fo-four" value="'+esc(p.four||"")+'">';
-      h+='<div class="row2"><div><label class="f" for="fo-mt">Montant (€)</label><input class="f" id="fo-mt" inputmode="decimal" value="'+esc(p.montant!=null?String(p.montant).replace(".",","):"")+'" placeholder="0,00"></div><div><label class="f" for="fo-date">Date</label><input class="f" id="fo-date" type="date" value="'+esc(p.date||"")+'"></div></div>';
+      h+='<div class="row2"><div><label class="f" for="fo-mt">Montant (€)</label><input class="f" id="fo-mt" inputmode="decimal" value="'+esc(p.montant!=null?Number(p.montant).toFixed(2).replace(".",","):"")+'" placeholder="0,00"></div><div><label class="f" for="fo-date">Date</label><input class="f" id="fo-date" type="date" value="'+esc(p.date||"")+'"></div></div>';
       if(ty.u) h+='<label class="f" for="fo-conso">Consommation ('+ty.u+')</label><input class="f" id="fo-conso" inputmode="decimal" value="'+esc(p.conso!=null?String(p.conso):"")+'">';
       h+='<label class="f">Paiement</label><div class="chips" id="fo-pay"><button type="button" class="chip'+(!p.aPayer?' on':'')+'" data-v="prel">Prélèvement</button><button type="button" class="chip'+(p.aPayer?' on':'')+'" data-v="apayer">À payer moi-même</button></div>';
       h+='<div class="row2"><div><label class="f" for="fo-du">Consommé du</label><input class="f" id="fo-du" type="date" value="'+esc(p.du||"")+'"></div><div><label class="f" for="fo-au">au</label><input class="f" id="fo-au" type="date" value="'+esc(p.au||"")+'"></div></div>';
