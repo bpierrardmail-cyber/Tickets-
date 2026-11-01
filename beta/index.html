@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 20:41" />
+  <meta name="build" content="01/11 21:13" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -8516,7 +8516,14 @@
       return String(s||"").replace(/[Oo](?=\d)/g, "0").replace(/(\d)[Il|](?=\d)/g, "$1/").replace(/(\/\d) (\d\/)/g, "$1$2")
         .replace(/(^|[^\d\/])(\d{2})(\d{2})\/(\d{4})(?!\d)/g, "$1$2/$3/$4").replace(/(\d{1,2}\/\d{1,2}\/20\d)[sS](?![\w])/g, function(x, a){ return a+"5"; });
     }
-    function factDate(s){ var m=/(\d{1,2}) ?[\/.\-] ?(\d{1,2}) ?[\/.\-] ?(\d{4}|\d{2})(?!\d)/.exec(factDateFix(s)); if(!m) return ""; var y=m[3].length===2?2000+(+m[3]):+m[3], mo=+m[2], d=+m[1]; if(d<1||d>31||mo<1||mo>12||y<2000||y>2099) return ""; return y+"-"+(mo<10?"0":"")+mo+"-"+(d<10?"0":"")+d; }
+    // date en chiffres (« 27/10/2026 », « 27-10-26 ») ou en lettres (« 27 octobre 2026 », « 1er déc. 2025 ») : la première des deux
+    var FACT_MOIS=["janv","f[ée]vr?","mars","avr","mai","juin","juil","ao[uû]t","sept","oct","nov","d[ée]c"];
+    var FACT_MOISRE=new RegExp("(\\d{1,2})(?:er)?\\s+("+FACT_MOIS.join("|")+")[a-zéû]*\\.?\\s+(\\d{4})(?!\\d)", "i");
+    function factDate(s){ var t=factDateFix(s), m=/(\d{1,2}) ?[\/.\-] ?(\d{1,2}) ?[\/.\-] ?(\d{4}|\d{2})(?!\d)/.exec(t), w=FACT_MOISRE.exec(t), y, mo, d;
+      if(w && (!m || w.index<m.index)){ y=+w[3]; d=+w[1]; mo=0; for(var i=0;i<FACT_MOIS.length;i++) if(new RegExp("^"+FACT_MOIS[i], "i").test(w[2])){ mo=i+1; break; } }
+      else if(m){ y=m[3].length===2?2000+(+m[3]):+m[3]; mo=+m[2]; d=+m[1]; }
+      else return "";
+      if(d<1||d>31||mo<1||mo>12||y<2000||y>2099) return ""; return y+"-"+(mo<10?"0":"")+mo+"-"+(d<10?"0":"")+d; }
     // montants d'une ligne (« 183,55 », « 1 234,56 ») ; une suite de chiffres (« N° 32 394 240 173 183,55 ») n'est pas un millier
     function factAmts(s){
       var r=[], m, re=/(\d{1,3}(?:[   ]\d{3})?|\d+) ?, ?(\d{2})(?!\d)/g;
@@ -8534,9 +8541,21 @@
       return null;
     }
     var FACT_PAYRE=/montant\s+total\s+[àa]\s+payer|net\s+[àa]\s+payer|total\s+[àa]\s+payer|montant\s+[àa]\s+(?:payer|r[ée]gler)|somme\s+[àa]\s+payer|reste\s+[àa]\s+payer/i;
+    // Texte de certains PDF (Free…) : accents détachés (« pr ´elev ´ee », « `a payer »), « N◦ », montants « 15.99 e » → « prélevée », « à payer », « N° », « 15,99 € »
+    var FACT_ACC={ "´":"\u0301", "`":"\u0300", "ˆ":"\u0302", "¨":"\u0308", "˜":"\u0303" };
+    var FACT_INIT=/^(?:etant|egal|ecri|emis|echeanc|electri|energ|etat|etabli|eventu|etre|etes)/i;
+    function factTxtFix(s){
+      // l'espace devant l'accent est gardé pour « `a » seul (« à ») et devant un mot qui commence par un accent (« sommes ´etant ») ;
+      // sinon l'accent est au milieu du mot (« abonn ´e », « l ´egal »)
+      return String(s||"").replace(/(?:([A-Za-zÀ-ÿ]+)( ?))?([´`ˆ¨˜])([A-Za-z])(?=([A-Za-zÀ-ÿ]*))/g, function(x, pre, sp, a, l, nx){
+          var c=(l+FACT_ACC[a]).normalize("NFC"), word=(a==="`" && /a/i.test(l) && !nx) || (pre && pre.length>1 && FACT_INIT.test(l+nx));
+          return (pre||"")+(pre && sp && word ? " " : "")+c; })
+        .replace(/([Nn])[◦º](?=\s|\d)/g, "$1°")
+        .replace(/(\d)[.,](\d{2}) ?e(?![A-Za-zÀ-ÿ0-9])/g, "$1,$2 €").replace(/(\d)\.(\d{2}) ?(€|EUR\b)/g, "$1,$2 $3");
+    }
     function titleCase(s){ return String(s||"").toLowerCase().replace(/(^|[\s\-'’])([a-zà-ÿ])/g, function(x, a, b){ return a+b.toUpperCase(); }); }
     function parseBill(text){
-      var T=String(text||"").replace(/[  ]/g," "), lines=T.split("\n").map(function(l){ return l.trim(); }).filter(Boolean), flat=lines.join("\n"), low=flat.toLowerCase();
+      var T=factTxtFix(text).replace(/[  ]/g," "), lines=T.split("\n").map(function(l){ return l.trim(); }).filter(Boolean), flat=lines.join("\n"), low=flat.toLowerCase();
       var r={ four:"", fourSure:false, type:"autre", date:"", montant:null, prelev:"", aPayer:false, due:"", du:"", au:"", conso:null, next:"", regul:false }, m;
       // fournisseur : les grands fournisseurs, sinon le créancier du TIP, sinon le nom en tête de la facture
       var nl=" "+norm(flat.replace(/[0-9]/g," "))+" ";
@@ -8561,14 +8580,14 @@
         else if(/\b(box|fibre|forfait mobile|ligne fixe)\b/.test(low) || /(?:abonnement|acc[eè]s|offre)\s+internet/.test(low)) r.type="net";
       }
       // date de la facture
-      r.date=factDateAfter(flat, /factur\w*(?:\s+r[ée]elle|\s+n°\s*\S+)?\s+(?:du|en date du|[ée]mise le)\s*:?\s*/i, 20) ||
+      r.date=factDateAfter(flat, /factur\w*(?:\s+r[ée]elle|\s+n[°o]\.?\s*\S+)?\s+(?:du|en date du|[ée]mise le)\s*:?\s*/i, 20) ||
              factDateAfter(flat, /date\s+(?:de\s+(?:la\s+)?)?facture?\s*:?\s*/i, 20) || factDateAfter(flat, /date\s+d['’][ée]mission\s*:?\s*/i, 20);
       // montant à payer (et prélèvement : « Le montant de 183,55€ sera prélevé le 12/11/2025 »)
       m=/montant\s+de\s+(\d[\d ]*,\d\d)\s*€?\s*sera\s+pr[ée]lev[ée]\s+(?:le|à partir du|vers le)\s*:?\s*([^\n]{0,14})/i.exec(flat);
       if(m){ r.montant=factAmts(m[1])[0]; r.prelev=factDate(m[2]); }
       if(r.montant==null) r.montant=factLabelAmt(lines, FACT_PAYRE);
       if(r.montant==null) r.montant=factLabelAmt(lines, /montant\s+total(?!\s*(?:ht|hors))|total\s+(?:de\s+)?(?:la|votre)\s+facture|total\s+facture\s+ttc|montant\s+ttc|total\s+ttc/i);
-      if(!r.prelev) r.prelev=factDateAfter(flat, /(?:sera\s+)?pr[ée]lev[ée]\s+(?:le|à partir du|vers le)\s*:?\s*/i, 40) || factDateAfter(flat, /date\s+(?:du|de)\s+pr[ée]l[èe]vement\s*:?\s*/i, 30);
+      if(!r.prelev) r.prelev=factDateAfter(flat, /(?:sera\s+)?pr[ée]lev[ée]e?s?\s+(?:sur\s+[^\n]{1,40}?\s+)?(?:le|à partir du|vers le)\s*:?\s*/i, 40) || factDateAfter(flat, /date\s+(?:du|de)\s+pr[ée]l[èe]vement\s*:?\s*/i, 30);
       if(!r.prelev && /[àa]\s+payer\s+[àa]\s+r[ée]ception|tip\s*sepa|payfip|[àa]\s+r[ée]gler\s+avant|date\s+limite\s+de\s+paiement|[àa]\s+payer\s+avant/i.test(flat)){
         r.aPayer=true; r.due=factDateAfter(flat, /(?:[àa]\s+(?:payer|r[ée]gler)\s+avant\s+le|date\s+limite\s+de\s+paiement)\s*:?\s*/i, 30);
       }
@@ -9154,7 +9173,7 @@
     }
     // Montant à payer d'une page (en centimes), 0 s'il n'y est pas
     function factPayAmt(t){
-      var lines=String(t||"").replace(/[  ]/g," ").split("\n").map(function(l){ return l.trim(); }).filter(Boolean), flat=lines.join("\n");
+      var lines=factTxtFix(t).replace(/[  ]/g," ").split("\n").map(function(l){ return l.trim(); }).filter(Boolean), flat=lines.join("\n");
       var m=/montant\s+de\s+(\d[\d ]*,\d\d)\s*€?\s*sera\s+pr[ée]lev[ée]/i.exec(flat); if(m){ var a=factAmts(m[1])[0]; if(a>0) return Math.round(a*100); }
       var v=factLabelAmt(lines, FACT_PAYRE); return v>0 ? Math.round(v*100) : 0;
     }
