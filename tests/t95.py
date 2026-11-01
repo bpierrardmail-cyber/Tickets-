@@ -2,6 +2,7 @@
 import sys, os, json
 HERE=os.path.dirname(os.path.abspath(__file__)); ROOT=os.path.dirname(HERE)
 from playwright.sync_api import sync_playwright
+import horloge
 SP=(sys.argv[1] if len(sys.argv)>1 else HERE); APP='file://'+ROOT+'/beta/index.html'; fails=[]
 def check(c, m):
     print(("OK   " if c else "FAIL ")+m)

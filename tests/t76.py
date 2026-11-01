@@ -2,6 +2,8 @@
 import sys, os, re, json, copy, time
 HERE=os.path.dirname(os.path.abspath(__file__)); ROOT=os.path.dirname(HERE)
 from playwright.sync_api import sync_playwright
+os.environ.setdefault("TICKETS_NOW", "2026-10-27T10:00:00")   # données écrites pour ce jour-là (« Hier », « habituellement le 28 »)
+import horloge
 SP=(sys.argv[1] if len(sys.argv)>1 else HERE); APP='file://'+ROOT+'/beta/index.html'; fails=[]
 def check(c, m):
     print(("OK   " if c else "FAIL ")+m)
@@ -68,7 +70,7 @@ with sync_playwright() as p:
     q.fill(""); pg.wait_for_timeout(200); q.dispatch_event("input"); pg.wait_for_timeout(200)
     # rond « fait »
     pg.locator('.ops-ck[data-k="v"]').click(); pg.wait_for_timeout(500)
-    V5=[v for v in ls("virements") if v["id"]==5][0]; today=int(time.strftime("%d"))
+    V5=[v for v in ls("virements") if v["id"]==5][0]; today=horloge.today().day
     check(V5["done"] and V5.get("day")==today, "Épargne cochée : faite aujourd'hui (jour %s)" % V5.get("day"))
     heads=[norm(x) for x in pg.locator(".ops-dh").all_inner_texts()]
     check(heads[0].startswith("Aujourd'hui") and "1 427,58" in heads[0], "elle rejoint la liste : Aujourd'hui, solde 1 427,58 (%s)" % heads[0])

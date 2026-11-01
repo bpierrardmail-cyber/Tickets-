@@ -2,6 +2,7 @@
 import sys, os, re, time
 HERE=os.path.dirname(os.path.abspath(__file__)); ROOT=os.path.dirname(HERE)
 from playwright.sync_api import sync_playwright
+import horloge
 SP=(sys.argv[1] if len(sys.argv)>1 else HERE)
 src=open(os.path.join(HERE,"imp_base.py"),encoding="utf-8").read(); exec(src.split("with sync_playwright() as p:")[0])
 FILES=os.path.join(HERE,"donnees","releves")

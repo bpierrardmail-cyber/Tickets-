@@ -1,6 +1,6 @@
 # Tickets : dossier de passation
 
-*État au 31/10/2026, 23 h 50. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
+*État au 01/11/2026. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
 
 > **À Claude qui reprend le projet**
 >
@@ -166,6 +166,7 @@ Fait et poussé le 31/10 :
    - le fournisseur écrit sur deux lignes est retrouvé ;
    - « site Internet » ne fait plus une facture internet.
 5. **Écran de contrôle de plusieurs factures**, à sa demande : nombre de pages lues sur le nombre de photos, « LA PLUS RÉCENTE », contrôle des plus anciennes, « Reprendre » une photo illisible, rien d'enregistré avant « Appliquer ». Même écran pour plusieurs PDF.
+6. **Accueil** : la page des petits graphiques (« 3 / 8 ») est gardée même quand l'appli se redessine au démarrage. **Commun** : la liste des frais communs se replie, et le graphique reprend alors sa place (01/11).
 
 **À faire valider par Benoît sur son téléphone :**
 - la nouvelle navigation, et les retours éventuels ;
@@ -175,7 +176,7 @@ Fait et poussé le 31/10 :
 - l'import de relevé avec ses exports BoursoBank (OFX, QIF, CSV) ;
 - les factures d'eau en photo : réimporter ses 6 photos d'un coup, après avoir supprimé l'ancienne mauvaise facture si elle a été enregistrée ; en cas de souci, il enverra « Copier la lecture ».
 
-**Tests automatiques** : les 16 tests de `tests/` passent (t96 couvre l'écran de contrôle), sauf deux vérifications de t76 qui dépendent du jour. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
+**Tests automatiques** : les 17 tests de `tests/` passent (t96 couvre l'écran de contrôle des factures, t97 la page gardée des petits graphiques). La date du navigateur est fixée au 30/10/2026 par `tests/horloge.py`, car les données inventées sont en octobre 2026. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
 
 ---
 
@@ -234,7 +235,7 @@ Fait et poussé le 31/10 :
 5. **Tenir `JOURNAL.md` à jour dans le même commit** : une entrée datée en haut de l'Historique, plus Décisions, État actuel et En cours si nécessaire. Mettre aussi `CLAUDE.md` à jour si une notion technique change.
 6. **Commit en français**, préfixé « β » quand il touche la β, poussé directement sur `main`. Le push met en ligne la β et la Perso, et recompile les deux APK.
 7. **Tester** avec les tests de `tests/` (mode d'emploi dans `tests/README.md`) :
-   - `sh tests/run.sh` lance les 16 tests ; `python3 tests/t95.py` en lance un seul ;
+   - `sh tests/run.sh` lance les 17 tests ; `python3 tests/t95.py` en lance un seul ;
    - ce sont des scripts Playwright en Python : Chromium sans interface, écran de 412×900, données injectées dans localStorage, relais local (Node et `node:sqlite` sur `localhost:8787`) ;
    - aucune requête réseau extérieure pendant les tests ;
    - ajouter un test pour chaque nouvelle fonction, **toujours avec des données inventées**.

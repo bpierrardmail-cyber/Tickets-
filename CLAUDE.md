@@ -63,7 +63,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 
 ## Notions métier à connaître
 
-- **Accueil** : graphiques choisis par l'utilisateur (`homeCharts`, bouton ⚙ Choisir, appui long sur une carte), grande carte du haut au choix (`homeTop`, hauteur fixe 300 px) ; puces ✍️ Saisie et 🧾 Tickets (→ Dépenses › Tickets) ; bouton personne en haut à droite. Rien sous les graphiques.
+- **Accueil** : graphiques choisis par l'utilisateur (`homeCharts`, bouton ⚙ Choisir, appui long sur une carte), grande carte du haut au choix (`homeTop`, hauteur fixe 300 px) ; puces ✍️ Saisie et 🧾 Tickets (→ Dépenses › Tickets) ; bouton personne en haut à droite. Rien sous les graphiques. Petits graphiques en pages à glisser (`pagerHTML`, `wirePagers`) : la page vue est gardée dans `pgPos`, seulement quand on l'a choisie (glisser, flèches, puces) ; un défilement dû à la mise en page ne la change pas, et un `ResizeObserver` remet la même page quand la largeur arrive ou change.
 - **Onglets** : Accueil · Dépenses · Compte · À venir · Commun · Bourse (pas de Bourse dans la version Store). Chaque onglet a ses sous-onglets en boutons `.avtabs` sous le titre (pas de page « Configuration » ni de bouton retour pour passer de l'un à l'autre). ✦ = Tickets Plus : on voit la fonction (`.fct-teaser`), seul le bouton demande Plus.
 - **Dépenses** (bouton de nav `data-view="depenses"` → `depView()`) : sous-onglets Tickets · Produits · Budgets · Analyse (`depSubs`, `state.depSub`, `depTabsHTML`, `wireDepTabs`, `depCur`). Tickets = vue `tickets` (`renderList` en mode Dépenses : liste du mois + ligne « Photos des tickets » → galerie) ; Produits = `renderArticles` (Mes produits, Hausses, Magasins, Familles) ; Budgets = `renderArticles` avec le seul onglet Budgets ; Analyse = `renderAnalyse`. `setNav` allume Dépenses pour les vues articles, analyse et tickets. Dans un foyer, Tickets suit l'Accueil, Produits et Budgets l'onglet `articles`, Analyse l'onglet `analyse`. Produits partagés reste dans Commun.
 - **Menu** : Foyer partagé, Personnes, Sauvegarder · Exporter en PDF, Réglages (la galerie est dans Dépenses › Tickets, l'import de relevé dans la roue du compte).
@@ -135,6 +135,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 ## Tests
 
 Les tests sont dans `tests/` (mode d'emploi : `tests/README.md`) : `sh tests/run.sh` les lance tous, `python3 tests/t95.py` un seul. Ajouter un test pour chaque nouvelle fonction, **toujours avec des données inventées** (le dépôt est public). Les tests qui utilisaient de vraies données (relevés BoursoBank, factures, vrais tickets) ne sont pas dans le dépôt. Principe :
+- date fixée par `tests/horloge.py` (`import horloge` dans chaque test) : le navigateur se croit le 30/10/2026, car les données inventées sont en octobre 2026 ; un nouveau test fait de même ;
 - l'appli Store se teste en servant une copie de `beta/` (+ pdf.js, `insee.json`) sur `https://localhost/` par une route, avec l'identifiant `TicketsApp/store` et un faux `window.Capacitor` : aucune requête ne doit partir ailleurs ;
 - Chromium sans interface, viewport 412×900 ;
 - données injectées dans localStorage puis `reload()` ;

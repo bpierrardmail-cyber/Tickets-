@@ -3,6 +3,7 @@
 import sys, os, json, re, shutil, mimetypes
 HERE=os.path.dirname(os.path.abspath(__file__)); ROOT=os.path.dirname(HERE)
 from playwright.sync_api import sync_playwright
+import horloge
 SP=(sys.argv[1] if len(sys.argv)>1 else HERE); fails=[]
 BETA=ROOT+'/beta/'; PJ=os.environ.get('PDFJS_DIR','/opt/npm-tools/node_modules/pdfjs-dist/legacy/build/').rstrip('/')+'/'
 GH='https://bpierrardmail-cyber.github.io/Tickets-/'

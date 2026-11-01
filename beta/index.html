@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 08:39" />
+  <meta name="build" content="01/11 09:14" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -3323,7 +3323,7 @@
     // ---------- Pages à glisser (comme les bureaux du téléphone) ----------
     // Défilement natif aimanté, une page à la fois. Puces jusqu'à 6 pages, « 2 / 11 » au-delà ;
     // flèches ‹ › sur ordinateur (et toujours avec le compteur). La page vue est gardée et reprise à l'affichage suivant.
-    var pgPos=store.read("pgPos", {})||{}, pgSaveT=0;
+    var pgPos=store.read("pgPos", {})||{};
     function pagerHTML(id, pages, o){
       o=o||{}; var n=pages.length;
       if(n<2 && !o.nav) return pages[0]||"";
@@ -3345,20 +3345,35 @@
         if(pg.getAttribute("data-wired")) return; pg.setAttribute("data-wired","1");
         var id=pg.getAttribute("data-pgr"), tr=pg.querySelector(".pg-track"); if(!tr) return;
         var n=tr.children.length, dots=pg.querySelectorAll(".pg-dot"), cnt=pg.querySelector(".pg-count b"), prev=pg.querySelector(".pg-prev"), next=pg.querySelector(".pg-next"), cur=-1;
-        function upd(i){ if(i===cur) return; cur=i;
-          [].forEach.call(dots, function(d,k){ d.classList.toggle("on", k===i); if(k===i) d.setAttribute("aria-current","page"); else d.removeAttribute("aria-current"); });
-          if(cnt) cnt.textContent=String(i+1); if(prev) prev.disabled=(i<=0); if(next) next.disabled=(i>=n-1);
-          if(id && pgPos[id]!==i){ pgPos[id]=i; clearTimeout(pgSaveT); pgSaveT=setTimeout(function(){ store.write("pgPos", pgPos); }, 400); }
+        // la page vue n'est gardée que si on l'a choisie (glisser, flèches, puces) : un défilement dû à la mise en page
+        // (appli qui s'ouvre avant d'avoir sa taille, largeur qui change) ne la remet pas à 1
+        var user=false, down=false, userT=0;
+        function settle(){ clearTimeout(userT); userT=setTimeout(function(){ if(!down) user=false; }, 300); }   // fin du geste : 0,3 s sans défilement, doigt levé
+        function touch(){ user=true; settle(); }
+        function clamp(i){ return Math.max(0, Math.min(n-1, i)); }
+        function upd(i, save){ if(i!==cur){ cur=i;
+            [].forEach.call(dots, function(d,k){ d.classList.toggle("on", k===i); if(k===i) d.setAttribute("aria-current","page"); else d.removeAttribute("aria-current"); });
+            if(cnt) cnt.textContent=String(i+1); if(prev) prev.disabled=(i<=0); if(next) next.disabled=(i>=n-1); }
+          if(save && id && pgPos[id]!==i){ pgPos[id]=i; store.write("pgPos", pgPos); }
         }
-        function go(i, smooth){ i=Math.max(0, Math.min(n-1, i)); var w=tr.clientWidth;
-          if(smooth && tr.scrollTo) tr.scrollTo({ left:i*w, behavior:"smooth" }); else tr.scrollLeft=i*w; upd(i); }
+        function place(){ var w=tr.clientWidth; if(w && cur>=0 && Math.abs(tr.scrollLeft-cur*w)>2) tr.scrollLeft=cur*w; }
+        function go(i, smooth, save){ i=clamp(i); var w=tr.clientWidth;
+          if(w){ if(smooth && tr.scrollTo) tr.scrollTo({ left:i*w, behavior:"smooth" }); else tr.scrollLeft=i*w; } upd(i, save); }
         var st=+pg.getAttribute("data-start")||0, i0=(pg.getAttribute("data-force")==="1" || !id || pgPos[id]==null) ? st : +pgPos[id];
-        go(isFinite(i0)?i0:0, false);
+        go(isFinite(i0)?i0:0, false, false);
+        ["pointerdown","touchstart"].forEach(function(ev){ tr.addEventListener(ev, function(){ down=true; user=true; clearTimeout(userT); }, { passive:true }); });
+        ["pointerup","pointercancel","touchend","touchcancel"].forEach(function(ev){ tr.addEventListener(ev, function(){ down=false; settle(); }, { passive:true }); });
+        tr.addEventListener("wheel", touch, { passive:true });
         var raf=0;
-        tr.addEventListener("scroll", function(){ if(raf) return; raf=requestAnimationFrame(function(){ raf=0; var w=tr.clientWidth||1; upd(Math.max(0, Math.min(n-1, Math.round(tr.scrollLeft/w)))); }); }, { passive:true });
-        [].forEach.call(dots, function(d,k){ d.onclick=function(ev){ ev.stopPropagation(); go(k, true); }; });
-        if(prev) prev.onclick=function(ev){ ev.stopPropagation(); go(cur-1, true); };
-        if(next) next.onclick=function(ev){ ev.stopPropagation(); go(cur+1, true); };
+        tr.addEventListener("scroll", function(){ if(user) settle(); if(raf) return; raf=requestAnimationFrame(function(){ raf=0; var w=tr.clientWidth; if(!w) return;
+          if(!user){ place(); return; }   // pas un geste : on reste sur la page voulue
+          upd(clamp(Math.round(tr.scrollLeft/w)), true); }); }, { passive:true });
+        // largeur connue plus tard ou qui change : on se remet sur la même page
+        if(window.ResizeObserver){ var lw=tr.clientWidth, ro=new ResizeObserver(function(){ if(!tr.isConnected){ ro.disconnect(); return; } var w=tr.clientWidth; if(!w || w===lw) return; lw=w; if(!user) place(); }); ro.observe(tr); }
+        setTimeout(function(){ if(!user && tr.isConnected) place(); }, 300);
+        [].forEach.call(dots, function(d,k){ d.onclick=function(ev){ ev.stopPropagation(); touch(); go(k, true, true); }; });
+        if(prev) prev.onclick=function(ev){ ev.stopPropagation(); touch(); go(cur-1, true, true); };
+        if(next) next.onclick=function(ev){ ev.stopPropagation(); touch(); go(cur+1, true, true); };
       });
     }
     // Les grands graphiques glissent pour changer de graphique : pas depuis une zone qui défile elle-même

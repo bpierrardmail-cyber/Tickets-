@@ -2,12 +2,13 @@
 import datetime, os
 HERE=os.path.dirname(os.path.abspath(__file__)); ROOT=os.path.dirname(HERE)
 from playwright.sync_api import sync_playwright
+import horloge
 APP='file://'+ROOT+'/beta/index.html'
 fails=[]
 def check(c,m):
     print(("OK   " if c else "FAIL ")+m)
     if not c: fails.append(m)
-y=datetime.datetime.now().replace(hour=23, minute=30, second=0, microsecond=0)-datetime.timedelta(days=1)
+y=horloge.today().replace(hour=23, minute=30, second=0, microsecond=0)-datetime.timedelta(days=1)
 data={"askName":False,"devise":"EUR","personnes":[{"nom":"Sylvette"}],"comptes":[{"key":"Benoit","nom":"Compte courant","payer":"Benoit","main":True}],"lastBackup":y.astimezone(datetime.timezone.utc).isoformat()}
 with sync_playwright() as p:
     b=p.chromium.launch()

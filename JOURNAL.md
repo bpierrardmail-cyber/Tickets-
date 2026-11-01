@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `01/11 08:39`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `01/11 09:14`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -160,6 +160,8 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 01/11
+- **Accueil : la page des petits graphiques est gardée** (« garder en mémoire la dernière page, ex 3/8 ») : elle l'était déjà en principe, mais un défilement dû à la mise en page (appli dessinée avant d'avoir sa taille, largeur qui change) la remettait à 1 et l'enregistrait. Maintenant la page n'est enregistrée que sur un geste (glisser, flèches, puces), tout de suite, et la page voulue est remise quand la largeur arrive ou change (`wirePagers`). Test `t97`.
+- **Tests indépendants de la date** : on est passé en novembre et 6 tests (données en octobre) échouaient ; `tests/horloge.py` fixe la date du navigateur au 30/10/2026 (t76 au 27/10 : ses deux vérifications « Hier » et « le 28 » passent enfin ; foyer à l'heure réelle). Tous les tests passent.
 - **Commun : le graphique reprend sa taille** quand on replie les frais communs (« le graphique ne reprend pas sa taille ») : replier ou déplier redessine la page, la carte du haut est recalculée (`fitHero`). Test t92 : la carte grandit en repliant, se resserre en dépliant.
 - **Commun › Frais communs se replie** (« ne se replie pas ») : toucher le titre replie ou déplie la liste (flèche qui tourne, choix gardé sur le téléphone, `comFcOpen`) ; toucher un frais ouvre toujours À venir › Frais fixes. Test t92 complété.
 

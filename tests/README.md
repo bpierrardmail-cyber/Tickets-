@@ -55,10 +55,11 @@ node tests/relais-local/server.mjs relais
 | t93 | Foyer : droits sur l'onglet À venir, selon Commun ou À venir. Utilise `foyer_base.py` (relais local, verrou, invitation par QR code). |
 | t94 | Compte en sous-onglets, roue du compte, graphiques touchables. |
 | t95 | Onglet Dépenses (Tickets · Produits · Budgets · Analyse), menu allégé, projection dans À venir, Plus visible. |
+| t97 | Accueil : la page des petits graphiques (« 3 / 8 ») est gardée : changement d'onglet, relance, et quand la mise en page fait défiler sans geste (Accueil dessiné avant d'avoir sa taille, largeur qui change). |
 | t96 | Plusieurs factures d'un coup : 3 factures d'eau en photos (recto et verso, avec les erreurs de lecture du téléphone, aussi dans le désordre) et 3 PDF dont un sans texte. Écran de contrôle « 6 photos · 6 lues », la plus récente, fiche d'une ancienne (Précédente / Suivante), décocher, photo illisible puis « Reprendre », rien d'enregistré avant « Appliquer ». La partie PDF a besoin de pdf.js (voir t90). |
 
 **À savoir**
-- t76 contient deux vérifications qui dépendent de la date du jour (« Hier », « habituellement le 28 ») : elles peuvent échouer certains jours sans que l'appli soit en cause.
+- **Date des tests** : les données inventées sont en octobre 2026. `horloge.py` (une ligne `import horloge` dans chaque test) fait croire au navigateur qu'on est le 30/10/2026 à 10 h ; l'heure avance normalement à partir de là. t76 se place au 27/10 ; les tests du foyer (t93) gardent la vraie heure, que le relais local compare. Pour essayer un autre jour : `TICKETS_NOW=2026-10-31T09:00:00 python3 tests/t95.py`.
 - t93 attend parfois le relais : en cas d'échec isolé, relancer le test une fois avant de chercher un bug.
 
 **Non inclus**, parce qu'ils utilisent de vraies données :

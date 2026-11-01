@@ -3,6 +3,8 @@ import sys, json, time, base64, os
 HERE=os.path.dirname(os.path.abspath(__file__)); ROOT=os.path.dirname(HERE)
 import numpy as np, cv2
 from playwright.sync_api import sync_playwright
+os.environ.setdefault("TICKETS_NOW", "")   # foyer : vraie heure (le relais local la compare)
+import horloge
 SP=(sys.argv[1] if len(sys.argv)>1 else HERE)
 APP = 'file://'+ROOT+'/beta/index.html'
 API = 'http://localhost:8787'
