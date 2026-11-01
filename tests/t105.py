@@ -41,8 +41,14 @@ with sync_playwright() as p:
     pg.locator(".sheet-overlay button", has_text="Passer en frais fixe").click(); pg.wait_for_timeout(400)
     sh=pg.locator(".sheet-overlay").last
     def sel(lbl): return sh.locator(".ui-field", has_text=lbl).locator("select")
-    check(sh.locator(".ui-field", has_text="Nom").first.locator("input").input_value()=="Claude ia" and sel("Pour qui").input_value()=="Alex" and sel("Prélevé sur").input_value()=="Alex",
-          "fenêtre remplie : Claude ia, pour Alex, sur le compte courant")
+    check(sh.locator(".ui-field", has_text="Nom").first.locator("input").input_value()=="Claude ia" and sel("Prélevé sur").input_value()=="Alex",
+          "fenêtre remplie : Claude ia, sur le compte courant")
+    kind=sh.locator(".ui-field", has_text="Frais commun ou perso")
+    check(kind.locator(".ui-seg button.on").count()==0 and not sh.locator(".ui-field", has_text="Pour qui").is_visible(), "« Frais commun ou perso ? » : rien de choisi d'avance")
+    sh.locator(".ui-actions button[type=submit]").click(); pg.wait_for_timeout(300)
+    check("Choisis : frais commun ou perso." in norm(sh.inner_text()) and not [x for x in ls(pg,"fraisCommuns") if x["label"]=="Claude ia"], "sans choix : « Choisis : frais commun ou perso. », rien d'enregistré")
+    kind.locator("button", has_text="Perso").click(); pg.wait_for_timeout(150)
+    check(sel("Pour qui").is_visible() and sel("Pour qui").input_value()=="Alex", "« Perso » : « Pour qui » apparaît, Alex (titulaire du compte)")
     check(sh.locator(".ui-field", has_text="Durée").locator(".ui-seg button.on").inner_text().strip()=="Sans fin" and "(2)" in norm(sh.inner_text()) and sh.locator(".ui-field", has_text="Les mêmes virements").is_visible(),
           "déjà repris en novembre et décembre : « Sans fin » proposé, « Les mêmes virements des mois suivants (2) : Les retirer »")
     pg.screenshot(path=os.path.join(SP,"t105_frais.png"))
@@ -61,7 +67,7 @@ with sync_playwright() as p:
     sh=pg.locator(".sheet-overlay").last
     sh.locator(".ui-seg button", has_text="Plusieurs mois").click(); pg.wait_for_timeout(150)
     sh.locator(".ui-field", has_text="Jusqu'au mois").locator("input").fill("2026-11")
-    sh.locator(".ui-field", has_text="Pour qui").locator("select").select_option("Commun"); pg.wait_for_timeout(150)
+    sh.locator(".ui-field", has_text="Frais commun ou perso").locator("button", has_text="Commun").click(); pg.wait_for_timeout(150)
     sh.locator(".ui-actions button[type=submit]").click(); pg.wait_for_timeout(500)
     F=[x for x in ls(pg,"fraisCommuns") if x["label"]=="Claude ia"][0]
     left=sorted([x["month"] for x in ls(pg,"virements") if x["label"]=="Claude ia"])

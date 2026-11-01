@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 15:41" />
+  <meta name="build" content="01/11 15:57" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -1800,11 +1800,19 @@
       function sameLater(lastM){ var n=norm(v.label||""), a=Number(v.montant)||0;
         return virements.filter(function(x){ return x!==v && x.person===v.person && x.month>m0 && (!lastM || x.month<=lastM) && !x.done &&
           ((r0 && String(x.rec)===String(r0.id)) || (norm(x.label||"")===n && Math.abs((Number(x.montant)||0)-a)<0.006)); }); }
-      var nAll=sameLater(null).length, dur0=(r0 || nAll) ? "inf" : "1";
+      var nAll=sameLater(null).length, dur0=(r0 || nAll) ? "inf" : "1", ppl=uniquePersons(); if(ppl.indexOf(owner)<0) ppl.unshift(owner);
       uiForm({ title:"Passer en frais fixe", intro:"« "+esc(v.label||"Virement")+" » ("+esc(fmtK(amt))+") devient un frais fixe à partir de "+esc(monthLabelOf(m0))+" : le virement est remplacé"+(v.done?", déjà passé (le solde ne change pas)":"")+".", fields:[
         {key:"label", label:"Nom", value:v.label||"", required:true},
         {key:"montant", label:"Montant", type:"money", value:amt, required:true}
-      ].concat(whoFields(owner)).concat(payFields({ personne:owner })).concat(acctFields(v.person, owner)).concat([
+      ].concat([
+        // à choisir à chaque fois : commun (partagé selon les parts) ou perso (à une personne)
+        {key:"kind", label:"Frais commun ou perso ?", type:"seg", value:"", options:[{v:"Commun",l:"Commun (partagé)"},{v:"perso",l:"Perso"}],
+          help:"Commun : partagé selon les parts du Commun. Perso : à une seule personne.",
+          onChange:function(x, api){ var w=(x==="perso") ? (api.get("who")||owner) : "Commun"; api.show("who", x==="perso"); api.show("pay", x==="Commun");
+            api.show("acct", !(x==="Commun" && api.get("pay")==="split")); if(!acctPick.touched) api.set("acct", acctDefKey(w)); }},
+        {key:"who", label:"Pour qui", type:"select", value:owner, hidden:true, options:ppl.map(function(n){ return {v:n, l:n}; }),
+          onChange:function(x, api){ if(!acctPick.touched) api.set("acct", acctDefKey(x)); }}
+      ]).concat(payFields({ personne:"Commun" }).map(function(x){ x.hidden=true; return x; })).concat(acctFields(v.person, owner)).concat([
         {key:"dur", label:"Durée", type:"seg", value:dur0, options:[{v:"1",l:"Un mois"},{v:"n",l:"Plusieurs mois"},{v:"inf",l:"Sans fin"}],
           onChange:function(x, api){ api.show("fin", x==="n"); api.show("later", x!=="1" && nAll>0); }},
         {key:"fin", label:"Jusqu'au mois (inclus)", type:"month", value:nextMonthKey(nextMonthKey(m0)), hidden:true},
@@ -1812,9 +1820,10 @@
         {key:"later", label:"Les mêmes virements des mois suivants ("+nAll+")", type:"seg", value:"del", hidden:!(nAll && dur0!=="1"), options:[{v:"del",l:"Les retirer"},{v:"keep",l:"Les garder"}],
           help:"Ceux des mois couverts par le frais, pour ne pas le compter deux fois."+(r0?" Le virement « chaque mois » s'arrête.":"")}
       ])}, function(r){
+        if(r.kind!=="Commun" && r.kind!=="perso") return "Choisis : frais commun ou perso.";
         var jd=dayRead(r); if(jd.err) return jd.err;
         var fin=null; if(r.dur==="n"){ if(!okM.test(r.fin||"")) return "Choisis le dernier mois."; if(r.fin<m0) return "Le dernier mois est avant le premier."; fin=r.fin; }
-        var rec=(r.dur!=="1" && fin!==m0), who=whoOf(r);
+        var rec=(r.dur!=="1" && fin!==m0), who=(r.kind==="Commun") ? "Commun" : (r.who||owner);
         var nf={ id:Date.now(), label:r.label||v.label||"Frais", montant:r.montant, personne:who, recurrent:rec, month:(rec ? null : m0) };
         if(rec){ nf.startMonth=m0; if(fin) nf.endMonth=fin; }
         if(jd.v) nf.jour=jd.v;

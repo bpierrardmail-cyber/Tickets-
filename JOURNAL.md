@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `01/11 15:41`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `01/11 15:57`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -170,6 +170,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 01/11
+- **Passer en frais fixe : commun ou perso à choisir** (« MAAF RC en frais fixe n'apparaît pas dans Commun » puis « il faut pouvoir choisir ») : le frais avait été enregistré pour le titulaire du compte (frais perso, compté dans « Ta part » mais pas dans « Frais communs »). La fenêtre demande maintenant « Frais commun ou perso ? » (Commun (partagé) / Perso), sans rien de choisi d'avance ; « Pour qui » n'apparaît que pour Perso (le titulaire d'abord), « Payé » que pour Commun ; sans choix : « Choisis : frais commun ou perso. ». Test `t105` complété.
 - **Passer un virement en frais fixe** (« passer un virement en frais fixe pour 1 ou plusieurs mois » ; proposition puis « tu peux intégrer ») : toucher un virement envoyé (pas un virement reçu, ni un virement vers l'épargne) → « 📅 Passer en frais fixe » ; fenêtre de « Nouveau frais fixe » déjà remplie (nom, montant, pour le titulaire du compte, ce compte, jour, à partir du mois du virement) et durée **Un mois** / **Plusieurs mois** / **Sans fin** ; le virement est remplacé (déjà fait → le frais est fait le même jour, le solde ne bouge pas) ; « Les mêmes virements des mois suivants (N) : Les retirer / Les garder » pour ceux des mois couverts (une série « chaque mois » s'arrête) ; venu d'un relevé, le frais garde sa clé d'import ; « Annuler » remet tout (`virToFrais`). Test `t105`. `PASSATION.md` mis à jour (avancement du 01/11, à faire valider, pièges).
 - **Frais fixe : « Prélevé sur » plus clair** (« Automatique et compte courant c'est pareil, et pas clair ») : plus d'option « Automatique » ; la liste ne montre que les comptes, celui par défaut déjà choisi (compte principal pour un frais commun, compte de la personne pour un frais perso) ; il suit « Pour qui » tant qu'on n'y touche pas. Enregistré sur le compte par défaut, le frais ne force rien (il suit le compte habituel, comme avant « Automatique ») ; un autre compte est gardé (`acctDefKey`, `acctPicked`). Test `t104`.
 - **Reprendre des virements du mois d'avant** (« reprendre des virements du mois dernier et choisir : mois suivant, un mois précis, une période ou récurrent » ; maquette puis « tu peux intégrer ») :

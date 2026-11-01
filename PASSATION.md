@@ -139,7 +139,7 @@ Les maquettes (canevas « Tickets — Plan de l'appli » et autres) sont des art
 - **Compte**, sous-onglets Opérations · Épargne · Graphiques, plus la roue du compte :
   - Opérations : la liste du mois comme un relevé de banque, avec « ＋ Ajouter » (virement reçu ou envoyé, « ↻ Reprendre des virements » du mois d'avant, frais fixe, ticket) ;
   - « ↻ Reprendre des virements » : dans le mois suivant, un mois choisi, une période, ou chaque mois (série qui crée le virement de chaque mois, 12 mois à l'avance ; modifier à partir d'un mois, retirer un mois, arrêter) ;
-  - toucher un virement : Modifier, « ↻ Reprendre ce virement », et pour un virement envoyé (pas vers l'épargne) « 📅 Passer en frais fixe » (un mois, plusieurs mois ou sans fin ; le virement est remplacé, le solde ne bouge pas, les mêmes virements des mois couverts partent aussi, « Annuler » possible) ;
+  - toucher un virement : Modifier, « ↻ Reprendre ce virement », et pour un virement envoyé (pas vers l'épargne) « 📅 Passer en frais fixe » (commun ou perso à choisir ; un mois, plusieurs mois ou sans fin ; le virement est remplacé, le solde ne bouge pas, les mêmes virements des mois couverts partent aussi, « Annuler » possible) ;
   - frais fixe : « Prélevé sur » ne montre que les comptes, celui par défaut déjà choisi (compte principal pour un frais commun, compte de la personne sinon) ;
   - roue du compte : modifier, solde reporté, **import d'un relevé** OFX, QIF ou CSV lu sur le téléphone (un virement déjà dans l'appli et retrouvé devient « fait »), annuler le dernier import.
 - **À venir**, sous-onglets 12 mois · Frais fixes · Provisions · Factures :
