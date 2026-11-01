@@ -32,3 +32,17 @@ def bill(path, mois, mois_num, montant, ht, tva):
 
 bill(os.path.join(HERE, "facture_mobile_fictive_09.pdf"), "septembre", "09", "9.99", "8.33", "1.66")
 bill(os.path.join(HERE, "facture_mobile_fictive_10.pdf"), "octobre", "10", "15.99", "13.33", "2.66")
+
+# Fournisseur au format inconnu (t108) : ni les règles ni la lecture générale ne trouvent la date ni le montant ;
+# corrigés une fois, ils sont relus au même endroit.
+def odd(path, jj_mm, montant):
+    c=canvas.Canvas(path, pagesize=(595, 842)); y=800
+    for s in ["BIZARRE ÉNERGIE", "Coopérative locale de chaleur", "Adhérent : ALEX MARTIN", "1 RUE DE L'ESSAI  00000 TESTVILLE",
+              "Testville, %s/2026" % jj_mm, "Votre relevé de participation", "Chaleur livrée  1 200 unités",
+              "Contribution mensuelle  € %s" % montant, "Merci de votre fidélité."]:
+        c.setFont("Helvetica", 10); c.drawString(57, y, s); y-=14
+    c.showPage(); c.save()
+
+odd(os.path.join(HERE, "facture_inconnue_09.pdf"), "03/09", "45,10")
+odd(os.path.join(HERE, "facture_inconnue_10.pdf"), "03/10", "47,80")
+odd(os.path.join(HERE, "facture_inconnue_11.pdf"), "03/11", "52,30")

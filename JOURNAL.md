@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `01/11 21:13`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `01/11 21:32`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -112,6 +112,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **01/11** : lecture des factures rendue plus tolérante (lecture générale) et apprentissage par fournisseur à la première correction ; « Lire avec mon IA » pour les factures plus tard, avec celle des tickets ; la lecture en ligne par une IA reste de côté.
 - **01/11** : passer un virement envoyé en frais fixe (un mois, plusieurs mois, sans fin), d'après la proposition (« tu peux intégrer ») ; mettre à jour `PASSATION.md`.
 - **01/11** : reprendre des virements du mois d'avant (mois suivant, un mois, une période, chaque mois), d'après la maquette (« tu peux intégrer »).
 - **01/11** : graphique des provisions avec les factures prévues, d'après la maquette (« tu peux intégrer ») : onglets De côté / Avec les factures prévues, liste des factures prévues avec ce qui manquera.
@@ -170,6 +171,10 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 01/11
+- **Factures : lecture générale et apprentissage par fournisseur** (« le système fonctionne mal, les utilisateurs ne pourront pas ou peu importer de facture » ; « OK pour 1 et 2 ») :
+  - lecture générale : quand les règles ne trouvent pas la date ou le montant, chaque montant et chaque date reçoit une note selon les mots de sa ligne (ou de la ligne au-dessus si la valeur est seule) et le mieux noté l'emporte (`factGuessAmt`, `factAmtScore` : « à payer », « TTC », « total », « prélevé »… contre « HT », « TVA », « dont », « capital »… ; `factGuessDate`, `factDateScore` : « date de facture », « émise le », « Date : », « Le … » contre échéance, période, contrat, prochaine) ; prélèvement sur une ligne « prélèv… » (`factGuessPrelev`) ; toutes les dates d'une ligne avec leur position (`factDatesIdx` : chiffres, lettres, AAAA-MM-JJ) ; « Prélèvement à partir du » ; « Règlement à réception » = à payer ; « date limite de paiement » sans date (conditions générales) ne veut plus dire « à payer » ;
+  - apprentissage : à « Appliquer », une date ou un montant corrigé est retenu pour ce fournisseur (nom lu à l'origine) : les 4 derniers mots avant la valeur, ou la ligne au-dessus (`factLearn`, `factAnchorOf`, clé `factAppris`, gardée sur le téléphone et dans la sauvegarde, pas synchronisée dans le foyer) ; la facture suivante est relue au même endroit (`factLearntApply`, prioritaire sur les règles) ; dans un import de plusieurs factures, corriger la plus récente remplit aussitôt les plus anciennes du même fournisseur (`factFillOthers`) ; message « lecture retenue pour … » ;
+  - corpus de 9 factures inventées (`tests/donnees/factures_fictives.json`) : 5 ratées avant, 9 lues après ; les 12 Free de Benoît toujours justes. Test `t108`.
 - **Factures Free Mobile en PDF : rien de lu** (12 PDF : « Date ? », montant vide, « à payer à réception ») : ces PDF (faits avec LaTeX) ont les accents détachés (« pr ´elev ´ee », « `a payer »), des montants « 15.99 e » et la date en lettres (« du 27 octobre 2026 »). `factTxtFix` répare le texte avant `parseBill` et `factPayAmt` (accent recollé à sa lettre, l'espace gardé pour « à » seul et devant un mot qui commence par un accent, `FACT_INIT` ; « N◦ » ; « 15.99 e » → « 15,99 € ») ; `factDate` lit aussi les dates en lettres (`FACT_MOISRE`) ; « Facture no … du » ; « sera prélevée sur votre carte bancaire le … ». Les 12 factures de Benoît : date, montant (9,99 / 15,99 €) et prélèvement justes (testé hors du dépôt). Test `t107` avec deux PDF fictifs au même format (`tests/donnees/facture_mobile_fictive.py`).
 - **Provisions : « Total provisions » partout** (« confusion possible avec ce qu'on a mis de côté, le mois ou le total » ; « il faut que ça soit identique partout ») : grand montant d'À venir › Provisions (au lieu de « Total mis de côté »), Compte › Graphiques › Provisions (au lieu de « Provisions mises de côté », note « Total provisions, sur 6 mois »). Sur l'Accueil, les cartes gardent leur nom « Provisions » / « Compte · Provisions ». « De côté » reste pour le solde d'une enveloppe et l'onglet du graphique, « Mis de côté chaque mois » pour la mensualité. Tests `t92`, `t93`, `t106`.
 - **Accueil : petite carte « Compte · Épargne » mal affichée** (« le graphique épargne est mal affiché ») : la courbe était prise pour un anneau (ses points sont des cercles) et réduite dans un coin. `enrichMiniCharts` reconnaît maintenant une courbe (`polyline`) : elle prend la largeur de la carte comme les barres, chiffres et mois lisibles, sans les points (qui seraient étirés en ovales), traits d'épaisseur constante. Test `t97` complété.

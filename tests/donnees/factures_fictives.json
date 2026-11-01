@@ -1,0 +1,20 @@
+[
+  {"nom":"Orange (date et prélèvement en lettres)", "attendu":{"four":"Orange","type":"net","date":"2026-10-05","montant":45.99,"prelev":"2026-10-20","aPayer":false},
+   "texte":"orange\nVotre facture du 5 octobre 2026\nN° client : 000000000\nM. ALEX MARTIN\n1 RUE DE L'ESSAI 00000 TESTVILLE\nOffre Livebox Fibre\nAbonnement du 05/10/2026 au 04/11/2026  37,49\nOptions  4,00\nTotal HT  38,32 €\nTVA 20 %  7,67 €\nMontant total TTC  45,99 €\nCe montant sera prélevé le 20 octobre 2026 sur votre compte bancaire.\nPour toute question : 3900"},
+  {"nom":"SFR (date « Date : », montant « Total facture »)", "attendu":{"four":"SFR","type":"net","date":"2026-10-12","montant":32.0,"prelev":"2026-10-22","aPayer":false},
+   "texte":"SFR\nFacture N° FX0000001\nDate : 12/10/2026\nClient : ALEX MARTIN\nLigne 06 00 00 00 00\nForfait 5G 100 Go  32,00\nTotal facture  32,00 €\ndont TVA  5,33 €\nPrélèvement à partir du 22/10/2026\nConditions générales disponibles sur sfr.fr"},
+  {"nom":"Bouygues (« Montant à prélever », date à points)", "attendu":{"four":"Bouygues Telecom","type":"net","date":"2026-10-08","montant":29.99,"prelev":"2026-10-18","aPayer":false},
+   "texte":"Bouygues Telecom\nDate de facture  08.10.2026\nNuméro de facture  0000000000\nTitulaire  ALEX MARTIN\nBbox fibre  29,99\nMontant à prélever  29,99 €\nDate de prélèvement  18.10.2026\nMontant HT  24,99 €"},
+  {"nom":"TotalEnergies électricité (« TOTAL TTC »)", "attendu":{"four":"TotalEnergies","type":"elec","date":"2026-10-03","montant":112.3,"prelev":"2026-10-17","aPayer":false},
+   "texte":"TotalEnergies\nFacture émise le 03/10/2026\nRéférence client : 000000\nÉlectricité · Offre Verte Fixe\nConsommation du 01/09/2026 au 30/09/2026  420 kWh\nAbonnement  15,20\nConsommation électricité  420 kWh  0,1952  81,98\nTaxes et contributions  15,12\nTOTAL TTC  112,30€\nSera prélevé le 17/10/2026"},
+  {"nom":"Veolia eau à payer (« Montant TTC à régler »)", "attendu":{"four":"Veolia","type":"eau","date":"2026-10-01","montant":145.2,"aPayer":true,"due":"2026-10-31"},
+   "texte":"Veolia Eau\nDate d'émission : 01/10/2026\nContrat n° 0000000\nM. ALEX MARTIN\nConsommation d'eau  38 m3\nAbonnement eau potable  22,10\nAssainissement  41,30\nTotal HT  137,63\nTVA  7,57\nMontant TTC à régler  145,20 €\nÀ régler avant le 31/10/2026\nPaiement par TIP SEPA ou sur payfip"},
+  {"nom":"Artisan inconnu (HT / TVA / TTC, date en lettres)", "attendu":{"four":"Plomberie Dupont","type":"autre","date":"2026-10-14","montant":300.0},
+   "texte":"PLOMBERIE DUPONT\n12 rue des Tuyaux 00000 TESTVILLE\nSIRET 000 000 000 00000\nFACTURE n° 2026-114\nLe 14 octobre 2026\nClient : ALEX MARTIN\nRemplacement chauffe-eau  1  250,00  250,00\nTotal HT  250,00 €\nTVA 20 %  50,00 €\nTotal TTC  300,00 €\nRèglement à réception de facture"},
+  {"nom":"Assurance (« Cotisation TTC », date ISO)", "attendu":{"four":"Assur Test","type":"autre","date":"2026-10-01","montant":38.5},
+   "texte":"ASSUR TEST\nAvis d'échéance\nÉdité le 2026-10-01\nContrat habitation n° 0000\nCotisation mensuelle\nPrime HT  35,00\nTaxes  3,50\nCotisation TTC  38,50 €\nPrélevée le 2026-10-10"},
+  {"nom":"Montant à point sans € (« Total : 54.90 EUR »)", "attendu":{"date":"2026-09-30","montant":54.9},
+   "texte":"MEDIA STREAM\nInvoice / Facture\nDate de facturation : 30/09/2026\nAbonnement Premium  54.90\nTotal : 54.90 EUR\nPayé par carte bancaire"},
+  {"nom":"Montant seul sous son libellé", "attendu":{"date":"2026-10-02","montant":61.4},
+   "texte":"GAZ TEST\nFacture du 02/10/2026\nConsommation gaz  480 kWh\nNet à payer\n61,40 €\nPrélèvement le 15/10/2026\nEn cas de retard, pénalités au taux légal à compter de la date limite de paiement."}
+]
