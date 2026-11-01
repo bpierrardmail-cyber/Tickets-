@@ -1,6 +1,6 @@
 # Tickets : dossier de passation
 
-*État au 01/11/2026. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
+*État au 01/11/2026, étiquette `01/11 17:27`. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
 
 > **À Claude qui reprend le projet**
 >
@@ -161,8 +161,9 @@ Fait et poussé le 01/11 :
 1. **Factures** : modifier, supprimer (une facture ou tout un fournisseur, annulable), nombre de factures par fournisseur ; une facture gardée sans ses effets peut être mise dans les comptes (« Pas dans tes comptes · Ajouter »).
 2. **Provisions reliées aux frais fixes, au Commun et aux comptes** : la mise de côté est un frais fixe « Provision · nom » (les anciens frais « Eau 20 € », « Amazon 6 € » sont reliés, pas doublés) ; une facture payée par une provision va dans le compte et sort de la provision en un seul geste, sans compter deux fois dans les parts du Commun.
 3. **Provisions avec les factures prévues** : graphique « De côté » / « Avec les factures prévues », liste de ce qui manquera, « Passer à X € / mois » ; carte du fournisseur « prête pour mai · il restera 28 € ». Corrigé : un mois futur repartait de 0.
-4. **Compte** : plus d'onglet Virements, « ＋ Ajouter » dans les Opérations ; reprendre des virements du mois d'avant (mois suivant, un mois, une période, chaque mois) ; passer un virement en frais fixe ; « Prélevé sur » sans « Automatique ».
+4. **Compte** : plus d'onglet Virements, « ＋ Ajouter » dans les Opérations ; reprendre des virements du mois d'avant (mois suivant, un mois, une période, chaque mois) ; passer un virement en frais fixe, avec « Frais commun ou perso ? » à choisir à chaque fois (rien de coché d'avance, l'appli le redemande si on oublie) ; « Prélevé sur » sans « Automatique ».
 5. **Tests indépendants de la date** (`tests/horloge.py`).
+6. **Accueil** : la petite carte « Compte · Épargne » n'est plus réduite dans un coin. Sa courbe était prise pour un anneau ; elle prend maintenant toute la largeur de la carte comme les barres de « Compte · Solde », montants au-dessus, mois en dessous, Bourse en pointillés, sans les petits points (`enrichMiniCharts` reconnaît les `polyline`). Test t97 complété.
 
 Fait et poussé le 31/10 :
 1. **Sans réseau** pour les deux éditions. L'APK Store est autonome ; la Perso garde une copie.
@@ -188,7 +189,8 @@ Fait et poussé le 31/10 :
 - l'import de relevé avec ses exports BoursoBank (OFX, QIF, CSV) ;
 - les factures d'eau en photo : réimporter ses 6 photos d'un coup, après avoir supprimé l'ancienne mauvaise facture si elle a été enregistrée ; en cas de souci, il enverra « Copier la lecture » ;
 - les provisions reliées (01/11) : ses frais « Eau » et « Amazon » doivent être devenus « Provision · Eau » / « Provision · Amazon » sans doublon ; les autres provisions ont un frais à partir de novembre (sinon « Remplie par » → « Pas dans les frais fixes ») ; la facture Région Minière du 02/11 : « Ajouter » la met dans le compte et la retire de « Eau » ;
-- les virements repris ou « chaque mois » (CAF, Sylvette…), et « Passer en frais fixe » (Claude ia…).
+- les virements repris ou « chaque mois » (CAF, Sylvette…), et « Passer en frais fixe » (Claude ia…) ; pour MAAF RC SBPI, déjà passé en frais fixe avant le choix commun / perso : le remettre en « Commun » dans À venir › Frais fixes › Modifier › « Pour qui » ;
+- la petite carte « Compte · Épargne » de l'Accueil.
 
 **Tests automatiques** : les 25 tests de `tests/` passent (t96 : écran de contrôle des factures ; t97 : page gardée des petits graphiques ; t98 : modifier ou supprimer une facture ; t99 : mettre dans les comptes une facture gardée sans ses effets ; t100 : payer une facture avec une provision ; t101 : provisions reliées aux frais fixes, au Commun et aux comptes ; t102 : graphique des provisions avec les factures prévues ; t103 : reprendre des virements, virements « chaque mois » ; t104 : « Prélevé sur » d'un frais fixe ; t105 : passer un virement en frais fixe). t93 (foyer) attend parfois le relais local : en cas d'échec isolé, le relancer seul. La date du navigateur est fixée au 30/10/2026 par `tests/horloge.py`, car les données inventées sont en octobre 2026. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
 
