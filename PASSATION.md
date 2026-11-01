@@ -137,9 +137,11 @@ Les maquettes (canevas « Tickets — Plan de l'appli » et autres) sont des art
   - Budgets : budgets par catégorie ;
   - Analyse : graphiques et ✦ Analyse avancée (inflation perso INSEE, comparaison avec l'an dernier, alertes, pistes d'économies, résumé à coller dans une IA).
 - **Compte**, sous-onglets Opérations · Épargne · Graphiques, plus la roue du compte :
-  - « ↻ Reprendre des virements » du mois d'avant : dans le mois suivant, un mois choisi, une période, ou chaque mois (série qui crée le virement de chaque mois, 12 mois à l'avance ; modifier à partir d'un mois, retirer un mois, arrêter) ;
-  - Opérations : la liste du mois comme un relevé de banque, avec « ＋ Ajouter » (virement reçu ou envoyé, frais fixe, ticket) ;
-  - roue du compte : modifier, solde reporté, **import d'un relevé** OFX, QIF ou CSV lu sur le téléphone, annuler le dernier import.
+  - Opérations : la liste du mois comme un relevé de banque, avec « ＋ Ajouter » (virement reçu ou envoyé, « ↻ Reprendre des virements » du mois d'avant, frais fixe, ticket) ;
+  - « ↻ Reprendre des virements » : dans le mois suivant, un mois choisi, une période, ou chaque mois (série qui crée le virement de chaque mois, 12 mois à l'avance ; modifier à partir d'un mois, retirer un mois, arrêter) ;
+  - toucher un virement : Modifier, « ↻ Reprendre ce virement », et pour un virement envoyé (pas vers l'épargne) « 📅 Passer en frais fixe » (un mois, plusieurs mois ou sans fin ; le virement est remplacé, le solde ne bouge pas, les mêmes virements des mois couverts partent aussi, « Annuler » possible) ;
+  - frais fixe : « Prélevé sur » ne montre que les comptes, celui par défaut déjà choisi (compte principal pour un frais commun, compte de la personne sinon) ;
+  - roue du compte : modifier, solde reporté, **import d'un relevé** OFX, QIF ou CSV lu sur le téléphone (un virement déjà dans l'appli et retrouvé devient « fait »), annuler le dernier import.
 - **À venir**, sous-onglets 12 mois · Frais fixes · Provisions · Factures :
   - 12 mois : les 12 prochains mois, « À payer bientôt », et ✦ « Tes comptes dans 12 mois » (projection et simulateur) ;
   - Factures (✦ en Store) : import de factures PDF ou photos, et estimation de la prochaine facture selon la saison ; dans le détail d'un fournisseur, toucher une facture pour la modifier, appui long pour la supprimer (annulable) ; appui long sur la carte d'un fournisseur pour le supprimer avec ses factures (provision gardée) ; une facture récente gardée sans ses effets est signalée « Pas dans tes comptes · Ajouter » ; une facture payée par une provision se règle en un seul geste (elle va dans le compte et sort de la provision, avec en option le virement du livret vers le compte), depuis la provision, le fournisseur ou la facture ;
@@ -154,6 +156,13 @@ Les maquettes (canevas « Tickets — Plan de l'appli » et autres) sont des art
 ---
 
 ## 5. Avancement : la semaine du 31/10
+
+Fait et poussé le 01/11 :
+1. **Factures** : modifier, supprimer (une facture ou tout un fournisseur, annulable), nombre de factures par fournisseur ; une facture gardée sans ses effets peut être mise dans les comptes (« Pas dans tes comptes · Ajouter »).
+2. **Provisions reliées aux frais fixes, au Commun et aux comptes** : la mise de côté est un frais fixe « Provision · nom » (les anciens frais « Eau 20 € », « Amazon 6 € » sont reliés, pas doublés) ; une facture payée par une provision va dans le compte et sort de la provision en un seul geste, sans compter deux fois dans les parts du Commun.
+3. **Provisions avec les factures prévues** : graphique « De côté » / « Avec les factures prévues », liste de ce qui manquera, « Passer à X € / mois » ; carte du fournisseur « prête pour mai · il restera 28 € ». Corrigé : un mois futur repartait de 0.
+4. **Compte** : plus d'onglet Virements, « ＋ Ajouter » dans les Opérations ; reprendre des virements du mois d'avant (mois suivant, un mois, une période, chaque mois) ; passer un virement en frais fixe ; « Prélevé sur » sans « Automatique ».
+5. **Tests indépendants de la date** (`tests/horloge.py`).
 
 Fait et poussé le 31/10 :
 1. **Sans réseau** pour les deux éditions. L'APK Store est autonome ; la Perso garde une copie.
@@ -177,9 +186,11 @@ Fait et poussé le 31/10 :
   - Perso : l'ouvrir une fois avec le réseau, puis passer en mode avion ;
   - Store : l'appli repart vide, donc faire une sauvegarde avant et la restaurer après ;
 - l'import de relevé avec ses exports BoursoBank (OFX, QIF, CSV) ;
-- les factures d'eau en photo : réimporter ses 6 photos d'un coup, après avoir supprimé l'ancienne mauvaise facture si elle a été enregistrée ; en cas de souci, il enverra « Copier la lecture ».
+- les factures d'eau en photo : réimporter ses 6 photos d'un coup, après avoir supprimé l'ancienne mauvaise facture si elle a été enregistrée ; en cas de souci, il enverra « Copier la lecture » ;
+- les provisions reliées (01/11) : ses frais « Eau » et « Amazon » doivent être devenus « Provision · Eau » / « Provision · Amazon » sans doublon ; les autres provisions ont un frais à partir de novembre (sinon « Remplie par » → « Pas dans les frais fixes ») ; la facture Région Minière du 02/11 : « Ajouter » la met dans le compte et la retire de « Eau » ;
+- les virements repris ou « chaque mois » (CAF, Sylvette…), et « Passer en frais fixe » (Claude ia…).
 
-**Tests automatiques** : les 24 tests de `tests/` passent (t96 : écran de contrôle des factures ; t97 : page gardée des petits graphiques ; t98 : modifier ou supprimer une facture ; t99 : mettre dans les comptes une facture gardée sans ses effets ; t100 : payer une facture avec une provision ; t101 : provisions reliées aux frais fixes, au Commun et aux comptes ; t102 : graphique des provisions avec les factures prévues ; t103 : reprendre des virements, virements « chaque mois » ; t104 : « Prélevé sur » d'un frais fixe). La date du navigateur est fixée au 30/10/2026 par `tests/horloge.py`, car les données inventées sont en octobre 2026. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
+**Tests automatiques** : les 25 tests de `tests/` passent (t96 : écran de contrôle des factures ; t97 : page gardée des petits graphiques ; t98 : modifier ou supprimer une facture ; t99 : mettre dans les comptes une facture gardée sans ses effets ; t100 : payer une facture avec une provision ; t101 : provisions reliées aux frais fixes, au Commun et aux comptes ; t102 : graphique des provisions avec les factures prévues ; t103 : reprendre des virements, virements « chaque mois » ; t104 : « Prélevé sur » d'un frais fixe ; t105 : passer un virement en frais fixe). t93 (foyer) attend parfois le relais local : en cas d'échec isolé, le relancer seul. La date du navigateur est fixée au 30/10/2026 par `tests/horloge.py`, car les données inventées sont en octobre 2026. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
 
 ---
 
@@ -238,7 +249,7 @@ Fait et poussé le 31/10 :
 5. **Tenir `JOURNAL.md` à jour dans le même commit** : une entrée datée en haut de l'Historique, plus Décisions, État actuel et En cours si nécessaire. Mettre aussi `CLAUDE.md` à jour si une notion technique change.
 6. **Commit en français**, préfixé « β » quand il touche la β, poussé directement sur `main`. Le push met en ligne la β et la Perso, et recompile les deux APK.
 7. **Tester** avec les tests de `tests/` (mode d'emploi dans `tests/README.md`) :
-   - `sh tests/run.sh` lance les 24 tests ; `python3 tests/t95.py` en lance un seul ;
+   - `sh tests/run.sh` lance les 25 tests ; `python3 tests/t95.py` en lance un seul ;
    - ce sont des scripts Playwright en Python : Chromium sans interface, écran de 412×900, données injectées dans localStorage, relais local (Node et `node:sqlite` sur `localhost:8787`) ;
    - aucune requête réseau extérieure pendant les tests ;
    - ajouter un test pour chaque nouvelle fonction, **toujours avec des données inventées**.
@@ -250,6 +261,8 @@ Fait et poussé le 31/10 :
 - Pour les soldes, toujours passer par `fraisKind(f, compte)` et `fraisAcctAmt(f, compte, mois)`. Les parts du commun **ne changent pas** les soldes des comptes.
 - Pour une provision, toujours passer par `provWhere(p)`. Si elle est déjà sur l'épargne ou le compte, ne pas la compter deux fois.
 - La mise de côté d'une provision est un frais fixe relié (`f.prov`, `f.provFrom`) recalculé par `provFraisSync()` à chaque affichage : c'est la provision qui décide (nom, montant, mois sautés) ; ne pas modifier ces champs sur le frais, passer par la provision. Une facture payée par une provision : frais `f.pp`, hors parts du Commun et de l'Analyse (`fraisPartV`).
+- Les virements « chaque mois » sont des séries (`virRec`, sur le téléphone du propriétaire) que `virRecSync()` transforme en vrais virements mois par mois ; un mois déjà créé n'est jamais recréé (`made`), même supprimé.
+- « Prélevé sur » d'un frais : enregistrer par `acctPicked(r, qui)`, qui ne force pas le compte quand c'est celui par défaut.
 - La Bourse compte une seule fois dans l'épargne, par la ligne automatique `bourseLink`.
 - Le filtre par personne ne s'applique ni aux comptes, ni au Bilan, ni aux widgets.
 - Le clavier Android met des espaces dans les montants : utiliser `num()`.

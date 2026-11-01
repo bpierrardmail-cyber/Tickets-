@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 15:25" />
+  <meta name="build" content="01/11 15:41" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -1790,6 +1790,48 @@
         uiToast((mode==="rec" ? made+" virement"+(made>1?"s":"")+" chaque mois" : made+" virement"+(made>1?"s":"")+" ajouté"+(made>1?"s":""))+txt+(skip?" · "+skip+" déjà là":""));
       };
       paint();
+    }
+    // Un virement envoyé devient un frais fixe (un mois, plusieurs mois ou sans fin) : il disparaît de son mois et le frais prend sa place
+    // (déjà fait → le frais est fait ce mois-là, le même jour : le solde ne bouge pas) ; les mêmes virements des mois couverts
+    // (repris, ou d'une série « chaque mois ») partent aussi, sauf « Les garder ». Venu d'un relevé : le frais garde sa clé d'import.
+    function virToFrais(v){
+      var m0=v.month, amt=Math.round(Math.abs(Number(v.montant)||0)*100)/100, acc=acctByKey(v.person), owner=(acc && acctOwner(acc))||mePerson(), d=virDay(v), okM=/^[0-9]{4}-[0-9]{2}$/;
+      var r0=v.rec!=null ? virRecById(v.rec) : null;
+      function sameLater(lastM){ var n=norm(v.label||""), a=Number(v.montant)||0;
+        return virements.filter(function(x){ return x!==v && x.person===v.person && x.month>m0 && (!lastM || x.month<=lastM) && !x.done &&
+          ((r0 && String(x.rec)===String(r0.id)) || (norm(x.label||"")===n && Math.abs((Number(x.montant)||0)-a)<0.006)); }); }
+      var nAll=sameLater(null).length, dur0=(r0 || nAll) ? "inf" : "1";
+      uiForm({ title:"Passer en frais fixe", intro:"« "+esc(v.label||"Virement")+" » ("+esc(fmtK(amt))+") devient un frais fixe à partir de "+esc(monthLabelOf(m0))+" : le virement est remplacé"+(v.done?", déjà passé (le solde ne change pas)":"")+".", fields:[
+        {key:"label", label:"Nom", value:v.label||"", required:true},
+        {key:"montant", label:"Montant", type:"money", value:amt, required:true}
+      ].concat(whoFields(owner)).concat(payFields({ personne:owner })).concat(acctFields(v.person, owner)).concat([
+        {key:"dur", label:"Durée", type:"seg", value:dur0, options:[{v:"1",l:"Un mois"},{v:"n",l:"Plusieurs mois"},{v:"inf",l:"Sans fin"}],
+          onChange:function(x, api){ api.show("fin", x==="n"); api.show("later", x!=="1" && nAll>0); }},
+        {key:"fin", label:"Jusqu'au mois (inclus)", type:"month", value:nextMonthKey(nextMonthKey(m0)), hidden:true},
+        dayField(d||"", "Jour du prélèvement (facultatif)", "Range le frais dans la liste du compte."),
+        {key:"later", label:"Les mêmes virements des mois suivants ("+nAll+")", type:"seg", value:"del", hidden:!(nAll && dur0!=="1"), options:[{v:"del",l:"Les retirer"},{v:"keep",l:"Les garder"}],
+          help:"Ceux des mois couverts par le frais, pour ne pas le compter deux fois."+(r0?" Le virement « chaque mois » s'arrête.":"")}
+      ])}, function(r){
+        var jd=dayRead(r); if(jd.err) return jd.err;
+        var fin=null; if(r.dur==="n"){ if(!okM.test(r.fin||"")) return "Choisis le dernier mois."; if(r.fin<m0) return "Le dernier mois est avant le premier."; fin=r.fin; }
+        var rec=(r.dur!=="1" && fin!==m0), who=whoOf(r);
+        var nf={ id:Date.now(), label:r.label||v.label||"Frais", montant:r.montant, personne:who, recurrent:rec, month:(rec ? null : m0) };
+        if(rec){ nf.startMonth=m0; if(fin) nf.endMonth=fin; }
+        if(jd.v) nf.jour=jd.v;
+        if(who==="Commun" && r.pay==="split") nf.split=true; else { var ak=acctPicked(r, who); if(ak) nf.compte=ak; }
+        if(v.impKey && !nf.split){ nf.impKeys=[v.impKey]; if(!nf.compte) nf.compte=v.person; }   // un nouvel import ne le recrée pas
+        if(v.done){ nf.doneMonths={}; nf.doneMonths[m0]=true; if(d){ nf.doneDays={}; nf.doneDays[m0]=d; } }
+        var gone=(rec && r.later!=="keep") ? sameLater(fin) : [], to0=r0 ? r0.to : undefined;
+        fraisCommuns.push(nf);
+        virements=virements.filter(function(x){ return x!==v && gone.indexOf(x)<0; });
+        if(r0 && rec && r.later!=="keep") r0.to=prevMonthKey(m0);
+        persistFrais(); persistVirements(); if(r0) persistVirRec(); render();
+        uiUndoToast("« "+nf.label+" » : frais fixe "+(rec ? (fin ? "jusqu'à "+monthLabelOf(fin) : "chaque mois") : "de "+monthLabelOf(m0))+(gone.length ? " · "+gone.length+" virement"+(gone.length>1?"s":"")+" suivant"+(gone.length>1?"s":"")+" retiré"+(gone.length>1?"s":"") : ""), "Annuler", function(){
+          fraisCommuns=fraisCommuns.filter(function(x){ return x!==nf; }); virements.push(v); gone.forEach(function(x){ virements.push(x); });
+          if(r0){ if(to0===undefined) delete r0.to; else r0.to=to0; persistVirRec(); }
+          persistFrais(); persistVirements(); render(); uiToast("Virement remis");
+        });
+      });
     }
     // Un virement d'une série : modifier à partir de ce mois, retirer un mois, arrêter
     function virRecEdit(r, v){
@@ -5520,6 +5562,7 @@
           Lv.push({ l:"✎ Modifier", fn:edit });
           Lv.push({ l:"↻ Reprendre ce virement", fn:function(){ virReprendre(v.person, nextMonthKey(v.month), v); } });
         }
+        if(a<0 && !v.epargneId) Lv.push({ l:"📅 Passer en frais fixe", fn:function(){ virToFrais(v); } });   // une dépense (pas un virement vers l'épargne)
         uiChoice((v.label||"Virement")+" · "+opsAmt(a), esc(r ? "Chaque mois depuis "+monthLabelOf(r.from)+(r.to?" jusqu'à "+monthLabelOf(r.to):"") : (done ? (d?"passé le "+(d===1?"1er":d)+" "+ml:"passé à la banque") : "à venir"+(d?" · le "+(d===1?"1er":d)+" "+ml:""))),
           Lv.map(function(c){ if(c.primary==null) c.primary=false; return c; }));
         return;

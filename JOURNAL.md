@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `01/11 15:25`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `01/11 15:41`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -34,6 +34,7 @@ Après chaque modification, dans le même commit :
   - Analyse : graphiques Mois, Répartition, Récurrentes et Qui a payé, bouton « + Frais fixes », détail d'un mois, bouton ✦ Analyse avancée (inflation perso INSEE, année / an dernier, alertes, reste à vivre, résumé pour une IA).
 - **Commun** : parts du commun en % et parts propres à chaque frais, bouton « Produits partagés ». Graphique Mois (6, 12, 12 à venir, Tout). Bandeau des personnes. Les frais communs du mois y sont à voir ; ils se modifient dans À venir › Frais fixes.
 - **Compte** : 3 sous-onglets **Opérations · Épargne · Graphiques** (bouton « ＋ Ajouter » dans Opérations : virement reçu ou envoyé, frais fixe, ticket), et la **roue du compte** en haut à droite (modifier le compte, solde reporté, importer un relevé, annuler le dernier import, compte principal, supprimer) ;
+  - toucher un virement : Modifier, « ↻ Reprendre ce virement », « 📅 Passer en frais fixe » (virement envoyé) ;
   - Opérations : « ＋ Ajouter › ↻ Reprendre des virements » du mois d'avant (mois suivant, un mois, une période ou chaque mois ; les virements « chaque mois » se créent seuls, 12 mois à l'avance) ;
   - Opérations : la **liste des opérations du mois**, comme un relevé de banque : solde estimé, Entrées / Sorties / Fin de mois, filtres Tout · Entrées · Sorties · À venir, recherche (nom ou montant, avec le total), bloc « À venir » avec un rond pour marquer « fait », puis les opérations par jour (le plus récent en haut) avec le solde du soir, et le report en bas ;
   - Graphiques : les 6 graphiques (Ce mois, Dépenses, Solde, Entrées-sorties, Épargne, Provisions), touchables (une barre ouvre Virements ou les Opérations filtrées) ;
@@ -111,6 +112,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **01/11** : passer un virement envoyé en frais fixe (un mois, plusieurs mois, sans fin), d'après la proposition (« tu peux intégrer ») ; mettre à jour `PASSATION.md`.
 - **01/11** : reprendre des virements du mois d'avant (mois suivant, un mois, une période, chaque mois), d'après la maquette (« tu peux intégrer »).
 - **01/11** : graphique des provisions avec les factures prévues, d'après la maquette (« tu peux intégrer ») : onglets De côté / Avec les factures prévues, liste des factures prévues avec ce qui manquera.
 - **01/11** : provisions reliées aux frais fixes, au Commun et aux comptes, d'après la maquette (« va y ») : la mise de côté est un frais fixe relié, une facture payée par une provision va dans le compte et sort de la provision en un seul geste, sans compter deux fois dans les parts.
@@ -168,6 +170,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 01/11
+- **Passer un virement en frais fixe** (« passer un virement en frais fixe pour 1 ou plusieurs mois » ; proposition puis « tu peux intégrer ») : toucher un virement envoyé (pas un virement reçu, ni un virement vers l'épargne) → « 📅 Passer en frais fixe » ; fenêtre de « Nouveau frais fixe » déjà remplie (nom, montant, pour le titulaire du compte, ce compte, jour, à partir du mois du virement) et durée **Un mois** / **Plusieurs mois** / **Sans fin** ; le virement est remplacé (déjà fait → le frais est fait le même jour, le solde ne bouge pas) ; « Les mêmes virements des mois suivants (N) : Les retirer / Les garder » pour ceux des mois couverts (une série « chaque mois » s'arrête) ; venu d'un relevé, le frais garde sa clé d'import ; « Annuler » remet tout (`virToFrais`). Test `t105`. `PASSATION.md` mis à jour (avancement du 01/11, à faire valider, pièges).
 - **Frais fixe : « Prélevé sur » plus clair** (« Automatique et compte courant c'est pareil, et pas clair ») : plus d'option « Automatique » ; la liste ne montre que les comptes, celui par défaut déjà choisi (compte principal pour un frais commun, compte de la personne pour un frais perso) ; il suit « Pour qui » tant qu'on n'y touche pas. Enregistré sur le compte par défaut, le frais ne force rien (il suit le compte habituel, comme avant « Automatique ») ; un autre compte est gardé (`acctDefKey`, `acctPicked`). Test `t104`.
 - **Reprendre des virements du mois d'avant** (« reprendre des virements du mois dernier et choisir : mois suivant, un mois précis, une période ou récurrent » ; maquette puis « tu peux intégrer ») :
   - Compte › Opérations, « ＋ Ajouter › ↻ Reprendre des virements d'octobre » (le mois avant celui affiché) : on coche les virements (ceux déjà vus le mois d'avant sont cochés d'office, ceux déjà dans le mois visé sont signalés), puis **Mois suivant**, **Un mois**, **Une période** (de… à…) ou **Chaque mois** (à partir de…, avec ou sans fin) ; au même jour, à venir, à cocher « fait » ; un virement vers un livret le reste ;
