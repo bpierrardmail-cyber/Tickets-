@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 21:42" />
+  <meta name="build" content="01/11 21:58" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -176,6 +176,9 @@
     .f-thumb{ flex:0 0 48px; width:48px; height:48px; padding:0; border-radius:10px; border:1px solid var(--line2); background:#e9e6dd; overflow:hidden; cursor:pointer; }
     .f-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
     /* À venir (ex Factures) : sous-onglets 12 mois · Frais fixes · Provisions · Factures */
+    .fct-hint{ margin:0 0 10px; padding:9px 11px; border-radius:10px; font-size:12.5px; line-height:1.45; background:rgba(230,180,80,.12); color:#e6b450; }
+    .fct-hint.ok{ background:rgba(79,214,160,.12); color:var(--accent); }
+    .fct-tip{ display:flex; gap:8px; align-items:flex-start; margin:12px 0 8px; padding:10px 12px; border-radius:12px; background:var(--card); border:1px solid var(--line2); font-size:12.5px; line-height:1.45; color:var(--ink-soft); } .fct-tip .ic{ color:var(--accent); }
     .avtabs{ display:flex; gap:6px; margin:2px 0 12px; }
     .avtabs button{ flex:1; min-width:0; height:38px; padding:0 4px; border-radius:12px; border:1px solid var(--line2); background:var(--card); color:var(--ink-soft); font:inherit; font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
     .avtabs button.on{ background:var(--accent); border-color:var(--accent); color:#0e0f14; font-weight:700; }
@@ -8626,10 +8629,11 @@
           if(A.prev ? (!a && factTail(lines[i-1]||"")===A.a) : a===A.a) return kind==="amt" ? x.v : x.iso; } }
       return null;
     }
+    function factKnown(four){ return !!(four && (store.read("factAppris", {})||{})[norm(four)]); }
     function factLearntApply(r, lines){
       var L=r.four ? (store.read("factAppris", {})||{})[norm(r.four)] : null; if(!L) return;
-      var v; if(L.amt && (v=factAnchorFind(lines, "amt", L.amt))!=null && v>0) r.montant=v;
-      if(L.date && (v=factAnchorFind(lines, "date", L.date))) r.date=v;
+      var v; if(L.amt && (v=factAnchorFind(lines, "amt", L.amt))!=null && v>0){ r.montant=v; r.learnt=true; }
+      if(L.date && (v=factAnchorFind(lines, "date", L.date))){ r.date=v; r.learnt=true; }
     }
     // retenir pour ce fournisseur où étaient la date et le montant corrigés ; vrai si quelque chose est appris
     function factLearn(four, text, amt, date){
@@ -8641,14 +8645,17 @@
     }
     // la correction de la plus récente sert aussitôt aux plus anciennes du même fournisseur qui n'ont pas leur date ou leur montant
     function factFillOthers(d){
-      if(!d.multi || !d.multi.others.length) return;
+      if(!d.multi || !d.multi.others.length) return 0;
       var p=d.p, lines=factLines(d.pages.join("\n")), A=Number(p.montant)>0 ? factAnchorOf(lines, "amt", Number(p.montant)) : null, D=p.date ? factAnchorOf(lines, "date", p.date) : null;
-      if(!A && !D) return;
-      d.multi.others.forEach(function(o){ var q=o.p; if(o.four0 && d.four0 && norm(o.four0)!==norm(d.four0)) return;
+      if(!A && !D) return 0;
+      var n=0;
+      d.multi.others.forEach(function(o){ var q=o.p, hit=false; if(o.four0 && d.four0 && norm(o.four0)!==norm(d.four0)) return;
         var L=factLines(o.tx.join("\n")), v;
-        if(A && !(q.montant>0) && (v=factAnchorFind(L, "amt", A))!=null && v>0) q.montant=v;
-        if(D && !q.date && (v=factAnchorFind(L, "date", D))) q.date=v;
+        if(A && !(q.montant>0) && (v=factAnchorFind(L, "amt", A))!=null && v>0){ q.montant=v; hit=true; }
+        if(D && !q.date && (v=factAnchorFind(L, "date", D))){ q.date=v; hit=true; }
+        if(hit) n++;
         o.check=o.short || !q.date || !(q.montant>0); });
+      return n;
     }
     function parseBill(text){
       var T=factTxtFix(text).replace(/[  ]/g," "), lines=T.split("\n").map(function(l){ return l.trim(); }).filter(Boolean), flat=lines.join("\n"), low=flat.toLowerCase();
@@ -8929,7 +8936,7 @@
         else if(s.ryth>=2) h+='<span class="fct-s">Pas de provision · '+esc(fmtK(Math.ceil(factMonthly(s))))+'/mois la lisserait</span>';
         h+='</button>';
       });
-        if(!ro) h+='<div class="ui-stack" style="margin-top:4px"><button type="button" class="btn primary" id="fctImp">Importer une facture</button></div>';
+        if(!ro) h+='<div class="fct-tip"><span class="ic">✦</span><span>La lecture s\'améliore avec l\'usage : la 1<sup>re</sup> facture d\'un fournisseur est à vérifier, les suivantes sont lues au même endroit.</span></div><div class="ui-stack" style="margin-top:4px"><button type="button" class="btn primary" id="fctImp">Importer une facture</button></div>';
         app.innerHTML=h; setNav("factures", true); wireAvTabs();
         [].forEach.call(document.querySelectorAll(".fct-card[data-k]"), function(b){ var k=b.getAttribute("data-k");
           function open(){ state.factKey=k; state.view="factserie"; render(); window.scrollTo(0,0); }
@@ -9428,11 +9435,14 @@
       h+='<section class="paper fct-form">';
       if(dup) h+='<div class="ech warn" style="margin:0 0 10px">Cette facture est déjà dans tes factures.</div>';
       h+='<div class="center" style="font-size:11px;color:var(--accent);margin-bottom:8px">'+(d.src==="pdf"?"Lu dans le PDF":"Lu sur le téléphone")+' · '+d.n+' page'+(d.n>1?'s':'')+' · vérifie les montants · <button type="button" class="ocr-raw" id="fctRaw">Copier la lecture</button></div>';
+      var fNew=!factKnown(d.four0), fEmpty=function(v){ return fNew && !v ? ' style="border-color:#e6b450"' : ''; };
+      if(p.learnt && !d.edited.montant && !d.edited.date) h+='<div class="fct-hint ok">✓ Lue comme les précédentes factures de ce fournisseur.</div>';
+      else if(fNew) h+='<div class="fct-hint">1<sup>re</sup> facture de ce fournisseur : vérifie la date et le montant. L\'appli retiendra où les lire pour les suivantes.</div>';
       if(d.src==="photo") h+='<button type="button" class="btn ghost" id="fctPage" style="margin-bottom:10px">📷 + Page suivante</button>';
       h+='<label class="f" for="fp-four">Fournisseur</label><input class="f" id="fp-four" value="'+esc(p.four||"")+'">';
       h+='<label class="f">Type</label><div class="chips" id="fp-type">'+FACT_TYPES.map(function(t){ return '<button type="button" class="chip'+(p.type===t.v?' on':'')+'" data-v="'+t.v+'">'+esc(t.l)+'</button>'; }).join("")+'</div>';
-      h+='<label class="f" for="fp-mt">Montant (€)</label><input class="f" id="fp-mt" inputmode="decimal" value="'+esc(p.montant!=null?Number(p.montant).toFixed(2).replace(".",","):"")+'" placeholder="0,00">';
-      h+='<label class="f" for="fp-date">Date de la facture</label><input class="f" id="fp-date" type="date" value="'+esc(p.date||"")+'">';
+      h+='<label class="f" for="fp-mt">Montant (€)</label><input class="f" id="fp-mt" inputmode="decimal"'+fEmpty(Number(p.montant)>0)+' value="'+esc(p.montant!=null?Number(p.montant).toFixed(2).replace(".",","):"")+'" placeholder="0,00">';
+      h+='<label class="f" for="fp-date">Date de la facture</label><input class="f" id="fp-date" type="date"'+fEmpty(p.date)+' value="'+esc(p.date||"")+'">';
       h+='<label class="f">Paiement</label><div class="chips" id="fp-pay"><button type="button" class="chip'+(!p.aPayer?' on':'')+'" data-v="prel">Prélèvement</button><button type="button" class="chip'+(p.aPayer?' on':'')+'" data-v="apayer">À payer moi-même</button></div>';
       h+=p.aPayer ? '<label class="f" for="fp-due">À payer avant le (facultatif)</label><input class="f" id="fp-due" type="date" value="'+esc(p.due||"")+'">'
                   : '<label class="f" for="fp-prel">Prélevé le</label><input class="f" id="fp-prel" type="date" value="'+esc(p.prelev||"")+'">';
@@ -9461,7 +9471,7 @@
         var mt=g("fp-mt"); if(mt!==null){ var v=num(mt); if(v!==(Number(p.montant)||0)){ p.montant=v||null; d.edited.montant=1; } }
         ["date","prel","due","next"].forEach(function(k){ var v=g("fp-"+k); if(v===null) return; var pk=(k==="prel"?"prelev":k); if(v!==(p[pk]||"")){ p[pk]=v; d.edited[pk]=1; } });
         var c=g("fp-conso"); if(c!==null){ var cv=c.trim()===""?null:num(c); if(cv!==p.conso){ p.conso=cv; d.edited.conso=1; } }
-        if(d.edited.montant || d.edited.date) factFillOthers(d);
+        if(d.edited.montant || d.edited.date){ var nf=factFillOthers(d); if(nf) setTimeout(function(){ uiToast(nf+" plus ancienne"+(nf>1?"s":"")+" complétée"+(nf>1?"s":"")+" avec ta correction"); }, 0); }
       }
       [].forEach.call(document.querySelectorAll(".fct-form input"), function(e){ e.addEventListener("change", function(){ rd(); render(); }); });
       [].forEach.call(document.querySelectorAll("#fp-type .chip"), function(b){ b.onclick=function(){ rd(); p.type=b.getAttribute("data-v"); d.edited.type=1; render(); }; });
@@ -9544,7 +9554,7 @@
       var histTxt=hist && hist.n ? " + "+hist.n+" plus ancienne"+(hist.n>1?"s":"")+" dans l'historique" : "";
       if(factDup(p)){ uiToast("Cette facture est déjà dans tes factures"+histTxt); state.factDraft=null; state.factKey=factKey(p); state.view="factserie"; render(); return; }
       // corrections de la date ou du montant : retenues pour ce fournisseur (lu sous son nom d'origine)
-      var learnt=factLearn(d.four0, d.pages.join("\n"), d.edited.montant ? amt : 0, d.edited.date ? p.date : "");
+      var first=!factKnown(d.four0), learnt=factLearn(d.four0, d.pages.join("\n"), (d.edited.montant || first) ? amt : 0, (d.edited.date || first) ? p.date : "");
       if(d.multi) d.multi.others.forEach(function(o){ if(!o.keep || !o.orig) return; var q=o.p;
         if(factLearn(o.four0, o.tx.join("\n"), Math.abs((q.montant||0)-(o.orig.montant||0))>0.004 ? q.montant : 0, q.date!==o.orig.date ? q.date : "")) learnt=true; });
       if(!p.four) p.four=factType(p.type).l;

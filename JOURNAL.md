@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `01/11 21:42`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `01/11 21:58`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -112,6 +112,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **01/11** : la lecture s'améliore après la 1re facture d'un fournisseur, et l'appli le dit (maquette validée) ; elle retient aussi la 1re facture enregistrée sans correction.
 - **01/11** : lecture des factures rendue plus tolérante (lecture générale) et apprentissage par fournisseur à la première correction ; « Lire avec mon IA » pour les factures plus tard, avec celle des tickets ; la lecture en ligne par une IA reste de côté.
 - **01/11** : passer un virement envoyé en frais fixe (un mois, plusieurs mois, sans fin), d'après la proposition (« tu peux intégrer ») ; mettre à jour `PASSATION.md`.
 - **01/11** : reprendre des virements du mois d'avant (mois suivant, un mois, une période, chaque mois), d'après la maquette (« tu peux intégrer »).
@@ -171,6 +172,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 01/11
+- **Factures : dire que la lecture s'améliore après la 1re facture** (« il faudrait indiquer que la détection fonctionne mieux après le 1er import manuel ou automatique » ; maquette puis « oui ») : Factures, au-dessus de « Importer une facture » : « La lecture s'améliore avec l'usage… » (`.fct-tip`) ; fiche de la facture lue : fournisseur sans lecture retenue → « 1re facture de ce fournisseur : vérifie la date et le montant… » et champs vides en orange, lecture retenue appliquée → « ✓ Lue comme les précédentes factures de ce fournisseur » (`.fct-hint`, `factKnown`, `r.learnt`) ; corriger la plus récente d'un import → « N plus anciennes complétées avec ta correction » ; la 1re facture d'un fournisseur enregistrée sans correction est aussi retenue (sa date et son montant validés). Tests `t107`, `t108` complétés.
 - **Factures : libellés relevés en ligne** (« tu pourras ajouter les données de factures récupérées sur internet ? ») : les guides « comprendre ma facture » (EDF, Engie, TotalEnergies, Veolia, Suez, Saur, Bouygues, La Poste Mobile) donnent peu de libellés exacts et pas la mise en page ; les libellés trouvés vont dans la lecture générale plutôt que dans une table par fournisseur : « date limite de règlement » (= à payer, échéance), « facture éditée le », « date de fin d'engagement » écartée ; 3 factures inventées avec ces libellés ajoutées au corpus (12 lues sur 12). La table de lectures par fournisseur attend des libellés tirés de vraies factures.
 - **Factures : lecture générale et apprentissage par fournisseur** (« le système fonctionne mal, les utilisateurs ne pourront pas ou peu importer de facture » ; « OK pour 1 et 2 ») :
   - lecture générale : quand les règles ne trouvent pas la date ou le montant, chaque montant et chaque date reçoit une note selon les mots de sa ligne (ou de la ligne au-dessus si la valeur est seule) et le mieux noté l'emporte (`factGuessAmt`, `factAmtScore` : « à payer », « TTC », « total », « prélevé »… contre « HT », « TVA », « dont », « capital »… ; `factGuessDate`, `factDateScore` : « date de facture », « émise le », « Date : », « Le … » contre échéance, période, contrat, prochaine) ; prélèvement sur une ligne « prélèv… » (`factGuessPrelev`) ; toutes les dates d'une ligne avec leur position (`factDatesIdx` : chiffres, lettres, AAAA-MM-JJ) ; « Prélèvement à partir du » ; « Règlement à réception » = à payer ; « date limite de paiement » sans date (conditions générales) ne veut plus dire « à payer » ;

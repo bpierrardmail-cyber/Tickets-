@@ -1,6 +1,6 @@
 # Tickets : dossier de passation
 
-*État au 01/11/2026, étiquette `01/11 21:42`. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
+*État au 01/11/2026, étiquette `01/11 21:58`. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
 
 > **À Claude qui reprend le projet**
 >
@@ -166,7 +166,7 @@ Fait et poussé le 01/11 :
 6. **Accueil** : la petite carte « Compte · Épargne » n'est plus réduite dans un coin. Sa courbe était prise pour un anneau ; elle prend maintenant toute la largeur de la carte comme les barres de « Compte · Solde », montants au-dessus, mois en dessous, Bourse en pointillés, sans les petits points (`enrichMiniCharts` reconnaît les `polyline`). Test t97 complété.
 7. **« Total provisions »** au lieu de « Total mis de côté » ou « Provisions mises de côté », dans À venir › Provisions et Compte › Graphiques.
 8. **Factures Free Mobile en PDF** : date, montant et prélèvement lus (accents détachés, « 15.99 e », date en lettres).
-9. **Lecture des factures plus tolérante, et apprise** : quand les règles ne trouvent rien, la date et le montant les plus probables d'après les mots autour ; une correction est retenue pour le fournisseur et la facture suivante est lue au même endroit ; dans un import de plusieurs factures, corriger la plus récente remplit les autres.
+9. **Lecture des factures plus tolérante, et apprise** : quand les règles ne trouvent rien, la date et le montant les plus probables d'après les mots autour ; une correction est retenue pour le fournisseur et la facture suivante est lue au même endroit ; dans un import de plusieurs factures, corriger la plus récente remplit les autres ; la 1re facture d'un fournisseur enregistrée sans correction est aussi retenue, et l'appli dit que la lecture s'améliore après la 1re facture.
 
 Fait et poussé le 31/10 :
 1. **Sans réseau** pour les deux éditions. L'APK Store est autonome ; la Perso garde une copie.

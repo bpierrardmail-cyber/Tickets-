@@ -47,6 +47,8 @@ with sync_playwright() as p:
     check([(f.get("four"), f.get("type"), f["date"], f["montant"], f.get("prelev"), bool(f.get("aPayer"))) for f in F]==
           [("Free Mobile","net","2026-09-27",9.99,"2026-09-27",False),("Free Mobile","net","2026-10-27",15.99,"2026-10-27",False)],
           "« Appliquer » : 2 factures Free Mobile, 9,99 € et 15,99 €, prélevées le 27")
+    L=pg.evaluate("()=>JSON.parse(localStorage.getItem('factAppris')||'{}')")
+    check("free mobile" in L and L["free mobile"].get("amt") and L["free mobile"].get("date"), "1re facture enregistrée sans correction : lecture retenue pour Free Mobile %s" % L.get("free mobile"))
     check(not errs, "pas d'erreur %s"%errs[:3])
     b.close()
 print("\n%d échec(s)"%len(fails)); sys.exit(1 if fails else 0)
