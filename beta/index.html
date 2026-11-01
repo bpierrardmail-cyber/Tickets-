@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 15:57" />
+  <meta name="build" content="01/11 17:27" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -3895,7 +3895,8 @@
     function enrichMiniCharts(){
       [].forEach.call(document.querySelectorAll(".hmini:not(.wide) .hm-ch"), function(ch){
         var svg=ch.querySelector("svg"); if(!svg) return;
-        if(svg.closest(".cdon") || svg.querySelectorAll("circle").length>=2){
+        var isLine=!!svg.querySelector("polyline");   // courbe (Épargne…) : ses points sont des cercles, ce n'est pas un anneau
+        if(svg.closest(".cdon") || (!isLine && svg.querySelectorAll("circle").length>=2)){
           var rows=[];
           [].forEach.call(ch.querySelectorAll(".lgd, .cdon-r"), function(r){
             var sw=r.querySelector(".sw, .cdot, i"), n=r.querySelector(".ln, .n"), pc=r.querySelector(".lp, .p");
@@ -3908,6 +3909,10 @@
           return;
         }
         svg.setAttribute("preserveAspectRatio","none");
+        if(isLine){   // étirée : les points ronds deviendraient des ovales, les traits gardent leur épaisseur
+          [].forEach.call(svg.querySelectorAll("circle"), function(c){ c.parentNode.removeChild(c); });
+          [].forEach.call(svg.querySelectorAll("polyline"), function(l){ l.setAttribute("vector-effect", "non-scaling-stroke"); });
+        }
         var vb=(svg.getAttribute("viewBox")||"").split(/[\s,]+/).map(Number), W=vb[2], H=vb[3];
         [].forEach.call(svg.querySelectorAll("text.vlab"), function(t){ t.parentNode.removeChild(t); });   // montants empilés : illisibles en petit
         var texts=[].slice.call(svg.querySelectorAll("text"));

@@ -12,7 +12,7 @@ def check(c, m):
 data={"askName":False,"devise":"EUR","comptes":[{"key":"Alex","nom":"Compte courant","payer":"Alex","main":True}],
   "fraisCommuns":[{"id":1,"label":"Loyer","montant":650,"personne":"Commun","recurrent":True,"startMonth":"2026-01","jour":5}],
   "bourse":[{"id":501,"nom":"PEA","vals":{"2026-10":{"valeur":1000,"capital":900}}}],
-  "epargne":[{"id":301,"nom":"Livret A","owner":"Alex","vals":{"2026-10":1000}}],
+  "epargne":[{"id":301,"nom":"Livret A","owner":"Alex","vals":{"2026-06":800,"2026-08":900,"2026-10":1000}}],
   "provisions":[{"id":11,"nom":"Taxe","mensuel":50,"soldeInitial":100,"startMonth":"2026-10","prelevements":[]}],
   "homeCharts":["bourse","epargne","provisions","compte:ep","compte:prov","compte:mois","compte:dep","compte:solde","compte:es","analyse:mois","analyse:rep","analyse:rec","analyse:pay","communes:rep","communes:postes","communes:6m"],
   "entries":[{"id":1,"date":"2026-10-03","marchand":"Supermarché","montant":3.3,"categorie":"Courses","payePar":"Alex","articles":[]}]}
@@ -51,6 +51,9 @@ with sync_playwright() as p:
     check(state(pg)[:2]==[5,5], "retour sur l'Accueil : page 5 %s"%state(pg))
     pg.reload(); pg.wait_for_timeout(1500)
     check(state(pg)[:2]==[5,5], "appli relancée : page 5 %s"%state(pg))
+    # la courbe de l'épargne (Compte · Épargne) n'est pas prise pour un anneau : elle prend la largeur de la carte
+    ep=pg.evaluate("()=>{ var c=document.querySelector('.hmini[data-id=\"compte:ep\"]'); var sv=c&&c.querySelector('.hm-ch svg'); return sv?[sv.parentNode.className, Math.round(sv.getBoundingClientRect().width), sv.querySelectorAll('circle').length]:null; }")
+    check(ep and ep[0]=="mbar" and ep[1]>120 and ep[2]==0, "petite carte Compte · Épargne : la courbe occupe la carte, sans points ovales %s"%ep)
     check(not errs, "pas d'erreur %s"%errs[:3])
     b.close()
 print("\n%d échec(s)"%len(fails))
