@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `01/11 12:36`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `01/11 14:55`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -166,6 +166,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 01/11
+- **Factures : ce qui restera dans la provision** (« eau prête pour mai, mais il restera combien ») : la carte du fournisseur dit « prête pour mai · il restera 28 € » (ou « il manquera X en mai »), son détail « prête · il restera 28 € après celle de mai ». Le calcul (`factProvAt`) suit maintenant la projection des provisions : les factures prévues d'ici là sont déjà retirées. Test `t102` complété.
 - **Provisions : graphique « Avec les factures prévues »** (« un bouton pour afficher un graphique où les factures prévues sont prises en compte, recalcul du solde » ; maquette puis « tu peux intégrer ») :
   - dans la carte du haut de À venir › Provisions, deux onglets : **De côté** (ce qui est mis de côté, moins les prélèvements enregistrés) et **Avec les factures prévues** (solde de chaque mois recalculé après les factures à venir ; légende Après factures · Facture prévue · Il manquera ; chiffres Factures prévues · Le plus bas · À compléter ; un total négatif est dit « pas assez de côté pour tout payer ») ; choix gardé avec ★ ;
   - montant d'une facture prévue (`provPlanned`) : le montant prévu de la provision (✎) le mois de son échéance ; sinon le fournisseur qu'elle suit (facture reçue pas encore payée par elle, puis prochaines estimées, `provFactPlan`) ; sinon ce qu'elle a payé le même mois l'an dernier ; une échéance sans rien de tout ça est « montant non indiqué » (plus « tout le solde ») ;

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 12:36" />
+  <meta name="build" content="01/11 14:55" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -8476,7 +8476,13 @@
     // Mois où l'argent sort : jour du prélèvement (ou de la facture à payer)
     function factPayIso(s, iso){ return isoAddDays(iso, s.offset||0); }
     // État d'une provision à une échéance : de côté ce mois-là, ce qu'il manquera
-    function factProvAt(p, iso, amt){ var mk=iso.slice(0,7), cur=monthKey(todayISO()); var bal=provState(p, mk<cur?cur:mk).bal; return { bal:bal, manque:Math.max(0, amt-bal) }; }
+    // la provision au mois où cette facture sera payée : de côté juste avant (les factures prévues d'ici là déjà retirées), ce qui manquera ou restera
+    function factProvAt(p, iso, amt){
+      var cur=monthKey(todayISO()), mk=iso.slice(0,7); if(mk<cur) mk=cur;
+      var months=[], m=cur; while(m<=mk && months.length<60){ months.push(m); m=nextMonthKey(m); }
+      var x=provProj(p, months, cur, true).pop()||{ bal:0 }, bal=(x.src && x.before!=null) ? x.before : x.bal;
+      return { bal:bal, manque:Math.max(0, amt-bal), reste:Math.max(0, bal-amt), mk:mk };
+    }
 
     // ----- Les 12 prochains mois : frais fixes, factures reçues ou estimées, échéances des provisions -----
     function factYear(){
@@ -8565,8 +8571,9 @@
         h+='<button type="button" class="fct-card'+(pa && pa.manque>0.5?' warn':'')+'" data-k="'+esc(s.key)+'"><span class="fct-top"><span class="fct-ic" style="background:'+hexA(cat.col,.16)+'">'+ty.ic+'</span>'+
            '<span class="fct-n"><b>'+esc(s.four||ty.l)+'</b><small>'+esc(ty.l+' · '+s.bills.length+' facture'+(s.bills.length>1?'s':'')+' · '+factRythLabel(s.ryth)+' · '+fmtK(factMonthly(s))+'/mois en moyenne')+'</small></span>'+
            '<span class="fct-v"><b>'+(est?'≈ '+esc(fctE(est)):'—')+'</b><small>'+esc(when)+'</small></span></span>';
-        if(pv){ var w=est>0?Math.min(100, pa.bal/est*100):0;
-          h+='<span class="fct-bar"><i style="width:'+w.toFixed(0)+'%"></i></span><span class="fct-s">Provision : '+esc(fmtK(provBalance(pv, curM)))+' de côté · +'+esc(fmtK(mensuelAt(pv, curM)))+'/mois · '+(pa.manque>0.5?'<span class="fct-warn">il manquera '+esc(fmtK(pa.manque))+'</span>':'<span class="fct-ok">prête pour '+esc(MOIS_NOMS[+s.next.slice(5,7)-1])+'</span>')+'</span>'; }
+        if(pv && pa){ var w=est>0?Math.min(100, pa.bal/est*100):0, pm=MOIS_NOMS[+pa.mk.slice(5,7)-1];
+          h+='<span class="fct-bar"><i style="width:'+w.toFixed(0)+'%"></i></span><span class="fct-s">Provision : '+esc(fmtK(provBalance(pv, curM)))+' de côté · +'+esc(fmtK(mensuelAt(pv, curM)))+'/mois · '+(pa.manque>0.5?'<span class="fct-warn">il manquera '+esc(fmtK(pa.manque))+' en '+esc(pm)+'</span>':'<span class="fct-ok">prête pour '+esc(pm)+'</span> · il restera '+esc(fmtK(pa.reste)))+'</span>'; }
+        else if(pv) h+='<span class="fct-s">Provision : '+esc(fmtK(provBalance(pv, curM)))+' de côté · +'+esc(fmtK(mensuelAt(pv, curM)))+'/mois</span>';
         else if(s.ryth>=2) h+='<span class="fct-s">Pas de provision · '+esc(fmtK(Math.ceil(factMonthly(s))))+'/mois la lisserait</span>';
         h+='</button>';
       });
@@ -8624,7 +8631,7 @@
       // provision
       if(s.prov){ var pa=s.next?factProvAt(s.prov, factPayIso(s, s.next), est):null;
         h+='<section class="paper fct-pv"><div class="fct-top"><span class="fct-n"><b>Provision « '+esc(s.prov.nom)+' »</b><small>'+esc(fmtK(provBalance(s.prov, curM)))+' de côté · +'+esc(fmtK(mensuelAt(s.prov, curM)))+'/mois</small></span>'+
-           (pa?'<span class="fct-v"><b class="'+(pa.manque>0.5?'fct-warn':'fct-ok')+'">'+(pa.manque>0.5?'il manquera '+esc(fmtK(pa.manque)):'prête')+'</b><small>pour la prochaine</small></span>':'')+'</div></section>';
+           (pa?'<span class="fct-v"><b class="'+(pa.manque>0.5?'fct-warn':'fct-ok')+'">'+(pa.manque>0.5?'il manquera '+esc(fmtK(pa.manque)):'prête')+'</b><small>'+(pa.manque>0.5?'pour celle de ':'il restera '+esc(fmtK(pa.reste))+' après celle de ')+esc(MOIS_NOMS[+pa.mk.slice(5,7)-1])+'</small></span>':'')+'</div></section>';
       } else if(!ro){ var mm=Math.ceil(factMonthly(s));
         h+='<section class="paper fct-pv"><div class="fct-top"><span class="fct-n"><b>Pas de provision</b><small>'+esc(fmtK(mm))+'/mois lisseraient tes factures</small></span>'+(provisions.length?'<button type="button" class="btn ghost" id="fsLink" style="flex:0 0 auto;padding:10px 12px">Lier</button>':'')+'<button type="button" class="btn ghost" id="fsProv" style="flex:0 0 auto;padding:10px 14px">Créer</button></div></section>';
       }

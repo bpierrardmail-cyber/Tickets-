@@ -65,6 +65,14 @@ with sync_playwright() as p:
     ass=[norm(x) for x in pg.locator(".pvlist .row").all_inner_texts() if "Assurance" in x]
     check((P.get("mensuelChanges") or {}).get("2026-11")==60 and ass and "couverte" in ass[0], "« Passer à 60 € / mois » : à partir de novembre, l'assurance est couverte")
     check(tab().startswith("Avec les factures prévues"), "l'onglet choisi reste affiché")
+    # ---------- Factures : « prête pour novembre · il restera … » (carte du fournisseur et son détail)
+    pg.locator('.avtabs button[data-av="fact"]').click(); pg.wait_for_timeout(400)
+    cd=norm(pg.locator(".fct-card", has_text="Vallée Claire").inner_text())
+    check("prête pour novembre" in cd and "il restera 128,00" in cd, "carte du fournisseur : « prête pour novembre · il restera 128 € » : %s"%cd.replace("\n"," | "))
+    pg.locator(".fct-card", has_text="Vallée Claire").click(); pg.wait_for_timeout(400)
+    pv=norm(pg.locator(".fct-pv").inner_text())
+    check("prête" in pv and "il restera 128,00 € après celle de novembre" in pv, "détail : « prête · il restera 128 € après celle de novembre »")
+    pg.locator("#hback").click(); pg.wait_for_timeout(300)
     # ---------- 12 mois d'À venir : le foncier prévu compte, novembre en jaune
     pg.locator('.avtabs button[data-av="mois"]').click(); pg.wait_for_timeout(400)
     check(pg.locator('.fct-col[data-m="2026-11"] i.e.w').count()==1, "12 mois : novembre en jaune (il manquera dans une provision)")
