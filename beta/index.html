@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 15:17" />
+  <meta name="build" content="01/11 15:25" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -3245,7 +3245,7 @@
     function whoFields(current){
       return [
         {key:"who", label:"Pour qui", type:"select", value:current||"Commun", options:personOptions(current), help:"« Commun » = dépense partagée.",
-          onChange:function(v,api){ api.show("whoNew", v==="__autre"); api.show("pay", v==="Commun"); api.show("rep", v==="Commun"); api.show("acct", !(v==="Commun" && api.get("pay")==="split")); }},
+          onChange:function(v,api){ api.show("whoNew", v==="__autre"); api.show("pay", v==="Commun"); api.show("rep", v==="Commun"); api.show("acct", !(v==="Commun" && api.get("pay")==="split")); if(!acctPick.touched) api.set("acct", acctDefKey(v==="__autre" ? "" : v)); }},
         {key:"whoNew", label:"Nom", hidden:true, placeholder:"Prénom"}
       ];
     }
@@ -3258,11 +3258,19 @@
         help:"En entier : retiré de « "+esc(((f && f.compte && acctByKey(f.compte)) || mainAcct() || {nom:"ton compte"}).nom)+" ». Chacun sa part : chacun paie sa part du commun (onglet Commun › Parts) depuis son propre compte.",
         onChange:function(v, api){ api.show("acct", v!=="split"); } }];
     }
-    function acctFields(cur){
+    // Compte d'où part un frais par défaut : le compte principal pour un frais commun, le compte de la personne pour un frais perso
+    function acctDefKey(who){ who=(who||"").trim()||"Commun"; var a=(who==="Commun") ? mainAcct() : (payAcctOf(who) || comptes.filter(function(c){ return c.payer===who; })[0] || null); return a ? a.key : ""; }
+    // « Prélevé sur » : la liste des comptes, celui par défaut déjà choisi (il suit « Pour qui » tant qu'on n'y touche pas)
+    var acctPick={ touched:false };
+    function acctFields(cur, who){
       if(comptes.length<2) return [];
-      return [{ key:"acct", label:"Prélevé sur", type:"select", value:cur||"", options:[{v:"",l:"Automatique"}].concat(comptes.map(function(a){ return {v:a.key, l:a.nom}; })),
-        help:"Automatique : frais communs sur « "+esc(mainAcct().nom)+" », frais perso sur le compte de la personne." }];
+      acctPick={ touched:false };
+      return [{ key:"acct", label:"Prélevé sur", type:"select", value:(cur && acctByKey(cur)) ? cur : acctDefKey(who),
+        options:comptes.filter(function(a){ return a.key!=="__tickets"; }).map(function(a){ return {v:a.key, l:a.nom}; }),
+        help:"Le compte d'où part ce frais.", onChange:function(){ acctPick.touched=true; } }];
     }
+    // à l'enregistrement : le compte choisi, sauf s'il est celui par défaut (le frais suit alors le compte habituel de la personne)
+    function acctPicked(r, who){ var k=r.acct||""; return (k && k!==acctDefKey(who)) ? k : ""; }
     function whoOf(r){ return (r.who==="__autre") ? ((r.whoNew||"").trim()||"Commun") : (r.who||"Commun"); }
     function epargneOptions(){
       var o=[{v:"",l:"Aucun"}];
@@ -4759,7 +4767,7 @@
       uiForm({ title:"Nouveau frais fixe", fields:[
         {key:"label", label:"Nom", placeholder:"Loyer, Internet…", required:true},
         {key:"montant", label:"Montant", type:"money", required:true}
-      ].concat(whoFields(null)).concat(payFields(null)).concat(acctFields("")).concat([
+      ].concat(whoFields(null)).concat(payFields(null)).concat(acctFields("", "Commun")).concat([
         {key:"debut", label:"À partir de", type:"month", value:vm},
         {key:"dur", label:"Durée", type:"seg", value:"inf", options:[{v:"1",l:"Un mois"},{v:"n",l:"Plusieurs mois"},{v:"inf",l:"Sans fin"}],
           onChange:function(v,api){ api.show("fin", v==="n"); }},
@@ -4774,7 +4782,7 @@
         if(rec){ nf.startMonth=deb; if(fin) nf.endMonth=fin; }
         if(jd.v) nf.jour=jd.v;
         if(nf.personne==="Commun" && r.pay==="split") nf.split=true;
-        else if(r.acct) nf.compte=r.acct;
+        else { var ak=acctPicked(r, nf.personne); if(ak) nf.compte=ak; }
         fraisCommuns.push(nf);
         persistFrais(); render();
       });
@@ -4795,7 +4803,7 @@
         {key:"label", label:"Nom", value:f.label, required:true},
         {key:"montant", label:"Montant", type:"money", value:cur, required:true, help:(fpv?"Mise de côté de la provision « "+esc(fpv.nom)+" », à partir de "+esc(monthLabelOf(emonth))+" : la provision suit.":(f.recurrent?"À partir de "+esc(monthLabelOf(emonth))+". Les mois précédents ne changent pas.":""))}
       ].concat(fpv?[]:f.recurrent?[{key:"debut", label:"Depuis le mois", type:"month", value:(fraisStart(f)||""), help:"Le frais n'est compté ni dans les comptes ni dans l'analyse avant ce mois."},
-        {key:"fin", label:"Jusqu'au mois (inclus)", type:"month", value:(f.endMonth||""), help:"Vide = sans fin."}]:[{key:"mois", label:"Mois", type:"month", value:(f.month||"")}]).concat([dayField(f.jour||"", "Jour du prélèvement (facultatif)", "Range le frais dans la liste du compte. Vide : le jour où tu le coches « fait ».")]).concat(whoFields(f.personne||"Commun")).concat(payFields(f)).concat(acctFields(f.compte||"").map(function(x){ if(x.key==="acct" && f.split) x.hidden=true; return x; })).concat(partsFields)}, function(r){
+        {key:"fin", label:"Jusqu'au mois (inclus)", type:"month", value:(f.endMonth||""), help:"Vide = sans fin."}]:[{key:"mois", label:"Mois", type:"month", value:(f.month||"")}]).concat([dayField(f.jour||"", "Jour du prélèvement (facultatif)", "Range le frais dans la liste du compte. Vide : le jour où tu le coches « fait ».")]).concat(whoFields(f.personne||"Commun")).concat(payFields(f)).concat(acctFields(f.compte||"", f.personne||"Commun").map(function(x){ if(x.key==="acct" && f.split) x.hidden=true; return x; })).concat(partsFields)}, function(r){
         if(f.recurrent && /^[0-9]{4}-[0-9]{2}$/.test(r.fin||"")){ var d0=/^[0-9]{4}-[0-9]{2}$/.test(r.debut||"")?r.debut:fraisStart(f); if(d0 && r.fin<d0) return "Le dernier mois est avant le premier."; }
         var jd=dayRead(r); if(jd.err) return jd.err;
         f.label=r.label||f.label;
@@ -4813,7 +4821,7 @@
         else f.montant=r.montant;
         f.personne=whoOf(r);
         if(f.personne==="Commun" && r.pay==="split"){ f.split=true; delete f.compte; }
-        else { delete f.split; if(r.acct) f.compte=r.acct; else delete f.compte; }
+        else { delete f.split; var ak=acctPicked(r, f.personne); if(ak) f.compte=ak; else delete f.compte; }
         persistFrais(); render();
       });
     }

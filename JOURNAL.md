@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `01/11 15:17`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `01/11 15:25`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -168,6 +168,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 01/11
+- **Frais fixe : « Prélevé sur » plus clair** (« Automatique et compte courant c'est pareil, et pas clair ») : plus d'option « Automatique » ; la liste ne montre que les comptes, celui par défaut déjà choisi (compte principal pour un frais commun, compte de la personne pour un frais perso) ; il suit « Pour qui » tant qu'on n'y touche pas. Enregistré sur le compte par défaut, le frais ne force rien (il suit le compte habituel, comme avant « Automatique ») ; un autre compte est gardé (`acctDefKey`, `acctPicked`). Test `t104`.
 - **Reprendre des virements du mois d'avant** (« reprendre des virements du mois dernier et choisir : mois suivant, un mois précis, une période ou récurrent » ; maquette puis « tu peux intégrer ») :
   - Compte › Opérations, « ＋ Ajouter › ↻ Reprendre des virements d'octobre » (le mois avant celui affiché) : on coche les virements (ceux déjà vus le mois d'avant sont cochés d'office, ceux déjà dans le mois visé sont signalés), puis **Mois suivant**, **Un mois**, **Une période** (de… à…) ou **Chaque mois** (à partir de…, avec ou sans fin) ; au même jour, à venir, à cocher « fait » ; un virement vers un livret le reste ;
   - toucher un virement ouvre maintenant un petit menu : Modifier, « ↻ Reprendre ce virement » (et « Pas encore passé » s'il est fait) ;
