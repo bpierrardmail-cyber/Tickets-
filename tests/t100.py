@@ -1,6 +1,7 @@
 # Une facture payée par une provision : depuis la provision (« + Prélèvement » propose les factures récentes,
 # celles de son fournisseur ou de son type d'abord), depuis le détail du fournisseur (« Lier » une provision qui
-# existe) ou depuis la fiche de la facture (« Payer avec une provision »). Données inventées.
+# existe) ou depuis la fiche de la facture (« Payer avec une provision »). Chaque fois, la même feuille : la facture va
+# dans les comptes ET est retirée de la provision (un seul geste). Données inventées.
 import sys, os
 HERE=os.path.dirname(os.path.abspath(__file__)); ROOT=os.path.dirname(HERE)
 from playwright.sync_api import sync_playwright
@@ -34,7 +35,12 @@ with sync_playwright() as p:
     ch=choices(pg); print("  choix :", ch)
     check(len(ch)>=3 and ch[0].startswith("Vallée Claire · 28/10/2026") and any(x.startswith("EDF") for x in ch) and "Autre montant…" in ch and not any("06/05/2026" in x for x in ch), "« + Prélèvement » de « Eau » : la facture d'eau d'abord, puis les autres récentes, « Autre montant… »")
     pg.locator(".sheet-overlay button", has_text="Vallée Claire · 28/10/2026").click(); pg.wait_for_timeout(500)
+    sh=norm(pg.locator(".sheet-overlay").last.inner_text())
+    check("Payée avec la provision « Eau »" in sh and pg.locator('.sheet-overlay input[data-k="acc"]').is_checked() and pg.locator('.sheet-overlay input[data-k="prov"]').is_checked(), "une seule feuille : dans le compte et retirée de « Eau », les deux cochés")
+    pg.locator("#fpfOk").click(); pg.wait_for_timeout(500)
     P=[x for x in ls(pg,"provisions") if x["id"]==11][0]; f=[x for x in ls(pg,"factures") if x["id"]==203][0]
+    fr=[x for x in ls(pg,"fraisCommuns") if str(x["id"])==str(f.get("fraisId"))]
+    check(len(fr)==1 and fr[0].get("pp")==11 and abs(fr[0]["montant"]-157.77)<0.001, "et la facture est dans les comptes (« payée par « Eau » », hors parts)")
     check(len(P["prelevements"])==1 and abs(P["prelevements"][0]["montant"]-157.77)<0.001 and P["prelevements"][0]["month"]=="2026-10" and f.get("prId")==P["prelevements"][0]["id"], "prélèvement de 157,77 € en octobre, lié à la facture")
     check(P.get("fact")=="eau|vallee claire", "la provision suit maintenant ce fournisseur")
     pg.locator('.addprl[data-id="11"]').click(); pg.wait_for_timeout(300)
@@ -58,10 +64,10 @@ with sync_playwright() as p:
     pg.locator(".fct-card", has_text="Vallée Claire").click(); pg.wait_for_timeout(400)
     check(pg.locator("#fsLink").count()==1 and pg.locator("#fsProv").count()==1, "détail sans provision : « Lier » et « Créer »")
     pg.locator("#fsLink").click(); pg.wait_for_timeout(300)
-    pg.locator(".sheet-overlay button", has_text="Eau").first.click(); pg.wait_for_timeout(300)
-    msg=norm(pg.locator(".sheet-overlay .ui-msg").inner_text())
-    check("28/10/2026" in msg and "157,77" in msg, "« Payer la facture du 28/10/2026 (157,77 €) avec « Eau » ? »")
-    pg.locator(".sheet-overlay .ui-yes").click(); pg.wait_for_timeout(500)
+    pg.locator(".sheet-overlay button", has_text="Eau").first.click(); pg.wait_for_timeout(500)
+    sh=norm(pg.locator(".sheet-overlay").last.inner_text())
+    check("Facture du 28/10/2026 · 157,77" in sh and "Payée avec la provision « Eau »" in sh, "« Lier » « Eau » : la feuille pour la dernière facture (28/10/2026, 157,77 €)")
+    pg.locator("#fpfOk").click(); pg.wait_for_timeout(500)
     P=[x for x in ls(pg,"provisions") if x["id"]==11][0]
     check(P.get("fact")=="eau|vallee claire" and len(P["prelevements"])==1 and "Provision « Eau »" in norm(pg.locator("#app").inner_text()), "liée et payée ; le détail montre la provision")
     check(not errs, "pas d'erreur %s"%errs[:3]); c.close()
@@ -73,6 +79,7 @@ with sync_playwright() as p:
     pg.locator(".fct-row").nth(0).click(); pg.wait_for_timeout(300)
     pg.locator("#fePrv").click(); pg.wait_for_timeout(300)
     pg.locator(".sheet-overlay button", has_text="Énergie").click(); pg.wait_for_timeout(500)
+    pg.locator("#fpfOk").click(); pg.wait_for_timeout(500)
     P=[x for x in ls(pg,"provisions") if x["id"]==12][0]
     check(len(P["prelevements"])==1 and P["prelevements"][0]["month"]=="2026-11" and abs(P["prelevements"][0]["montant"]-88.43)<0.001 and P.get("fact")=="elec|edf", "« Payer avec une provision » → « Énergie » : prélèvement de novembre (mois du prélèvement EDF)")
     check(not errs, "pas d'erreur %s"%errs[:3]); c.close()

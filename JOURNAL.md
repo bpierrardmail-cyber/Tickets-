@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `01/11 10:52`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `01/11 11:40`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -42,7 +42,8 @@ Après chaque modification, dans le même commit :
   - rien avant le début du suivi ;
   - mois à venir = solde prévu.
 - **À venir** (ex Factures, ouvert à tous ; seule la partie Factures est dans Tickets Plus en Store) : sous-onglets **12 mois · Frais fixes · Provisions · Factures** ;
-  - Frais fixes : tous (communs et perso), comme l'ancienne page de Commun ; Provisions : l'ancienne page de Compte › Configuration ;
+  - Frais fixes : tous (communs et perso), comme l'ancienne page de Commun, dont la mise de côté des provisions (« Provision · nom ») ; Provisions : l'ancienne page de Compte › Configuration, avec « Remplie par » et « facture pas encore retirée · Retirer » ;
+  - une facture payée par une provision va dans le compte et sort de la provision en un seul geste (virement du livret en option), hors parts du Commun ;
   - les 12 prochains mois : frais fixes, factures reçues ou estimées, échéances des provisions ; un mois en jaune s'il manquera de l'argent dans une provision ; toucher un mois donne le détail ; en dessous, ✦ « Tes comptes dans 12 mois » (projection et simulateur, ex Analyse avancée) ;
   - « À payer bientôt » (30 jours, tous comptes) ;
   - Factures : une carte par fournisseur (prochaine facture estimée, moyenne par mois, provision : « prête pour … » ou « il manquera … ») ; en Store sans Plus, ce que Plus apporte et un seul bouton ✦ ;
@@ -74,6 +75,8 @@ Après chaque modification, dans le même commit :
 ## En cours / à reprendre
 
 - **Réorganisation de l'appli** (31/10) : il trouve l'organisation et l'accès aux fonctions peu clairs. Plan proposé dans la maquette « Tickets — Plan de l'appli » : un onglet = une question, chaque chose à un seul endroit, sous-onglets visibles au lieu de « Configuration », ✦ partout pareil (on voit la fonction, seul le bouton demande Plus). Onglets proposés : Accueil · Dépenses (Articles + Analyse) · Compte (Opérations · Virements · Épargne · Graphiques, roue du compte) · À venir (ex Factures, ouvert à tous : 12 mois · Frais fixes · Provisions gratuits, Factures ✦, Projection ✦) · Commun (parts seulement) · Bourse. En 4 étapes, À venir d'abord (sa question : les provisions dans Factures). Décidé le 31/10 : nom « À venir », 12 mois gratuits. **Les 4 étapes sont intégrées (31/10).** À essayer par Benoît sur son téléphone ; à revoir selon ses retours.
+
+- **Provisions reliées** (01/11) : à vérifier par Benoît sur ses données : ses frais « Eau » et « Amazon » doivent être devenus « Provision · Eau » / « Provision · Amazon » (pas de doublon) ; les autres provisions ont un nouveau frais à partir de novembre (sinon « Remplie par » → « Pas dans les frais fixes ») ; la facture Région Minière du 02/11 : « Ajouter » la met dans le compte et la retire de « Eau ».
 
 - **Factures d'eau en photos** (31/10) : à réimporter par Benoît (ses 6 photos d'un coup), après avoir supprimé la mauvaise facture « Région » à 304,06 € si elle a été enregistrée.
 
@@ -107,6 +110,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **01/11** : provisions reliées aux frais fixes, au Commun et aux comptes, d'après la maquette (« va y ») : la mise de côté est un frais fixe relié, une facture payée par une provision va dans le compte et sort de la provision en un seul geste, sans compter deux fois dans les parts.
 - **01/11** : l'onglet Virements de Compte est retiré ; un bouton « ＋ Ajouter » (virement reçu, envoyé, frais fixe, ticket) va dans l'écran Opérations.
 - **31/10** : écran de contrôle de plusieurs factures (photos ou PDF) intégré d'après la maquette (« tu peux intégrer ») : nombre de pages lues sur le nombre de photos, « LA PLUS RÉCENTE », contrôle des plus anciennes, rien d'enregistré avant « Appliquer » ; et mettre à jour `PASSATION.md`.
 - **31/10** : étapes 3 et 4 de la réorganisation intégrées sans maquette (« tu peux passer à la 3 et aux autres ») : onglet Dépenses, finitions.
@@ -161,6 +165,14 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 01/11
+- **Provisions reliées aux frais fixes, au Commun et aux comptes** (« il n'y a pas de lien entre une provision, les frais fixes et frais commun… ce n'est pas retiré des provisions quand j'ajoute la facture dans les comptes » ; maquette puis « va y ») :
+  - la mise de côté de chaque mois est un **frais fixe « Provision · nom »** relié à la provision (étiquette « mise de côté », « vers Livret A » ou « reste sur Compte courant ») : il compte dans les parts du Commun et l'Analyse ; il sort du compte qui paie, sauf si l'argent de la provision reste sur ce compte ;
+  - un ancien frais de même nom et même montant (« Eau 20 € », « Amazon 6 € ») est **relié au lieu de faire doublon**, et garde son passé ; s'il avait été retiré ce mois-ci par une facture, il revient ;
+  - la provision décide : changer le montant ou le nom du frais, « Sauter ce mois » / « Rétablir » d'un côté ou de l'autre restent d'accord ; supprimer le frais propose « Sauter », « Ne plus la compter dans les frais fixes » ou « Supprimer la provision » ; la provision a un champ **« Remplie par »** (Commun, chacun sa part, une personne, pas dans les frais fixes) ;
+  - **facture payée par une provision = un seul geste** : une feuille avec « dans le compte » (le prélèvement, comme sur le relevé), « retirée de la provision » (solde avant → après) et, si l'argent est sur un livret, « virement livret → compte » en option ; même feuille depuis le bandeau du fournisseur (« Pas dans tes comptes ni retirée de « Eau » · Ajouter », ou « Pas retirée de la provision · Retirer »), la fiche de la facture, « Lier », « + Prélèvement » ; sur la provision, « 1 facture pas encore retirée · Retirer » ;
+  - cette facture sort du compte mais **ne compte pas une 2ᵉ fois** dans les parts du Commun ni dans l'Analyse (« hors parts ») : c'est la mise de côté qui y compte ; elle ne remplace plus la mise de côté du mois ;
+  - import d'un relevé : un virement égal à plusieurs mises de côté d'un coup est reconnu (« Déjà en frais fixes (tes 2 provisions du mois) ») et elles sont marquées faites.
+  - Test `t101` ; `t92`, `t93` et `t100` suivent (la mise de côté est un frais commun ; la même feuille partout).
 - **Une facture payée par une provision** (« pouvoir mettre une facture dans les provisions, ex. l'eau de ce mois ») :
   - provision : « + Prélèvement (facture payée) » propose d'abord les factures importées récentes (moins de 120 jours, pas encore payées par une provision ; celles de son fournisseur ou de son type, « Eau », en premier), puis « Autre montant… » (l'ancien formulaire) ;
   - détail d'un fournisseur sans provision : « Lier » une provision qui existe (elle suit ce fournisseur), qui propose de payer sa dernière facture ;
