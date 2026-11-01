@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `31/10 23:48`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `01/11 08:34`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -158,6 +158,9 @@ Après chaque modification, dans le même commit :
 ---
 
 ## Historique (le plus récent en haut)
+
+### 01/11
+- **Commun › Frais communs se replie** (« ne se replie pas ») : toucher le titre replie ou déplie la liste (flèche qui tourne, choix gardé sur le téléphone, `comFcOpen`) ; toucher un frais ouvre toujours À venir › Frais fixes. Test t92 complété.
 
 ### 31/10
 - **Écran de contrôle de plusieurs factures** (photos ou PDF ; d'après la maquette, « tu peux intégrer ») :
