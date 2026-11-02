@@ -1,7 +1,10 @@
 package fr.bpierrard.tickets.beta;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
+import android.util.Base64;
 import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
 import android.print.PrintManager;
@@ -13,6 +16,7 @@ import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
+import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -22,6 +26,12 @@ import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanner;
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions;
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning;
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions;
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanning;
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 
 /**
  * Fonctions Android utilisées par l'appli :
@@ -31,8 +41,9 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScanning;
  *  - widgetData({ json })         : résumé des chiffres pour les widgets de l'écran d'accueil
  *  - launchTarget()               : { target } si l'appli a été ouverte depuis un widget (une seule fois)
  *  - scanQr()                     : { text } lu par le lecteur de QR code de Google Play (invitation au foyer)
+ *  - scanDoc({ pages })           : { images } pages scannées (JPEG base64) par le scanner de documents de Google Play
  */
-@CapacitorPlugin(name = "TicketsNative")
+@CapacitorPlugin(name = "TicketsNative", requestCodes = { TicketsNativePlugin.DOC_REQ })
 public class TicketsNativePlugin extends Plugin {
 
     @PluginMethod
@@ -111,6 +122,70 @@ public class TicketsNativePlugin extends Plugin {
                 call.reject("Lecteur de QR code indisponible : " + e.getMessage(), "fail");
             }
         });
+    }
+
+    // ---------- Scanner de documents (ML Kit, services Google Play) ----------
+    // Ticket ou pages d'une facture : recadrés, redressés, contrastés. Résultat : { images: [jpeg en base64] }.
+    static final int DOC_REQ = 9741;
+    private PluginCall docCall;
+
+    @PluginMethod
+    public void scanDoc(final PluginCall call) {
+        final int max = Math.max(1, Math.min(20, call.getInt("pages", 1)));
+        getActivity().runOnUiThread(() -> {
+            try {
+                GmsDocumentScannerOptions o = new GmsDocumentScannerOptions.Builder()
+                        .setPageLimit(max)
+                        .setGalleryImportAllowed(true)
+                        .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
+                        .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+                        .build();
+                GmsDocumentScanning.getClient(o).getStartScanIntent(getActivity())
+                        .addOnSuccessListener(sender -> {
+                            try {
+                                docCall = call;
+                                getActivity().startIntentSenderForResult(sender, DOC_REQ, null, 0, 0, 0);
+                            } catch (Exception e) {
+                                docCall = null;
+                                call.reject("Scanner indisponible : " + e.getMessage(), "fail");
+                            }
+                        })
+                        .addOnFailureListener(e -> call.reject("Scanner indisponible : " + e.getMessage(), "fail"));
+            } catch (Exception e) {
+                call.reject("Scanner indisponible : " + e.getMessage(), "fail");
+            }
+        });
+    }
+
+    @Override
+    protected void handleOnActivityResult(int requestCode, int resultCode, Intent data) {
+        super.handleOnActivityResult(requestCode, resultCode, data);
+        if (requestCode != DOC_REQ) return;
+        PluginCall call = docCall;
+        docCall = null;
+        if (call == null) return;
+        if (resultCode != Activity.RESULT_OK) { call.reject("Scan annulé", "cancel"); return; }
+        try {
+            GmsDocumentScanningResult res = GmsDocumentScanningResult.fromActivityResultIntent(data);
+            if (res == null || res.getPages() == null || res.getPages().isEmpty()) { call.reject("Aucune page", "cancel"); return; }
+            JSArray imgs = new JSArray();
+            for (GmsDocumentScanningResult.Page pg : res.getPages()) {
+                Uri u = pg.getImageUri();
+                try (InputStream in = getContext().getContentResolver().openInputStream(u)) {
+                    if (in == null) continue;
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    byte[] buf = new byte[16384];
+                    int n;
+                    while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+                    imgs.put(Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP));
+                }
+            }
+            JSObject r = new JSObject();
+            r.put("images", imgs);
+            call.resolve(r);
+        } catch (Exception e) {
+            call.reject("Scan illisible : " + e.getMessage(), "fail");
+        }
     }
 
     // ---------- Widgets ----------

@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `02/11 02:51`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `02/11 07:09`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -112,6 +112,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **02/11** : scan des tickets amélioré de façon générique (scanner de documents, total recoupé, total appris par enseigne, jeu d'essai), d'après la maquette ; le partage d'informations entre utilisateurs est laissé de côté pour l'instant (pistes : envoi volontaire puis tables livrées à la mise à jour, ou table commune par le relais avec accord et seuil de plusieurs utilisateurs).
 - **02/11** : rapprochement avec le relevé, contrôles de cohérence, lecture par voisinage et Factur-X pour les factures, d'après la maquette ; les mêmes idées (relevé, contrôles) pour le scan des tickets.
 - **01/11** : la lecture s'améliore après la 1re facture d'un fournisseur, et l'appli le dit (maquette validée) ; elle retient aussi la 1re facture enregistrée sans correction.
 - **01/11** : lecture des factures rendue plus tolérante (lecture générale) et apprentissage par fournisseur à la première correction ; « Lire avec mon IA » pour les factures plus tard, avec celle des tickets ; la lecture en ligne par une IA reste de côté.
@@ -173,6 +174,12 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 02/11
+- **Scan des tickets : scanner de documents, total recoupé, total appris par enseigne, jeu d'essai** (« il faut que les systèmes de scan fonctionnent du mieux possible tout en étant génériques » ; maquette puis « oui » ; partage entre utilisateurs laissé de côté) :
+  - scanner de documents de Google Play (ML Kit, `play-services-mlkit-document-scanner:16.0.0`) : `TicketsNative.scanDoc({pages})` → `{images}` (JPEG base64), lancé par `startIntentSenderForResult` et rendu par `handleOnActivityResult` (`requestCodes = {9741}`) ; « 📷 Prendre une photo » d'un ticket (3 pages max), le widget Scan et les photos de factures (12 pages) passent par `docScan` ; absent ou en échec (navigateur, téléphone sans le module) → « Scanner indisponible · Prendre une photo » (l'appareil photo comme avant). **Nouvel APK.** ;
+  - total recoupé : `parseTicket` rend aussi `carte` (ligne de paiement CB / carte / sans contact, pas espèces ni fidélité) et `tva` (somme des TTC du tableau de TVA) ; la fiche montre les sources (Articles · Carte · TVA, ✓ si égales au total) et, si deux sources sont d'accord contre le total lu, « ⚠ Lu X, mais … disent Y » avec « Prendre Y » / « Garder X » (`tkSrcPaint`, `draft.scan`) ;
+  - total appris par enseigne (`tkAppris`, sur le téléphone, dans la sauvegarde) : à l'enregistrement d'un ticket scanné (1er ticket de ce magasin, ou total corrigé), les mots avant le total (ligne de total de préférence, sinon la dernière qui porte ce montant : un article seul n'est pas pris) (`tkAnchorOf`) ; au scan suivant, le total est relu au même endroit (`factAnchorFind` avec `tamt`) et sa ligne retirée des articles ; « ✓ Total lu comme tes tickets … », « Ticket enregistré · total retenu pour … » ;
+  - « Somme due » et « à régler » reconnus comme lignes de total ;
+  - jeu d'essai `tests/donnees/tickets_fictifs.json` (4 tickets inventés, lus 4 sur 4) et test `t112`.
 - **Factures et tickets vérifiés par le relevé, contrôles, lecture par voisinage, Factur-X** (« un autre moyen pour améliorer la lecture » ; maquette ; « oui et tu peux faire les améliorations sur le scan Tickets aussi ») :
   - le relevé importé est gardé (clé `releve` : date, libellé, montant, compte, n° d'import ; retiré par « Annuler le dernier import » ; avant, `bankLines` le retrouve dans les tickets « relevé » et les frais fixes importés) ; `bankFind` cherche un paiement au même nom (`bankNameMatch`), dans la période, montant égal ou proche ;
   - facture lue : retrouvée sur le relevé → « 🏦 Retrouvée sur ton relevé… » et le jour du prélèvement pris sur le relevé ; montant un peu différent → « Sur ton relevé : … » avec « Prendre le relevé » / « Garder la facture » (`factBankMatch`) ; détail d'un fournisseur : « Prélevé le … sur ton relevé, mais pas de facture de … · Importer la facture » ;

@@ -1,0 +1,14 @@
+[
+ {"nom":"Supermarché : total, carte et TVA d'accord",
+  "attendu":{"montant":"31,26","marchand":"Intermarché","date":"2026-10-03","sources":["✓ Articles 31,26","✓ Carte 31,26","✓ TVA 31,26"],"alerte":false},
+  "texte":"INTERMARCHE\nSAS TESTVILLE DISTRIBUTION\nTEL 00 00 00 00 00\nLAIT DEMI ECREME  1,05  A\nPAIN DE CAMPAGNE  2,20  A\nCAFE MOULU 250G  4,15  A\nPOULET ROTI  14,60  A\nLESSIVE LIQUIDE  9,26  B\nMONTANT DU  31,26\nCB SANS CONTACT  31,26\nTVA  HT  TVA  TTC\nA 5,5%  20,85  1,15  22,00\nB 20,0%  7,72  1,54  9,26\n03/10/2026 10:42"},
+ {"nom":"Total mal lu (37,26) : carte et TVA disent 31,26",
+  "attendu":{"montant":"37,26","marchand":"Intermarché","alerte":"31,26"},
+  "texte":"INTERMARCHE\nSAS TESTVILLE DISTRIBUTION\nLAIT DEMI ECREME  1,05  A\nPAIN DE CAMPAGNE  2,20  A\nCAFE MOULU 250G  4,15  A\nPOULET ROTI  14,60  A\nLESSIVE LIQUIDE  9,26  B\nMONTANT DU  37,26\nCB SANS CONTACT  31,26\nTVA  HT  TVA  TTC\nA 5,5%  20,85  1,15  22,00\nB 20,0%  7,72  1,54  9,26\n03/10/2026 10:42"},
+ {"nom":"Boulangerie : un article, payé en espèces",
+  "attendu":{"montant":"3,40","date":"2026-10-12","alerte":false},
+  "texte":"BOULANGERIE DU TEST\n12 RUE DU FOUR\nBAGUETTE TRADITION  1,30\nCROISSANT X2  2,10\nTOTAL  3,40\nESPECES  5,00\nRENDU  1,60\n12/10/2026"},
+ {"nom":"Pharmacie : « NET A PAYER », carte",
+  "attendu":{"montant":"18,90","date":"2026-10-20","sources":["✓ Articles 18,90","✓ Carte 18,90"],"alerte":false},
+  "texte":"PHARMACIE TEST\nSIRET 000 000 000 00000\nDOLIPRANE 1000  2,18\nSERUM PHYSIO  4,72\nCREME SOLAIRE  12,00\nNET A PAYER  18,90\nCARTE BANCAIRE  18,90\n20/10/2026"}
+]

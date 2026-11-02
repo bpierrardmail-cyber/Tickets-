@@ -1,6 +1,6 @@
 # Tickets : dossier de passation
 
-*État au 01/11/2026, étiquette `02/11 02:51`. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
+*État au 01/11/2026, étiquette `02/11 07:09`. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
 
 > **À Claude qui reprend le projet**
 >
@@ -169,6 +169,7 @@ Fait et poussé le 01/11 :
 9. **Lecture des factures plus tolérante, et apprise** : quand les règles ne trouvent rien, la date et le montant les plus probables d'après les mots autour ; une correction est retenue pour le fournisseur et la facture suivante est lue au même endroit ; dans un import de plusieurs factures, corriger la plus récente remplit les autres ; la 1re facture d'un fournisseur enregistrée sans correction est aussi retenue, et l'appli dit que la lecture s'améliore après la 1re facture.
 10. **Abonnements (02/11)** : sans consommation sur les factures, la prochaine facture et le « par mois » suivent le prix de la dernière facture ; le rythme vient de l'historique.
 11. **Relevé et contrôles (02/11)** : factures et tickets confirmés ou corrigés par le relevé importé (gardé dans l'appli), facture manquante signalée, ticket qui complète le paiement du relevé sans doublon, import qui corrige le total d'un ticket ; contrôles de cohérence (montant inhabituel, HT + TVA, dates) ; lecture apprise par voisinage ; données Factur-X des PDF.
+12. **Scan des tickets (02/11)** : scanner de documents de Google (photo recadrée et redressée, nouvel APK ; repli sur l'appareil photo), total recoupé avec la carte et la TVA, total appris par magasin, jeu d'essai de tickets inventés.
 
 Fait et poussé le 31/10 :
 1. **Sans réseau** pour les deux éditions. L'APK Store est autonome ; la Perso garde une copie.
@@ -196,11 +197,12 @@ Fait et poussé le 31/10 :
 - les provisions reliées (01/11) : ses frais « Eau » et « Amazon » doivent être devenus « Provision · Eau » / « Provision · Amazon » sans doublon ; les autres provisions ont un frais à partir de novembre (sinon « Remplie par » → « Pas dans les frais fixes ») ; la facture Région Minière du 02/11 : « Ajouter » la met dans le compte et la retire de « Eau » ;
 - les virements repris ou « chaque mois » (CAF, Sylvette…), et « Passer en frais fixe » (Claude ia…) ; pour MAAF RC SBPI, déjà passé en frais fixe avant le choix commun / perso : le remettre en « Commun » dans À venir › Frais fixes › Modifier › « Pour qui » ;
 - la petite carte « Compte · Épargne » de l'Accueil ;
+- le scanner de documents avec le nouvel APK (ticket et photos de facture ; la 1re fois il se télécharge avec les services Google) ; un ticket au total mal lu (« Prendre … ») ; un magasin corrigé une fois, puis un 2e ticket du même magasin ;
 - relevé et contrôles : réimporter un relevé BoursoBank (les lignes sont gardées à partir de cet import), puis une facture Free ou EDF (bandeau « Retrouvée sur ton relevé ») et un ticket déjà payé par carte (« Compléter ce paiement ») ;
 - la lecture des factures : ses trois types de factures ratées (à réimporter ; envoyer les PDF ou « Copier la lecture » si l'une reste mal lue), et corriger une fois un fournisseur mal lu pour voir la suivante bien lue ;
 - les 12 factures Free Mobile : refaire l'import (sans rien appliquer de l'ancien essai), dates du 27 et 9,99 / 15,99 € attendus.
 
-**Tests automatiques** : les 31 tests de `tests/` passent (t96 : écran de contrôle des factures ; t97 : page gardée des petits graphiques ; t98 : modifier ou supprimer une facture ; t99 : mettre dans les comptes une facture gardée sans ses effets ; t100 : payer une facture avec une provision ; t101 : provisions reliées aux frais fixes, au Commun et aux comptes ; t102 : graphique des provisions avec les factures prévues ; t103 : reprendre des virements, virements « chaque mois » ; t104 : « Prélevé sur » d'un frais fixe ; t105 : passer un virement en frais fixe ; t106 : « Total provisions » ; t107 : factures Free Mobile en PDF ; t108 : lecture générale des factures et apprentissage par fournisseur ; t109 : abonnement dont le prix change ; t110 : factures et relevé, contrôles, Factur-X ; t111 : tickets et relevé). t93 (foyer) attend parfois le relais local : en cas d'échec isolé, le relancer seul. La date du navigateur est fixée au 30/10/2026 par `tests/horloge.py`, car les données inventées sont en octobre 2026. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
+**Tests automatiques** : les 32 tests de `tests/` passent (t96 : écran de contrôle des factures ; t97 : page gardée des petits graphiques ; t98 : modifier ou supprimer une facture ; t99 : mettre dans les comptes une facture gardée sans ses effets ; t100 : payer une facture avec une provision ; t101 : provisions reliées aux frais fixes, au Commun et aux comptes ; t102 : graphique des provisions avec les factures prévues ; t103 : reprendre des virements, virements « chaque mois » ; t104 : « Prélevé sur » d'un frais fixe ; t105 : passer un virement en frais fixe ; t106 : « Total provisions » ; t107 : factures Free Mobile en PDF ; t108 : lecture générale des factures et apprentissage par fournisseur ; t109 : abonnement dont le prix change ; t110 : factures et relevé, contrôles, Factur-X ; t111 : tickets et relevé ; t112 : scan des tickets, jeu d'essai). t93 (foyer) attend parfois le relais local : en cas d'échec isolé, le relancer seul. La date du navigateur est fixée au 30/10/2026 par `tests/horloge.py`, car les données inventées sont en octobre 2026. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
 
 ---
 
@@ -215,6 +217,7 @@ Fait et poussé le 31/10 :
   - Cela s'ajoute à la lecture actuelle, sans la remplacer. Aucun coût pour nous, rien ne passe par notre relais.
 - **Retrait au distributeur** scanné : le proposer comme argent liquide plutôt que comme dépense.
 - **Lecture des tickets** : pour chaque ticket mal lu, demander la photo et « Copier la lecture », puis corriger `mlkitRows` et `parseTicket`.
+- **Partage entre utilisateurs** (laissé de côté le 02/11) : ce qui n'est pas personnel (libellé → produit, libellé de banque → enseigne, mise en page d'une enseigne) ; envoi volontaire puis tables livrées à la mise à jour, ou table commune par le relais (accord, seuil de plusieurs utilisateurs, déclaration Play Store).
 - **Factures** : table de lectures par fournisseur livrée avec l'appli (même format que `factAppris`), à remplir avec des libellés tirés de vraies factures (les guides en ligne n'en donnent presque pas) ; plus tard, partage volontaire par l'utilisateur de ce qui a été appris (nom du fournisseur et mots avant la valeur, sans montant ni date). « Lire avec mon IA » aussi pour les factures (avec celle des tickets) ; enrichir le corpus `tests/donnees/factures_fictives.json` à chaque format raté.
 - **Factures d'eau** : vérifier ce que ML Kit lit, quand Benoît enverra « Copier la lecture ».
 - **Import de relevé** : pistes possibles.
@@ -260,7 +263,7 @@ Fait et poussé le 31/10 :
 5. **Tenir `JOURNAL.md` à jour dans le même commit** : une entrée datée en haut de l'Historique, plus Décisions, État actuel et En cours si nécessaire. Mettre aussi `CLAUDE.md` à jour si une notion technique change.
 6. **Commit en français**, préfixé « β » quand il touche la β, poussé directement sur `main`. Le push met en ligne la β et la Perso, et recompile les deux APK.
 7. **Tester** avec les tests de `tests/` (mode d'emploi dans `tests/README.md`) :
-   - `sh tests/run.sh` lance les 31 tests ; `python3 tests/t95.py` en lance un seul ;
+   - `sh tests/run.sh` lance les 32 tests ; `python3 tests/t95.py` en lance un seul ;
    - ce sont des scripts Playwright en Python : Chromium sans interface, écran de 412×900, données injectées dans localStorage, relais local (Node et `node:sqlite` sur `localhost:8787`) ;
    - aucune requête réseau extérieure pendant les tests ;
    - ajouter un test pour chaque nouvelle fonction, **toujours avec des données inventées**.

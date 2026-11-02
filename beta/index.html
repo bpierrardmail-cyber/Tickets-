@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="02/11 02:51" />
+  <meta name="build" content="02/11 07:09" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -178,6 +178,7 @@
     /* À venir (ex Factures) : sous-onglets 12 mois · Frais fixes · Provisions · Factures */
     .fct-hint{ margin:0 0 10px; padding:9px 11px; border-radius:10px; font-size:12.5px; line-height:1.45; background:rgba(230,180,80,.12); color:#e6b450; }
     .fct-hint .fct-hb{ display:flex; gap:8px; margin-top:8px; } .fct-hint .fct-hb .btn{ flex:1; padding:8px 6px; font-size:12.5px; }
+    .tk-src{ display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 4px; } .tk-src span{ font-size:11.5px; padding:3px 9px; border-radius:12px; background:rgba(230,180,80,.12); color:#e6b450; } .tk-src span.ok{ background:rgba(79,214,160,.12); color:var(--accent); }
     .fct-chk{ font-size:11.5px; color:#e6b450; margin:4px 2px 0; } .fct-chk.ok{ color:var(--accent); }
     .fct-miss{ margin:0 0 12px; padding:10px 12px; border-radius:12px; background:var(--card); border:1px solid var(--line2); font-size:12.5px; line-height:1.5; color:var(--ink-soft); }
     .fct-hint.ok{ background:rgba(79,214,160,.12); color:var(--accent); }
@@ -2899,8 +2900,8 @@
       // Lignes de paiement / totaux (tolère les erreurs de lecture : T0TAL, YONTANT…)
       // (« TOT TTC », lu parfois « TOT TIC » ; « Net » = net à payer ou net HT ; carburant : volume et prix au litre ne sont pas des articles)
       // (« carte » en mot entier : « CARTES MAXI TRAD » est un article)
-      var key = /t[o0]ta[l1i]|\bt[o0]t\b|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|net a|net à|\bcarte\b|\bcb\b|visa|mastercard|sans contact|esp[eè]ces|rendu|rendre|monnaie|tva|\bttc\b|\bht\b|€\s*\/\s*l(?:it(?:re)?s?)?\b|prix\s*(unit|au\s*litre)|\bp\.?u\.?\b/i;
-      var totRe = /t[o0]ta[l1i]|\bt[o0]t\b|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|net a|net à/i;
+      var key = /somme\s*d[uû]e?\b|[aà]\s*r[eé]gler|t[o0]ta[l1i]|\bt[o0]t\b|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|net a|net à|\bcarte\b|\bcb\b|visa|mastercard|sans contact|esp[eè]ces|rendu|rendre|monnaie|tva|\bttc\b|\bht\b|€\s*\/\s*l(?:it(?:re)?s?)?\b|prix\s*(unit|au\s*litre)|\bp\.?u\.?\b/i;
+      var totRe = /t[o0]ta[l1i]|\bt[o0]t\b|[mnyw]{1,2}ontant|ontant\s*d|a payer|à payer|net a|net à|somme\s*d[uû]e?\b|[aà]\s*r[eé]gler/i;
       // En-tête du magasin : téléphone, RCS, SIRET… (jamais des articles ni des montants)
       var payRe = /\bcb\b|\bcarte\s+(?:bancaire|bleue|cb|visa)|paiement|visa|mastercard|sans contact|esp[eè]ces/i;
       var skip = /\b(t[eé]l|tel|fax|siret|siren|rcs|naf|ape|www|http|caisse|ticket|op[eé]rateur|h[oô]tesse|vendeur)\b|@/i;
@@ -2918,9 +2919,9 @@
       }
       // ticket de carburant : volume, prix au litre, pompe ne sont jamais des articles
       var fuelT=/\b(gazole|gasoil|diesel|sp\s?9[58](?:\s?-?\s?e\s?(?:5|10))?|sans\s*plomb|e\s?10|e\s?85|gpl|carburant|adblue|essence|pompe|esso|avia|agip|shell)\b|total\s*(energ|access)/i.test(text);
-      var sawVol=false, pend="";   // pend : nom d'un article pesé, dont le prix est sur la ligne suivante (« NET 0,980 kg x 1,99 €/kg 1,95 € »)
+      var sawVol=false, pend="", cardV=0, tvaRows=[];   // cardV : montant payé par carte ; tvaRows : TTC de chaque taux du tableau de TVA   // pend : nom d'un article pesé, dont le prix est sur la ligne suivante (« NET 0,980 kg x 1,99 €/kg 1,95 € »)
       lines.forEach(function(l){
-        var m, last=null, lastV=0, neg=false, nAmt=0, isSkip=skip.test(l) || /\b\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\b/.test(l); amtRe.lastIndex=0;
+        var lv=[], m, last=null, lastV=0, neg=false, nAmt=0, isSkip=skip.test(l) || /\b\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\b/.test(l); amtRe.lastIndex=0;
         // la même ligne sans ses espaces : la lecture coupe parfois les mots (« Vo lume », « T OT TIC », « N et »)
         var cmp=l.toLowerCase().replace(/\s+/g,"");
         var weightL=/(?:€|eur(?:os?)?)\s*\/\s*k?g\b|\d[.,]\d{3}\s*k\s?g\b/i.test(l);   // ligne de pesée : poids net, prix au kilo (« 2,99 €/kg », « 2,99EURO/kg »)
@@ -2932,11 +2933,13 @@
           var ng=/-\s?$/.test(l.slice(Math.max(0, m.index-2), m.index));   // « -0,73 » : une remise
           var v=parseFloat(m[1]+"."+m[2]), th=m[1].length===3 && /(?:^|[^\d.,])(\d{1,3})\.$/.exec(l.slice(Math.max(0, m.index-5), m.index));   // « 1.234,56 »
           if(th) v+=1000*th[1];
-          if(!isSkip && !ng) all.push({ value: v, line:l, tot:cTot, pay:payRe.test(l) }); last=m; lastV=v; neg=ng; nAmt++;
+          if(!isSkip && !ng) all.push({ value: v, line:l, tot:cTot, pay:payRe.test(l) }); if(!ng) lv.push(v); last=m; lastV=v; neg=ng; nAmt++;
         }
         if(cFuel && (volL || /^volume|litre/.test(cmp))) sawVol=true;
-        // tableau de TVA (« A 5,5% 42,15 € 2,32 € 44,47 € ») : ni un article, ni la fin des articles
-        if(nAmt>=2 && /^[^A-Za-zÀ-ÿ]*(?:[A-Za-z]\b[^A-Za-zÀ-ÿ\d]*)?\d{1,2}(?:[.,]\d{1,2})?\s*%/.test(l)) return;
+        // paiement par carte (« CB 31,26 », « CARTE BANCAIRE », « SANS CONTACT ») : une 2e source du total
+        if(lv.length && /\bcb\b|\bcarte\b|visa|mastercard|sans\s*contact|\bemv\b/i.test(l) && !/esp[eè]ces|rendu|fid[eé]lit|cagnotte|points?\b|avantage/i.test(l)){ var cm=Math.max.apply(null, lv); if(cm>cardV) cardV=cm; }
+        // tableau de TVA (« A 5,5% 42,15 € 2,32 € 44,47 € ») : ni un article, ni la fin des articles ; le plus grand montant de la ligne = TTC du taux
+        if(nAmt>=2 && /^[^A-Za-zÀ-ÿ]*(?:[A-Za-z]\b[^A-Za-zÀ-ÿ\d]*)?\d{1,2}(?:[.,]\d{1,2})?\s*%/.test(l)){ if(lv.length>=3) tvaRows.push(Math.max.apply(null, lv)); return; }
         var isKey=(key.test(l) || cTot || cFuel) && !weightL;
         if(isKey && last && (totRe.test(l) || cTot || payRe.test(l))) afterTotal=true;   // après le total (ou le paiement, si le total est mal lu) : TVA, pied de ticket
         if(afterTotal || isSkip || isKey) return;
@@ -2989,7 +2992,8 @@
       marchand=matchMerchant(lines, marchand);
       var fuel=/\b(gazole|gasoil|diesel|sp\s?9[58](?:\s?-?\s?e\s?(?:5|10))?|sans\s*plomb|e\s?85|gpl|carburant|adblue)\b/i.exec(text);
       if((fuel || fuelT || sawVol) && !lignes.length && total>0) lignes.push({ label:(fuel ? fuel[1].toUpperCase().replace(/\s+/g," ") : "CARBURANT"), prix:total.toFixed(2).replace(".",","), produit:"" });
-      return { total: total, date: date, dateFix: dateFix, marchand: marchand, categorie: ticketCat(marchand, text, !!(fuel || sawVol)), lignes: lignes };
+      var tvaT=0; tvaRows.forEach(function(v){ tvaT+=v; }); tvaT=Math.round(tvaT*100)/100;
+      return { total: total, date: date, dateFix: dateFix, marchand: marchand, categorie: ticketCat(marchand, text, !!(fuel || sawVol)), lignes: lignes, carte: cardV||"", tva: tvaRows.length ? tvaT : "" };
     }
 
 
@@ -3352,10 +3356,20 @@
       document.body.appendChild(ov);
       function close(){ try{ document.body.removeChild(ov); }catch(e){} }
       ov.addEventListener("click", function(e){ if(e.target===ov) close(); });
-      document.getElementById("sc-cam").onclick=function(){ close(); filein.setAttribute("capture","environment"); filein.click(); };
+      document.getElementById("sc-cam").onclick=function(){ close(); docScan(3, function(fs){ filein.onchange({ target:{ files:fs, value:"" } }); }, function(){ filein.setAttribute("capture","environment"); filein.click(); }); };
       document.getElementById("sc-gal").onclick=function(){ close(); filein.removeAttribute("capture"); filein.click(); };
       document.getElementById("sc-cancel").onclick=close;
       var scm=document.getElementById("sc-man"); if(scm) scm.onclick=function(){ close(); newDraft(); };
+    }
+    // Scanner de documents de Google (appli Android) : photo recadrée, redressée et contrastée avant la lecture ;
+    // pas de scanner (navigateur, téléphone trop ancien, module pas encore téléchargé) : l'appareil photo, comme avant.
+    function docScan(max, onFiles, fallback){
+      var NP=capPlugin("TicketsNative"); if(!NP || typeof NP.scanDoc!=="function"){ fallback(); return; }
+      NP.scanDoc({ pages:max }).then(function(r){
+        var files=((r && r.images) || []).map(function(b, i){ var bin=atob(b), arr=new Uint8Array(bin.length); for(var k=0;k<bin.length;k++) arr[k]=bin.charCodeAt(k); return new File([arr], "scan-"+(i+1)+".jpg", { type:"image/jpeg" }); });
+        if(files.length) onFiles(files);
+      }).catch(function(e){ var m=String((e && (e.code || e.message)) || e || ""); if(/cancel|annul/i.test(m)) return;
+        uiChoice("Scanner indisponible", "Le scanner de documents n'est pas disponible sur ce téléphone pour l'instant (il se télécharge avec les services Google la première fois).", [{ l:"Prendre une photo", primary:true, fn:fallback }, { l:"Annuler", fn:function(){} }]); });
     }
     var restorein = document.getElementById("restorein");
 
@@ -4306,7 +4320,7 @@
                '<div class="muted" style="font-size:11px;margin-top:8px">Tu peux déjà corriger les champs ci-dessous.</div></div>';
       }
       h += '<label class="f" for="f-montant">Montant ('+curSym()+')</label><div class="f-mrow"><input class="f" id="f-montant" inputmode="decimal" value="'+esc(d.montant)+'" placeholder="0,00">'+
-           (d.photo ? '<button type="button" class="f-thumb" id="photoview" aria-label="Voir la photo du ticket"><img src="'+d.photo+'" alt=""></button>' : '')+'</div><div id="artchk"></div><div id="bankchk"></div>';
+           (d.photo ? '<button type="button" class="f-thumb" id="photoview" aria-label="Voir la photo du ticket"><img src="'+d.photo+'" alt=""></button>' : '')+'</div><div id="artchk"></div><div id="srcchk"></div><div id="bankchk"></div>';
       h += '<label class="f">Enseigne</label><input class="f" id="f-marchand" value="'+esc(d.marchand)+'" placeholder="Nom du magasin">';
       h += '<label class="f">Date</label><input class="f" id="f-date" type="date" value="'+esc(d.date)+'">';
       if(!d.photo) h += '<label class="f">Photo du ticket</label><button class="btn ghost" id="photoadd" type="button">📷 Ajouter une photo</button>';   // la photo : vignette à côté du montant
@@ -4469,6 +4483,22 @@
       var bm=document.getElementById("bkMerge"); if(bm) bm.onclick=function(){ d.mergeInto=b.e.id; if(!b.exact) take(); else tkBankPaint(); };
       var bt=document.getElementById("bkTake"); if(bt) bt.onclick=take;
     }
+    // Total recoupé : la somme des articles, le paiement par carte et le tableau de TVA ; deux sources d'accord contre le total lu → les proposer
+    function tkSrcPaint(c){
+      var box=document.getElementById("srcchk"), d=state.draft; if(!box || !d) return;
+      var S=d.scan, tot=c ? c.tot : num(d.montant), h="";
+      if(S && S.learnt && Math.abs(tot-(Number(S.total)||0))<0.006) h+='<div class="fct-hint ok">✓ Total lu comme tes tickets '+esc(S.four||"de ce magasin")+'.</div>';
+      var src=[]; if(c && c.n>0 && c.sum>0) src.push({ n:"Articles", v:Math.round(c.sum*100)/100 }); if(S && S.carte>0) src.push({ n:"Carte", v:S.carte }); if(S && S.tva>0) src.push({ n:"TVA", v:S.tva });
+      if(S && src.length && tot>0){
+        h+='<div class="tk-src">'+src.map(function(x){ var ok=Math.abs(x.v-tot)<0.011; return '<span class="'+(ok?'ok':'no')+'">'+(ok?'✓ ':'')+esc(x.n)+' '+esc(fmtK(x.v))+'</span>'; }).join("")+'</div>';
+        var agree=null; src.forEach(function(a, i){ src.forEach(function(b, j){ if(j>i && Math.abs(a.v-b.v)<0.011 && Math.abs(a.v-tot)>=0.011) agree=a.v; }); });
+        if(agree && !d.srcKeep){ var who=src.filter(function(x){ return Math.abs(x.v-agree)<0.011; }).map(function(x){ return x.n==="Articles"?"les articles":(x.n==="Carte"?"le paiement carte":"la TVA"); });
+          h+='<div class="fct-hint">⚠ Lu <b>'+esc(fmtK(tot))+'</b>, mais '+esc(who.length>2 ? who.slice(0,-1).join(", ")+" et "+who[who.length-1] : who.join(" et "))+' disent <b>'+esc(fmtK(agree))+'</b>.<div class="fct-hb"><button type="button" class="btn" id="srcTake">Prendre '+esc(fmtK(agree))+'</button><button type="button" class="btn ghost" id="srcKeep">Garder '+esc(fmtK(tot))+'</button></div></div>'; }
+      }
+      box.innerHTML=h;
+      var tk=document.getElementById("srcTake"); if(tk) tk.onclick=function(){ var fm=document.getElementById("f-montant"); if(fm) fm.value=agree.toFixed(2).replace(".", ","); artChkPaint(); tkBankPaint(); };
+      var kp=document.getElementById("srcKeep"); if(kp) kp.onclick=function(){ d.srcKeep=true; tkSrcPaint(artChkForm()); };
+    }
     function artChkPaint(){
       var c=artChkForm(), box=document.getElementById("artchk"), sm=document.getElementById("artsum"); if(!box) return;
       var show=c.n>0 && c.tot>0, np=0, nx=0;
@@ -4482,6 +4512,7 @@
         : '<button type="button" class="chk bad" id="chkgo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17.5v.5"/></svg><span class="t"><b>'+c.n+' article'+(c.n>1?'s':'')+' · '+esc(fmtK(c.sum))+' ≠ '+esc(fmtK(c.tot))+'</b><span>écart '+esc(fmtK(Math.abs(c.diff)))+' · vérifie les articles'+(npT ? ' · '+npT : '')+'</span></span><span class="go">Vérifier ↓</span></button>');
       var go=document.getElementById("chkgo"); if(go) go.onclick=function(){ var h=document.getElementById("artshead"); if(h) h.scrollIntoView({ behavior:"smooth", block:"start" }); };
       if(sm){ sm.textContent=show ? (c.ok ? "✓ "+fmtK(c.sum) : fmtK(c.sum)+" sur "+fmtK(c.tot)) : ""; sm.className=show ? (c.ok?"ok":"bad") : ""; }
+      tkSrcPaint(c);
       [].forEach.call(document.querySelectorAll("#arts .art"), function(node){ node.classList.toggle("warn", show && !c.ok); });
     }
     function readForm(){
@@ -4569,7 +4600,11 @@
       else { entry.photo=false; delete PHOTOS[String(entry.id)]; idbDel(entry.id); }
       if(isNew){ state.entries.unshift(entry); }
       else { state.entries=state.entries.map(function(e){ return String(e.id)===String(entry.id)?entry:e; }); }
+      var sc=state.draft.scan, tkMsg="";
+      if(sc && sc.four && sc.lines && montant>0){ var all=store.read("tkAppris", {})||{}, k=norm(sc.four);
+        if(k && (!all[k] || Math.abs(montant-(Number(sc.total)||0))>0.004)){ var A=tkAnchorOf(sc.lines, montant); if(A){ all[k]={ amt:A }; store.write("tkAppris", all); tkMsg="total retenu pour "+sc.four; } } }
       persist(); state.view=formBackView(); state.draft=null; render();
+      if(tkMsg) uiToast("Ticket enregistré · "+tkMsg);
     }
     function delDraft(){
       if(state.draftRO) return;
@@ -7786,7 +7821,10 @@
       var texts=[], idx=0;
       function step(){
         if(idx>=files.length){
-          var p=parseTicket(texts.join("\n"));
+          var p=parseTicket(texts.join("\n")), tkL=texts.join("\n").split(/\n/).map(function(l){ return l.trim(); }).filter(Boolean), tkA=(store.read("tkAppris", {})||{})[norm(p.marchand||"")], tkLearnt=false;
+          if(tkA && tkA.amt){ var tv=factAnchorFind(tkL, "tamt", tkA.amt); if(tv>0){ p.total=tv; tkLearnt=true;   // ce magasin : le total lu au même endroit que la dernière fois
+            var aw=" "+tkA.amt.a+" "; p.lignes=(p.lignes||[]).filter(function(a){ return !(Math.abs(num(a.prix)-tv)<0.005 && aw.indexOf(" "+norm(a.label)+" ")>=0); }); } }   // et sa ligne n'est pas un article
+          state.draft.scan={ lines:tkL, four:p.marchand||"", total:p.total, carte:p.carte, tva:p.tva, learnt:tkLearnt };
           state.draft.montant = (p.total==="")?"":String(p.total).replace(".",",");
           state.draft.date = p.date || state.draft.date;
           state.draft.marchand = p.marchand || state.draft.marchand;
@@ -8684,11 +8722,19 @@
     // ----- Ce qui a été appris d'un fournisseur : les mots juste avant la date et le montant (ou la ligne au-dessus
     // quand la valeur est seule sur sa ligne). Gardé sur le téléphone, par nom de fournisseur tel qu'il est lu.
     function factLines(text){ return factTxtFix(text).replace(/[\u00a0\u202f]/g," ").split("\n").map(function(l){ return l.trim(); }).filter(Boolean); }
-    function factItems(l, kind){ return kind==="amt" ? factAmtsIdx(l) : factDatesIdx(l); }
+    function tkAmtsIdx(l){ var out=[], m, re=/(\d{1,4}) ?[.,] ?(\d{2})(?![\d.,])/g; while((m=re.exec(l||""))){ out.push({ v:parseFloat(m[1]+"."+m[2]), i:m.index, e:m.index+m[0].length }); } return out; }
+    // le total d'un ticket : la ligne de total qui porte ce montant, sinon la dernière (un article seul a le même prix que le total)
+    function tkAnchorOf(lines, val){
+      var cand=[]; lines.forEach(function(l, i){ if(tkAmtsIdx(l).some(function(x){ return Math.abs(x.v-val)<0.005; })) cand.push(i); }); if(!cand.length) return null;
+      var tot=cand.filter(function(i){ return /t[o0]ta[l1i]|\bt[o0]t\b|montant|[aà] payer|net [aà]|\bdu\b/i.test(lines[i]); }), i=tot.length ? tot[0] : cand[cand.length-1];
+      var x=tkAmtsIdx(lines[i]).filter(function(x){ return Math.abs(x.v-val)<0.005; })[0], a=factTail(lines[i].slice(0, x.i));
+      if(a) return { a:a }; var b=factTail(lines[i-1]||""); return b ? { a:b, prev:1 } : null;
+    }
+    function factItems(l, kind){ return kind==="date" ? factDatesIdx(l) : (kind==="tamt" ? tkAmtsIdx(l) : factAmtsIdx(l)); }
     function factTail(t){ return norm(t).split(" ").filter(Boolean).slice(-4).join(" "); }
     function factAnchorOf(lines, kind, val){
       for(var i=0;i<lines.length;i++){ var It=factItems(lines[i], kind);
-        for(var k=0;k<It.length;k++){ var x=It[k]; if(kind==="amt" ? Math.abs(x.v-val)>0.004 : x.iso!==val) continue;
+        for(var k=0;k<It.length;k++){ var x=It[k]; if(kind!=="date" ? Math.abs(x.v-val)>0.004 : x.iso!==val) continue;
           var a=factTail(lines[i].slice(0, x.i)); if(a) return { a:a };
           var b=factTail(lines[i-1]||""); if(b) return { a:b, prev:1 }; } }
       return null;
@@ -8702,7 +8748,7 @@
         var b=" "+norm(before)+" "; return pass===0 ? factTail(before)===A.a : (pass===1 ? b.indexOf(" "+A.a+" ")>=0 : aw.length>2 && b.indexOf(" "+a2+" ")>=0);
       }
       for(var pass=0;pass<3;pass++) for(var i=0;i<lines.length;i++){ var It=factItems(lines[i], kind);
-        for(var k=0;k<It.length;k++){ var x=It[k]; if(hit(pass, lines[i].slice(0, x.i), lines[i-1])) return kind==="amt" ? x.v : x.iso; } }
+        for(var k=0;k<It.length;k++){ var x=It[k]; if(hit(pass, lines[i].slice(0, x.i), lines[i-1])) return kind!=="date" ? x.v : x.iso; } }
       return null;
     }
     function factKnown(four){ return !!(four && (store.read("factAppris", {})||{})[norm(four)]); }
@@ -9358,7 +9404,7 @@
       factInputs();
       uiChoice("Importer une facture", "Elle est lue sur ton téléphone : rien n'est envoyé.", [
         { l:"Un ou plusieurs PDF (espace client)", primary:true, fn:function(){ factPdfIn.click(); } },
-        { l:"Des photos, une par page", fn:function(){ factImgIn._add=false; factImgIn.click(); } }
+        { l:"Des photos, une par page", fn:function(){ docScan(12, function(fs){ factFromPhotos(fs, false); }, function(){ factImgIn._add=false; factImgIn.click(); }); } }
       ]);
     }
     function factBusy(msg){ state.factDraft={ busy:true, msg:msg, pages:[] }; state.view="factlue"; render(); window.scrollTo(0,0); }
@@ -9745,7 +9791,7 @@
       uiToast("Facture ajoutée"+histTxt+(made.length?" · "+made.join(", "):"")+(learnt?" · lecture retenue pour "+p.four:""));
     }
     function backupData(){
-      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","factAppris","releve","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"];
+      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","factAppris","releve","tkAppris","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"];
       var dump={ _app:"tickets", _version:1, _date:new Date().toISOString(), data:{} };
       keys.forEach(function(k){ var v=store.read(k, null); if(v!==null) dump.data[k]=v; });
       dump.photos = PHOTOS;
@@ -9780,7 +9826,7 @@
           if(!data || typeof data!=="object") throw new Error("format non reconnu");
           var n=(data.entries && data.entries.length) ? data.entries.length : 0;
           if(!window.confirm("Restaurer cette sauvegarde ?\n"+n+" ticket(s) vont REMPLACER les données actuelles.")) return;
-          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","factAppris","releve","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"].forEach(function(k){
+          ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","factAppris","releve","tkAppris","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"].forEach(function(k){
             if(k in data) store.write(k, data[k]);
           });
           if(!("comptes" in data)) store.write("comptes", null);
@@ -10924,6 +10970,10 @@
     }
     function widgetScan(){
       if(fyMember() && (fyCfg.role==="view" || !fyTabEd("list"))){ uiToast("Lecture seule : tu ne peux pas ajouter de ticket"); return; }
+      var NPd=capPlugin("TicketsNative"); if(NPd && typeof NPd.scanDoc==="function"){ docScan(3, function(fs){ filein.onchange({ target:{ files:fs, value:"" } }); }, widgetCam); return; }
+      widgetCam();
+    }
+    function widgetCam(){
       var Cam=capPlugin("Camera"); if(!Cam || typeof Cam.getPhoto!=="function"){ openScanChooser(); return; }
       Cam.getPhoto({ quality:88, width:2400, resultType:"dataUrl", source:"CAMERA", correctOrientation:true, saveToGallery:false, allowEditing:false }).then(function(ph){
         var u=ph && ph.dataUrl; if(!u) return;
