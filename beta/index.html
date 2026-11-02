@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="02/11 14:50" />
+  <meta name="build" content="02/11 14:58" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -396,19 +396,19 @@
     .gcap{ position:absolute; left:0; right:0; bottom:0; display:flex; justify-content:space-between; gap:8px; align-items:flex-end; padding:16px 9px 7px; font-size:11px; background:linear-gradient(transparent, rgba(0,0,0,.8)); color:#fff; }
     .gcap .gn{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .gcap .ga{ font-family:var(--mono); font-weight:700; flex:0 0 auto; }
-    .wlc{ position:fixed; inset:0; z-index:108; background:var(--bg); display:flex; flex-direction:column; padding:calc(18px + env(safe-area-inset-top)) 22px calc(18px + env(safe-area-inset-bottom)); }
-    .wlc-dots{ display:flex; justify-content:center; gap:7px; margin:4px 0 18px; }
-    .wlc-dots i{ width:8px; height:8px; border-radius:50%; background:var(--line); }
-    .wlc-dots i.on{ background:var(--accent); width:22px; border-radius:5px; }
-    .wlc-body{ flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; justify-content:center; max-width:460px; width:100%; margin:0 auto; }
-    .wlc-ic{ font-size:46px; text-align:center; line-height:1.2; }
-    .wlc-t{ font-size:22px; font-weight:800; text-align:center; margin:12px 0 18px; color:var(--ink); }
-    .wlc-l{ display:flex; gap:12px; align-items:flex-start; padding:10px 12px; margin-bottom:8px; border-radius:12px; background:var(--card); border:1px solid var(--line); font-size:14.5px; line-height:1.45; color:var(--ink); }
-    .wlc-l b{ flex:0 0 auto; color:var(--accent); }
-    .wlc-l small{ display:block; color:var(--muted); font-size:12.5px; margin-top:1px; }
-    .wlc-bt{ display:flex; justify-content:space-between; align-items:center; gap:12px; max-width:460px; width:100%; margin:14px auto 0; }
-    .wlc-bt .btn{ min-width:120px; }
-    .wlc-skip{ background:none; border:0; color:var(--muted); font-size:14px; padding:10px 4px; cursor:pointer; }
+    .wlc{ position:fixed; inset:0; z-index:108; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom)); }
+    .wlc-card{ width:100%; max-width:360px; max-height:100%; overflow-y:auto; box-sizing:border-box; background:var(--card); border:1px solid var(--line); border-radius:22px; padding:18px 20px 16px; display:flex; flex-direction:column; min-height:min(430px, 100%); }
+    .wlc-dots{ display:flex; justify-content:center; gap:7px; margin:2px 0 16px; }
+    .wlc-dots i{ width:7px; height:7px; border-radius:50%; background:var(--line); }
+    .wlc-dots i.on{ background:var(--accent); }
+    .wlc-ic{ display:flex; justify-content:center; color:var(--accent); }
+    .wlc-ic svg{ width:38px; height:38px; }
+    .wlc-t{ font-size:20px; font-weight:800; text-align:center; margin:12px 0 14px; color:var(--ink); line-height:1.25; }
+    .wlc-card ul{ margin:0; padding-left:20px; font-size:15px; line-height:1.5; color:var(--ink); }
+    .wlc-card li{ margin-bottom:6px; }
+    .wlc-bt{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:auto; padding-top:16px; }
+    .wlc-skip{ background:none; border:0; color:var(--muted); font-size:15px; padding:10px 4px; cursor:pointer; }
+    .wlc-go{ background:rgba(79,214,160,.16); color:var(--accent); border:0; border-radius:12px; padding:10px 20px; font-size:15px; font-weight:700; cursor:pointer; }
     .sheet-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:110; display:flex; align-items:flex-end; }
     .sheet{ width:100%; background:var(--card); border-top-left-radius:20px; border-top-right-radius:20px; border-top:1px solid var(--line);
       padding:16px 16px calc(20px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:10px; box-shadow:0 -10px 30px rgba(0,0,0,.45); }
@@ -11212,33 +11212,40 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
     }
     // ---------- Accueil en diapos : au premier démarrage, une fois pour un téléphone déjà utilisé, et une fois quand on devient membre d'un foyer ----------
     function welcomeKey(){ return fyMember() ? "welcomeFy" : "welcomeSeen"; }
+    // icônes au trait (couleur de l'appli)
+    var WLC_IC={
+      ticket:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>',
+      scan:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M4 12h16"/></svg>',
+      aide:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6"/><path d="M12 17h.01"/></svg>',
+      foyer:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20v-1a5 5 0 0 1 5-5h1a5 5 0 0 1 5 5v1"/><circle cx="17" cy="9" r="2.4"/><path d="M17 14a4 4 0 0 1 4 4v1"/></svg>'
+    };
     function welcomeSlides(){   // propriétaire : 3 diapos ; membre d'un foyer : 2 diapos (maquette du 02/11)
       var mem=fyMember(), own=mem ? (fyCfg.owner||"le propriétaire") : "";
       if(mem) return [
-        { ic:"👨‍👩‍👧", t:"Tu as rejoint le foyer de "+own, l:[
-          ["👀", "Tu vois ce que "+own+" partage avec toi", ""],
-          ["🔐", "Des onglets en lecture, d'autres en modification", "selon les choix de "+own],
-          ["🏠", "Ton accueil est personnel", "ta part du commun, tes tickets"],
-          ["🔄", "Tes modifications partent chez "+own, "toutes seules"] ] },
-        { ic:"📷", t:"Ajouter tes tickets", l:[
-          ["📄", "Bien scanner", "ticket à plat, bien éclairé, pris en entier ; vérifie le montant (l'orange est à regarder)"],
-          ["🏦", "Tes tickets vont dans ton compte", ""],
-          ["❓", "Le guide du membre", "Menu › Aide"] ] } ];
+        { ic:"foyer", t:"Tu as rejoint le foyer de "+own, l:[
+          "Tu vois ce que "+own+" partage avec toi",
+          "Onglets en lecture ou en modification, selon ses choix",
+          "Ton accueil est personnel : ta part, tes tickets",
+          "Tes modifications partent chez "+own ] },
+        { ic:"scan", t:"Ajouter tes tickets", l:[
+          "Bien scanner : ticket à plat, bien éclairé, en entier ; vérifie le total",
+          "Tes tickets vont dans ton compte",
+          "Guide du membre : Menu › Aide" ] } ];
       return [
-        { ic:"🧾", t:"Bienvenue dans Tickets", l:[
-          ["📚", "Tes tickets, comptes, frais fixes", "et le commun du foyer"],
-          ["🔒", "Tout reste sur ton téléphone", ""],
-          ["📴", "Sans compte, sans internet", ""] ] },
-        { ic:"📷", t:"Bien scanner", l:[
-          ["📄", "Ticket à plat, bien éclairé, en entier", ""],
-          ["🧾", "Ticket long : plusieurs photos", ""],
-          ["🟠", "Vérifie le total", "l'orange est à regarder"],
-          ["🧠", "1er ticket d'un magasin : corrige-le", "l'appli s'en souvient pour les suivants"],
-          ["📑", "Factures : un PDF se lit mieux qu'une photo", ""] ] },
-        { ic:"💡", t:"Pour aller plus loin", l:[
-          ["❓", "Le guide : Menu › Aide", ""],
-          ["🔁", "Revoir cet accueil : Menu › Aide", ""],
-          ["💾", "Pense à la sauvegarde complète de temps en temps", "Menu › Sauvegarder : données et photos"] ] } ];
+        { ic:"ticket", t:"Bienvenue dans Tickets", l:[
+          "Tes tickets, comptes, frais fixes et le commun du foyer",
+          "Tout reste sur ton téléphone",
+          "Sans compte, sans internet" ] },
+        { ic:"scan", t:"Bien scanner", l:[
+          "Ticket à plat, bien éclairé, en entier",
+          "Ticket long : plusieurs photos",
+          "Vérifie le total ; l'orange est à regarder",
+          "1er ticket d'un magasin : corrige-le, l'appli s'en souvient",
+          "Factures : un PDF se lit mieux qu'une photo" ] },
+        { ic:"aide", t:"Pour aller plus loin", l:[
+          "Le guide : Menu › Aide",
+          "Revoir cet accueil : Menu › Aide",
+          "Pense à la sauvegarde complète de temps en temps" ] } ];
     }
     function welcomeShow(after){
       if(document.querySelector(".wlc")) return;
@@ -11246,11 +11253,11 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       document.body.appendChild(ov);
       function end(){ store.write(welcomeKey(), 1); try{ document.body.removeChild(ov); }catch(e){} if(after) after(); }
       function paint(){
-        var d=S[i], h='<div class="wlc-dots">'; S.forEach(function(x, k){ h+='<i'+(k===i?' class="on"':'')+'></i>'; }); h+='</div>';
-        h+='<div class="wlc-body"><div class="wlc-ic">'+d.ic+'</div><div class="wlc-t">'+esc(d.t)+'</div>';
-        d.l.forEach(function(x){ h+='<div class="wlc-l"><b>'+x[0]+'</b><span>'+esc(x[1])+(x[2]?'<small>'+esc(x[2])+'</small>':'')+'</span></div>'; });
-        h+='</div><div class="wlc-bt">'+(i<S.length-1 ? '<button type="button" class="wlc-skip" id="wlcSkip">Passer</button>' : (i ? '<button type="button" class="wlc-skip" id="wlcPrev">‹ Retour</button>' : '<span></span>'))+
-           '<button type="button" class="btn primary" id="wlcNext">'+(i<S.length-1 ? "Suivant" : "Commencer")+'</button></div>';
+        var d=S[i], h='<div class="wlc-card"><div class="wlc-dots">'; S.forEach(function(x, k){ h+='<i'+(k===i?' class="on"':'')+'></i>'; }); h+='</div>';
+        h+='<div class="wlc-ic">'+(WLC_IC[d.ic]||"")+'</div><div class="wlc-t">'+esc(d.t)+'</div><ul>';
+        d.l.forEach(function(x){ h+='<li>'+esc(x)+'</li>'; });
+        h+='</ul><div class="wlc-bt">'+(i<S.length-1 ? '<button type="button" class="wlc-skip" id="wlcSkip">Passer</button>' : (i ? '<button type="button" class="wlc-skip" id="wlcPrev">‹ Retour</button>' : '<span></span>'))+
+           '<button type="button" class="wlc-go" id="wlcNext">'+(i<S.length-1 ? "Suivant" : "Commencer")+'</button></div></div>';
         ov.innerHTML=h;
         ov.querySelector("#wlcNext").onclick=function(){ if(i<S.length-1){ i++; paint(); } else end(); };
         var sk=ov.querySelector("#wlcSkip"); if(sk) sk.onclick=end;

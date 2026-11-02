@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `02/11 14:50`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `02/11 14:58`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -182,6 +182,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 02/11
+- **Accueil en bulles** (« le même graphisme que proposé, des bulles superposées à l'onglet de démarrage ») : chaque diapo est une carte arrondie posée sur l'écran d'accueil assombri (`.wlc` voile, `.wlc-card`), points en haut, icône au trait couleur de l'appli (`WLC_IC`), titre, liste à puces reprise mot pour mot de la maquette, « Passer » et bouton « Suivant » / « Commencer ».
 - **Accueil en diapos et Menu › Aide** (maquette ; « tu peux intégrer ») : `welcomeShow(after)` (plein écran `.wlc`, points, Passer / Suivant / ‹ Retour / Commencer, glisser), `welcomeSlides()` : propriétaire 3 diapos, membre 2 diapos ; premier démarrage : diapos puis `fyWelcome` (sauf si déjà vues) ; téléphone déjà utilisé ou membre : `welcomeAuto` une fois, après le code (`welcomeSeen`, `welcomeFy`) ; Menu › Aide (`openAide`) : « Revoir l'accueil », le guide « arrive bientôt ». Tests : `horloge.py` pose `window.__tkNoWelcome` pour que l'accueil ne s'ouvre pas tout seul (sauf avec `window.__wlcTest`, script de contexte), t72 et t95 (ligne Aide), nouveau `t115`.
 - **Photos en qualité d'origine, Stockage, sauvegarde complète** (maquette ; « oui tu peux intégrer ») :
   - IndexedDB `ticketsdb` passe en version 2 avec le store `orig` : `{b:[Blob, …], s:taille}` par ticket (toutes les pages scannées, ou la photo ajoutée), écrit à l'enregistrement (`draft.photoFiles`, `origPut`), retiré avec la photo ou le ticket (`origDel`) ; tailles seules chargées au démarrage (`ORIGSZ`, `origSizes`) ; la petite photo (600 px) reste dans `photos` / `PHOTOS` pour les listes ; `navigator.storage.persist()` demandé ;
