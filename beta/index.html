@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="02/11 07:09" />
+  <meta name="build" content="02/11 08:44" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -1223,11 +1223,52 @@
   <script>
   (function(){
     "use strict";
+    // ---------- Stockage ----------
+    // La mémoire locale de la page (localStorage, environ 5 Mo) tant qu'il y a de la place. Une donnée qui n'y tient plus part
+    // dans le stockage du téléphone (IndexedDB « tickets-kv », sans limite pratique) ; la liste de ces données est gardée dans
+    // localStorage (« __idbOnly »). Au démarrage, s'il y en a, l'appli les charge d'abord, puis se relance (même script).
+    var KVO=null, KVONLY={};   // données dans IndexedDB seulement : clé → texte JSON
+    (function(){ var L=[]; try{ L=JSON.parse(localStorage.getItem("__idbOnly")||"[]")||[]; }catch(e){ L=[]; } KVO=L; })();
+    if(KVO.length && !window.__tkKV){
+      var me=document.currentScript, src=me ? me.textContent : "";
+      kvLoadAll(function(all){ window.__tkKV=all||{}; var sc=document.createElement("script"); sc.textContent=src; document.body.appendChild(sc); });
+      return;
+    }
+    if(window.__tkKV){ KVO.forEach(function(k){ if(window.__tkKV[k]!=null && localStorage.getItem(k)==null) KVONLY[k]=window.__tkKV[k]; }); }
+    function kvOpen(cb){
+      var I=window.indexedDB; if(!I){ cb(null); return; }
+      try{ var rq=I.open("tickets-kv", 1); rq.onupgradeneeded=function(){ var db=rq.result; if(!db.objectStoreNames.contains("kv")) db.createObjectStore("kv"); };
+        rq.onsuccess=function(){ cb(rq.result); }; rq.onerror=function(){ cb(null); }; }catch(e){ cb(null); }
+    }
+    function kvLoadAll(cb){
+      var done=false, to=setTimeout(function(){ if(!done){ done=true; cb({}); } }, 4000);
+      kvOpen(function(db){ if(!db){ if(!done){ done=true; clearTimeout(to); cb({}); } return; }
+        try{ var out={}, tx=db.transaction("kv", "readonly"), os=tx.objectStore("kv"), cr=os.openCursor();
+          cr.onsuccess=function(){ var c=cr.result; if(c){ out[c.key]=c.value; c.continue(); } else if(!done){ done=true; clearTimeout(to); cb(out); } };
+          cr.onerror=function(){ if(!done){ done=true; clearTimeout(to); cb({}); } }; }catch(e){ if(!done){ done=true; clearTimeout(to); cb({}); } } });
+    }
+    var kvDb=null, kvWait=[];
+    function kvPut(k, v){   // v = texte JSON, ou null pour effacer
+      function go(db){ try{ var tx=db.transaction("kv", "readwrite"), os=tx.objectStore("kv"); if(v==null) os.delete(k); else os.put(v, k); }catch(e){} }
+      if(kvDb){ go(kvDb); return; }
+      kvWait.push(function(){ go(kvDb); }); if(kvWait.length>1) return;
+      kvOpen(function(db){ kvDb=db; var w=kvWait; kvWait=[]; if(db) w.forEach(function(f){ f(); }); });
+    }
+    function kvOnlySave(){ try{ localStorage.setItem("__idbOnly", JSON.stringify(Object.keys(KVONLY))); }catch(e){} }
     var mem = {};
     var storageFull=false;
     var store = {
-      read: function(k, def){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):def; }catch(e){ return (k in mem)?mem[k]:def; } },
-      write: function(k, val){ try{ localStorage.setItem(k, JSON.stringify(val)); storageFull=false; }catch(e){ mem[k]=val; storageFull=true; } }
+      read: function(k, def){
+        if(k in KVONLY){ try{ return JSON.parse(KVONLY[k]); }catch(e){ return def; } }
+        try{ var v=localStorage.getItem(k); return v?JSON.parse(v):def; }catch(e){ return (k in mem)?mem[k]:def; } },
+      write: function(k, val){
+        var t=JSON.stringify(val);
+        try{ localStorage.setItem(k, t); storageFull=false;
+          if(k in KVONLY){ delete KVONLY[k]; kvOnlySave(); kvPut(k, null); } }
+        catch(e){   // plus de place : cette donnée part dans le stockage du téléphone
+          if(window.indexedDB){ try{ localStorage.removeItem(k); }catch(e2){} KVONLY[k]=t; kvOnlySave(); kvPut(k, t); delete mem[k]; storageFull=false; }
+          else { mem[k]=val; storageFull=true; } } },
+      remove: function(k){ try{ localStorage.removeItem(k); }catch(e){} delete mem[k]; if(k in KVONLY){ delete KVONLY[k]; kvOnlySave(); kvPut(k, null); } }
     };
     var fyCfg = store.read("fyCfg", null);   // foyer partagé (voir « Foyer partagé ») : null, propriétaire ou membre
 
@@ -2180,7 +2221,7 @@
       return p?{ c:c, p:p, acc:String(c.id) }:null;
     }
     // eToro retiré : efface toute ancienne configuration (clés, adresse du relais, secret)
-    try{ ["etoroKeys","etoroSession","etoroPending","etoroWorkerUrl","etoroAppSecret","etoroCorrectionFactor"].forEach(function(k){ localStorage.removeItem(k); }); }catch(e){}
+    try{ ["etoroKeys","etoroSession","etoroPending","etoroWorkerUrl","etoroAppSecret","etoroCorrectionFactor"].forEach(function(k){ store.remove(k); }); }catch(e){}
 
     function positionsHTML(c){
       if(!c.positions || !c.positions.length) return "";
@@ -10406,8 +10447,8 @@
     function fyLeaveLocal(reload){
       var prev=store.read("fyAvant", null);
       Object.keys(FY_KEYS).forEach(function(k){ fyRawWrite(k, (prev && prev.hasOwnProperty(k) && prev[k]!==null) ? prev[k] : fyDefault(k)); });
-      if(!prev || !prev.comptes || !prev.comptes.length){ try{ localStorage.removeItem("comptes"); }catch(e){} fyRawWrite("askName", true); }
-      ["fyCfg","fyBase","fyMt","fyPend","fyAvant","compteSel"].forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+      if(!prev || !prev.comptes || !prev.comptes.length){ try{ store.remove("comptes"); }catch(e){} fyRawWrite("askName", true); }
+      ["fyCfg","fyBase","fyMt","fyPend","fyAvant","compteSel"].forEach(function(k){ try{ store.remove(k); }catch(e){} });
       fyCfg=null; fyBase={}; fyMt={}; fyPend={};
       if(reload!==false) location.reload();
     }
@@ -10723,7 +10764,7 @@
       uiConfirm("Arrêter le partage ?<br>Le foyer est effacé du relais ; les membres perdent l'accès et les données du foyer disparaissent de leurs téléphones. Tes données restent sur ton téléphone.", function(){
         fyCall("DELETE","").then(function(r){
           if(r.status!==200 && r.status!==410) throw new Error();
-          ["fyCfg","fyBase","fyMt","fyPend"].forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+          ["fyCfg","fyBase","fyMt","fyPend"].forEach(function(k){ try{ store.remove(k); }catch(e){} });
           fyCfg=null; fyBase={}; fyMt={}; fyPend={}; fyApplyMode(); render(); uiToast("Partage arrêté");
         }).catch(function(){ uiToast("Pas de connexion au relais : réessaie."); });
       }, { ok:"Arrêter le partage", danger:true });
@@ -10846,7 +10887,7 @@
           if(Array.isArray(m.ed) && m.ed.indexOf("compte")>=0 && m.ed.indexOf("factures")<0) m.ed.push("factures"); });
         fyCfg.factMig=1; fySave(); fyVer++; }
       fyEnsureLock();
-      if(store.read("fyRecovered", null)){ try{ localStorage.removeItem("fyRecovered"); }catch(e){} setTimeout(function(){ uiToast("Foyer récupéré ✓"); }, 900); }
+      if(store.read("fyRecovered", null)){ try{ store.remove("fyRecovered"); }catch(e){} setTimeout(function(){ uiToast("Foyer récupéré ✓"); }, 900); }
       render();
       fySyncSoon(1200);
     }

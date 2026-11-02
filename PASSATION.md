@@ -1,6 +1,6 @@
 # Tickets : dossier de passation
 
-*État au 01/11/2026, étiquette `02/11 07:09`. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
+*État au 01/11/2026, étiquette `02/11 08:44`. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
 
 > **À Claude qui reprend le projet**
 >
@@ -170,6 +170,7 @@ Fait et poussé le 01/11 :
 10. **Abonnements (02/11)** : sans consommation sur les factures, la prochaine facture et le « par mois » suivent le prix de la dernière facture ; le rythme vient de l'historique.
 11. **Relevé et contrôles (02/11)** : factures et tickets confirmés ou corrigés par le relevé importé (gardé dans l'appli), facture manquante signalée, ticket qui complète le paiement du relevé sans doublon, import qui corrige le total d'un ticket ; contrôles de cohérence (montant inhabituel, HT + TVA, dates) ; lecture apprise par voisinage ; données Factur-X des PDF.
 12. **Scan des tickets (02/11)** : scanner de documents de Google (photo recadrée et redressée, nouvel APK ; repli sur l'appareil photo), total recoupé avec la carte et la TVA, total appris par magasin, jeu d'essai de tickets inventés.
+13. **Stockage (02/11)** : plus de limite de 5 Mo ; une donnée qui ne tient plus dans la mémoire locale part dans le stockage du téléphone, sans perte.
 
 Fait et poussé le 31/10 :
 1. **Sans réseau** pour les deux éditions. L'APK Store est autonome ; la Perso garde une copie.
@@ -202,7 +203,7 @@ Fait et poussé le 31/10 :
 - la lecture des factures : ses trois types de factures ratées (à réimporter ; envoyer les PDF ou « Copier la lecture » si l'une reste mal lue), et corriger une fois un fournisseur mal lu pour voir la suivante bien lue ;
 - les 12 factures Free Mobile : refaire l'import (sans rien appliquer de l'ancien essai), dates du 27 et 9,99 / 15,99 € attendus.
 
-**Tests automatiques** : les 32 tests de `tests/` passent (t96 : écran de contrôle des factures ; t97 : page gardée des petits graphiques ; t98 : modifier ou supprimer une facture ; t99 : mettre dans les comptes une facture gardée sans ses effets ; t100 : payer une facture avec une provision ; t101 : provisions reliées aux frais fixes, au Commun et aux comptes ; t102 : graphique des provisions avec les factures prévues ; t103 : reprendre des virements, virements « chaque mois » ; t104 : « Prélevé sur » d'un frais fixe ; t105 : passer un virement en frais fixe ; t106 : « Total provisions » ; t107 : factures Free Mobile en PDF ; t108 : lecture générale des factures et apprentissage par fournisseur ; t109 : abonnement dont le prix change ; t110 : factures et relevé, contrôles, Factur-X ; t111 : tickets et relevé ; t112 : scan des tickets, jeu d'essai). t93 (foyer) attend parfois le relais local : en cas d'échec isolé, le relancer seul. La date du navigateur est fixée au 30/10/2026 par `tests/horloge.py`, car les données inventées sont en octobre 2026. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
+**Tests automatiques** : les 33 tests de `tests/` passent (t96 : écran de contrôle des factures ; t97 : page gardée des petits graphiques ; t98 : modifier ou supprimer une facture ; t99 : mettre dans les comptes une facture gardée sans ses effets ; t100 : payer une facture avec une provision ; t101 : provisions reliées aux frais fixes, au Commun et aux comptes ; t102 : graphique des provisions avec les factures prévues ; t103 : reprendre des virements, virements « chaque mois » ; t104 : « Prélevé sur » d'un frais fixe ; t105 : passer un virement en frais fixe ; t106 : « Total provisions » ; t107 : factures Free Mobile en PDF ; t108 : lecture générale des factures et apprentissage par fournisseur ; t109 : abonnement dont le prix change ; t110 : factures et relevé, contrôles, Factur-X ; t111 : tickets et relevé ; t112 : scan des tickets, jeu d'essai ; t113 : stockage au-delà de la mémoire locale). t93 (foyer) attend parfois le relais local : en cas d'échec isolé, le relancer seul. La date du navigateur est fixée au 30/10/2026 par `tests/horloge.py`, car les données inventées sont en octobre 2026. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
 
 ---
 
@@ -225,6 +226,7 @@ Fait et poussé le 31/10 :
   - Rapprocher un remboursement de l'achat correspondant.
 
 ### Avant la sortie sur le Play Store
+- Licences et légal (02/11, dans l'ordre) : écran « Licences » (pdf.js, Tesseract.js, Capacitor, AndroidX : Apache 2.0 / MIT) et « Source : INSEE » (Licence Ouverte) ; suppression du foyer (règle Google pour les comptes créés dans l'appli) ; politique de confidentialité et fiche « Sécurité des données » (ML Kit envoie des statistiques d'usage à Google, jamais les photos ni le texte lu). Yahoo / CoinGecko restent hors de la version Store.
 - Paquet signé (AAB) avec une vraie clé, envoyé à la Play Console : à la main d'abord, puis depuis GitHub Actions.
 - **Brancher l'achat de Tickets Plus**, qui n'est pas encore fait. Aujourd'hui `plusUnlocked` n'est qu'un drapeau local.
 - QR code d'invitation lisible par l'appareil photo (lien Play Store et install referrer).
@@ -263,7 +265,7 @@ Fait et poussé le 31/10 :
 5. **Tenir `JOURNAL.md` à jour dans le même commit** : une entrée datée en haut de l'Historique, plus Décisions, État actuel et En cours si nécessaire. Mettre aussi `CLAUDE.md` à jour si une notion technique change.
 6. **Commit en français**, préfixé « β » quand il touche la β, poussé directement sur `main`. Le push met en ligne la β et la Perso, et recompile les deux APK.
 7. **Tester** avec les tests de `tests/` (mode d'emploi dans `tests/README.md`) :
-   - `sh tests/run.sh` lance les 32 tests ; `python3 tests/t95.py` en lance un seul ;
+   - `sh tests/run.sh` lance les 33 tests ; `python3 tests/t95.py` en lance un seul ;
    - ce sont des scripts Playwright en Python : Chromium sans interface, écran de 412×900, données injectées dans localStorage, relais local (Node et `node:sqlite` sur `localhost:8787`) ;
    - aucune requête réseau extérieure pendant les tests ;
    - ajouter un test pour chaque nouvelle fonction, **toujours avec des données inventées**.

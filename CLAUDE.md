@@ -34,7 +34,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
   `node -e "const h=require('fs').readFileSync('beta/index.html','utf8');const m=h.match(/<script>\n  \(function\(\)\{[\s\S]*?<\/script>/);new Function(m[0].replace(/^<script>/,'').replace(/<\/script>$/,''));console.log('OK')"`
 - Repères : les sections sont annoncées par `// ---------- Titre ----------` (Comptes, Éditions, Budgets, Filtre par personne, Analyse, Appli Android, Foyer partagé, Widgets…).
 - Outils internes :
-  - `store.read(k, def)` / `store.write(k, v)` : JSON dans localStorage.
+  - `store.read(k, def)` / `store.write(k, v)` / `store.remove(k)` : JSON dans localStorage ; une écriture refusée faute de place part dans IndexedDB (`tickets-kv`, liste des clés dans `__idbOnly`), chargée au démarrage avant de relancer le script (`window.__tkKV`). Ne jamais appeler `localStorage` directement.
   - `render()` : redessine tout ; il remet aussi les mémos à zéro (`pvMemo`, `fsMemo`). `renderView()` choisit l'écran selon `state.view`.
   - `uiForm({title, fields}, cb)`, `uiChoice`, `uiToast`, `uiUndoToast(msg, "Annuler", annuler, fin)` : fenêtres intégrées. Les champs de `uiForm` sont de type `seg`, `select`, `money`… ; `api.show/get/set` dans `onChange`.
   - `num(x)` : lit un montant tapé (virgule ou point, espaces — le clavier Android en met après la virgule —, €, « 1 234,56 »). Toujours l'utiliser, jamais `parseFloat` directement.

@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `02/11 07:09`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `02/11 08:44`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -112,6 +112,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **02/11** : pour la sortie Store, dans l'ordre : stockage sans limite (fait), écran « Licences » et mention INSEE, suppression du foyer, politique de confidentialité et fiche « Sécurité des données » (statistiques ML Kit).
 - **02/11** : scan des tickets amélioré de façon générique (scanner de documents, total recoupé, total appris par enseigne, jeu d'essai), d'après la maquette ; le partage d'informations entre utilisateurs est laissé de côté pour l'instant (pistes : envoi volontaire puis tables livrées à la mise à jour, ou table commune par le relais avec accord et seuil de plusieurs utilisateurs).
 - **02/11** : rapprochement avec le relevé, contrôles de cohérence, lecture par voisinage et Factur-X pour les factures, d'après la maquette ; les mêmes idées (relevé, contrôles) pour le scan des tickets.
 - **01/11** : la lecture s'améliore après la 1re facture d'un fournisseur, et l'appli le dit (maquette validée) ; elle retient aussi la 1re facture enregistrée sans correction.
@@ -174,6 +175,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 02/11
+- **Stockage sans limite de 5 Mo** (« Il faut que toutes les fonctions soient légales et sans problème sur le long terme (espace de stockage…) » ; « oui commence par 1 ») : `store` écrit toujours dans localStorage tant qu'il y a de la place ; une écriture refusée (mémoire pleine) part dans IndexedDB (`tickets-kv`, `kvPut`) et la clé est notée dans `__idbOnly` (localStorage) ; au démarrage, s'il y en a, l'appli charge IndexedDB (`kvLoadAll`, 4 s au plus) puis se relance (même script, `window.__tkKV`) ; une donnée qui retient de nouveau revient dans localStorage ; plus de bandeau « mémoire pleine » ni de perte si IndexedDB est là ; `store.remove` remplace les `localStorage.removeItem` directs. Les photos étaient déjà dans IndexedDB (`ticketsdb`). Test `t113` (mémoire pleine imitée).
 - **Scan des tickets : scanner de documents, total recoupé, total appris par enseigne, jeu d'essai** (« il faut que les systèmes de scan fonctionnent du mieux possible tout en étant génériques » ; maquette puis « oui » ; partage entre utilisateurs laissé de côté) :
   - scanner de documents de Google Play (ML Kit, `play-services-mlkit-document-scanner:16.0.0`) : `TicketsNative.scanDoc({pages})` → `{images}` (JPEG base64), lancé par `startIntentSenderForResult` et rendu par `handleOnActivityResult` (`requestCodes = {9741}`) ; « 📷 Prendre une photo » d'un ticket (3 pages max), le widget Scan et les photos de factures (12 pages) passent par `docScan` ; absent ou en échec (navigateur, téléphone sans le module) → « Scanner indisponible · Prendre une photo » (l'appareil photo comme avant). **Nouvel APK.** ;
   - total recoupé : `parseTicket` rend aussi `carte` (ligne de paiement CB / carte / sans contact, pas espèces ni fidélité) et `tva` (somme des TTC du tableau de TVA) ; la fiche montre les sources (Articles · Carte · TVA, ✓ si égales au total) et, si deux sources sont d'accord contre le total lu, « ⚠ Lu X, mais … disent Y » avec « Prendre Y » / « Garder X » (`tkSrcPaint`, `draft.scan`) ;
