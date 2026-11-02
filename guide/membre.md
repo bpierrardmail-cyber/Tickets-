@@ -45,6 +45,7 @@ En plus du foyer, tu as un espace à toi : Menu › Mes comptes.
 
 - Tickets, comptes, frais fixes, épargne : une appli complète pour toi, avec ta propre sauvegarde.
 - Rien n'en sort : ni le propriétaire ni le relais ne le voient.
+- Une dépense pour le foyer ? Coche « Envoyer aussi au foyer » sur le ticket : il part chez le propriétaire à ton retour dans le foyer. Décocher le retire.
 - La pastille « 🔒 Mes comptes · privé » sous le titre rappelle où tu es ; touche-la pour revenir au foyer.
 - Pendant que tu es dans Mes comptes, le foyer n'est pas mis à jour ; il le sera à ton retour.
 

@@ -3,7 +3,8 @@
 #    pastille « 🔒 Mes comptes · privé », plus de foyer ;
 # 2. un ticket ajouté dans « Mes comptes » n'est pas envoyé (rien dans les changements en attente du foyer) ;
 # 3. pastille › « Revenir au foyer » : les données du foyer reviennent telles quelles, le ticket perso n'y est pas ;
-# 4. retour dans « Mes comptes » : le ticket perso est toujours là. Sans relais (réseau coupé). Données inventées.
+# 4. retour dans « Mes comptes » : le ticket perso est toujours là ;
+# 5. « Envoyer aussi au foyer » : le ticket est copié dans le foyer (payé par le membre), il part au retour ; décocher le retire. Sans relais (réseau coupé). Données inventées.
 import sys, os
 HERE=os.path.dirname(os.path.abspath(__file__)); ROOT=os.path.dirname(HERE)
 from playwright.sync_api import sync_playwright
@@ -71,6 +72,35 @@ with sync_playwright() as p:
     pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="perso"]').click(); pg.wait_for_timeout(300)
     pg.locator(".sheet-overlay button", has_text="Aller dans Mes comptes").click(); after_reload()
     t=tickets(); check("Cadeau perso" in t and "Librairie perso" in t, "de retour dans « Mes comptes » : les tickets perso sont toujours là")
+    # ---------- 5. envoyer aussi au foyer
+    pg.locator('#nav .navi[data-view="list"]').click(); pg.wait_for_timeout(300)
+    pg.locator("#manual2").first.click(); pg.wait_for_timeout(400)
+    check(pg.locator("#f-tofy").count()==1 and not pg.locator("#f-tofy").is_checked() and "Envoyer aussi au foyer de Alex" in norm(pg.locator("#app").inner_text()), "fiche : « Envoyer aussi au foyer de Alex », décoché")
+    pg.locator("#f-montant").fill("42"); pg.locator("#f-marchand").fill("Courses communes"); pg.locator("#f-tofy").check()
+    pg.locator("#save").click(); pg.wait_for_timeout(600)
+    if pg.locator("#cksave").count(): pg.locator("#cksave").click(); pg.wait_for_timeout(500)
+    check("envoyé au foyer de Alex" in norm(pg.locator("body").inner_text()), "« Ticket enregistré · envoyé au foyer de Alex (à ton retour) »")
+    P=pg.evaluate("()=>JSON.parse(localStorage.getItem('fyPerso'))")
+    fc=[e for e in P["data"]["entries"] if e["marchand"]=="Courses communes"]
+    mine=[e for e in pg.evaluate("()=>JSON.parse(localStorage.getItem('entries'))") if e["marchand"]=="Courses communes"]
+    check(len(fc)==1 and fc[0]["payePar"]=="Lou" and mine and mine[0].get("foyerId")==fc[0]["id"], "copié dans le foyer mis de côté, payé par Lou, relié au ticket perso")
+    # décocher : retiré du foyer
+    pg.locator('#nav .navi[data-view="depenses"]').click(); pg.wait_for_timeout(400)
+    pg.locator('.entry[data-id="%s"]' % mine[0]["id"]).first.click(); pg.wait_for_timeout(500)
+    check(pg.locator("#f-tofy").is_checked() and "déjà envoyé" in norm(pg.locator("#app").inner_text()), "rouvert : coché, « déjà envoyé »")
+    pg.locator("#f-tofy").uncheck(); pg.locator("#save").click(); pg.wait_for_timeout(600)
+    if pg.locator("#cksave").count(): pg.locator("#cksave").click(); pg.wait_for_timeout(500)
+    P=pg.evaluate("()=>JSON.parse(localStorage.getItem('fyPerso'))")
+    check(not [e for e in P["data"]["entries"] if e["marchand"]=="Courses communes"], "décoché : retiré du foyer")
+    # recocher puis revenir au foyer : il y est, prêt à partir
+    pg.locator('#nav .navi[data-view="depenses"]').click(); pg.wait_for_timeout(400)
+    pg.locator('.entry[data-id="%s"]' % mine[0]["id"]).first.click(); pg.wait_for_timeout(500)
+    pg.locator("#f-tofy").check(); pg.locator("#save").click(); pg.wait_for_timeout(600)
+    if pg.locator("#cksave").count(): pg.locator("#cksave").click(); pg.wait_for_timeout(500)
+    pg.locator("#persoPill").click(); pg.wait_for_timeout(300)
+    pg.locator(".sheet-overlay button", has_text="Revenir au foyer de Alex").click(); after_reload(); pg.wait_for_timeout(1500)
+    t=tickets(); pend=pg.evaluate("()=>localStorage.getItem('fyPend')") or ""
+    check("Courses communes" in t and "Cadeau perso" not in t and "Courses communes" in pend, "dans le foyer : « Courses communes » est là et part au propriétaire (changements en attente)")
     check(not errs, "pas d'erreur %s"%errs[:3])
     b.close()
 print("\n%d échec(s)"%len(fails)); sys.exit(1 if fails else 0)
