@@ -1,6 +1,6 @@
 # Tickets : dossier de passation
 
-*État au 01/11/2026, étiquette `02/11 18:56`. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
+*État au 01/11/2026, étiquette `02/11 19:41`. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
 
 > **À Claude qui reprend le projet**
 >

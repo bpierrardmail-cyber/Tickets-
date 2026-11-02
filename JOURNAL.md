@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `02/11 18:56`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `02/11 19:41`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -117,6 +117,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **02/11** : les graphiques sont toujours visibles en entier, jamais réduits pour tenir dans l'écran : la page défile s'il le faut.
 - **02/11** : pour la sortie Store, dans l'ordre : stockage sans limite (fait), écran « Licences » et mention INSEE, suppression du foyer, politique de confidentialité et fiche « Sécurité des données » (statistiques ML Kit).
 - **02/11** : scan des tickets amélioré de façon générique (scanner de documents, total recoupé, total appris par enseigne, jeu d'essai), d'après la maquette ; le partage d'informations entre utilisateurs est laissé de côté pour l'instant (pistes : envoi volontaire puis tables livrées à la mise à jour, ou table commune par le relais avec accord et seuil de plusieurs utilisateurs).
 - **02/11** : rapprochement avec le relevé, contrôles de cohérence, lecture par voisinage et Factur-X pour les factures, d'après la maquette ; les mêmes idées (relevé, contrôles) pour le scan des tickets.
@@ -184,6 +185,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 02/11
+- **Graphiques jamais réduits** (« il ne faut pas réduire la hauteur des graphiques, ils doivent toujours être visibles en entier » ; capture de Commun avec « Voir la suite ») : `fitHero` ne descend plus sous la hauteur normale (`CHB ≥ 0`, avant jusqu'à −70 px) ; s'il n'y a pas la place pour la carte et ce qui suit, la carte garde sa hauteur entière et la page défile. Équilibre : arrondi au centime identique pour celui qui doit et celui qui reçoit (491,25 € des deux côtés).
 - **Retirer un membre : avertissement** (« si je retire et remets Sylvette, les tickets sont perdus ? » ; « oui ») : la confirmation dit que ses tickets déjà arrivés restent et, s'il n'est pas à jour depuis plus d'un jour (`fyCfg.srv[id].seen`), « X n'est pas à jour depuis le … : ce qui a été ajouté sur son téléphone depuis sera perdu », avec le conseil d'attendre « à jour à l'instant » ou d'utiliser « Nouveau téléphone : nouveau QR code ». Guide mis à jour. Test `t119`.
 - **Guide dans l'appli (Menu › Aide)** (« 2, tu peux même faire le guide membre, on peaufine après ») : guide du propriétaire (9 parties, mis à jour avec Partager une dépense et Qui doit combien à qui) et guide du membre (6 parties : ce que tu vois, ton accueil, ajouter un ticket, ce que tu peux modifier, code et sécurité, questions fréquentes) ; sources `guide/*.md`, mises dans la page par `guide/maj.py` ; écran Aide : parties à déplier, recherche, « Revoir l'accueil » ; un membre voit son guide (Aide et Stockage ajoutés à `FY_SUB` pour qu'un membre puisse les ouvrir). Brouillons partagés dans les documents « Guide de Tickets — propriétaire » et « — membre du foyer ». Test t115 complété.
 - **Accueil en vitrine et carrousel Tickets Plus** (« penser ça comme une publicité, avec illustrations, et un bouton Plus » ; « avec de vraies captures » ; « Découvrir Tickets+ sur toutes les bulles » ; « intègre comme ça, on peaufine après ») : 4 cartes illustrées par de vraies captures de l'appli (`beta/vitrine/*.jpg`, faites par `tests/vitrine.py` avec un foyer inventé) : Bienvenue (texte de Benoît), Scanne tes tickets (Photo, Galerie, Saisie ; astuce), Importe ton relevé (OFX, QIF, CSV), Vois ce qui arrive (ZIP, JSON ; guide) ; « ✦ Découvrir Tickets Plus » sur chaque carte (version Store sans Plus) → carrousel de 6 cartes (Foyer partagé, Qui doit combien à qui, Tes factures PDF / Factur-X / photos, Analyse avancée, Widgets, « Tout le reste est gratuit · Prix : bientôt »), « Plus tard » ramène à la carte de l'accueil ; aussi depuis « ✦ Tickets Plus » dans le menu et tous les boutons ✦. Widgets dessinés (écran Android). Tests t115 (mis à jour) et `t118`.

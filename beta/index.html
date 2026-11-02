@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="02/11 18:56" />
+  <meta name="build" content="02/11 19:41" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -3579,9 +3579,12 @@
       if(target<200) target=200;
       // mesure faite avec la mise en page finale (colonne flexible : les marges ne se chevauchent plus), sinon il manque quelques pixels
       hero.classList.add("fit"); hero.style.setProperty("--chb", CHB+"px");
-      var diff=target-hero.offsetHeight, nb=Math.max(-70, Math.min(420, CHB+diff));
+      // le graphique n'est jamais réduit sous sa hauteur normale (CHB ≥ 0) : s'il manque de place, c'est la page qui défile
+      var diff=target-hero.offsetHeight, nb=Math.max(0, Math.min(420, CHB+diff));
       if(fitting<5 && Math.abs(nb-CHB)>1){ fitting++; CHB=nb; fitMemo[v0key()]=nb; try{ render(); }finally{ fitting--; } return; }
-      hero=document.querySelector(".thero"); if(hero){ hero.classList.add("fit"); hero.style.setProperty("--chb", CHB+"px"); hero.style.height=target+"px";
+      hero=document.querySelector(".thero");
+      if(hero && hero.offsetHeight>target+1){ hero.style.height=""; return; }   // pas la place : carte entière, la page défile
+      if(hero){ hero.classList.add("fit"); hero.style.setProperty("--chb", CHB+"px"); hero.style.height=target+"px";
         // 1 à 3 px de trop (arrondis) : on bloque le défilement interne, sinon le graphique « bouge » au toucher
         [].forEach.call(hero.children, function(x){ if(x.classList.contains("cch")) fitDonut(x); });
         [].forEach.call(hero.children, function(x){ if((x.classList.contains("cch") || x.classList.contains("bsl")) && x.scrollHeight-x.clientHeight<=3) x.style.overflowY="hidden"; });
@@ -5290,7 +5293,7 @@
         carry=nx;
       }
       // le moins de virements possible : le plus gros débiteur rembourse le plus gros créancier, et ainsi de suite
-      var cr=[], db=[]; Object.keys(B.P).forEach(function(p){ var v=Math.round(B.P[p].net*100)/100; if(v>0.5) cr.push({ p:p, v:v }); else if(v<-0.5) db.push({ p:p, v:-v }); });
+      var cr=[], db=[]; Object.keys(B.P).forEach(function(p){ var n0=B.P[p].net, v=(n0<0?-1:1)*Math.round(Math.abs(n0)*100+1e-6)/100; if(v>0.5) cr.push({ p:p, v:v }); else if(v<-0.5) db.push({ p:p, v:-v }); });
       var T=[]; cr.sort(function(a,b){ return b.v-a.v; }); db.sort(function(a,b){ return b.v-a.v; });
       var i=0, j=0; while(i<db.length && j<cr.length){ var x=Math.min(db[i].v, cr[j].v); if(x>0.5) T.push({ from:db[i].p, to:cr[j].p, v:Math.round(x*100)/100 }); db[i].v-=x; cr[j].v-=x; if(db[i].v<0.5) i++; if(cr[j].v<0.5) j++; }
       B.T=T; return B;

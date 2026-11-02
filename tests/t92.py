@@ -69,11 +69,11 @@ with sync_playwright() as p:
     pg.locator('.cfx-sec[data-k="fc"] .cfx-h').click(); pg.wait_for_timeout(400)
     check(not pg.locator(".cfx-r").first.is_visible() and "Frais communs · 3" in norm(pg.locator("#app").inner_text()), "Commun : toucher « Frais communs » replie la liste")
     h1=pg.evaluate("()=>document.querySelector('.thero').offsetHeight")
-    check(h1>h0+40, "… et le graphique du haut reprend la place libérée (%d → %d px)"%(h0, h1))
+    check(h1>=h0-1, "… et le graphique du haut garde au moins sa hauteur entière (%d → %d px)"%(h0, h1))
     pg.reload(); pg.wait_for_timeout(900); pg.locator('#nav .navi[data-view="communes"]').click(); pg.wait_for_timeout(400)
     check(not pg.locator(".cfx-r").first.is_visible(), "… et elle reste repliée en revenant")
     pg.locator('.cfx-sec[data-k="fc"] .cfx-h').click(); pg.wait_for_timeout(400)
-    check(pg.locator(".cfx-r").first.is_visible() and pg.evaluate("()=>document.querySelector('.thero').offsetHeight")<h1-40, "toucher encore : elle se déplie, le graphique se resserre")
+    check(pg.locator(".cfx-r").first.is_visible() and pg.evaluate("()=>document.querySelector('.thero').offsetHeight")>=h0-1, "toucher encore : elle se déplie, le graphique n'est pas réduit (la page défile)")
     # Produits partagés se replie de la même façon (fermé d'abord)
     pp='.cfx-sec[data-k="pp"]'
     check("open" not in pg.locator(pp).get_attribute("class"), "Produits partagés : replié au départ")
