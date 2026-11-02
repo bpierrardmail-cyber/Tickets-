@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="02/11 16:00" />
+  <meta name="build" content="02/11 16:34" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -430,6 +430,17 @@
     .wlc-t{ font-size:20px; font-weight:800; text-align:center; margin:12px 0 14px; color:var(--ink); line-height:1.25; }
     .wlc-card ul{ margin:0; padding-left:20px; font-size:15px; line-height:1.5; color:var(--ink); }
     .wlc-card li{ margin-bottom:6px; }
+    .wlc.plus{ z-index:109; }
+    .wlc-shot{ margin:0 -4px; border-radius:14px; overflow:hidden; border:1px solid var(--line); background:var(--bg); aspect-ratio:544/500; max-height:30vh; }
+    .wlc-shot img{ display:block; width:100%; height:100%; object-fit:cover; object-position:top; }
+    .wlc-p{ margin:0; font-size:14.5px; line-height:1.5; color:var(--ink-soft); text-align:center; }
+    .wlc-tags{ display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-top:10px; }
+    .wlc-tags span{ font-size:11.5px; border:1px solid var(--line2, #3a4150); border-radius:7px; padding:2px 8px; color:var(--ink); }
+    .wlc-pro{ display:block; width:max-content; margin:0 auto 6px; font-size:11px; font-weight:700; color:#0e0f14; background:#f2c76b; border-radius:8px; padding:2px 9px; }
+    .wlc-plusl{ display:block; margin:10px auto 0; background:none; border:0; color:#f2c76b; font:inherit; font-size:13.5px; font-weight:700; cursor:pointer; padding:4px 8px; }
+    .wlc-fin{ aspect-ratio:544/500; max-height:30vh; border-radius:14px; background:var(--card2); display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .wlc-fin b{ font-size:52px; color:#f2c76b; line-height:1; } .wlc-fin span{ font-size:20px; font-weight:800; margin-top:6px; } .wlc-fin small{ color:var(--muted); margin-top:4px; font-size:13px; }
+    .wlc-card.img .wlc-t{ margin:12px 0 8px; font-size:19px; }
     .wlc-note{ margin-top:auto; padding-top:12px; font-size:12px; line-height:1.4; color:var(--muted); }
     .wlc-note + .wlc-bt{ margin-top:0; }
     .wlc-bt{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:auto; padding-top:16px; }
@@ -1356,6 +1367,7 @@
       else if(!fyM){ var nm=Object.keys(fyCfg.members||{}).length; fyT="Foyer partagé"; fyS=nm+" membre"+(nm>1?"s":"")+" · "+fySyncLabel(); }
       else { fyT="Foyer de "+(fyCfg.owner||"…"); fyS=fySyncLabel(); }
       h+=grp([ row("foyer","👨‍👩‍👧",fyT,fyS),
+               (plusOffer() && !fyM) ? row("plus","✦","Tickets Plus","découvrir","#f2c76b") : "",
                fyFull ? row("persons","👥","Personnes",plist.length+" personne"+(plist.length>1?"s":"")) : "",
                !fyM ? row("backup","💾","Sauvegarder",bk.label,(bk.days===null || bk.days>=7)?"var(--coral)":"var(--accent)") : "",
                row("stockage","🗂️","Stockage",fmtBytes(photosBytes()+dataBytes())) ]);
@@ -1369,7 +1381,7 @@
       function closeAnim(){ ov.classList.remove("open"); setTimeout(closeMenu, 200); }
       ov.onclick=function(e){ if(e.target===ov) closeAnim(); };
       ov.querySelector(".dr-x").onclick=closeAnim;
-      var acts={ settings:openSettings, import:function(){ impStart(null); }, gallery:function(){ state.view="gallery"; render(); window.scrollTo(0,0); }, stockage:function(){ state.view="stockage"; render(); window.scrollTo(0,0); }, aide:openAide, foyer:function(){ state.view="foyer"; render(); window.scrollTo(0,0); }, backup:backupData, restore:function(){ restorein.click(); }, lockSetup:lockSetup, lockBio:lockEnableBio, lockOff:lockDisable, devise:chooseCurrency, pdf:choosePdfPeriod, persons:managePersons };
+      var acts={ settings:openSettings, import:function(){ impStart(null); }, gallery:function(){ state.view="gallery"; render(); window.scrollTo(0,0); }, stockage:function(){ state.view="stockage"; render(); window.scrollTo(0,0); }, aide:openAide, plus:function(){ plusShow(null); }, foyer:function(){ state.view="foyer"; render(); window.scrollTo(0,0); }, backup:backupData, restore:function(){ restorein.click(); }, lockSetup:lockSetup, lockBio:lockEnableBio, lockOff:lockDisable, devise:chooseCurrency, pdf:choosePdfPeriod, persons:managePersons };
       [].forEach.call(ov.querySelectorAll(".dr-row"), function(b){ b.onclick=function(){ var fn=acts[b.getAttribute("data-k")]; closeMenu(); if(fn) fn(); }; });
     }
     // Âge de la dernière sauvegarde, en jours de calendrier (une sauvegarde de la veille au soir = « hier »)
@@ -5303,7 +5315,7 @@
     }
     function commBalWire(month){
       if(!store.read("commBalFrom", null) && canUse("equilibre") && !fyMember()) store.write("commBalFrom", month<monthKey(todayISO()) ? month : monthKey(todayISO()));
-      var bb=document.getElementById("cbalBuy"); if(bb) bb.onclick=function(){ uiChoice("Tickets Plus", "Qui doit combien à qui, les remboursements en un geste et leur historique font partie de Tickets Plus. L'achat de Plus arrivera bientôt dans l'appli.", [{ l:"D'accord", fn:function(){} }]); };
+      var bb=document.getElementById("cbalBuy"); if(bb) bb.onclick=function(){ plusShow("equilibre"); };
       var hb=document.getElementById("cbalHist"); if(hb) hb.onclick=commRembHistory;
       var bt=document.querySelectorAll(".cbal-ok"); if(!bt.length) return;
       var B=commBal(month);
@@ -7105,7 +7117,7 @@
       bindBack(function(){ var f=state.avFrom; state.avFrom=null; state.view=(f==="factures" ? "factures" : "analyse"); render(); window.scrollTo(0,0); });
       [].forEach.call(document.querySelectorAll(".avseg button[data-s]"), function(b){ b.onclick=function(){ state.avSub=b.getAttribute("data-s"); render(); window.scrollTo(0,0); }; });
       [].forEach.call(document.querySelectorAll(".avper button"), function(b){ b.onclick=function(){ var y=window.scrollY; state.avPer=b.getAttribute("data-p"); store.write("avPer", state.avPer); render(); window.scrollTo(0,y); }; });
-      var bu=document.getElementById("avBuy"); if(bu) bu.onclick=function(){ uiChoice("Tickets Plus", "L'analyse avancée fait partie de Tickets Plus. L'achat de Plus arrivera bientôt dans l'appli.", [{ l:"D'accord", fn:function(){} }]); };
+      var bu=document.getElementById("avBuy"); if(bu) bu.onclick=function(){ plusShow("avancee"); };
       var pdf=document.getElementById("avPdf"); if(pdf) pdf.onclick=function(){ var cm=monthKey(todayISO()); state.bilanFrom=cm.slice(0,4)+"-01"; state.bilanTo=cm; state.bilanMonth=cm; state.view="bilan"; render(); window.scrollTo(0,0); };
       var ia=document.getElementById("avIA"); if(ia) ia.onclick=avOpenIA;
       var ial=document.getElementById("avInflAll"); if(ial) ial.onclick=function(){ var L=avData().infl.all;
@@ -9486,7 +9498,7 @@
     function avTabsHTML(cur){ var L=avSubs(); if(L.length<2) return '';
       return '<div class="avtabs" role="tablist">'+L.map(function(x){ var on=x[0]===cur; return '<button type="button" role="tab" aria-selected="'+on+'" data-av="'+x[0]+'"'+(on?' class="on"':'')+'>'+x[1]+(x[0]==="fact" && !canUse("factures")?' <span class="avplus">✦</span>':'')+'</button>'; }).join("")+'</div>'; }
     function wireAvTabs(){ [].forEach.call(document.querySelectorAll(".avtabs button"), function(b){ b.onclick=function(){ state.avnSub=b.getAttribute("data-av"); render(); window.scrollTo(0,0); }; }); }
-    function factPlusAsk(){ uiChoice("Tickets Plus", "Importer tes factures (PDF ou photos), le prélèvement exact et la prochaine facture estimée font partie de Tickets Plus. L'achat de Plus arrivera bientôt dans l'appli.", [{ l:"D'accord", fn:function(){} }]); }
+    function factPlusAsk(){ plusShow("factures"); }
     function avCanFrais(){ return !fyMember() || (fyCfg.role==="edit" && fyTabOn(fyCfg, "communes") && fyTabEd("communes")); }
     function renderFactures(){
       var sub=avSub(); state.avnSub=sub;
@@ -11109,7 +11121,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
     // ----- écrans -----
     function fyPlusOk(){
       if(canUse("foyer")) return true;
-      uiChoice("Tickets Plus", "Le foyer partagé fait partie de Tickets Plus. L'achat de Plus arrivera bientôt dans l'appli. Rejoindre le foyer de quelqu'un reste gratuit.", [{ l:"D'accord", fn:function(){} }]);
+      plusShow("foyer");
       return false;
     }
     function fyStatus(id){
@@ -11441,22 +11453,60 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
           "Tes tickets vont dans ton compte",
           "Guide du membre : Menu › Aide" ] } ];
       return [
-        { ic:"ticket", t:"Bienvenue dans Tickets", l:[
+        { img:"accueil", t:"Bienvenue dans Tickets", l:[
           "Gère tes achats, comptes, frais fixes et le commun",
           "Invite ta famille et retrouve ses dépenses ✦",
           "Tes données restent privées : personne ne les récupère, pas même nous",
           "Sans compte, sans pub, hors ligne*" ],
           n:"*Internet sert seulement au foyer partagé et à l'achat de Tickets Plus." },
-        { ic:"scan", t:"Bien scanner", l:[
-          "Ticket à plat, bien éclairé, en entier",
-          "Ticket long : plusieurs photos",
-          "Vérifie le total ; l'orange est à regarder",
-          "1er ticket d'un magasin : corrige-le, l'appli s'en souvient",
-          "Factures : un PDF se lit mieux qu'une photo" ] },
-        { ic:"aide", t:"Pour aller plus loin", l:[
-          "Le guide : Menu › Aide",
-          "Revoir cet accueil : Menu › Aide",
-          "Pense à la sauvegarde complète de temps en temps" ] } ];
+        { img:"scan", t:"Scanne tes tickets", p:"Montant, magasin, date et articles lus sur ton téléphone. L'appli apprend de tes corrections.",
+          tags:["Photo", "Galerie", "Saisie"], n:"Astuce : ticket à plat, bien éclairé, pris en entier." },
+        { img:"releve", t:"Importe ton relevé", p:"Le fichier du site de ta banque devient tickets, frais fixes et virements, sans doublon. Tout est lu sur ton téléphone.",
+          tags:["OFX", "QIF", "CSV"] },
+        { img:"avenir", t:"Vois ce qui arrive", p:"Les 12 prochains mois : frais fixes, provisions, ce qui manquera. Sauvegarde complète en un fichier ; le guide est dans Menu › Aide.",
+          tags:["ZIP", "JSON"] } ];
+    }
+    function plusOffer(){ return EDITION==="store" && !plusUnlocked(); }
+    function wlcCardHTML(d, S, i, btns, plusLink){
+      var h='<div class="wlc-card'+(d.img||d.fin?' img':'')+'"><div class="wlc-dots">'; S.forEach(function(x, k){ h+='<i'+(k===i?' class="on"':'')+'></i>'; }); h+='</div>';
+      if(d.img) h+='<div class="wlc-shot"><img src="vitrine/'+d.img+'.jpg" alt="" onerror="this.parentNode.style.display=\'none\'"></div>';
+      else if(d.fin) h+='<div class="wlc-fin"><b>✦</b><span>Tickets Plus</span><small>Prix : bientôt</small></div>';
+      else h+='<div class="wlc-ic">'+(WLC_IC[d.ic]||"")+'</div>';
+      h+='<div class="wlc-t">'+(d.pro?'<span class="wlc-pro">✦ Plus</span>':'')+esc(d.t)+'</div>';
+      if(d.p) h+='<p class="wlc-p">'+esc(d.p)+'</p>';
+      if(d.l){ h+='<ul>'; d.l.forEach(function(x){ h+='<li>'+esc(x)+'</li>'; }); h+='</ul>'; }
+      if(d.tags) h+='<div class="wlc-tags">'+d.tags.map(function(x){ return '<span>'+esc(x)+'</span>'; }).join("")+'</div>';
+      if(d.n) h+='<div class="wlc-note">'+esc(d.n)+'</div>';
+      if(plusLink) h+='<button type="button" class="wlc-plusl" id="wlcPlus">✦ Découvrir Tickets Plus</button>';
+      return h+'<div class="wlc-bt">'+btns+'</div></div>';
+    }
+    function wlcSwipe(ov, go){ var x0=null;
+      ov.addEventListener("touchstart", function(ev){ x0=ev.touches[0].clientX; }, { passive:true });
+      ov.addEventListener("touchend", function(ev){ if(x0===null) return; var dx=ev.changedTouches[0].clientX-x0; x0=null; if(dx<-50) go(1); else if(dx>50) go(-1); }, { passive:true }); }
+    // ---------- Carrousel Tickets Plus : depuis l'accueil, le menu et chaque bouton ✦ (version Store) ----------
+    var PLUS_CARDS=[
+      { k:"foyer", img:"foyer", pro:1, t:"Foyer partagé", p:"Invite ta famille : chacun ses droits, ses tickets arrivent chez toi. Tout est chiffré. Rejoindre le foyer de quelqu'un reste gratuit.", tags:["QR code", "Code + empreinte"] },
+      { k:"equilibre", img:"equilibre", pro:1, t:"Qui doit combien à qui", p:"Ce que chacun a vraiment payé pour le commun, comparé à sa part, et les remboursements en un geste.", tags:["Avec ou sans virement"] },
+      { k:"factures", img:"factures", pro:1, t:"Tes factures", p:"Électricité, gaz, eau, internet : le prélèvement dans « À venir » et la prochaine facture estimée, selon la saison.", tags:["PDF", "Factur-X", "Photos"] },
+      { k:"avancee", img:"analyse", pro:1, t:"Analyse avancée", p:"Ton inflation à toi, tes alertes, ton reste à vivre et des pistes d'économies. Calculé sur ton téléphone.", tags:["Données INSEE"] },
+      { k:"widgets", img:"widgets", pro:1, t:"Widgets", p:"Ton solde et tes dépenses sur l'écran du téléphone, masqués derrière ton empreinte.", tags:["Android"] },
+      { k:"fin", fin:1, t:"Tout le reste est gratuit", p:"Tickets, comptes, frais fixes, provisions, commun, import de relevé, sauvegardes : gratuits, sans limite." } ];
+    function plusShow(start){
+      if(document.querySelector(".wlc.plus")) return;
+      var S=PLUS_CARDS, i=0; S.forEach(function(c, k){ if(c.k===start) i=k; });
+      var ov=document.createElement("div"); ov.className="wlc plus"; ov.setAttribute("role", "dialog"); ov.setAttribute("aria-label", "Tickets Plus");
+      document.body.appendChild(ov);
+      function close(){ try{ document.body.removeChild(ov); }catch(e){} }
+      function go(dx){ var n=i+dx; if(n>=0 && n<S.length){ i=n; paint(); } }
+      function paint(){
+        var last=i===S.length-1;
+        ov.innerHTML=wlcCardHTML(S[i], S, i, last ? '<button type="button" class="wlc-skip" id="plLater">Plus tard</button><button type="button" class="wlc-go" id="plBuy">Prendre Tickets Plus · bientôt</button>'
+                                                  : '<button type="button" class="wlc-skip" id="plLater">Plus tard</button><button type="button" class="wlc-go" id="plNext">Suivant</button>', false);
+        ov.querySelector("#plLater").onclick=close;
+        var nx=ov.querySelector("#plNext"); if(nx) nx.onclick=function(){ go(1); };
+        var by=ov.querySelector("#plBuy"); if(by) by.onclick=function(){ uiToast("L'achat de Tickets Plus arrive bientôt dans l'appli"); };
+      }
+      wlcSwipe(ov, go); paint();
     }
     function welcomeShow(after){
       if(document.querySelector(".wlc")) return;
@@ -11464,20 +11514,15 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       document.body.appendChild(ov);
       function end(){ store.write(welcomeKey(), 1); try{ document.body.removeChild(ov); }catch(e){} if(after) after(); }
       function paint(){
-        var d=S[i], h='<div class="wlc-card"><div class="wlc-dots">'; S.forEach(function(x, k){ h+='<i'+(k===i?' class="on"':'')+'></i>'; }); h+='</div>';
-        h+='<div class="wlc-ic">'+(WLC_IC[d.ic]||"")+'</div><div class="wlc-t">'+esc(d.t)+'</div><ul>';
-        d.l.forEach(function(x){ h+='<li>'+esc(x)+'</li>'; });
-        h+='</ul>'+(d.n ? '<div class="wlc-note">'+esc(d.n)+'</div>' : '')+'<div class="wlc-bt">'+(i<S.length-1 ? '<button type="button" class="wlc-skip" id="wlcSkip">Passer</button>' : (i ? '<button type="button" class="wlc-skip" id="wlcPrev">‹ Retour</button>' : '<span></span>'))+
-           '<button type="button" class="wlc-go" id="wlcNext">'+(i<S.length-1 ? "Suivant" : "Commencer")+'</button></div></div>';
+        var d=S[i], h=wlcCardHTML(d, S, i, (i<S.length-1 ? '<button type="button" class="wlc-skip" id="wlcSkip">Passer</button>' : (i ? '<button type="button" class="wlc-skip" id="wlcPrev">‹ Retour</button>' : '<span></span>'))+
+           '<button type="button" class="wlc-go" id="wlcNext">'+(i<S.length-1 ? "Suivant" : "Commencer")+'</button>', !fyMember() && plusOffer());
         ov.innerHTML=h;
         ov.querySelector("#wlcNext").onclick=function(){ if(i<S.length-1){ i++; paint(); } else end(); };
         var sk=ov.querySelector("#wlcSkip"); if(sk) sk.onclick=end;
         var pv=ov.querySelector("#wlcPrev"); if(pv) pv.onclick=function(){ i--; paint(); };
+        var pl=ov.querySelector("#wlcPlus"); if(pl) pl.onclick=function(){ plusShow(null); };
       }
-      var x0=null;
-      ov.addEventListener("touchstart", function(ev){ x0=ev.touches[0].clientX; }, { passive:true });
-      ov.addEventListener("touchend", function(ev){ if(x0===null) return; var dx=ev.changedTouches[0].clientX-x0; x0=null;
-        if(dx<-50 && i<S.length-1){ i++; paint(); } else if(dx>50 && i>0){ i--; paint(); } }, { passive:true });
+      wlcSwipe(ov, function(dx){ if(document.querySelector(".wlc.plus")) return; var n=i+dx; if(n>=0 && n<S.length){ i=n; paint(); } });
       paint();
     }
     // téléphone déjà utilisé, ou membre d'un foyer : une seule fois, après le code de verrouillage
@@ -11625,7 +11670,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
     }
     function openFromWidget(t){
       if(document.getElementById("lockscreen")){ var n=0, iv=setInterval(function(){ if(!document.getElementById("lockscreen") || ++n>240){ clearInterval(iv); if(n<=240) openFromWidget(t); } }, 500); return; }
-      if(t==="plus"){ uiChoice("Tickets Plus", "Les widgets font partie de Tickets Plus. L'achat de Plus arrivera bientôt dans l'appli.", [{ l:"D'accord", fn:function(){} }]); return; }
+      if(t==="plus"){ plusShow("widgets"); return; }
       if(t==="scan"){ state.view="list"; render(); widgetScan(); return; }
       if(t==="compte_foyer" || t==="foyer") state.compteSel=(comptes.length>1)?"__all":myAcct().key;
       else if(t==="compte") state.compteSel=myAcct().key;

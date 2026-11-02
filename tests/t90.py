@@ -14,7 +14,7 @@ def norm(t): return t.replace(" "," ").replace("\xa0"," ")
 
 # www de l'appli Store, comme le fait la compilation
 W=os.path.join(SP,"offline","www"); shutil.rmtree(W, ignore_errors=True); os.makedirs(W+"/pdfjs")
-for f in os.listdir(BETA): shutil.copy(BETA+f, W)
+shutil.copytree(BETA, W, dirs_exist_ok=True)   # comme l'APK : tout le dossier beta (captures de vitrine/ comprises)
 for f in ["pdf.min.mjs","pdf.worker.min.mjs"]: shutil.copy(PJ+f, W+"/pdfjs/")
 series=[{"m":"2025-%02d"%m,"v":120+m*0.1} for m in range(9,13)]+[{"m":"2026-%02d"%m,"v":121.5+m*0.1} for m in range(1,10)]
 json.dump({"ok":True,"yoy":1.2,"last":"2026-09","title":"IPC","series":series}, open(W+"/insee.json","w"))

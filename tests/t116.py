@@ -82,7 +82,7 @@ with sync_playwright() as p:
     c, pg = open_app(base, APP+"?edition=store")
     check(pg.locator("#cbal").count()==0 and pg.locator("#cbalBuy").count()==1, "Store sans Plus : présentation et bouton ✦")
     pg.locator("#cbalBuy").click(); pg.wait_for_timeout(300)
-    check("Tickets Plus" in pg.locator(".sheet-overlay").last.inner_text(), "le bouton demande Tickets Plus")
+    check(pg.locator(".wlc.plus").count()==1 and "Qui doit combien à qui" in pg.locator(".wlc.plus").inner_text(), "le bouton ouvre le carrousel Tickets Plus à « Qui doit combien à qui »")
     c.close()
     check(not errs, "pas d'erreur %s"%errs[:3])
     b.close()
