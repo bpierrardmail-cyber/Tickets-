@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `02/11 09:25`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `02/11 14:50`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -54,7 +54,9 @@ Après chaque modification, dans le même commit :
   - détail d'un fournisseur : provision, factures en barres avec la prochaine estimée, moyenne par mois, consommation sur 12 mois, prix moyen, liste (toucher une facture pour la modifier, appui long pour Modifier / Supprimer, suppression annulable) ; la carte du fournisseur dit combien de factures il a.
 - **Bourse** (Perso seulement) : cours Yahoo et CoinGecko via le relais, courbe 1J. Comptée une fois dans l'épargne, comme une ligne automatique (« dont Bourse » sur l'Accueil et dans Épargne).
 
-**Menu** : 3 blocs sans titres et sans défilement. Foyer partagé, Personnes, Sauvegarder (complète en ZIP, ou données seules), Stockage · Exporter en PDF, Réglages (devise, code et empreinte, restaurer une sauvegarde JSON ou ZIP).
+**Menu** : 3 blocs sans titres et sans défilement. Foyer partagé, Personnes, Sauvegarder (complète en ZIP, ou données seules), Stockage · Exporter en PDF, Aide (revoir l'accueil ; le guide est à écrire), Réglages (devise, code et empreinte, restaurer une sauvegarde JSON ou ZIP).
+
+**Accueil en diapos** : au premier démarrage 3 diapos (Bienvenue, Bien scanner, Pour aller plus loin) puis le choix « Je commence / Rejoindre un foyer » ; une fois sur un téléphone déjà utilisé ; un membre a ses 2 diapos (« Tu as rejoint le foyer de … », « Ajouter tes tickets »). Menu › Aide › « Revoir l'accueil ».
 
 **Photos des tickets** : gardées en qualité d'origine (toutes les pages) en plus de la petite photo des listes ; galerie rangée par mois (⋯ : supprimer les photos d'un mois ou d'une année) ; Menu › Stockage (place utilisée, années / mois, « Garder les photos d'origine » Toujours / 5 ans / 2 ans). Les tickets restent toujours, la galerie du téléphone n'est jamais touchée.
 
@@ -77,6 +79,7 @@ Après chaque modification, dans le même commit :
 **Version Store** : `PLUS_FEATURES = widgets, foyer, avancee, factures` (« factures » = importer et suivre ses factures ; le reste d'À venir est gratuit). L'achat de Plus n'est pas encore branché. L'import de relevé est gratuit pour l'instant.
 
 ## En cours / à reprendre
+- **Guide de l'appli (Menu › Aide)**, à écrire avec Benoît : un guide du propriétaire (pour commencer, scanner, Dépenses, Compte, À venir, Commun, foyer, photos et sauvegardes, questions fréquentes) et un guide du membre (ce que tu vois, ton accueil, ajouter un ticket, ce que tu peux modifier, questions fréquentes), dans l'appli, sans réseau ; le membre ne voit que les parties de ses onglets.
 
 - **Réorganisation de l'appli** (31/10) : il trouve l'organisation et l'accès aux fonctions peu clairs. Plan proposé dans la maquette « Tickets — Plan de l'appli » : un onglet = une question, chaque chose à un seul endroit, sous-onglets visibles au lieu de « Configuration », ✦ partout pareil (on voit la fonction, seul le bouton demande Plus). Onglets proposés : Accueil · Dépenses (Articles + Analyse) · Compte (Opérations · Virements · Épargne · Graphiques, roue du compte) · À venir (ex Factures, ouvert à tous : 12 mois · Frais fixes · Provisions gratuits, Factures ✦, Projection ✦) · Commun (parts seulement) · Bourse. En 4 étapes, À venir d'abord (sa question : les provisions dans Factures). Décidé le 31/10 : nom « À venir », 12 mois gratuits. **Les 4 étapes sont intégrées (31/10).** À essayer par Benoît sur son téléphone ; à revoir selon ses retours.
 
@@ -134,6 +137,7 @@ Après chaque modification, dans le même commit :
 - **31/10** : onglet « Factures » intégré (« tu peux intégrer ») : Plus dans la version Store ; les provisions passent de l'onglet Compte à l'onglet Factures pour les droits du foyer (elles restent visibles et gratuites dans Compte › Configuration).
 - **31/10** : « Mes factures » sera un onglet, réservé à Tickets Plus dans la version Store.
 - **31/10** : import de factures : effets proposés « à cocher » ; une page « Mes factures » qui sert d'accueil aux provisions et réunit le prévisionnel.
+- **02/11** : accueil au premier démarrage avec une explication du scan et où trouver le guide ; le guide est à écrire ensemble ; pour un membre du foyer, accueil et guide faits autrement (« pour un membre du foyer le guide doit être fait autrement ») ; maquette de base retenue : 3 diapos propriétaire, 2 diapos membre (« pars sur ce que tu as prévu à la base », « tu peux intégrer »).
 - **02/11** : photos des tickets en qualité d'origine (« il faut garder la meilleure qualité pour la meilleure lecture ») ; sauvegarde complète (données + photos) et possibilité de supprimer dans la galerie les photos d'un mois ou d'une année ; place utilisée indiquée dans le menu (maquette, « oui tu peux intégrer »). Les tickets restent ; seules les photos partent ; la galerie du téléphone est à part.
 - **28/10** : « Lire avec mon IA » (partage vers l'IA déjà sur le téléphone, réponse collée dans Tickets) ajouté à la liste des améliorations ; la lecture par une IA en ligne payée par nous reste de côté.
 - **28/10** : « Copier la lecture » sous un ticket scanné, pour envoyer à Claude ce que le téléphone a lu. Le retrait au distributeur → liquide : plus tard.
@@ -178,6 +182,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 02/11
+- **Accueil en diapos et Menu › Aide** (maquette ; « tu peux intégrer ») : `welcomeShow(after)` (plein écran `.wlc`, points, Passer / Suivant / ‹ Retour / Commencer, glisser), `welcomeSlides()` : propriétaire 3 diapos, membre 2 diapos ; premier démarrage : diapos puis `fyWelcome` (sauf si déjà vues) ; téléphone déjà utilisé ou membre : `welcomeAuto` une fois, après le code (`welcomeSeen`, `welcomeFy`) ; Menu › Aide (`openAide`) : « Revoir l'accueil », le guide « arrive bientôt ». Tests : `horloge.py` pose `window.__tkNoWelcome` pour que l'accueil ne s'ouvre pas tout seul (sauf avec `window.__wlcTest`, script de contexte), t72 et t95 (ligne Aide), nouveau `t115`.
 - **Photos en qualité d'origine, Stockage, sauvegarde complète** (maquette ; « oui tu peux intégrer ») :
   - IndexedDB `ticketsdb` passe en version 2 avec le store `orig` : `{b:[Blob, …], s:taille}` par ticket (toutes les pages scannées, ou la photo ajoutée), écrit à l'enregistrement (`draft.photoFiles`, `origPut`), retiré avec la photo ou le ticket (`origDel`) ; tailles seules chargées au démarrage (`ORIGSZ`, `origSizes`) ; la petite photo (600 px) reste dans `photos` / `PHOTOS` pour les listes ; `navigator.storage.persist()` demandé ;
   - visionneuse : la photo d'origine (toutes les pages, « photo d'origine · 2 pages · 224 Ko »), toucher pour zoomer ; la fiche du ticket montre aussi l'origine ;

@@ -1,6 +1,6 @@
 # Tickets : dossier de passation
 
-*État au 01/11/2026, étiquette `02/11 09:25`. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
+*État au 01/11/2026, étiquette `02/11 14:50`. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
 
 > **À Claude qui reprend le projet**
 >
@@ -150,7 +150,8 @@ Les maquettes (canevas « Tickets — Plan de l'appli » et autres) sont des art
   - plusieurs factures d'un coup (plusieurs PDF, ou plusieurs factures en photos, recto et verso, même dans le désordre) : un écran de contrôle « 6 photos · 6 lues · 3 factures trouvées » liste les factures ; la plus récente est vérifiée en entier, les plus anciennes se contrôlent une par une ou se décochent ; une photo illisible se reprend ; rien n'est enregistré avant « Appliquer ».
 - **Commun** : part de chacun dans le commun, en %, et parts propres à chaque frais ; frais communs du mois ; produits partagés.
 - **Bourse** (Perso seulement) : cours Yahoo et CoinGecko via le relais. Elle compte une fois dans l'épargne.
-- **Menu** : Foyer partagé, Personnes, Sauvegarder (complète en ZIP avec les photos, ou données seules), Stockage · Exporter en PDF, Réglages.
+- **Menu** : Foyer partagé, Personnes, Sauvegarder (complète en ZIP avec les photos, ou données seules), Stockage · Exporter en PDF, Aide, Réglages.
+- **Accueil** : au premier démarrage, 3 diapos (Bienvenue, Bien scanner, Pour aller plus loin) ; un membre du foyer a ses 2 diapos ; à revoir dans Menu › Aide. Le guide de l'appli est à écrire ensemble.
 - **Photos des tickets** : en qualité d'origine (toutes les pages) ; galerie par mois, suppression d'un mois ou d'une année ; Menu › Stockage (place utilisée, « Garder les photos d'origine »). Les tickets restent toujours ; la galerie du téléphone n'est jamais touchée.
 - **Scan d'un ticket** : ML Kit, puis `parseTicket`. L'appli compare les articles au total et propose les produits appris, chaque personne ayant les siens. « Copier la lecture » sert à déboguer un ticket mal lu.
 
@@ -173,6 +174,7 @@ Fait et poussé le 01/11 :
 12. **Scan des tickets (02/11)** : scanner de documents de Google (photo recadrée et redressée, nouvel APK ; repli sur l'appareil photo), total recoupé avec la carte et la TVA, total appris par magasin, jeu d'essai de tickets inventés.
 13. **Stockage (02/11)** : plus de limite de 5 Mo ; une donnée qui ne tient plus dans la mémoire locale part dans le stockage du téléphone, sans perte.
 14. **Photos et sauvegarde complète (02/11)** : photos des tickets gardées en qualité d'origine, visionneuse avec zoom ; galerie par mois (⋯ : supprimer un mois ou une année, annulable) ; Menu › Stockage ; sauvegarde complète en ZIP (données + photos) ou données seules ; restauration du ZIP.
+15. **Accueil en diapos (02/11)** : 3 diapos au premier démarrage (une fois aussi sur un téléphone déjà utilisé), 2 pour un membre ; Menu › Aide › « Revoir l'accueil ».
 
 Fait et poussé le 31/10 :
 1. **Sans réseau** pour les deux éditions. L'APK Store est autonome ; la Perso garde une copie.
@@ -200,13 +202,14 @@ Fait et poussé le 31/10 :
 - les provisions reliées (01/11) : ses frais « Eau » et « Amazon » doivent être devenus « Provision · Eau » / « Provision · Amazon » sans doublon ; les autres provisions ont un frais à partir de novembre (sinon « Remplie par » → « Pas dans les frais fixes ») ; la facture Région Minière du 02/11 : « Ajouter » la met dans le compte et la retire de « Eau » ;
 - les virements repris ou « chaque mois » (CAF, Sylvette…), et « Passer en frais fixe » (Claude ia…) ; pour MAAF RC SBPI, déjà passé en frais fixe avant le choix commun / perso : le remettre en « Commun » dans À venir › Frais fixes › Modifier › « Pour qui » ;
 - la petite carte « Compte · Épargne » de l'Accueil ;
+- l'accueil (il s'ouvre une fois au démarrage, puis Menu › Aide › « Revoir l'accueil ») ;
 - les photos : scanner un ticket, l'ouvrir dans la galerie (photo d'origine, zoom), Menu › Stockage, une sauvegarde complète (ZIP dans Documents/Tickets ou envoyée vers Drive) ;
 - le scanner de documents avec le nouvel APK (ticket et photos de facture ; la 1re fois il se télécharge avec les services Google) ; un ticket au total mal lu (« Prendre … ») ; un magasin corrigé une fois, puis un 2e ticket du même magasin ;
 - relevé et contrôles : réimporter un relevé BoursoBank (les lignes sont gardées à partir de cet import), puis une facture Free ou EDF (bandeau « Retrouvée sur ton relevé ») et un ticket déjà payé par carte (« Compléter ce paiement ») ;
 - la lecture des factures : ses trois types de factures ratées (à réimporter ; envoyer les PDF ou « Copier la lecture » si l'une reste mal lue), et corriger une fois un fournisseur mal lu pour voir la suivante bien lue ;
 - les 12 factures Free Mobile : refaire l'import (sans rien appliquer de l'ancien essai), dates du 27 et 9,99 / 15,99 € attendus.
 
-**Tests automatiques** : les 34 tests de `tests/` passent (t96 : écran de contrôle des factures ; t97 : page gardée des petits graphiques ; t98 : modifier ou supprimer une facture ; t99 : mettre dans les comptes une facture gardée sans ses effets ; t100 : payer une facture avec une provision ; t101 : provisions reliées aux frais fixes, au Commun et aux comptes ; t102 : graphique des provisions avec les factures prévues ; t103 : reprendre des virements, virements « chaque mois » ; t104 : « Prélevé sur » d'un frais fixe ; t105 : passer un virement en frais fixe ; t106 : « Total provisions » ; t107 : factures Free Mobile en PDF ; t108 : lecture générale des factures et apprentissage par fournisseur ; t109 : abonnement dont le prix change ; t110 : factures et relevé, contrôles, Factur-X ; t111 : tickets et relevé ; t112 : scan des tickets, jeu d'essai ; t113 : stockage au-delà de la mémoire locale ; t114 : photos d'origine, Stockage, sauvegarde complète). t93 (foyer) attend parfois le relais local : en cas d'échec isolé, le relancer seul. La date du navigateur est fixée au 30/10/2026 par `tests/horloge.py`, car les données inventées sont en octobre 2026. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
+**Tests automatiques** : les 35 tests de `tests/` passent (t96 : écran de contrôle des factures ; t97 : page gardée des petits graphiques ; t98 : modifier ou supprimer une facture ; t99 : mettre dans les comptes une facture gardée sans ses effets ; t100 : payer une facture avec une provision ; t101 : provisions reliées aux frais fixes, au Commun et aux comptes ; t102 : graphique des provisions avec les factures prévues ; t103 : reprendre des virements, virements « chaque mois » ; t104 : « Prélevé sur » d'un frais fixe ; t105 : passer un virement en frais fixe ; t106 : « Total provisions » ; t107 : factures Free Mobile en PDF ; t108 : lecture générale des factures et apprentissage par fournisseur ; t109 : abonnement dont le prix change ; t110 : factures et relevé, contrôles, Factur-X ; t111 : tickets et relevé ; t112 : scan des tickets, jeu d'essai ; t113 : stockage au-delà de la mémoire locale ; t114 : photos d'origine, Stockage, sauvegarde complète ; t115 : accueil en diapos). t93 (foyer) attend parfois le relais local : en cas d'échec isolé, le relancer seul. La date du navigateur est fixée au 30/10/2026 par `tests/horloge.py`, car les données inventées sont en octobre 2026. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
 
 ---
 
@@ -268,7 +271,7 @@ Fait et poussé le 31/10 :
 5. **Tenir `JOURNAL.md` à jour dans le même commit** : une entrée datée en haut de l'Historique, plus Décisions, État actuel et En cours si nécessaire. Mettre aussi `CLAUDE.md` à jour si une notion technique change.
 6. **Commit en français**, préfixé « β » quand il touche la β, poussé directement sur `main`. Le push met en ligne la β et la Perso, et recompile les deux APK.
 7. **Tester** avec les tests de `tests/` (mode d'emploi dans `tests/README.md`) :
-   - `sh tests/run.sh` lance les 34 tests ; `python3 tests/t95.py` en lance un seul ;
+   - `sh tests/run.sh` lance les 35 tests ; `python3 tests/t95.py` en lance un seul ;
    - ce sont des scripts Playwright en Python : Chromium sans interface, écran de 412×900, données injectées dans localStorage, relais local (Node et `node:sqlite` sur `localhost:8787`) ;
    - aucune requête réseau extérieure pendant les tests ;
    - ajouter un test pour chaque nouvelle fonction, **toujours avec des données inventées**.

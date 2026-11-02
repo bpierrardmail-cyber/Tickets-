@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="02/11 09:25" />
+  <meta name="build" content="02/11 14:50" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -396,6 +396,19 @@
     .gcap{ position:absolute; left:0; right:0; bottom:0; display:flex; justify-content:space-between; gap:8px; align-items:flex-end; padding:16px 9px 7px; font-size:11px; background:linear-gradient(transparent, rgba(0,0,0,.8)); color:#fff; }
     .gcap .gn{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .gcap .ga{ font-family:var(--mono); font-weight:700; flex:0 0 auto; }
+    .wlc{ position:fixed; inset:0; z-index:108; background:var(--bg); display:flex; flex-direction:column; padding:calc(18px + env(safe-area-inset-top)) 22px calc(18px + env(safe-area-inset-bottom)); }
+    .wlc-dots{ display:flex; justify-content:center; gap:7px; margin:4px 0 18px; }
+    .wlc-dots i{ width:8px; height:8px; border-radius:50%; background:var(--line); }
+    .wlc-dots i.on{ background:var(--accent); width:22px; border-radius:5px; }
+    .wlc-body{ flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; justify-content:center; max-width:460px; width:100%; margin:0 auto; }
+    .wlc-ic{ font-size:46px; text-align:center; line-height:1.2; }
+    .wlc-t{ font-size:22px; font-weight:800; text-align:center; margin:12px 0 18px; color:var(--ink); }
+    .wlc-l{ display:flex; gap:12px; align-items:flex-start; padding:10px 12px; margin-bottom:8px; border-radius:12px; background:var(--card); border:1px solid var(--line); font-size:14.5px; line-height:1.45; color:var(--ink); }
+    .wlc-l b{ flex:0 0 auto; color:var(--accent); }
+    .wlc-l small{ display:block; color:var(--muted); font-size:12.5px; margin-top:1px; }
+    .wlc-bt{ display:flex; justify-content:space-between; align-items:center; gap:12px; max-width:460px; width:100%; margin:14px auto 0; }
+    .wlc-bt .btn{ min-width:120px; }
+    .wlc-skip{ background:none; border:0; color:var(--muted); font-size:14px; padding:10px 4px; cursor:pointer; }
     .sheet-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:110; display:flex; align-items:flex-end; }
     .sheet{ width:100%; background:var(--card); border-top-left-radius:20px; border-top-right-radius:20px; border-top:1px solid var(--line);
       padding:16px 16px calc(20px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:10px; box-shadow:0 -10px 30px rgba(0,0,0,.45); }
@@ -1321,7 +1334,7 @@
                !fyM ? row("backup","💾","Sauvegarder",bk.label,(bk.days===null || bk.days>=7)?"var(--coral)":"var(--accent)") : "",
                row("stockage","🗂️","Stockage",fmtBytes(photosBytes()+dataBytes())) ]);
       h+=grp([ row("pdf","📄","Exporter en PDF","bilan") ]);
-      h+=grp([ row("settings","⚙️","Réglages",[fyFull?"devise":"", "code", !fyM?"restaurer":""].filter(function(x){ return x; }).join(", "),"",true) ]);
+      h+=grp([ row("aide","❓","Aide","accueil, guide"), row("settings","⚙️","Réglages",[fyFull?"devise":"", "code", !fyM?"restaurer":""].filter(function(x){ return x; }).join(", "),"",true) ]);
       h+='<div class="dr-foot"><span class="beta-tag">Version β · '+esc((document.querySelector('meta[name=build]')||{}).content||'')+(capNative()?(EDITION==="store"?' · appli Store':' · appli Perso'):' · navigateur'+(EDITION==="store"?' (Store)':''))+'</span></div>';
       h+='</div>';
       var ov=document.createElement("div"); ov.className="drawer-ov"; ov.innerHTML=h; document.body.appendChild(ov);
@@ -1330,7 +1343,7 @@
       function closeAnim(){ ov.classList.remove("open"); setTimeout(closeMenu, 200); }
       ov.onclick=function(e){ if(e.target===ov) closeAnim(); };
       ov.querySelector(".dr-x").onclick=closeAnim;
-      var acts={ settings:openSettings, import:function(){ impStart(null); }, gallery:function(){ state.view="gallery"; render(); window.scrollTo(0,0); }, stockage:function(){ state.view="stockage"; render(); window.scrollTo(0,0); }, foyer:function(){ state.view="foyer"; render(); window.scrollTo(0,0); }, backup:backupData, restore:function(){ restorein.click(); }, lockSetup:lockSetup, lockBio:lockEnableBio, lockOff:lockDisable, devise:chooseCurrency, pdf:choosePdfPeriod, persons:managePersons };
+      var acts={ settings:openSettings, import:function(){ impStart(null); }, gallery:function(){ state.view="gallery"; render(); window.scrollTo(0,0); }, stockage:function(){ state.view="stockage"; render(); window.scrollTo(0,0); }, aide:openAide, foyer:function(){ state.view="foyer"; render(); window.scrollTo(0,0); }, backup:backupData, restore:function(){ restorein.click(); }, lockSetup:lockSetup, lockBio:lockEnableBio, lockOff:lockDisable, devise:chooseCurrency, pdf:choosePdfPeriod, persons:managePersons };
       [].forEach.call(ov.querySelectorAll(".dr-row"), function(b){ b.onclick=function(){ var fn=acts[b.getAttribute("data-k")]; closeMenu(); if(fn) fn(); }; });
     }
     // Âge de la dernière sauvegarde, en jours de calendrier (une sauvegarde de la veille au soir = « hier »)
@@ -11197,6 +11210,69 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       Object.keys(fyCfg.members||{}).forEach(function(id){ var n=fyCfg.members[id].name; if(fyEnsurePerson(n)===2) back.push(n); });
       if(back.length) setTimeout(function(){ uiToast(back.join(", ")+(back.length>1?" sont":" est")+" de retour dans tes Personnes : membre du foyer"); }, 1200);
     }
+    // ---------- Accueil en diapos : au premier démarrage, une fois pour un téléphone déjà utilisé, et une fois quand on devient membre d'un foyer ----------
+    function welcomeKey(){ return fyMember() ? "welcomeFy" : "welcomeSeen"; }
+    function welcomeSlides(){   // propriétaire : 3 diapos ; membre d'un foyer : 2 diapos (maquette du 02/11)
+      var mem=fyMember(), own=mem ? (fyCfg.owner||"le propriétaire") : "";
+      if(mem) return [
+        { ic:"👨‍👩‍👧", t:"Tu as rejoint le foyer de "+own, l:[
+          ["👀", "Tu vois ce que "+own+" partage avec toi", ""],
+          ["🔐", "Des onglets en lecture, d'autres en modification", "selon les choix de "+own],
+          ["🏠", "Ton accueil est personnel", "ta part du commun, tes tickets"],
+          ["🔄", "Tes modifications partent chez "+own, "toutes seules"] ] },
+        { ic:"📷", t:"Ajouter tes tickets", l:[
+          ["📄", "Bien scanner", "ticket à plat, bien éclairé, pris en entier ; vérifie le montant (l'orange est à regarder)"],
+          ["🏦", "Tes tickets vont dans ton compte", ""],
+          ["❓", "Le guide du membre", "Menu › Aide"] ] } ];
+      return [
+        { ic:"🧾", t:"Bienvenue dans Tickets", l:[
+          ["📚", "Tes tickets, comptes, frais fixes", "et le commun du foyer"],
+          ["🔒", "Tout reste sur ton téléphone", ""],
+          ["📴", "Sans compte, sans internet", ""] ] },
+        { ic:"📷", t:"Bien scanner", l:[
+          ["📄", "Ticket à plat, bien éclairé, en entier", ""],
+          ["🧾", "Ticket long : plusieurs photos", ""],
+          ["🟠", "Vérifie le total", "l'orange est à regarder"],
+          ["🧠", "1er ticket d'un magasin : corrige-le", "l'appli s'en souvient pour les suivants"],
+          ["📑", "Factures : un PDF se lit mieux qu'une photo", ""] ] },
+        { ic:"💡", t:"Pour aller plus loin", l:[
+          ["❓", "Le guide : Menu › Aide", ""],
+          ["🔁", "Revoir cet accueil : Menu › Aide", ""],
+          ["💾", "Pense à la sauvegarde complète de temps en temps", "Menu › Sauvegarder : données et photos"] ] } ];
+    }
+    function welcomeShow(after){
+      if(document.querySelector(".wlc")) return;
+      var S=welcomeSlides(), i=0, ov=document.createElement("div"); ov.className="wlc"; ov.setAttribute("role", "dialog"); ov.setAttribute("aria-label", "Bienvenue");
+      document.body.appendChild(ov);
+      function end(){ store.write(welcomeKey(), 1); try{ document.body.removeChild(ov); }catch(e){} if(after) after(); }
+      function paint(){
+        var d=S[i], h='<div class="wlc-dots">'; S.forEach(function(x, k){ h+='<i'+(k===i?' class="on"':'')+'></i>'; }); h+='</div>';
+        h+='<div class="wlc-body"><div class="wlc-ic">'+d.ic+'</div><div class="wlc-t">'+esc(d.t)+'</div>';
+        d.l.forEach(function(x){ h+='<div class="wlc-l"><b>'+x[0]+'</b><span>'+esc(x[1])+(x[2]?'<small>'+esc(x[2])+'</small>':'')+'</span></div>'; });
+        h+='</div><div class="wlc-bt">'+(i<S.length-1 ? '<button type="button" class="wlc-skip" id="wlcSkip">Passer</button>' : (i ? '<button type="button" class="wlc-skip" id="wlcPrev">‹ Retour</button>' : '<span></span>'))+
+           '<button type="button" class="btn primary" id="wlcNext">'+(i<S.length-1 ? "Suivant" : "Commencer")+'</button></div>';
+        ov.innerHTML=h;
+        ov.querySelector("#wlcNext").onclick=function(){ if(i<S.length-1){ i++; paint(); } else end(); };
+        var sk=ov.querySelector("#wlcSkip"); if(sk) sk.onclick=end;
+        var pv=ov.querySelector("#wlcPrev"); if(pv) pv.onclick=function(){ i--; paint(); };
+      }
+      var x0=null;
+      ov.addEventListener("touchstart", function(ev){ x0=ev.touches[0].clientX; }, { passive:true });
+      ov.addEventListener("touchend", function(ev){ if(x0===null) return; var dx=ev.changedTouches[0].clientX-x0; x0=null;
+        if(dx<-50 && i<S.length-1){ i++; paint(); } else if(dx>50 && i>0){ i--; paint(); } }, { passive:true });
+      paint();
+    }
+    // téléphone déjà utilisé, ou membre d'un foyer : une seule fois, après le code de verrouillage
+    function welcomeAuto(){
+      if(store.read(welcomeKey(), null) || window.__tkNoWelcome) return;   // __tkNoWelcome : posé par les tests automatiques
+      var n=0; (function wait(){ if(document.getElementById("lockscreen") || document.querySelector(".sheet-overlay")){ if(++n<240) setTimeout(wait, 500); return; } welcomeShow(null); })();
+    }
+    function openAide(){
+      var s=uiSheet('<div class="sheet-title">Aide</div><div class="ui-intro">Le guide complet de l\'appli arrive bientôt ici : on l\'écrit en ce moment. En attendant, l\'accueil redonne l\'essentiel.</div>'+
+        '<div class="ui-stack"><button type="button" class="btn primary" id="aideWlc">Revoir l\'accueil</button><button type="button" class="btn ghost ui-no">Fermer</button></div>');
+      s.q(".ui-no").onclick=s.close;
+      s.q("#aideWlc").onclick=function(){ s.close(); welcomeShow(null); };
+    }
     function fyWelcome(){
       uiChoice("Bienvenue dans Tickets 👋", "C'est ta première fois, ou quelqu'un t'invite dans son foyer ?", [
         { l:"Je commence", fn:askFirstName },
@@ -11229,7 +11305,8 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
     fyInit();
     try{ factEstRefresh(); }catch(e){}
     render();
-    if(store.read("askName", false) && !mainAcct().payer && !fyCfg) setTimeout(function(){ if(!document.getElementById("lockscreen")) fyWelcome(); }, 500);
+    if(store.read("askName", false) && !mainAcct().payer && !fyCfg) setTimeout(function(){ if(!document.getElementById("lockscreen")) if(store.read("welcomeSeen", null) || window.__tkNoWelcome) fyWelcome(); else welcomeShow(fyWelcome); }, 500);
+    else welcomeAuto();
     initPhotos();
     tickBourse();
     setInterval(tickBourse, 60000);
