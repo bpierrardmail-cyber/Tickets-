@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `02/11 08:44`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `02/11 09:25`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -54,7 +54,9 @@ Après chaque modification, dans le même commit :
   - détail d'un fournisseur : provision, factures en barres avec la prochaine estimée, moyenne par mois, consommation sur 12 mois, prix moyen, liste (toucher une facture pour la modifier, appui long pour Modifier / Supprimer, suppression annulable) ; la carte du fournisseur dit combien de factures il a.
 - **Bourse** (Perso seulement) : cours Yahoo et CoinGecko via le relais, courbe 1J. Comptée une fois dans l'épargne, comme une ligne automatique (« dont Bourse » sur l'Accueil et dans Épargne).
 
-**Menu** : 3 blocs sans titres et sans défilement. Foyer partagé, Personnes, Sauvegarder · Exporter en PDF, Réglages (devise, code et empreinte, restaurer une sauvegarde).
+**Menu** : 3 blocs sans titres et sans défilement. Foyer partagé, Personnes, Sauvegarder (complète en ZIP, ou données seules), Stockage · Exporter en PDF, Réglages (devise, code et empreinte, restaurer une sauvegarde JSON ou ZIP).
+
+**Photos des tickets** : gardées en qualité d'origine (toutes les pages) en plus de la petite photo des listes ; galerie rangée par mois (⋯ : supprimer les photos d'un mois ou d'une année) ; Menu › Stockage (place utilisée, années / mois, « Garder les photos d'origine » Toujours / 5 ans / 2 ans). Les tickets restent toujours, la galerie du téléphone n'est jamais touchée.
 
 **Foyer partagé**
 - Invitation par QR code. Copies chiffrées sur le relais, que le relais ne peut pas lire. Code + empreinte obligatoires.
@@ -132,6 +134,7 @@ Après chaque modification, dans le même commit :
 - **31/10** : onglet « Factures » intégré (« tu peux intégrer ») : Plus dans la version Store ; les provisions passent de l'onglet Compte à l'onglet Factures pour les droits du foyer (elles restent visibles et gratuites dans Compte › Configuration).
 - **31/10** : « Mes factures » sera un onglet, réservé à Tickets Plus dans la version Store.
 - **31/10** : import de factures : effets proposés « à cocher » ; une page « Mes factures » qui sert d'accueil aux provisions et réunit le prévisionnel.
+- **02/11** : photos des tickets en qualité d'origine (« il faut garder la meilleure qualité pour la meilleure lecture ») ; sauvegarde complète (données + photos) et possibilité de supprimer dans la galerie les photos d'un mois ou d'une année ; place utilisée indiquée dans le menu (maquette, « oui tu peux intégrer »). Les tickets restent ; seules les photos partent ; la galerie du téléphone est à part.
 - **28/10** : « Lire avec mon IA » (partage vers l'IA déjà sur le téléphone, réponse collée dans Tickets) ajouté à la liste des améliorations ; la lecture par une IA en ligne payée par nous reste de côté.
 - **28/10** : « Copier la lecture » sous un ticket scanné, pour envoyer à Claude ce que le téléphone a lu. Le retrait au distributeur → liquide : plus tard.
 - **28/10** : appui long sur un ticket → Ouvrir / Supprimer, suppression annulable.
@@ -175,6 +178,14 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 02/11
+- **Photos en qualité d'origine, Stockage, sauvegarde complète** (maquette ; « oui tu peux intégrer ») :
+  - IndexedDB `ticketsdb` passe en version 2 avec le store `orig` : `{b:[Blob, …], s:taille}` par ticket (toutes les pages scannées, ou la photo ajoutée), écrit à l'enregistrement (`draft.photoFiles`, `origPut`), retiré avec la photo ou le ticket (`origDel`) ; tailles seules chargées au démarrage (`ORIGSZ`, `origSizes`) ; la petite photo (600 px) reste dans `photos` / `PHOTOS` pour les listes ; `navigator.storage.persist()` demandé ;
+  - visionneuse : la photo d'origine (toutes les pages, « photo d'origine · 2 pages · 224 Ko »), toucher pour zoomer ; la fiche du ticket montre aussi l'origine ;
+  - galerie rangée par mois, ⋯ ou appui long sur le mois → supprimer les photos du mois ou de l'année (`photosMenu`, `photosAskDelete` : avertit « jamais fait de sauvegarde complète » ou « Dernière sauvegarde complète : … » ; `photosDelete` annulable 7 s, `PHDEL`) ;
+  - Menu › Stockage (`renderStockage`, vue `stockage`) : total, barre Photos / Données (`photosBytes`, `dataBytes`), place encore libre (`navigator.storage.estimate`), « Garder les photos d'origine » Toujours / 5 ans / 2 ans (`photoKeep`, dans la sauvegarde ; `photoKeepApply` au démarrage : au-delà, l'origine est retirée, la petite photo et le ticket restent), sauvegarde complète, années repliables puis mois avec « Supprimer » ;
+  - Sauvegarder → « Sauvegarde complète · données + N photos » (ZIP sans compression écrit en JS : `zipBuild`, CRC par morceaux de 4 Mo ; `data.json` + `photos/AAAA-MM/<ticket>-<page>.jpg`, liste `_zip` ; Android : écrit par morceaux de 3 Mo `writeFile` / `appendFile`, Documents/Tickets ou partage ; `lastBackupFull`) ou « Données seules » (JSON sans photos) ; au-delà de 3,9 Go ou 65 000 fichiers : refus avec conseil ;
+  - restaurer : JSON (anciennes sauvegardes avec petites photos, toujours lues) ou ZIP (`zipRead`, `restoreZip` : données, puis petites photos refaites et photos d'origine remises) ; `restoreApply` commun ;
+  - menu : ligne « Stockage » (tests t72 et t95 mis à jour) ; test `t114`.
 - **Stockage sans limite de 5 Mo** (« Il faut que toutes les fonctions soient légales et sans problème sur le long terme (espace de stockage…) » ; « oui commence par 1 ») : `store` écrit toujours dans localStorage tant qu'il y a de la place ; une écriture refusée (mémoire pleine) part dans IndexedDB (`tickets-kv`, `kvPut`) et la clé est notée dans `__idbOnly` (localStorage) ; au démarrage, s'il y en a, l'appli charge IndexedDB (`kvLoadAll`, 4 s au plus) puis se relance (même script, `window.__tkKV`) ; une donnée qui retient de nouveau revient dans localStorage ; plus de bandeau « mémoire pleine » ni de perte si IndexedDB est là ; `store.remove` remplace les `localStorage.removeItem` directs. Les photos étaient déjà dans IndexedDB (`ticketsdb`). Test `t113` (mémoire pleine imitée).
 - **Scan des tickets : scanner de documents, total recoupé, total appris par enseigne, jeu d'essai** (« il faut que les systèmes de scan fonctionnent du mieux possible tout en étant génériques » ; maquette puis « oui » ; partage entre utilisateurs laissé de côté) :
   - scanner de documents de Google Play (ML Kit, `play-services-mlkit-document-scanner:16.0.0`) : `TicketsNative.scanDoc({pages})` → `{images}` (JPEG base64), lancé par `startIntentSenderForResult` et rendu par `handleOnActivityResult` (`requestCodes = {9741}`) ; « 📷 Prendre une photo » d'un ticket (3 pages max), le widget Scan et les photos de factures (12 pages) passent par `docScan` ; absent ou en échec (navigateur, téléphone sans le module) → « Scanner indisponible · Prendre une photo » (l'appareil photo comme avant). **Nouvel APK.** ;
