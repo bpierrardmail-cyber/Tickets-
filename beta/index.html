@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="02/11 14:58" />
+  <meta name="build" content="02/11 15:13" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -406,6 +406,8 @@
     .wlc-t{ font-size:20px; font-weight:800; text-align:center; margin:12px 0 14px; color:var(--ink); line-height:1.25; }
     .wlc-card ul{ margin:0; padding-left:20px; font-size:15px; line-height:1.5; color:var(--ink); }
     .wlc-card li{ margin-bottom:6px; }
+    .wlc-note{ margin-top:auto; padding-top:12px; font-size:12px; line-height:1.4; color:var(--muted); }
+    .wlc-note + .wlc-bt{ margin-top:0; }
     .wlc-bt{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:auto; padding-top:16px; }
     .wlc-skip{ background:none; border:0; color:var(--muted); font-size:15px; padding:10px 4px; cursor:pointer; }
     .wlc-go{ background:rgba(79,214,160,.16); color:var(--accent); border:0; border-radius:12px; padding:10px 20px; font-size:15px; font-weight:700; cursor:pointer; }
@@ -11233,9 +11235,11 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
           "Guide du membre : Menu › Aide" ] } ];
       return [
         { ic:"ticket", t:"Bienvenue dans Tickets", l:[
-          "Tes tickets, comptes, frais fixes et le commun du foyer",
-          "Tout reste sur ton téléphone",
-          "Sans compte, sans internet" ] },
+          "Gère tes achats, comptes, frais fixes et le commun",
+          "Invite ta famille et retrouve ses dépenses ✦",
+          "Tes données restent privées : personne ne les récupère, pas même nous",
+          "Sans compte, sans pub, hors ligne*" ],
+          n:"*Internet sert seulement au foyer partagé et à l'achat de Tickets Plus." },
         { ic:"scan", t:"Bien scanner", l:[
           "Ticket à plat, bien éclairé, en entier",
           "Ticket long : plusieurs photos",
@@ -11256,7 +11260,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
         var d=S[i], h='<div class="wlc-card"><div class="wlc-dots">'; S.forEach(function(x, k){ h+='<i'+(k===i?' class="on"':'')+'></i>'; }); h+='</div>';
         h+='<div class="wlc-ic">'+(WLC_IC[d.ic]||"")+'</div><div class="wlc-t">'+esc(d.t)+'</div><ul>';
         d.l.forEach(function(x){ h+='<li>'+esc(x)+'</li>'; });
-        h+='</ul><div class="wlc-bt">'+(i<S.length-1 ? '<button type="button" class="wlc-skip" id="wlcSkip">Passer</button>' : (i ? '<button type="button" class="wlc-skip" id="wlcPrev">‹ Retour</button>' : '<span></span>'))+
+        h+='</ul>'+(d.n ? '<div class="wlc-note">'+esc(d.n)+'</div>' : '')+'<div class="wlc-bt">'+(i<S.length-1 ? '<button type="button" class="wlc-skip" id="wlcSkip">Passer</button>' : (i ? '<button type="button" class="wlc-skip" id="wlcPrev">‹ Retour</button>' : '<span></span>'))+
            '<button type="button" class="wlc-go" id="wlcNext">'+(i<S.length-1 ? "Suivant" : "Commencer")+'</button></div></div>';
         ov.innerHTML=h;
         ov.querySelector("#wlcNext").onclick=function(){ if(i<S.length-1){ i++; paint(); } else end(); };

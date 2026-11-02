@@ -24,7 +24,7 @@ with sync_playwright() as p:
     W=lambda pg: norm(pg.locator(".wlc").inner_text()) if pg.locator(".wlc").count() else ""
     # ---------- 1. premier démarrage
     c, pg = page(); pg.reload(); pg.wait_for_timeout(1200)
-    t=W(pg); check("Bienvenue dans Tickets" in t and "Tout reste sur ton téléphone" in t and pg.locator(".wlc-dots i").count()==3, "1er démarrage : « Bienvenue dans Tickets », 3 diapos")
+    t=W(pg); check("Bienvenue dans Tickets" in t and "Gère tes achats, comptes, frais fixes et le commun" in t and "pas même nous" in t and "*Internet sert seulement au foyer partagé" in t and pg.locator(".wlc-dots i").count()==3, "1er démarrage : « Bienvenue dans Tickets », 3 diapos")
     pg.locator("#wlcNext").click(); pg.wait_for_timeout(200); t=W(pg)
     check("Bien scanner" in t and "orange" in t and "PDF" in t, "2e diapo : « Bien scanner »")
     pg.locator("#wlcNext").click(); pg.wait_for_timeout(200); t=W(pg)

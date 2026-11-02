@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `02/11 14:58`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `02/11 15:13`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -182,6 +182,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 02/11
+- **1re diapo de l'accueil réécrite par Benoît** : « Gère tes achats, comptes, frais fixes et le commun », « Invite ta famille et retrouve ses dépenses ✦ », « Tes données restent privées : personne ne les récupère, pas même nous », « Sans compte, sans pub, hors ligne* » et la note « *Internet sert seulement au foyer partagé et à l'achat de Tickets Plus. » (champ `n` d'une diapo, `.wlc-note`).
 - **Accueil en bulles** (« le même graphisme que proposé, des bulles superposées à l'onglet de démarrage ») : chaque diapo est une carte arrondie posée sur l'écran d'accueil assombri (`.wlc` voile, `.wlc-card`), points en haut, icône au trait couleur de l'appli (`WLC_IC`), titre, liste à puces reprise mot pour mot de la maquette, « Passer » et bouton « Suivant » / « Commencer ».
 - **Accueil en diapos et Menu › Aide** (maquette ; « tu peux intégrer ») : `welcomeShow(after)` (plein écran `.wlc`, points, Passer / Suivant / ‹ Retour / Commencer, glisser), `welcomeSlides()` : propriétaire 3 diapos, membre 2 diapos ; premier démarrage : diapos puis `fyWelcome` (sauf si déjà vues) ; téléphone déjà utilisé ou membre : `welcomeAuto` une fois, après le code (`welcomeSeen`, `welcomeFy`) ; Menu › Aide (`openAide`) : « Revoir l'accueil », le guide « arrive bientôt ». Tests : `horloge.py` pose `window.__tkNoWelcome` pour que l'accueil ne s'ouvre pas tout seul (sauf avec `window.__wlcTest`, script de contexte), t72 et t95 (ligne Aide), nouveau `t115`.
 - **Photos en qualité d'origine, Stockage, sauvegarde complète** (maquette ; « oui tu peux intégrer ») :
