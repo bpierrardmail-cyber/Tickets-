@@ -1,6 +1,6 @@
 # Tickets : dossier de passation
 
-*État au 01/11/2026, étiquette `02/11 15:13`. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
+*État au 01/11/2026, étiquette `02/11 15:38`. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
 
 > **À Claude qui reprend le projet**
 >
@@ -175,6 +175,7 @@ Fait et poussé le 01/11 :
 13. **Stockage (02/11)** : plus de limite de 5 Mo ; une donnée qui ne tient plus dans la mémoire locale part dans le stockage du téléphone, sans perte.
 14. **Photos et sauvegarde complète (02/11)** : photos des tickets gardées en qualité d'origine, visionneuse avec zoom ; galerie par mois (⋯ : supprimer un mois ou une année, annulable) ; Menu › Stockage ; sauvegarde complète en ZIP (données + photos) ou données seules ; restauration du ZIP.
 15. **Accueil en diapos (02/11)** : 3 diapos au premier démarrage (une fois aussi sur un téléphone déjà utilisé), 2 pour un membre ; Menu › Aide › « Revoir l'accueil ».
+16. **Qui doit combien à qui (02/11, ✦ Plus)** : dans Commun, ce que chacun a payé pour le commun comparé à sa part, le moins de remboursements possible, « Remboursé » avec ou sans virement, report d'un mois sur l'autre, historique.
 
 Fait et poussé le 31/10 :
 1. **Sans réseau** pour les deux éditions. L'APK Store est autonome ; la Perso garde une copie.
@@ -209,7 +210,7 @@ Fait et poussé le 31/10 :
 - la lecture des factures : ses trois types de factures ratées (à réimporter ; envoyer les PDF ou « Copier la lecture » si l'une reste mal lue), et corriger une fois un fournisseur mal lu pour voir la suivante bien lue ;
 - les 12 factures Free Mobile : refaire l'import (sans rien appliquer de l'ancien essai), dates du 27 et 9,99 / 15,99 € attendus.
 
-**Tests automatiques** : les 35 tests de `tests/` passent (t96 : écran de contrôle des factures ; t97 : page gardée des petits graphiques ; t98 : modifier ou supprimer une facture ; t99 : mettre dans les comptes une facture gardée sans ses effets ; t100 : payer une facture avec une provision ; t101 : provisions reliées aux frais fixes, au Commun et aux comptes ; t102 : graphique des provisions avec les factures prévues ; t103 : reprendre des virements, virements « chaque mois » ; t104 : « Prélevé sur » d'un frais fixe ; t105 : passer un virement en frais fixe ; t106 : « Total provisions » ; t107 : factures Free Mobile en PDF ; t108 : lecture générale des factures et apprentissage par fournisseur ; t109 : abonnement dont le prix change ; t110 : factures et relevé, contrôles, Factur-X ; t111 : tickets et relevé ; t112 : scan des tickets, jeu d'essai ; t113 : stockage au-delà de la mémoire locale ; t114 : photos d'origine, Stockage, sauvegarde complète ; t115 : accueil en diapos). t93 (foyer) attend parfois le relais local : en cas d'échec isolé, le relancer seul. La date du navigateur est fixée au 30/10/2026 par `tests/horloge.py`, car les données inventées sont en octobre 2026. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
+**Tests automatiques** : les 36 tests de `tests/` passent (t96 : écran de contrôle des factures ; t97 : page gardée des petits graphiques ; t98 : modifier ou supprimer une facture ; t99 : mettre dans les comptes une facture gardée sans ses effets ; t100 : payer une facture avec une provision ; t101 : provisions reliées aux frais fixes, au Commun et aux comptes ; t102 : graphique des provisions avec les factures prévues ; t103 : reprendre des virements, virements « chaque mois » ; t104 : « Prélevé sur » d'un frais fixe ; t105 : passer un virement en frais fixe ; t106 : « Total provisions » ; t107 : factures Free Mobile en PDF ; t108 : lecture générale des factures et apprentissage par fournisseur ; t109 : abonnement dont le prix change ; t110 : factures et relevé, contrôles, Factur-X ; t111 : tickets et relevé ; t112 : scan des tickets, jeu d'essai ; t113 : stockage au-delà de la mémoire locale ; t114 : photos d'origine, Stockage, sauvegarde complète ; t115 : accueil en diapos ; t116 : qui doit combien à qui). t93 (foyer) attend parfois le relais local : en cas d'échec isolé, le relancer seul. La date du navigateur est fixée au 30/10/2026 par `tests/horloge.py`, car les données inventées sont en octobre 2026. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
 
 ---
 
@@ -271,7 +272,7 @@ Fait et poussé le 31/10 :
 5. **Tenir `JOURNAL.md` à jour dans le même commit** : une entrée datée en haut de l'Historique, plus Décisions, État actuel et En cours si nécessaire. Mettre aussi `CLAUDE.md` à jour si une notion technique change.
 6. **Commit en français**, préfixé « β » quand il touche la β, poussé directement sur `main`. Le push met en ligne la β et la Perso, et recompile les deux APK.
 7. **Tester** avec les tests de `tests/` (mode d'emploi dans `tests/README.md`) :
-   - `sh tests/run.sh` lance les 35 tests ; `python3 tests/t95.py` en lance un seul ;
+   - `sh tests/run.sh` lance les 36 tests ; `python3 tests/t95.py` en lance un seul ;
    - ce sont des scripts Playwright en Python : Chromium sans interface, écran de 412×900, données injectées dans localStorage, relais local (Node et `node:sqlite` sur `localhost:8787`) ;
    - aucune requête réseau extérieure pendant les tests ;
    - ajouter un test pour chaque nouvelle fonction, **toujours avec des données inventées**.

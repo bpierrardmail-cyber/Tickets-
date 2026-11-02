@@ -63,6 +63,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 - `tkAppris` (sur le téléphone, dans la sauvegarde) : total d'un ticket appris par enseigne `{nom lu (norm): {amt: {a, prev?}}}` (`tkAnchorOf` à l'enregistrement d'un ticket scanné ; relu au scan par `factAnchorFind(lignes, "tamt", …)`). Brouillon d'un ticket scanné : `draft.scan = {lines, four, total, carte, tva, learnt}` ; `parseTicket` rend `carte` et `tva` ; `tkSrcPaint` (sources du total, « Prendre … »).
 - `factures` : factures importées `{id, four, type ("elec"|"gaz"|"eau"|"net"|"autre"), date, montant, prelev? | aPayer?, due?, du?, au?, conso?, next?, regul?, src, fraisId?, prId?}` ; série = même `factKey(f)` (type + nom normalisé). `factAlias` : nom de fournisseur corrigé à la main.
   - Frais fixe créé par une facture : `fact` (clé de la série), `factNom`, `est` (prochaine facture estimée, remplacée à l'import de la vraie), `aPayer`. Provision liée à une série : `fact`.
+- `commRemb` (dans `FY_KEYS`, onglet Commun) : remboursements du commun `{id, month, from, to, montant, date, vir?}` (`vir` = ids des virements créés). `commBalFrom` (sur le téléphone) : 1er mois de l'équilibre ; avant, rien n'est reporté.
 - `budgets` (budgets du foyer par catégorie), `budgetsP` (`{personne: {catégorie: montant}}`).
 - `communParts` (part de chacun dans le commun, en %), `argentMois`, `liquideMois`, `soldeInit`, `devise`.
 - Taxonomie : `cats`, `familles`, `produits`, `appris`, `familleDe`.
@@ -88,6 +89,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
   - avec `f.split` (« chacun sa part ») : la part de chacun sur son propre compte (`payAcctOf`).
   
   Toujours passer par `fraisKind(f, compte)` et `fraisAcctAmt(f, compte, mois)` pour les soldes.
+- **Qui doit combien à qui** (✦ Plus, `canUse("equilibre")`, section `// ---------- Équilibre du commun`, en haut de l'onglet Commun) : `commMonthBal(mois)` = payé pour le commun (frais communs : en entier par `fraisPayer(f)`, ou chacun sa part si `f.split` ; produits partagés « Dépense à deux » par `payerOf(e)` si `commProdOn()` ; remboursements `commRemb`) et part de chacun (`fPct`, `pctOf`) ; `commBal(mois)` reporte le reste d'un mois sur l'autre depuis `commBalFrom` et calcule le moins de remboursements possible (`B.T`) ; « Remboursé » → `commRembForm` (montant, « Créer le virement » depuis / vers un compte, ou « Sans virement »), annulable ; `commRembHistory` (supprimer retire aussi les virements créés). Sans Plus (Store) : `.fct-teaser` et `#cbalBuy`.
 - **Filtre par personne** (Accueil, Dépenses › Produits et Analyse, Commun) : `pvCur()` vaut `moi`, un prénom ou `all` ; utiliser `vEntries()` et `inView()`. Dans Commun, il choisit seulement la part affichée en grand et dans les bulles. « Qui a payé » (Analyse) montre toujours tout le foyer. Il ne s'applique ni aux comptes, ni au Bilan, ni aux widgets.
 - **Import d'un relevé** (section `// ---------- Import d'un relevé`, `state.view="import"`) :
   - `impParse` lit l'OFX, le QIF ou le CSV, tout sur le téléphone. Montants avec `impNum`, dates avec `impDate` + `impDateOrder` (jj/mm ou mm/jj).
@@ -110,7 +112,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 - **Analyse « + Frais fixes »** : `fraisLines(mois, qui)` donne ce qui sort réellement du compte de la personne. `anFraisLines` limite le calcul aux mois qui ont des tickets.
 - **Éditions** : `EDITION` vaut `perso` ou `store`. L'appli Android l'annonce par `TicketsApp/<édition>` dans son identifiant de navigateur (plus ` TkOff/1` pour la Perso qui garde elle-même sa copie hors ligne) ; dans un navigateur, ajouter `?edition=store`.
   - La version Store n'a pas la Bourse.
-  - `PLUS_FEATURES = ["widgets","foyer","avancee","factures"]` sont réservées à Tickets Plus dans la version Store ; vérifier avec `canUse()`.
+  - `PLUS_FEATURES = ["widgets","foyer","avancee","factures","equilibre"]` sont réservées à Tickets Plus dans la version Store ; vérifier avec `canUse()`.
 - **Analyse avancée** (`state.view="avancee"`, `renderAvancee`, `avData`) : depuis Dépenses › Analyse, la vue d'ensemble seule (inflation perso, année / année précédente, alertes, épargne et reste à vivre, pistes d'économies, résumé à coller dans une IA) ; Projection et Simuler s'ouvrent depuis À venir › 12 mois (« Tes comptes dans 12 mois », `#avProj`, `state.avFrom="factures"`, titre « Dans 12 mois », retour vers À venir). Sans Plus (Store) : `.fct-teaser` et bouton `#avBuy`, plus d'écran flouté. Tout est calculé sur le téléphone ; seule l'inflation INSEE (publique) vient du relais (`/inflation`, gardée 24 h dans `inseeIpc`) ; dans l'appli Store, elle est lue dans `insee.json` de l'APK.
   - Rejoindre un foyer est gratuit.
 

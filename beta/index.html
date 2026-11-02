@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="02/11 15:13" />
+  <meta name="build" content="02/11 15:38" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -199,6 +199,19 @@
     .fct-teaser{ padding:18px; border-radius:20px; background:var(--card); border:1px solid var(--line); }
     .fct-teaser h3{ margin:0 0 8px; font-size:18px; } .fct-teaser p{ margin:0 0 8px; font-size:13.5px; line-height:1.5; color:var(--ink-soft); }
     .fct-teaser ul{ margin:0; padding-left:20px; font-size:13.5px; line-height:1.75; color:var(--ink-soft); }
+    .cbal-r{ display:grid; grid-template-columns:minmax(0,74px) minmax(0,1fr) auto; gap:10px; align-items:center; font-size:13.5px; margin:9px 0; }
+    .cbal-r .nm{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .cbal-bar{ position:relative; height:10px; border-radius:5px; background:var(--card2); }
+    .cbal-bar i{ position:absolute; left:0; top:0; bottom:0; border-radius:5px; }
+    .cbal-bar u{ position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--ink); border-radius:1px; }
+    .cbal-r .v{ text-align:right; font-size:12.5px; white-space:nowrap; }
+    .cbal-up{ color:var(--accent); } .cbal-dn{ color:var(--coral); }
+    .cbal-res{ background:var(--card2); border-radius:14px; padding:4px 12px; margin-top:12px; }
+    .cbal-tr{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 0; font-size:14px; }
+    .cbal-tr + .cbal-tr{ border-top:1px solid var(--line); }
+    .cbal-tr small{ display:block; color:var(--muted); font-size:11.5px; margin-top:2px; }
+    .cbal-ok{ flex:0 0 auto; border:0; border-radius:10px; padding:7px 12px; background:rgba(79,214,160,.16); color:var(--accent); font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; }
+    .cbal-hist{ display:flex; justify-content:space-between; margin-top:10px; font-size:12.5px; color:var(--accent); cursor:pointer; }
     .fct-plus{ width:100%; margin-top:12px; height:50px; border-radius:14px; border:0; background:#f2c76b; color:#0e0f14; font:inherit; font-size:15px; font-weight:700; cursor:pointer; }
     /* Factures */
     .fct-h{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:600; }
@@ -1553,6 +1566,8 @@
     function isArchived(n){ var r=personRec(n); return !!(r && r.archived); }
     // Parts du commun en % : { prénom: 50, … } (seules les parts > 0). null = parts égales entre les personnes du commun.
     var communParts = store.read("communParts", null);
+    var commRemb = store.read("commRemb", []);   // remboursements du commun : {id, month, from, to, montant, date, vir:[ids des virements créés]}
+    function persistRemb(){ store.write("commRemb", commRemb); }
     function persistParts(){ store.write("communParts", communParts); }
     function mePerson(){ if(fyCfg && fyCfg.role!=="owner" && fyCfg.me) return fyCfg.me; var a=mainAcct(); return (a && a.payer) || "Moi"; }
     // À qui est une épargne ou une provision : un prénom, « Commun » (tout le foyer), ou rien = toi (anciennes données)
@@ -1587,7 +1602,7 @@
     var FEAT={ bourse: EDITION!=="store" };
     // Version Plus (achat dans l'appli Store) : la liste des fonctions réservées sera remplie quand le partage
     // gratuit / Plus sera décidé. Tant qu'elle est vide, tout est ouvert.
-    var PLUS_FEATURES=["widgets","foyer","avancee","factures"];   // à compléter (par ex. "scan", "provisions", "epargne")
+    var PLUS_FEATURES=["widgets","foyer","avancee","factures","equilibre"];   // à compléter (par ex. "scan", "provisions", "epargne")
     function plusUnlocked(){ return EDITION!=="store" || !!store.read("plusUnlocked", false); }
     function canUse(f){ return PLUS_FEATURES.indexOf(f)<0 || plusUnlocked(); }
     function mainAcct(){ return comptes.filter(function(c){ return c.main; })[0] || comptes[0]; }
@@ -5148,6 +5163,118 @@
       function effPct(who){ var pot=D.commun+D.prod; return pot>0 ? shareOf(who)/pot*100 : pctOf(who); }
       return { monthData:monthData, D:D, me:me, ppl:ppl, CP:CP, persoOf:persoOf, pctOf:pctOf, fPct:fPct, communShareOf:communShareOf, effPct:effPct, shareOf:shareOf, partOf:partOf };
     }
+    // ---------- Équilibre du commun : qui doit combien à qui (✦ Plus) ----------
+    // Payé pour le commun : les frais communs (en entier par le titulaire du compte qui les paie, ou chacun sa part),
+    // les produits partagés (« Dépense à deux ») par la personne qui a payé le ticket, et les remboursements notés.
+    // Part : la part de chacun dans ces mêmes dépenses. Ce qui reste d'un mois passe au suivant, à partir du 1er mois affiché (commBalFrom).
+    function commProdOn(){ var v=state.comProd; if(v==null) v=store.read("comProd", true); return !!v; }
+    function commMonthBal(month){
+      var CM=communModel(month), D=CM.D, P={}, prodOn=commProdOn();
+      function add(p, k, v){ p=(p||"").trim(); if(!p || p==="Commun") return; var o=P[p]||(P[p]={ paid:0, share:0 }); o[k]+=v; }
+      (D.byP.Commun ? D.byP.Commun.items : []).forEach(function(f){ var v=fraisPartV(f, month); if(!v) return;
+        CM.ppl.forEach(function(p){ var sh=v*CM.fPct(f, p)/100; if(sh>0.004){ add(p, "share", sh); if(f.split) add(p, "paid", sh); } });
+        if(!f.split) add(fraisPayer(f), "paid", v); });
+      if(prodOn && D.prod){
+        state.entries.forEach(function(e){ if(monthKey(e.date)!==month) return; (e.articles||[]).forEach(function(a){ if(a.commun) add(payerOf(e), "paid", Number(a.prix)||0); }); });
+        CM.ppl.forEach(function(p){ var sh=D.prod*CM.pctOf(p)/100; if(sh>0.004) add(p, "share", sh); });
+      }
+      commRemb.forEach(function(r){ if(r.month!==month) return; add(r.from, "paid", Number(r.montant)||0); add(r.to, "paid", -(Number(r.montant)||0)); });
+      return { P:P, ppl:CM.ppl, me:CM.me, tot:D.commun+(prodOn?D.prod:0) };
+    }
+    function commBal(month){
+      var from=store.read("commBalFrom", null)||month, carry={}, m=from, B=null, n=0;
+      if(month<from) from=month;
+      for(m=from; m<=month && n<240; m=nextMonthKey(m), n++){
+        B=commMonthBal(m); B.carry=carry; var nx={};
+        Object.keys(B.P).forEach(function(p){ var o=B.P[p]; o.carry=carry[p]||0; o.net=o.paid-o.share+o.carry; nx[p]=o.net; });
+        Object.keys(carry).forEach(function(p){ if(!B.P[p] && Math.abs(carry[p])>0.004){ B.P[p]={ paid:0, share:0, carry:carry[p], net:carry[p] }; nx[p]=carry[p]; } });
+        carry=nx;
+      }
+      // le moins de virements possible : le plus gros débiteur rembourse le plus gros créancier, et ainsi de suite
+      var cr=[], db=[]; Object.keys(B.P).forEach(function(p){ var v=Math.round(B.P[p].net*100)/100; if(v>0.5) cr.push({ p:p, v:v }); else if(v<-0.5) db.push({ p:p, v:-v }); });
+      var T=[]; cr.sort(function(a,b){ return b.v-a.v; }); db.sort(function(a,b){ return b.v-a.v; });
+      var i=0, j=0; while(i<db.length && j<cr.length){ var x=Math.min(db[i].v, cr[j].v); if(x>0.5) T.push({ from:db[i].p, to:cr[j].p, v:Math.round(x*100)/100 }); db[i].v-=x; cr[j].v-=x; if(db[i].v<0.5) i++; if(cr[j].v<0.5) j++; }
+      B.T=T; return B;
+    }
+    function commBalHTML(month){
+      var who=function(p, me){ return p===me ? "Toi" : p; };
+      if(!canUse("equilibre")){
+        return '<section class="fct-teaser" style="margin-bottom:14px"><h3>✦ Qui doit combien à qui</h3><p>Ce que chacun a vraiment payé pour le commun, comparé à sa part, et les remboursements en un geste.</p>'+
+          '<ul><li>« Tu dois 220 € à Marie »</li><li>Le moins de virements possible, même à 10</li><li>Reporté d\'un mois sur l\'autre, avec l\'historique</li></ul>'+
+          '<button type="button" class="fct-plus" id="cbalBuy">✦ Équilibrer avec Tickets Plus</button></section>';
+      }
+      var B=commBal(month), me=B.me, L=Object.keys(B.P).filter(function(p){ var o=B.P[p]; return o.share>0.004 || Math.abs(o.paid)>0.004 || Math.abs(o.net)>0.004; });
+      if(L.length<2) return "";
+      L.sort(function(a,b){ return a===me ? -1 : (b===me ? 1 : B.P[b].net-B.P[a].net); });
+      var mx=0; L.forEach(function(p){ mx=Math.max(mx, B.P[p].paid, B.P[p].share); }); if(!mx) mx=1;
+      var h='<section class="paper cacc" id="cbal"><div class="cacc-h" style="cursor:default"><span class="t"><span class="tic">⚖️</span> Qui doit combien à qui<small>payé pour le commun, comparé à la part de chacun</small></span></div>';
+      L.forEach(function(p){ var o=B.P[p], d=o.paid-o.share, w=Math.max(0, Math.min(100, o.paid/mx*100)), sw=Math.min(100, o.share/mx*100);
+        h+='<div class="cbal-r" data-p="'+esc(p)+'"><span class="nm">'+esc(who(p, me))+'</span><div class="cbal-bar"><i style="width:'+w.toFixed(1)+'%;background:'+(d>=-0.5?'var(--accent)':'var(--coral)')+'"></i><u style="left:calc('+sw.toFixed(1)+'% - 1px)"></u></div>'+
+           '<span class="v">'+fmtK(o.paid)+(Math.abs(d)>0.5?' <span class="'+(d>0?'cbal-up':'cbal-dn')+'">'+(d>0?'+':'−')+fmtK(Math.abs(d))+'</span>':'')+'</span></div>'; });
+      h+='<div class="muted" style="font-size:11.5px">Le trait = la part de chacun</div>';
+      h+='<div class="cbal-res">';
+      if(!B.T.length) h+='<div class="cbal-tr"><span>✓ Tout est équilibré</span></div>';
+      else {
+        if(B.T.length>1) h+='<div class="muted" style="font-size:11.5px;padding-top:8px">'+B.T.length+' remboursements suffisent</div>';
+        B.T.forEach(function(t, k){ var cf=B.P[t.from].carry||0, txt=(t.from===me) ? "Tu dois "+fmtS(t.v)+" à "+t.to : (t.to===me ? t.from+" te doit "+fmtS(t.v) : t.from+" doit "+fmtS(t.v)+" à "+t.to);
+          h+='<div class="cbal-tr"><span>'+esc(txt)+(B.T.length===1 && cf<-0.5 ? '<small>dont '+esc(fmtS(-cf))+' reportés des mois d\'avant</small>' : '')+'</span><button type="button" class="cbal-ok" data-k="'+k+'">Remboursé</button></div>'; });
+      }
+      h+='</div>';
+      var nR=commRemb.length;
+      if(nR) h+='<div class="cbal-hist" id="cbalHist"><span>Historique des remboursements · '+nR+'</span><span>›</span></div>';
+      return h+'</section>';
+    }
+    function commBalWire(month){
+      if(!store.read("commBalFrom", null) && canUse("equilibre") && !fyMember()) store.write("commBalFrom", month<monthKey(todayISO()) ? month : monthKey(todayISO()));
+      var bb=document.getElementById("cbalBuy"); if(bb) bb.onclick=function(){ uiChoice("Tickets Plus", "Qui doit combien à qui, les remboursements en un geste et leur historique font partie de Tickets Plus. L'achat de Plus arrivera bientôt dans l'appli.", [{ l:"D'accord", fn:function(){} }]); };
+      var hb=document.getElementById("cbalHist"); if(hb) hb.onclick=commRembHistory;
+      var bt=document.querySelectorAll(".cbal-ok"); if(!bt.length) return;
+      var B=commBal(month);
+      [].forEach.call(bt, function(b){ b.onclick=function(){ var t=B.T[+b.getAttribute("data-k")]; if(t) commRembForm(t, month, B.me); }; });
+    }
+    function commAcctOpts(){ return [{ v:"", l:"Pas dans l'appli" }].concat(comptes.filter(function(a){ return a.key!=="__tickets"; }).map(function(a){ var o=acctOwner(a); return { v:a.key, l:a.nom+(o?" · "+o:"") }; })); }
+    function commRembForm(t, month, me){
+      var fa=payAcctOf(t.from), ta=payAcctOf(t.to), nm=function(p){ return p===me ? "toi" : p; };
+      uiForm({ title:(t.from===me?"Toi":t.from)+" → "+(t.to===me?"toi":t.to), fields:[
+        { key:"montant", label:"Montant remboursé", type:"money", value:t.v, required:true },
+        { key:"how", label:"Comment", type:"seg", value:(fa || ta) ? "vir" : "none", options:[{ v:"vir", l:"Créer le virement" }, { v:"none", l:"Sans virement" }],
+          help:"Sans virement : en liquide, ou déjà noté ailleurs.", onChange:function(v, api){ api.show("from", v==="vir"); api.show("to", v==="vir"); } },
+        { key:"from", label:"Depuis le compte de "+nm(t.from), type:"select", value:fa ? fa.key : "", options:commAcctOpts(), hidden:!(fa || ta) },
+        { key:"to", label:"Vers le compte de "+nm(t.to), type:"select", value:ta ? ta.key : "", options:commAcctOpts(), hidden:!(fa || ta) }
+      ], ok:"Remboursé" }, function(r){
+        var v=Math.abs(num(r.montant)); if(!(v>0)) return "Indique le montant.";
+        var vir=[], td=todayISO(), mk=monthKey(td), day=+td.slice(8, 10);
+        if(r.how==="vir"){
+          if(!r.from && !r.to) return "Choisis au moins un compte, ou « Sans virement ».";
+          if(r.from && r.from===r.to) return "Choisis deux comptes différents.";
+          if(r.from){ var o={ id:virNewId(), person:r.from, month:mk, label:"Remboursement · "+t.to, note:"Commun de "+monthLabelOf(month), montant:-v, day:day, done:true }; virements.push(o); vir.push(o.id); }
+          if(r.to){ var n={ id:virNewId(), person:r.to, month:mk, label:"Remboursement · "+t.from, note:"Commun de "+monthLabelOf(month), montant:v, day:day, done:true }; virements.push(n); vir.push(n.id); }
+          if(vir.length) persistVirements();
+        }
+        var rec={ id:virNewId(), month:month, from:t.from, to:t.to, montant:Math.round(v*100)/100, date:td }; if(vir.length) rec.vir=vir;
+        commRemb.push(rec); persistRemb(); render();
+        uiUndoToast("Remboursement noté"+(vir.length?" · virement créé":""), "Annuler", function(){ commRembDel(rec.id); uiToast("Remboursement retiré"); });
+      });
+    }
+    function commRembDel(id){
+      var r=commRemb.filter(function(x){ return String(x.id)===String(id); })[0]; if(!r) return;
+      if(r.vir && r.vir.length){ virements=virements.filter(function(v){ return r.vir.indexOf(v.id)<0; }); persistVirements(); }
+      commRemb=commRemb.filter(function(x){ return String(x.id)!==String(id); }); persistRemb(); render();
+    }
+    function commRembHistory(){
+      var me=mePerson(), L=commRemb.slice().sort(function(a,b){ return String(b.date||"").localeCompare(String(a.date||"")) || (+b.id||0)-(+a.id||0); });
+      var h='<div class="sheet-title">Remboursements</div><div class="ui-stack" style="gap:0">';
+      if(!L.length) h+='<div class="muted">Aucun remboursement.</div>';
+      L.forEach(function(r){ h+='<button type="button" class="dr-row tall" data-id="'+esc(r.id)+'"><span class="t">'+esc((r.from===me?"Toi":r.from)+" → "+(r.to===me?"toi":r.to))+'<small>'+esc((r.date||"").split("-").reverse().join("/")+" · commun de "+monthLabelOf(r.month)+" · "+(r.vir&&r.vir.length?"virement":"sans virement"))+'</small></span><span class="st">'+esc(fmtS(r.montant))+'</span></button>'; });
+      h+='<button type="button" class="btn ghost ui-no" style="margin-top:10px">Fermer</button></div>';
+      var s=uiSheet(h); s.q(".ui-no").onclick=s.close;
+      [].forEach.call(s.qa(".dr-row[data-id]"), function(b){ b.onclick=function(){ var id=b.getAttribute("data-id"), r=commRemb.filter(function(x){ return String(x.id)===String(id); })[0]; if(!r) return; s.close();
+        uiChoice("Remboursement de "+fmtS(r.montant), esc(r.vir && r.vir.length ? "Le supprimer retire aussi le virement créé." : "Noté sans virement."), [{ l:"Supprimer", danger:true, fn:function(){
+          var keep=JSON.parse(JSON.stringify(r)), vs=virements.filter(function(v){ return (r.vir||[]).indexOf(v.id)>=0; });
+          commRembDel(id);
+          uiUndoToast("Remboursement supprimé", "Annuler", function(){ commRemb.push(keep); vs.forEach(function(v){ virements.push(v); }); persistRemb(); persistVirements(); render(); });
+        } }]); }; });
+    }
     function renderCommunes(){
       if(state.view!=="factures" && state.comSub==="frais"){ state.comSub=null; state.view="factures"; state.avnSub="frais"; return renderFactures(); }
       var avMode=(state.view==="factures");   // À venir › Frais fixes : la même page, dans l'onglet À venir
@@ -5296,7 +5423,7 @@
         skL.map(function(f){ return '<div style="display:flex;align-items:center;gap:8px;padding:8px 2px;border-top:1px solid var(--line)"><span style="flex:1;min-width:0;color:var(--ink-soft);text-decoration:line-through;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(f.label)+'</span><button class="btn ghost fxunskip" type="button" data-id="'+esc(f.id)+'" style="padding:6px 10px;font-size:12px;flex:0 0 auto">↺ Rétablir</button></div>'; }).join("")+'</section>';
       if(cSub){ h+=subBody; if(cSub!=="prod") h+='<section class="paper cacc"><div class="clink" id="addfrais" style="margin:10px 2px"><span>+ Ajouter un frais fixe</span><span></span></div></section>'; }
       else {
-        h+='<section class="paper cacc">'+rowsMain+'</section>';
+        h+=commBalHTML(month)+'<section class="paper cacc">'+rowsMain+'</section>';
       }
 
       app.innerHTML=h;
@@ -5328,6 +5455,7 @@
         uiChoice(f.label, "", [ { l:"Modifier", fn:function(){ editFraisCommun(id); } }, { l:"Supprimer", danger:true, fn:function(){ delFraisCommun(id); } } ]); }; });
       [].forEach.call(document.querySelectorAll(".entry"), function(node){ node.onclick=function(){ editEntry(node.getAttribute("data-id")); }; });
       wireMonthNav(month, curM, "communes");
+      if(!cSub && !avMode) commBalWire(month);
       if(!cSub) wireComSwipe(cm, MODES.map(function(x){ return x[0]; }));
       setNav(avMode ? "factures" : "communes", true);
     }
@@ -10032,7 +10160,7 @@
       uiToast("Facture ajoutée"+histTxt+(made.length?" · "+made.join(", "):"")+(learnt?" · lecture retenue pour "+p.four:""));
     }
     function backupData(mode){
-      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","factAppris","releve","tkAppris","photoKeep","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"];
+      var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","factAppris","releve","tkAppris","photoKeep","commRemb","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"];
       var dump={ _app:"tickets", _version:1, _date:new Date().toISOString(), data:{} };
       keys.forEach(function(k){ var v=store.read(k, null); if(v!==null) dump.data[k]=v; });
       // deux sauvegardes : complète (ZIP : données + photos d'origine) ou données seules (petit fichier JSON, sans photos)
@@ -10083,7 +10211,7 @@
       (obj._zip||[]).forEach(function(x){ np[x.id]=1; });
       np=Object.keys(np).length;
       if(!window.confirm("Restaurer cette sauvegarde ?\n"+n+" ticket(s)"+(np?" et "+np+" photo(s)":"")+" vont REMPLACER les données actuelles.")) return;
-      ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","factAppris","releve","tkAppris","photoKeep","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"].forEach(function(k){
+      ["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","factAppris","releve","tkAppris","photoKeep","commRemb","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"].forEach(function(k){
         if(k in data) store.write(k, data[k]);
       });
       if(!("comptes" in data)) store.write("comptes", null);
@@ -10314,7 +10442,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
     // Le propriétaire garde aussi une copie de secours, que seul son code de secours permet d'ouvrir (nouveau téléphone).
     function fyApiBase(){ return (store.read("foyerApi","")||COURS_API||"").replace(/\/+$/,""); }
     var FY_KEYS={ entries:"id", virements:"id", fraisCommuns:"id", epargne:"id", provisions:"id", factures:"id", bourse:"id", comptes:"key", personnes:"nom",
-      argentMois:2, liquideMois:2, soldeInit:2, budgets:1, budgetsP:2, appris:1, familleDe:1, communParts:0, cats:0, familles:0, produits:0, devise:0 };
+      argentMois:2, liquideMois:2, soldeInit:2, budgets:1, budgetsP:2, appris:1, familleDe:1, communParts:0, commRemb:"id", cats:0, familles:0, produits:0, devise:0 };
     var FY_OWNER_ONLY={ bourse:1 };   // la Bourse se gère depuis le téléphone du propriétaire (cours mis à jour en continu)
     var FY_TABS=[{v:"list",l:"Accueil"},{v:"articles",l:"Dépenses : produits"},{v:"analyse",l:"Dépenses : analyse"},{v:"compte",l:"Compte"},{v:"factures",l:"À venir"},{v:"communes",l:"Commun"}].concat(FEAT.bourse?[{v:"bourse",l:"Bourse"}]:[]);
     var FY_SUB={ tickets:"list", import:"compte", avancee:"analyse", epargne:"compte", form:"list", gallery:"list", photo:"list", produits:"articles", artDetail:"articles", comptedet:"compte", patrimoine:"compte", provisions:"factures", factlue:"factures", factserie:"factures", month:"analyse", graph:"analyse", history:"analyse" };
@@ -10323,7 +10451,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
     function fyMember(){ return !!fyCfg && fyCfg.role!=="owner"; }
     // Droits par onglet : m.ed = onglets en modification (absent : tous les onglets visibles si « edit », aucun si « view »)
     var FY_KEY_TAB={ entries:"list", cats:"articles", familles:"articles", produits:"articles", appris:"articles", familleDe:"articles", budgets:"articles", budgetsP:"articles",
-      fraisCommuns:"communes", communParts:"communes", comptes:"compte", virements:"compte", epargne:"compte", provisions:"factures", factures:"factures", soldeInit:"compte", liquideMois:"compte", argentMois:"compte", bourse:"bourse" };
+      fraisCommuns:"communes", communParts:"communes", commRemb:"communes", comptes:"compte", virements:"compte", epargne:"compte", provisions:"factures", factures:"factures", soldeInit:"compte", liquideMois:"compte", argentMois:"compte", bourse:"bourse" };
     function fyEdTabs(m){ if(!m || m.role==="owner") return FY_TABS.map(function(t){ return t.v; }); if(m.role!=="edit") return [];
       if(Array.isArray(m.ed)) return m.ed; return m.tabs ? m.tabs.slice() : FY_TABS.map(function(t){ return t.v; }); }
     function fyTabEd(t){ return !fyMember() || fyEdTabs(fyCfg).indexOf(t)>=0; }   // ce téléphone peut-il modifier cet onglet ?
@@ -10508,7 +10636,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       provisions=store.read("provisions", []); factures=store.read("factures", []); bourse=store.read("bourse", []); personnes=store.read("personnes", []);
       var cp=store.read("comptes", null); if(cp && cp.length) comptes=cp;
       argentMois=store.read("argentMois", {}); liquideMois=store.read("liquideMois", {}); soldeInit=store.read("soldeInit", {});
-      budgets=store.read("budgets", {}); budgetsP=store.read("budgetsP", {})||{}; communParts=store.read("communParts", null); APPRIS=store.read("appris", {});
+      budgets=store.read("budgets", {}); budgetsP=store.read("budgetsP", {})||{}; communParts=store.read("communParts", null); commRemb=store.read("commRemb", []); APPRIS=store.read("appris", {});
       var fd=store.read("familleDe", null); FAMILLE_DE=fd||{};
       var c=store.read("cats", null); if(c && c.length){ CATS=c; if(CATS.indexOf("Autre")<0) CATS.push("Autre"); }
       var f=store.read("familles", null); if(f && f.length){ FAMILLES=f; if(FAMILLES.indexOf("Divers")<0) FAMILLES.push("Divers"); }
@@ -10542,6 +10670,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       // frais communs payés en entier : le membre doit savoir par qui (pour l'Analyse « + Frais fixes »)
       K.fraisCommuns=(K.fraisCommuns||[]).map(function(f){ if(((f.personne||"").trim()||"Commun")!=="Commun" || f.split) return f; var x=JSON.parse(JSON.stringify(f)); x.payeur=fraisPayer(f); return x; });
       if(!fyTabOn(m,"bourse")){ K.bourse=[]; K.epargne=(K.epargne||[]).filter(function(x){ return !x.bourseLink; }); }
+      if(!fyTabOn(m,"communes")) K.commRemb=[];   // remboursements du commun : avec l'onglet Commun
       if(!fyTabOn(m,"factures")) K.factures=[];   // les factures suivent l'onglet Factures   // la ligne Bourse de l'épargne suit l'onglet Bourse
       if(R.acc){
         K.comptes=K.comptes.filter(function(a){ return R.acc[a.key]; });
@@ -10576,7 +10705,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       }
       if(k==="soldeInit" || k==="liquideMois" || k==="argentMois"){ var pp=p.split(FY_SEP)[1]; return !!(R.acc[pp] || R.payers[pp]); }
       if(k==="budgetsP") return !!R.payers[p.split(FY_SEP)[1]];
-      if(k==="communParts") return true;   // parts du commun : onglet Commun en modification
+      if(k==="communParts" || k==="commRemb") return true;   // parts et remboursements du commun : onglet Commun en modification
       if(k==="cats" || k==="familles" || k==="produits" || k==="appris" || k==="familleDe") return true;
       if(typeof FY_KEYS[k]==="string") return ok(old, true) && ok(nw, false);
       return false;
