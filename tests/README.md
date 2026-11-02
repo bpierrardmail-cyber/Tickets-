@@ -66,6 +66,7 @@ node tests/relais-local/server.mjs relais
 | t106 | Provisions : le total s'appelle « Total provisions » dans À venir › Provisions et Compte › Graphiques. |
 | t107 | Factures de mobile au format Free (PDF fictifs `facture_mobile_fictive_09/10.pdf`, faits par `donnees/facture_mobile_fictive.py`) : accents détachés, montants « 15.99 e », date en lettres, prélèvement sur la carte. |
 | t108 | Factures : corpus de factures inventées (`donnees/factures_fictives.json`) passé dans `parseBill` ; fournisseur au format inconnu (`facture_inconnue_09/10/11.pdf`) : corriger la plus récente remplit la plus ancienne, « Appliquer » retient la lecture, la suivante est lue toute seule. |
+| t109 | Abonnement dont le prix change (9,99 € puis 15,99 €, sans consommation) : prochaine facture et « par mois » au prix actuel, rythme tiré des factures, estimation déjà dans À venir déplacée et mise à jour. |
 | t97 | Accueil : la page des petits graphiques (« 3 / 8 ») est gardée : changement d'onglet, relance, et quand la mise en page fait défiler sans geste (Accueil dessiné avant d'avoir sa taille, largeur qui change). |
 | t96 | Plusieurs factures d'un coup : 3 factures d'eau en photos (recto et verso, avec les erreurs de lecture du téléphone, aussi dans le désordre) et 3 PDF dont un sans texte. Écran de contrôle « 6 photos · 6 lues », la plus récente, fiche d'une ancienne (Précédente / Suivante), décocher, photo illisible puis « Reprendre », rien d'enregistré avant « Appliquer ». La partie PDF a besoin de pdf.js (voir t90). |
 

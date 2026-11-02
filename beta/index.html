@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="01/11 21:58" />
+  <meta name="build" content="02/11 01:53" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -8732,12 +8732,15 @@
       return out;
     }
     function factRythme(s){
-      var b=s.bills, L=s.last;
-      if(L.next && L.date && L.next>L.date) return Math.max(1, Math.round(isoDays(L.date, L.next)/30.4));
+      var b=s.bills.filter(function(x){ return x.date; }), L=s.last;
+      if(L.next && L.date && L.next>L.date && b.length<3) return Math.max(1, Math.round(isoDays(L.date, L.next)/30.4));
       if(b.length>=2){ var g=[]; for(var i=1;i<b.length;i++) g.push(isoDays(b[i-1].date, b[i].date)/30.4); g.sort(function(x,y){ return x-y; }); return Math.max(1, Math.round(g[Math.floor(g.length/2)])); }
       return s.type==="eau" ? 6 : 1;
     }
-    function factNextDate(s){ var L=s.last; if(L.next && L.next>L.date) return L.next; return L.date ? isoAddMonths(L.date, s.ryth) : ""; }
+    function factNextDate(s){ var L=s.last; if(!L.date) return ""; var byR=isoAddMonths(L.date, s.ryth);
+      if(L.next && L.next>L.date && (s.bills.length<3 || Math.abs(isoDays(L.next, byR))<=20)) return L.next; return byR; }
+    // abonnement (aucune consommation sur les factures) : le prix suit la dernière facture
+    function factNoConso(s){ return !s.bills.some(function(b){ return b.conso>0; }); }
     // Montant d'une facture à venir : même période l'an dernier, corrigée de l'évolution de la consommation ;
     // avec au moins 3 factures et leur consommation, montant = part fixe + prix × consommation attendue.
     // Saison : l'hiver consomme plus (éclairage, chauffage, moins de soleil pour les panneaux). Profil simple, sans données
@@ -8780,6 +8783,7 @@
     // Sans consommation : l'an dernier, sinon la moyenne des dernières.
     function factEstInfo(s, iso){
       var B=s.bills.filter(function(b){ return b.montant>0 && !b.regul && b.date; }); if(!B.length) return { v:0, how:"" };
+      if(factNoConso(s)) return { v:B[B.length-1].montant, how:"prix" };
       function near(d, tol){ var best=null, bd=1e9; B.forEach(function(b){ var x=Math.abs(isoDays(b.date, d)); if(x<=tol && x<bd){ bd=x; best=b; } }); return best; }
       var L=B[B.length-1], Lp=L.conso ? near(isoAddDays(L.date, -365), 45) : null;
       var r=(Lp && Lp.conso && L.conso) ? Math.max(0.3, Math.min(3, L.conso/Lp.conso)) : 1;
@@ -8812,7 +8816,9 @@
       if(fyMember() || !factures.length) return;
       var S={}, ch=false; factSeries().forEach(function(s){ S[s.key]=s; });
       fraisCommuns.forEach(function(f){ var s=f.est && f.fact && f.month ? S[f.fact] : null; if(!s || !s.next || fraisDone(f, f.month)) return;
-        var v=factEstimate(s, s.next); if(v>0 && Math.abs(v-(Number(f.montant)||0))>=1){ f.montant=v; ch=true; } });
+        var v=factEstimate(s, s.next); if(v>0 && Math.abs(v-(Number(f.montant)||0))>=(factNoConso(s)?0.005:1)){ f.montant=v; ch=true; }
+        // la date prévue a changé (rythme recalculé) : l'estimation suit, sans revenir dans le passé
+        var np=factPayIso(s, s.next), nm=np.slice(0,7), cur=monthKey(todayISO()); if(nm!==f.month && nm>=cur){ f.month=nm; if(f.jour) f.jour=+np.slice(8,10); ch=true; } });
       if(ch) persistFrais();
     }
     function fctE(n){ return String(Math.round(Number(n)||0)).replace(/\B(?=(\d{3})+(?!\d))/g, " ")+" "+curSym(); }   // un montant estimé : à l'euro près
@@ -8822,10 +8828,12 @@
       if(e.how==="saison") return sz ? "D'après ta dernière facture, corrigée de la saison." : "D'après ta consommation par jour sur ta dernière facture.";
       if(e.how==="mix") return (sz ? "D'après ta dernière facture corrigée de la saison" : "D'après ta dernière facture")+", et l'an dernier à la même période ("+fmtK(e.b0.montant)+").";
       if(e.how==="an" && e.b0) return "L'an dernier à la même période : "+fmtK(e.b0.montant)+(e.b0.conso && s.last.conso && s.last!==e.b0 ? ", corrigé de l'évolution de ta consommation" : "")+".";
+      if(e.how==="prix") return "Même montant que ta dernière facture (prix actuel de l'abonnement).";
       return "D'après tes dernières factures.";
     }
     function factMonthly(s){
       var B=s.bills.filter(function(b){ return b.montant>0 && !b.regul; }); if(!B.length) return 0; var n=Math.max(1, Math.round(12/s.ryth));
+      if(factNoConso(s)){ var Ld=B.filter(function(b){ return b.date; }); return (Ld.length ? Ld[Ld.length-1] : B[B.length-1]).montant/(s.ryth||1); }
       if(B.length>=n) return B.slice(-n).reduce(function(t,b){ return t+b.montant; },0)/12;
       return B.reduce(function(t,b){ return t+b.montant; },0)/B.length/s.ryth;
     }
@@ -8928,8 +8936,8 @@
         var est=s.next?factEstimate(s, s.next):0, ty=factType(s.type), cat=catIcon(ty.l+" "+s.four), when=s.next?(isoDays(todayISO(), s.next)<=60?"vers le "+ddmm(s.next):MOIS_NOMS[+s.next.slice(5,7)-1]):"";
         var pv=s.prov, pa=null; if(pv && s.next) pa=factProvAt(pv, factPayIso(s, s.next), est);
         h+='<button type="button" class="fct-card'+(pa && pa.manque>0.5?' warn':'')+'" data-k="'+esc(s.key)+'"><span class="fct-top"><span class="fct-ic" style="background:'+hexA(cat.col,.16)+'">'+ty.ic+'</span>'+
-           '<span class="fct-n"><b>'+esc(s.four||ty.l)+'</b><small>'+esc(ty.l+' · '+s.bills.length+' facture'+(s.bills.length>1?'s':'')+' · '+factRythLabel(s.ryth)+' · '+fmtK(factMonthly(s))+'/mois en moyenne')+'</small></span>'+
-           '<span class="fct-v"><b>'+(est?'≈ '+esc(fctE(est)):'—')+'</b><small>'+esc(when)+'</small></span></span>';
+           '<span class="fct-n"><b>'+esc(s.four||ty.l)+'</b><small>'+esc(ty.l+' · '+s.bills.length+' facture'+(s.bills.length>1?'s':'')+' · '+factRythLabel(s.ryth)+' · '+fmtK(factMonthly(s))+(factNoConso(s)?'/mois':'/mois en moyenne'))+'</small></span>'+
+           '<span class="fct-v"><b>'+(est?(factNoConso(s)?esc(fmtK(est)):'≈ '+esc(fctE(est))):'—')+'</b><small>'+esc(when)+'</small></span></span>';
         if(pv && pa){ var w=est>0?Math.min(100, pa.bal/est*100):0, pm=MOIS_NOMS[+pa.mk.slice(5,7)-1];
           h+='<span class="fct-bar"><i style="width:'+w.toFixed(0)+'%"></i></span><span class="fct-s">Provision : '+esc(fmtK(provBalance(pv, curM)))+' de côté · +'+esc(fmtK(mensuelAt(pv, curM)))+'/mois · '+(pa.manque>0.5?'<span class="fct-warn">il manquera '+esc(fmtK(pa.manque))+' en '+esc(pm)+'</span>':'<span class="fct-ok">prête pour '+esc(pm)+'</span> · il restera '+esc(fmtK(pa.reste)))+'</span>'; }
         else if(pv) h+='<span class="fct-s">Provision : '+esc(fmtK(provBalance(pv, curM)))+' de côté · +'+esc(fmtK(mensuelAt(pv, curM)))+'/mois</span>';
@@ -9003,10 +9011,10 @@
       // chiffres
       var y12=s.bills.filter(function(b){ return b.date>isoAddDays(todayISO(), -365) && !b.regul; }), y12p=s.bills.filter(function(b){ return b.date<=isoAddDays(todayISO(), -365) && b.date>isoAddDays(todayISO(), -730) && !b.regul; });
       var c12=y12.reduce(function(t,b){ return t+(b.conso||0); },0), c12p=y12p.length>=Math.max(1, Math.round(12/s.ryth)) ? y12p.reduce(function(t,b){ return t+(b.conso||0); },0) : 0;   // l'année d'avant, seulement si elle est complète
-      h+='<div class="fct-tiles"><div class="fct-tile"><span>Par mois en moyenne</span><b>'+esc(fmtK(factMonthly(s)))+'</b><span>sur les 12 derniers mois</span></div>';
+      h+='<div class="fct-tiles"><div class="fct-tile"><span>'+(factNoConso(s)?'Par mois':'Par mois en moyenne')+'</span><b>'+esc(fmtK(factMonthly(s)))+'</b><span>'+(factNoConso(s)?'au prix actuel':'sur les 12 derniers mois')+'</span></div>';
       if(c12>0 && ty.u) h+='<div class="fct-tile"><span>Consommation · 12 mois</span><b>'+esc(String(Math.round(c12)).replace(/\B(?=(\d{3})+(?!\d))/g," ")+' '+ty.u)+'</b><span'+(c12p>0?' class="'+(c12<=c12p?'fct-ok':'fct-warn')+'"':'')+'>'+(c12p>0?esc((c12>=c12p?'+':'−')+Math.abs(Math.round((c12/c12p-1)*100))+' % sur un an'):'')+'</span></div>';
       if(s.last.conso && ty.u){ var pu=s.last.montant/s.last.conso; h+='<div class="fct-tile"><span>Prix moyen payé</span><b>'+esc(pu.toFixed(ty.v==="eau"?2:3).replace(".",",")+' €/'+ty.u)+'</b><span>abonnement compris</span></div>'; }
-      if(est) h+='<div class="fct-tile nx"><span>Prochaine facture</span><b>≈ '+esc(fctE(est))+'</b><span>'+esc(s.next?'vers le '+ddmmyy(s.next):'')+'</span></div>';
+      if(est) h+='<div class="fct-tile nx"><span>Prochaine facture</span><b>'+(factNoConso(s)?esc(fmtK(est)):'≈ '+esc(fctE(est)))+'</b><span>'+esc(s.next?'vers le '+ddmmyy(s.next):'')+'</span></div>';
       h+='</div>';
       if(est) h+='<div class="muted" style="font-size:12px;margin:8px 4px 0;line-height:1.45">'+esc(factEstWhy(s, s.next))+'</div>';
       // la liste

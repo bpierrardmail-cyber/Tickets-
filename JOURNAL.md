@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `01/11 21:58`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `02/11 01:53`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -170,6 +170,9 @@ Après chaque modification, dans le même commit :
 ---
 
 ## Historique (le plus récent en haut)
+
+### 02/11
+- **Abonnement dont le prix change** (Free Mobile : « le prix mensuel a changé, c'est bien 15,99 par mois, pas 10 € » ; l'appli affichait « tous les 2 mois », 6 €/mois en moyenne, prochaine ≈ 10 € vers le 27/12) : série sans consommation (`factNoConso`) → prochaine facture = montant de la dernière (`how:"prix"`, affichée exacte, « Même montant que ta dernière facture ») et « Par mois · au prix actuel » au lieu de la moyenne sur 12 mois ; rythme tiré de l'historique dès 3 factures, une « prochaine facture » annoncée ne passe devant que si elle s'accorde avec lui (`factRythme`, `factNextDate`) ; l'estimation déjà dans À venir suit le montant et le mois recalculés (`factEstRefresh`). Test `t109`.
 
 ### 01/11
 - **Factures : dire que la lecture s'améliore après la 1re facture** (« il faudrait indiquer que la détection fonctionne mieux après le 1er import manuel ou automatique » ; maquette puis « oui ») : Factures, au-dessus de « Importer une facture » : « La lecture s'améliore avec l'usage… » (`.fct-tip`) ; fiche de la facture lue : fournisseur sans lecture retenue → « 1re facture de ce fournisseur : vérifie la date et le montant… » et champs vides en orange, lecture retenue appliquée → « ✓ Lue comme les précédentes factures de ce fournisseur » (`.fct-hint`, `factKnown`, `r.learnt`) ; corriger la plus récente d'un import → « N plus anciennes complétées avec ta correction » ; la 1re facture d'un fournisseur enregistrée sans correction est aussi retenue (sa date et son montant validés). Tests `t107`, `t108` complétés.
