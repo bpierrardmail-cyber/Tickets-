@@ -1,7 +1,7 @@
 # Accueil (diapos) :
 # 1. premier démarrage : 4 cartes illustrées par des captures (Bienvenue, Scanne, Importe ton relevé OFX/QIF/CSV, Vois ce qui arrive), puis le choix « Je commence / Rejoindre un foyer » ;
 # 2. téléphone déjà utilisé : l'accueil s'ouvre une fois (Passer), plus après un redémarrage ;
-# 3. Menu › Aide › « Revoir l'accueil » ;
+# 3. Menu › Aide : le guide (parties à déplier, recherche) et « Revoir l'accueil » ;
 # 4. membre d'un foyer : 2 diapos à lui (« Tu as rejoint le foyer de Alex », « Ajouter tes tickets »), après le code.
 # Données inventées.
 import sys, os
@@ -47,7 +47,14 @@ with sync_playwright() as p:
     pg.reload(); pg.wait_for_timeout(1500); check(pg.locator(".wlc").count()==0, "redémarrage : plus d'accueil")
     # ---------- 3. Menu › Aide
     pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="aide"]').click(); pg.wait_for_timeout(300)
-    check("guide" in norm(pg.locator(".sheet-overlay").last.inner_text()).lower(), "Menu › Aide : le guide (bientôt) et « Revoir l'accueil »")
+    hs=[norm(x) for x in pg.locator(".aide-h").all_inner_texts()]
+    check(len(hs)==9 and hs[0].startswith("Pour commencer") and hs[-1].startswith("Questions fréquentes"), "Menu › Aide : le guide du propriétaire, 9 parties %s" % [h[:14] for h in hs])
+    pg.locator(".aide-h").nth(1).click(); pg.wait_for_timeout(200)
+    check("Ticket à plat" in norm(pg.locator(".aide-sec.open").inner_text()), "toucher une partie l'ouvre (Scanner un ticket)")
+    pg.locator("#aideQ").fill("relevé"); pg.wait_for_timeout(300)
+    hs=[norm(x) for x in pg.locator(".aide-h").all_inner_texts()]
+    check(0<len(hs)<9 and any(h.startswith("Compte") for h in hs) and pg.locator(".aide-sec.open").count()==len(hs), "recherche « relevé » : les parties qui en parlent, ouvertes %s" % [h[:10] for h in hs])
+    pg.locator("#aideQ").fill(""); pg.wait_for_timeout(200)
     pg.locator("#aideWlc").click(); pg.wait_for_timeout(300)
     check("Bienvenue dans Tickets" in W(pg), "« Revoir l'accueil » : les diapos")
     c.close()
@@ -65,6 +72,9 @@ with sync_playwright() as p:
     check("Ajouter tes tickets" in t and "guide du membre" in t.lower(), "2e diapo du membre : « Ajouter tes tickets », le guide du membre")
     pg.locator("#wlcNext").click(); pg.wait_for_timeout(300)
     check(pg.locator(".wlc").count()==0 and pg.evaluate("()=>localStorage.getItem('welcomeFy')")=="1", "« Commencer » : fermé, noté pour le membre")
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="aide"]').click(); pg.wait_for_timeout(300)
+    hs=[norm(x) for x in pg.locator(".aide-h").all_inner_texts()]
+    check(len(hs)==6 and hs[0].startswith("Ce que tu vois") and "Guide du membre" in norm(pg.locator("#app").inner_text()), "membre : Menu › Aide montre le guide du membre (6 parties)")
     c.close()
     check(not errs, "pas d'erreur %s"%errs[:3])
     b.close()

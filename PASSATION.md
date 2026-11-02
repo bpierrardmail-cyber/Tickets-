@@ -1,6 +1,6 @@
 # Tickets : dossier de passation
 
-*État au 01/11/2026, étiquette `02/11 16:34`. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
+*État au 01/11/2026, étiquette `02/11 18:43`. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
 
 > **À Claude qui reprend le projet**
 >
@@ -151,7 +151,7 @@ Les maquettes (canevas « Tickets — Plan de l'appli » et autres) sont des art
 - **Commun** : part de chacun dans le commun, en %, et parts propres à chaque frais ; frais communs du mois ; produits partagés.
 - **Bourse** (Perso seulement) : cours Yahoo et CoinGecko via le relais. Elle compte une fois dans l'épargne.
 - **Menu** : Foyer partagé, Personnes, Sauvegarder (complète en ZIP avec les photos, ou données seules), Stockage · Exporter en PDF, Aide, Réglages.
-- **Accueil** : au premier démarrage, 3 diapos (Bienvenue, Bien scanner, Pour aller plus loin) ; un membre du foyer a ses 2 diapos ; à revoir dans Menu › Aide. Le guide de l'appli est à écrire ensemble.
+- **Accueil** : au premier démarrage, 3 diapos (Bienvenue, Bien scanner, Pour aller plus loin) ; un membre du foyer a ses 2 diapos ; à revoir dans Menu › Aide. Le guide est dans Menu › Aide (propriétaire et membre).
 - **Photos des tickets** : en qualité d'origine (toutes les pages) ; galerie par mois, suppression d'un mois ou d'une année ; Menu › Stockage (place utilisée, « Garder les photos d'origine »). Les tickets restent toujours ; la galerie du téléphone n'est jamais touchée.
 - **Scan d'un ticket** : ML Kit, puis `parseTicket`. L'appli compare les articles au total et propose les produits appris, chaque personne ayant les siens. « Copier la lecture » sert à déboguer un ticket mal lu.
 
@@ -178,6 +178,7 @@ Fait et poussé le 01/11 :
 16. **Qui doit combien à qui (02/11, ✦ Plus)** : dans Commun, ce que chacun a payé pour le commun comparé à sa part, le moins de remboursements possible, « Remboursé » avec ou sans virement, report d'un mois sur l'autre, historique.
 17. **Ticket partagé avec plusieurs personnes (02/11)** : « Dépense commune » sur les articles, « Partagé avec » sur la fiche (personnes et parts au choix), « Tout le ticket en commun ».
 18. **Accueil en vitrine et carrousel Tickets Plus (02/11)** : 4 cartes avec de vraies captures de l'appli (scan, relevé OFX/QIF/CSV, 12 mois, sauvegarde ZIP/JSON), « ✦ Découvrir Tickets Plus » sur chaque carte (Store), carrousel de 6 cartes réutilisé par le menu et les boutons ✦ ; captures refaites par `tests/vitrine.py`.
+19. **Guide dans l'appli (02/11)** : Menu › Aide, guide du propriétaire et guide du membre, parties à déplier et recherche, sans internet ; sources `guide/*.md`.
 
 Fait et poussé le 31/10 :
 1. **Sans réseau** pour les deux éditions. L'APK Store est autonome ; la Perso garde une copie.
