@@ -137,7 +137,7 @@ Compte comme payé pour le commun : les frais communs (selon le compte qui les p
 
 **Code et empreinte** : obligatoires sur tous les téléphones du foyer. Garde bien ton code de récupération (26 caractères) : il permet de retrouver ton foyer sur un nouveau téléphone.
 
-Retirer un membre coupe son accès tout de suite.
+Retirer un membre coupe son accès tout de suite. Ses tickets déjà arrivés chez toi restent ; ce qu'il a ajouté depuis sa dernière mise à jour serait perdu : vérifie qu'il est « à jour » avant (l'appli te prévient). Pour juste le reconnecter, « Nouveau téléphone : nouveau QR code » suffit.
 
 ## Photos et sauvegardes
 
