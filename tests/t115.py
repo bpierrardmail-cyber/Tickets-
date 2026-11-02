@@ -74,7 +74,7 @@ with sync_playwright() as p:
     check(pg.locator(".wlc").count()==0 and pg.evaluate("()=>localStorage.getItem('welcomeFy')")=="1", "« Commencer » : fermé, noté pour le membre")
     pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="aide"]').click(); pg.wait_for_timeout(300)
     hs=[norm(x) for x in pg.locator(".aide-h").all_inner_texts()]
-    check(len(hs)==6 and hs[0].startswith("Ce que tu vois") and "Guide du membre" in norm(pg.locator("#app").inner_text()), "membre : Menu › Aide montre le guide du membre (6 parties)")
+    check(len(hs)==7 and hs[0].startswith("Ce que tu vois") and "Guide du membre" in norm(pg.locator("#app").inner_text()), "membre : Menu › Aide montre le guide du membre (7 parties)")
     c.close()
     check(not errs, "pas d'erreur %s"%errs[:3])
     b.close()

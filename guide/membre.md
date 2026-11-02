@@ -39,6 +39,15 @@ Ton ticket part chez le propriétaire du foyer dès que ton téléphone est conn
 - Les tickets et les frais des autres restent en lecture seule.
 - Si tu es connecté, la mise à jour se fait toute seule ; Menu › Foyer › « Mettre à jour maintenant » la lance tout de suite.
 
+## Mes comptes (privé)
+
+En plus du foyer, tu as un espace à toi : Menu › Mes comptes.
+
+- Tickets, comptes, frais fixes, épargne : une appli complète pour toi, avec ta propre sauvegarde.
+- Rien n'en sort : ni le propriétaire ni le relais ne le voient.
+- La pastille « 🔒 Mes comptes · privé » sous le titre rappelle où tu es ; touche-la pour revenir au foyer.
+- Pendant que tu es dans Mes comptes, le foyer n'est pas mis à jour ; il le sera à ton retour.
+
 ## Code et sécurité
 
 - Un code à 6 chiffres et ton empreinte protègent l'appli : obligatoires dans un foyer.
