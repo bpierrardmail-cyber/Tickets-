@@ -46,3 +46,29 @@ def odd(path, jj_mm, montant):
 odd(os.path.join(HERE, "facture_inconnue_09.pdf"), "03/09", "45,10")
 odd(os.path.join(HERE, "facture_inconnue_10.pdf"), "03/10", "47,80")
 odd(os.path.join(HERE, "facture_inconnue_11.pdf"), "03/11", "52,30")
+
+# Facture avec données Factur-X jointes (t110) : le texte est volontairement trompeur (montant HT seul, pas de date lisible),
+# les données jointes donnent la date, le montant et l'échéance exacts.
+def facturx(path):
+    from pypdf import PdfReader, PdfWriter
+    tmp=path+".tmp"
+    c=canvas.Canvas(tmp, pagesize=(595, 842)); y=800
+    for s in ["ATELIER FICTIF", "Facture n° FX-0001", "Prestation de test  100,00", "Total HT  100,00 €", "Merci."]:
+        c.setFont("Helvetica", 10); c.drawString(57, y, s); y-=14
+    c.showPage(); c.save()
+    xml='''<?xml version="1.0" encoding="UTF-8"?>
+<rsm:CrossIndustryInvoice xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100" xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100" xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100">
+ <rsm:ExchangedDocument><ram:ID>FX-0001</ram:ID><ram:IssueDateTime><udt:DateTimeString format="102">20261012</udt:DateTimeString></ram:IssueDateTime></rsm:ExchangedDocument>
+ <rsm:SupplyChainTradeTransaction>
+  <ram:ApplicableHeaderTradeAgreement><ram:SellerTradeParty><ram:Name>Atelier Fictif</ram:Name></ram:SellerTradeParty></ram:ApplicableHeaderTradeAgreement>
+  <ram:ApplicableHeaderTradeSettlement>
+   <ram:SpecifiedTradePaymentTerms><ram:DueDateDateTime><udt:DateTimeString format="102">20261112</udt:DateTimeString></ram:DueDateDateTime></ram:SpecifiedTradePaymentTerms>
+   <ram:SpecifiedTradeSettlementHeaderMonetarySummation><ram:TaxBasisTotalAmount>100.00</ram:TaxBasisTotalAmount><ram:GrandTotalAmount>120.00</ram:GrandTotalAmount><ram:DuePayableAmount>120.00</ram:DuePayableAmount></ram:SpecifiedTradeSettlementHeaderMonetarySummation>
+  </ram:ApplicableHeaderTradeSettlement>
+ </rsm:SupplyChainTradeTransaction>
+</rsm:CrossIndustryInvoice>'''
+    w=PdfWriter(clone_from=PdfReader(tmp)); w.add_attachment("factur-x.xml", xml.encode("utf-8"))
+    with open(path, "wb") as f: w.write(f)
+    os.remove(tmp)
+
+facturx(os.path.join(HERE, "facture_facturx_fictive.pdf"))

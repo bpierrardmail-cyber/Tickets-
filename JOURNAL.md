@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `02/11 01:53`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `02/11 02:51`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -112,6 +112,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **02/11** : rapprochement avec le relevé, contrôles de cohérence, lecture par voisinage et Factur-X pour les factures, d'après la maquette ; les mêmes idées (relevé, contrôles) pour le scan des tickets.
 - **01/11** : la lecture s'améliore après la 1re facture d'un fournisseur, et l'appli le dit (maquette validée) ; elle retient aussi la 1re facture enregistrée sans correction.
 - **01/11** : lecture des factures rendue plus tolérante (lecture générale) et apprentissage par fournisseur à la première correction ; « Lire avec mon IA » pour les factures plus tard, avec celle des tickets ; la lecture en ligne par une IA reste de côté.
 - **01/11** : passer un virement envoyé en frais fixe (un mois, plusieurs mois, sans fin), d'après la proposition (« tu peux intégrer ») ; mettre à jour `PASSATION.md`.
@@ -172,6 +173,14 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 02/11
+- **Factures et tickets vérifiés par le relevé, contrôles, lecture par voisinage, Factur-X** (« un autre moyen pour améliorer la lecture » ; maquette ; « oui et tu peux faire les améliorations sur le scan Tickets aussi ») :
+  - le relevé importé est gardé (clé `releve` : date, libellé, montant, compte, n° d'import ; retiré par « Annuler le dernier import » ; avant, `bankLines` le retrouve dans les tickets « relevé » et les frais fixes importés) ; `bankFind` cherche un paiement au même nom (`bankNameMatch`), dans la période, montant égal ou proche ;
+  - facture lue : retrouvée sur le relevé → « 🏦 Retrouvée sur ton relevé… » et le jour du prélèvement pris sur le relevé ; montant un peu différent → « Sur ton relevé : … » avec « Prendre le relevé » / « Garder la facture » (`factBankMatch`) ; détail d'un fournisseur : « Prélevé le … sur ton relevé, mais pas de facture de … · Importer la facture » ;
+  - contrôles (`factChecks`) : montant 3 fois plus ou moins que d'habitude chez ce fournisseur, prélèvement avant la facture, date dans le futur, « ✓ HT + TVA = TTC » ou « c'est le montant hors taxes » ; en orange sous le champ ;
+  - lecture apprise par voisinage (`factAnchorFind`) : mêmes derniers mots, sinon le libellé n'importe où avant la valeur, sinon ses 2 derniers mots ;
+  - Factur-X / ZUGFeRD : données XML jointes au PDF lues (`factFxRead`, `factFxParse`, ligne « [Factur-X] » ajoutée au texte), elles l'emportent ; pdf.js 6 rend une `Map` et le contenu par `getAttachmentContent` ;
+  - tickets : fiche → paiement par carte déjà là (ticket « relevé » sans articles) : « Ce paiement est déjà dans tes comptes (relevé) » et « Compléter ce paiement » (même fiche, montant du relevé, plus de doublon, `mergeInto`) ; ligne du relevé gardée : « Retrouvé sur ton relevé » ou « Prendre le relevé » ; date dans le futur signalée (`tkBankPaint`) ; import d'un relevé : ticket au même nom avec un total un peu différent → « total corrigé : X → Y », le ticket prend le montant du relevé (annulable) ;
+  - tests `t110` (factures, PDF Factur-X fictif fait par `donnees/facture_mobile_fictive.py`) et `t111` (tickets).
 - **Abonnement dont le prix change** (Free Mobile : « le prix mensuel a changé, c'est bien 15,99 par mois, pas 10 € » ; l'appli affichait « tous les 2 mois », 6 €/mois en moyenne, prochaine ≈ 10 € vers le 27/12) : série sans consommation (`factNoConso`) → prochaine facture = montant de la dernière (`how:"prix"`, affichée exacte, « Même montant que ta dernière facture ») et « Par mois · au prix actuel » au lieu de la moyenne sur 12 mois ; rythme tiré de l'historique dès 3 factures, une « prochaine facture » annoncée ne passe devant que si elle s'accorde avec lui (`factRythme`, `factNextDate`) ; l'estimation déjà dans À venir suit le montant et le mois recalculés (`factEstRefresh`). Test `t109`.
 
 ### 01/11
