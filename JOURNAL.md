@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `02/11 15:38`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `02/11 16:00`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -183,6 +183,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 02/11
+- **Ticket partagé avec plusieurs personnes** (maquette ; « tu peux y aller ») : la case devient « Dépense commune » ; sur la fiche, « Partagé avec : Tout le foyer ▾ » → « Choisir » : cocher les personnes, parts égales ajustables (total 100 %), la personne qui paie cochée d'office ; « Tout le ticket en commun » coche tous les articles (ou crée « Divers » au montant du ticket) ; `entry.share` ; les produits partagés se répartissent entre ces personnes dans Commun (parts, graphiques, « Ta part »), l'équilibre et les widgets (`prodShareOf`, `prodPartIn`) ; Produits partagés « · avec Toi, Marie, Léa ». Les anciens tickets restent « Tout le foyer ». Test `t117`.
 - **Commun › « Qui doit combien à qui » (✦ Plus)** (maquette ; « 1 oui le plus simple possible ; 2 on doit pouvoir choisir : rembourser et créer un virement dans *choix du compte* ou rembourser sans virement ») : en haut de l'onglet Commun, une barre par personne (payé pour le commun, trait = sa part, écart en vert / rouge), « Marie te doit 470,00 € » ou le moins de remboursements possible à plusieurs, report du mois précédent (« dont … reportés »), « Remboursé » (montant modifiable, créer le virement depuis / vers le compte choisi, ou sans virement), annulable, historique. Payé = frais communs (compte qui les paie, ou chacun sa part) + produits partagés « Dépense à deux » (pas de ticket entier « commun »). Nouvelle donnée `commRemb` (foyer : onglet Commun), `commBalFrom`, `PLUS_FEATURES` + `equilibre`. Test `t116`.
 - **1re diapo de l'accueil réécrite par Benoît** : « Gère tes achats, comptes, frais fixes et le commun », « Invite ta famille et retrouve ses dépenses ✦ », « Tes données restent privées : personne ne les récupère, pas même nous », « Sans compte, sans pub, hors ligne* » et la note « *Internet sert seulement au foyer partagé et à l'achat de Tickets Plus. » (champ `n` d'une diapo, `.wlc-note`).
 - **Accueil en bulles** (« le même graphisme que proposé, des bulles superposées à l'onglet de démarrage ») : chaque diapo est une carte arrondie posée sur l'écran d'accueil assombri (`.wlc` voile, `.wlc-card`), points en haut, icône au trait couleur de l'appli (`WLC_IC`), titre, liste à puces reprise mot pour mot de la maquette, « Passer » et bouton « Suivant » / « Commencer ».

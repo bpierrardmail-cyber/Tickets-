@@ -44,7 +44,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 
 ## Données (clés localStorage)
 
-- `entries` : tickets `{id, date, marchand, montant, categorie, payePar, compte?, articles[]}`.
+- `entries` : tickets `{id, date, marchand, montant, categorie, payePar, compte?, share?, articles[]}`. Article `commun: true` = « Dépense commune » ; `share` = `{prénom: %}` des personnes avec qui le ticket est partagé (« Partagé avec », `shareSheet`, `shareLabel`, `shareSub`) ; absent = tout le foyer, selon les parts du commun. Toujours passer par `CM.prodShareOf(p)` / `CM.prodPartIn(d, p)` (dans `communModel`) pour la part des produits partagés.
 - `comptes` : `{key, nom, payer, main}` (un compte principal).
 - `personnes` : `{nom, archived?}`.
 - `fraisCommuns` : frais fixes `{id, label, montant, personne ("Commun" ou un prénom), recurrent, month, startMonth?, endMonth?, compte?, split?, amounts?, parts?, doneMonths, skipMonths?}`.

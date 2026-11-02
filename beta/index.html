@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="02/11 15:38" />
+  <meta name="build" content="02/11 16:00" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -199,6 +199,17 @@
     .fct-teaser{ padding:18px; border-radius:20px; background:var(--card); border:1px solid var(--line); }
     .fct-teaser h3{ margin:0 0 8px; font-size:18px; } .fct-teaser p{ margin:0 0 8px; font-size:13.5px; line-height:1.5; color:var(--ink-soft); }
     .fct-teaser ul{ margin:0; padding-left:20px; font-size:13.5px; line-height:1.75; color:var(--ink-soft); }
+    .f-share{ display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:12px; background:var(--card2); color:var(--ink); font:inherit; font-size:14px; text-align:left; cursor:pointer; }
+    .f-share b{ color:var(--accent); font-weight:700; text-align:right; }
+    .f-allcom{ display:block; margin:8px 0 0 auto; background:none; border:0; color:var(--accent); font:inherit; font-size:12.5px; cursor:pointer; padding:4px 2px; }
+    .seg2{ display:flex; border:1px solid var(--line); border-radius:12px; overflow:hidden; margin:4px 0 8px; }
+    .seg2 button{ flex:1; padding:9px; border:0; background:none; color:var(--ink-soft); font:inherit; font-size:13.5px; cursor:pointer; }
+    .seg2 button.on{ background:rgba(79,214,160,.16); color:var(--accent); font-weight:700; }
+    .sh-r{ display:grid; grid-template-columns:24px minmax(0,1fr) 66px 78px; gap:8px; align-items:center; padding:9px 2px; border-top:1px solid var(--line); font-size:14.5px; }
+    .sh-r.off .nm{ color:var(--muted); }
+    .sh-r input.sh-c{ width:20px; height:20px; accent-color:var(--accent); }
+    .sh-r .sh-p{ width:100%; box-sizing:border-box; padding:6px 8px; border:1px solid var(--line); border-radius:8px; background:var(--card2); color:var(--ink); text-align:right; font:inherit; font-size:13.5px; }
+    .sh-r .eur{ text-align:right; font-size:12.5px; color:var(--ink-soft); }
     .cbal-r{ display:grid; grid-template-columns:minmax(0,74px) minmax(0,1fr) auto; gap:10px; align-items:center; font-size:13.5px; margin:9px 0; }
     .cbal-r .nm{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .cbal-bar{ position:relative; height:10px; border-radius:5px; background:var(--card2); }
@@ -4405,10 +4416,59 @@
           '</div>'+
           '<button class="btn ghost art-del" type="button">✕</button>'+
         '</div>'+
-        '<label class="art-com"><input type="checkbox" class="art-comc"'+(a.commun?" checked":"")+'><span>Dépense à deux (commune)</span></label>'+
+        '<label class="art-com"><input type="checkbox" class="art-comc"'+(a.commun?" checked":"")+'><span>Dépense commune</span></label>'+
       '</div>';
     }
 
+    // ---------- Partage d'un ticket : « Partagé avec » (entry.share = {prénom: %} ; absent = tout le foyer, selon les parts du commun) ----------
+    function shareCands(d){ var L=uniquePersons().slice(), me=mePerson(); if(L.indexOf(me)<0) L.unshift(me);
+      if(d && d.share) Object.keys(d.share).forEach(function(p){ if(L.indexOf(p)<0) L.push(p); });
+      return L.filter(function(p){ return p && p!=="Commun"; }); }
+    function shareWho(p){ return p===mePerson() ? "Toi" : p; }
+    function shareLabel(sh){ if(!sh) return "Tout le foyer"; var L=Object.keys(sh).filter(function(p){ return (Number(sh[p])||0)>0; }); return L.length ? L.map(shareWho).join(", ") : "Tout le foyer"; }
+    function shareSub(sh, cands){
+      if(!sh) return "selon les parts du commun (Commun › Parts)";
+      var L=Object.keys(sh).filter(function(p){ return (Number(sh[p])||0)>0; }), eq=L.every(function(p){ return Math.abs(partsPct(sh, p)-partsPct(sh, L[0]))<0.05; });
+      var t=eq ? "parts égales · "+pctTxt(100/L.length)+" chacun" : L.map(function(p){ return shareWho(p)+" "+pctTxt(partsPct(sh, p)); }).join(" · ");
+      var out=(cands||[]).filter(function(p){ return L.indexOf(p)<0; }).map(shareWho);
+      if(out.length) t+=" · "+(out.length<=2 ? out.join(" et ") : out.length+" personnes")+" ne paie"+(out.length>1?"nt":"")+" rien";
+      return t;
+    }
+    function shareSheet(){
+      var d=state.draft, C=shareCands(d), mode=d.share ? "pick" : "all", sel={}, pc={};
+      if(d.share) C.forEach(function(p){ var v=Number(d.share[p])||0; if(v>0){ sel[p]=1; pc[p]=v; } });
+      else C.forEach(function(p){ sel[p]=1; });
+      function eqAll(){ var L=C.filter(function(p){ return sel[p]; }); pc={}; L.forEach(function(p){ pc[p]=Math.round(10000/L.length)/100; }); }
+      if(!d.share) eqAll();
+      var tot=0, prix=0; (d.articles||[]).forEach(function(a){ if(a.commun) prix+=num(a.prix)||0; });
+      var s=uiSheet('<div class="sheet-title">Partagé avec</div><div class="seg2" id="shMode"><button type="button" data-m="all">Tout le foyer</button><button type="button" data-m="pick">Choisir</button></div><div id="shBody"></div><div class="ui-err" style="display:none"></div>'+
+        '<div class="ui-stack"><button type="button" class="btn primary" id="shOk">Valider</button><button type="button" class="btn ghost ui-no">Annuler</button></div>');
+      function paint(){
+        [].forEach.call(s.qa("#shMode button"), function(b){ b.classList.toggle("on", b.getAttribute("data-m")===mode); });
+        var h='';
+        if(mode==="all") h='<div class="muted" style="font-size:12.5px;line-height:1.5;margin:10px 2px">Chacun selon sa part du commun (Commun › Parts).</div>';
+        else { tot=0; C.forEach(function(p){ if(sel[p]) tot+=Number(pc[p])||0; });
+          C.forEach(function(p){ var on=!!sel[p], v=on ? (Number(pc[p])||0) : 0;
+            h+='<div class="sh-r'+(on?'':' off')+'" data-p="'+esc(p)+'"><input type="checkbox" class="sh-c"'+(on?' checked':'')+'><span class="nm">'+esc(shareWho(p))+'</span>'+
+               (on ? '<input class="sh-p" inputmode="decimal" value="'+esc(String(Math.round(v*100)/100).replace(".", ","))+'"><span class="eur">'+(prix ? fmtS(prix*v/100) : '')+'</span>' : '<span></span><span></span>')+'</div>'; });
+          h+='<div class="muted" style="font-size:11.5px;margin:6px 2px">'+(Math.abs(tot-100)<0.05 ? 'Total 100 %' : 'Total '+pctTxt(tot)+' : il faut 100 %')+' · cocher ou décocher remet des parts égales</div>'; }
+        s.q("#shBody").innerHTML=h;
+        [].forEach.call(s.qa(".sh-c"), function(cb){ cb.onchange=function(){ var p=cb.parentNode.getAttribute("data-p"); if(cb.checked) sel[p]=1; else delete sel[p]; eqAll(); paint(); }; });
+        [].forEach.call(s.qa(".sh-p"), function(inp){ inp.onchange=function(){ var p=inp.parentNode.getAttribute("data-p"), v=num(inp.value); pc[p]=(isNaN(v)||v===null) ? 0 : Math.max(0, Math.min(100, v)); paint(); }; });
+      }
+      [].forEach.call(s.qa("#shMode button"), function(b){ b.onclick=function(){ mode=b.getAttribute("data-m"); paint(); }; });
+      s.q(".ui-no").onclick=s.close;
+      s.q("#shOk").onclick=function(){
+        if(mode==="all"){ d.share=null; s.close(); render(); return; }
+        var L=C.filter(function(p){ return sel[p] && (Number(pc[p])||0)>0; }), t=0; L.forEach(function(p){ t+=Number(pc[p])||0; });
+        var er=s.q(".ui-err");
+        if(!L.length){ er.textContent="Coche au moins une personne."; er.style.display=""; return; }
+        if(Math.abs(t-100)>=0.05){ er.textContent="Le total doit faire 100 % (il fait "+pctTxt(t)+")."; er.style.display=""; return; }
+        var o={}; L.forEach(function(p){ o[p]=Number(pc[p]); }); d.share=o;
+        if(!(d.articles||[]).some(function(a){ return a.commun; })){ var mt=num(d.montant); if((d.articles||[]).length) d.articles.forEach(function(a){ a.commun=true; }); else if(mt>0) d.articles=[{ label:"Divers", prix:String(d.montant), produit:"", commun:true }]; }
+        s.close(); render(); };
+      paint();
+    }
     function renderForm(){
       var d = state.draft;
       var h = header("list") + '<section class="paper">';
@@ -4437,6 +4497,13 @@
         h += '<label class="f">Compte</label><div class="chips" id="acctc"><button class="chip'+(!d.compte?" on":"")+'" data-acct="">Auto</button>';
         comptes.forEach(function(a){ h += '<button class="chip'+(d.compte===a.key?" on":"")+'" data-acct="'+esc(a.key)+'">'+esc(a.nom)+'</button>'; });
         h += '</div><div class="muted" style="font-size:10.5px;margin:4px 2px 0">Auto = selon « payé par »</div>';
+      }
+      var shC=shareCands(d);
+      if(shC.length>1){
+        var allC=(d.articles||[]).length && d.articles.every(function(a){ return a.commun; });
+        h += '<label class="f">Dépense commune</label><button type="button" class="f-share" id="fshare"'+(state.draftRO?' disabled':'')+'><span>Partagé avec</span><b>'+esc(shareLabel(d.share))+' ▾</b></button>'+
+             '<div class="muted" style="font-size:11px;margin:4px 2px 0">'+esc(shareSub(d.share, shC))+'</div>'+
+             (state.draftRO ? '' : '<button type="button" class="f-allcom" id="allcom">'+(allC?'Retirer tout le ticket du commun':'Tout le ticket en commun')+'</button>');
       }
       h += '<div class="f-arth" id="artshead"><label class="f">Articles (rangés par produit)</label><span id="artsum"></span></div><div id="arts">';
       (d.articles||[]).forEach(function(a){ h += artRow(a); });
@@ -4475,6 +4542,11 @@
       var photochg=document.getElementById("photochg"); if(photochg) photochg.onclick=function(){ readForm(); var pi=document.getElementById("photoin"); if(pi) pi.click(); };
       var photodel=document.getElementById("photodel"); if(photodel) photodel.onclick=function(){ readForm(); state.draft.photo=""; state.draft.photoFiles=null; render(); };
       document.getElementById("addart").onclick=function(){ readForm(); state.draft.articles.push({label:"",prix:"",produit:""}); render(); };
+      var fsh=document.getElementById("fshare"); if(fsh) fsh.onclick=function(){ readForm(); shareSheet(); };
+      var alc=document.getElementById("allcom"); if(alc) alc.onclick=function(){ readForm(); var A=state.draft.articles||[], all=A.length && A.every(function(a){ return a.commun; });
+        if(!A.length){ var mt=num(state.draft.montant); if(mt>0) A.push({ label:"Divers", prix:String(state.draft.montant), produit:"", commun:true }); state.draft.articles=A; }
+        else A.forEach(function(a){ a.commun=!all; });
+        render(); };
       var orb=document.getElementById("ocrRawBtn"); if(orb) orb.onclick=ocrRawSheet;
       var addr=document.getElementById("addremise"); if(addr) addr.onclick=function(){ readForm(); state.draft.articles.push({label:"Remise",prix:"",produit:"Remise"}); render(); };
       [].forEach.call(document.querySelectorAll("#chips .chip"), function(btn){
@@ -4636,7 +4708,7 @@
     function editEntry(id){
       var e=state.entries.filter(function(x){ return String(x.id)===String(id); })[0];
       if(!e) return;
-      state.draft={id:e.id,montant:e.montant,date:e.date,marchand:e.marchand,categorie:e.categorie,payePar:e.payePar||"",compte:e.compte||"",photo:photoOf(e),
+      state.draft={id:e.id,montant:e.montant,date:e.date,marchand:e.marchand,categorie:e.categorie,payePar:e.payePar||"",compte:e.compte||"",photo:photoOf(e),share:e.share||null,
         articles:(e.articles||[]).map(function(a){ return {label:a.label,prix:a.prix,produit:a.produit,commun:!!a.commun}; })};
       state.draftRO=!fyCanEdit(e); state.note=""; state.ocrRaw=null;   // pas la note d'un scan précédent
       state.formFrom=(state.view==="analyse" || state.view==="month" || state.view==="artDetail" || state.view==="articles" || state.view==="compte" || state.view==="comptedet") ? state.view : null;
@@ -4693,6 +4765,7 @@
       });
       persistAppris();
       if(state.draft.compte && acctByKey(state.draft.compte)) entry.compte=state.draft.compte;
+      if(state.draft.share && arts.some(function(a){ return a.commun; })) entry.share=state.draft.share;   // « Partagé avec » : seulement s'il y a des articles communs
       var mg=state.draft.mergeInto!=null ? state.entries.filter(function(e){ return String(e.id)===String(state.draft.mergeInto); })[0] : null;
       if(mg && !entry.id){ entry.id=mg.id; if(!entry.compte && mg.compte) entry.compte=mg.compte; if(mg.imp) entry.imp=mg.imp; if(mg.impKey) entry.impKey=mg.impKey; if(!entry.payePar && mg.payePar) entry.payePar=mg.payePar; }
       var isNew=!entry.id;
@@ -5132,7 +5205,7 @@
         var rows=[], prod=0;
         state.entries.filter(function(e){ return monthKey(e.date)===m; }).forEach(function(e){
           (e.articles||[]).forEach(function(a){ if(!a.commun) return; var amt=Number(a.prix)||0;
-            rows.push({ id:e.id, marchand:e.marchand, date:e.date, label:(a.label||"").trim()||a.produit||"Article", prix:amt }); prod+=amt; });
+            rows.push({ id:e.id, marchand:e.marchand, date:e.date, label:(a.label||"").trim()||a.produit||"Article", prix:amt, sh:e.share||null }); prod+=amt; });
         });
         rows.sort(function(a,b){ return String(b.date||"").localeCompare(String(a.date||"")); });
         return { frais:frais, byP:byP, fraisTot:fraisTot, rows:rows, prod:prod, commun:(byP.Commun?byP.Commun.total:0) };
@@ -5150,6 +5223,7 @@
       var CP=(communParts && typeof communParts==="object") ? communParts : null;
       if(CP) Object.keys(CP).forEach(function(n){ if((Number(CP[n])||0)>0 && ppl.indexOf(n)<0) ppl.push(n); });
       (D.byP.Commun?D.byP.Commun.items:[]).forEach(function(f){ var P=fraisPartsAt(f, month); if(P) Object.keys(P).forEach(function(n){ if((Number(P[n])||0)>0 && ppl.indexOf(n)<0) ppl.push(n); }); });
+      D.rows.forEach(function(r){ if(r.sh) Object.keys(r.sh).forEach(function(n){ if((Number(r.sh[n])||0)>0 && ppl.indexOf(n)<0) ppl.push(n); }); });
       var cpSum=0; if(CP) Object.keys(CP).forEach(function(n){ cpSum+=Math.max(0, Number(CP[n])||0); });
       if(CP && cpSum<=0) CP=null;
       // ramené à 100 % pile (3 × 33,33 % = 99,99 %) pour que les parts fassent exactement le total
@@ -5157,15 +5231,18 @@
       function fPct(f, who){ var P=fraisPartsAt(f, month); return P ? partsPct(P, who) : pctOf(who); }
       // Part des frais communs : frais par frais (chacun peut avoir ses parts)
       function communShareOf(who){ var t=0; (D.byP.Commun?D.byP.Commun.items:[]).forEach(function(f){ t+=fraisPartV(f, month)*fPct(f, who)/100; }); return t; }
-      function shareOf(who){ return communShareOf(who)+D.prod*pctOf(who)/100; }
+      // Produits partagés : entre les personnes choisies sur le ticket (« Partagé avec »), sinon selon les parts du commun
+      function prodPartIn(d, who){ var t=0; d.rows.forEach(function(r){ t+=r.prix*(r.sh ? partsPct(r.sh, who) : pctOf(who))/100; }); return t; }
+      function prodShareOf(who){ return prodPartIn(D, who); }
+      function shareOf(who){ return communShareOf(who)+prodShareOf(who); }
       function partOf(who){ return persoOf(who)+shareOf(who); }
       // Part réelle sur tout le commun (frais + produits), en %
       function effPct(who){ var pot=D.commun+D.prod; return pot>0 ? shareOf(who)/pot*100 : pctOf(who); }
-      return { monthData:monthData, D:D, me:me, ppl:ppl, CP:CP, persoOf:persoOf, pctOf:pctOf, fPct:fPct, communShareOf:communShareOf, effPct:effPct, shareOf:shareOf, partOf:partOf };
+      return { monthData:monthData, D:D, me:me, ppl:ppl, CP:CP, persoOf:persoOf, pctOf:pctOf, fPct:fPct, communShareOf:communShareOf, effPct:effPct, shareOf:shareOf, partOf:partOf, prodShareOf:prodShareOf, prodPartIn:prodPartIn };
     }
     // ---------- Équilibre du commun : qui doit combien à qui (✦ Plus) ----------
     // Payé pour le commun : les frais communs (en entier par le titulaire du compte qui les paie, ou chacun sa part),
-    // les produits partagés (« Dépense à deux ») par la personne qui a payé le ticket, et les remboursements notés.
+    // les produits partagés (« Dépense commune », entre les personnes choisies sur le ticket) par la personne qui a payé le ticket, et les remboursements notés.
     // Part : la part de chacun dans ces mêmes dépenses. Ce qui reste d'un mois passe au suivant, à partir du 1er mois affiché (commBalFrom).
     function commProdOn(){ var v=state.comProd; if(v==null) v=store.read("comProd", true); return !!v; }
     function commMonthBal(month){
@@ -5176,7 +5253,7 @@
         if(!f.split) add(fraisPayer(f), "paid", v); });
       if(prodOn && D.prod){
         state.entries.forEach(function(e){ if(monthKey(e.date)!==month) return; (e.articles||[]).forEach(function(a){ if(a.commun) add(payerOf(e), "paid", Number(a.prix)||0); }); });
-        CM.ppl.forEach(function(p){ var sh=D.prod*CM.pctOf(p)/100; if(sh>0.004) add(p, "share", sh); });
+        CM.ppl.forEach(function(p){ var sh=CM.prodShareOf(p); if(sh>0.004) add(p, "share", sh); });
       }
       commRemb.forEach(function(r){ if(r.month!==month) return; add(r.from, "paid", Number(r.montant)||0); add(r.to, "paid", -(Number(r.montant)||0)); });
       return { P:P, ppl:CM.ppl, me:CM.me, tot:D.commun+(prodOn?D.prod:0) };
@@ -5281,13 +5358,14 @@
       var curM = monthKey(todayISO());
       var month = (state.months&&state.months.communes)||curM;
       var monthLabel = monthLabelOf(month);
-      var CM=communModel(month), monthData=CM.monthData, D=CM.D, me=CM.me, ppl=CM.ppl, CP=CM.CP, persoOf=CM.persoOf, pctOf=CM.pctOf, shareOf=CM.shareOf, partOf=CM.partOf, fPct=CM.fPct, communShareOf=CM.communShareOf, effPct=CM.effPct;
+      var CM=communModel(month), prodShareOf=CM.prodShareOf, monthData=CM.monthData, D=CM.D, me=CM.me, ppl=CM.ppl, CP=CM.CP, persoOf=CM.persoOf, pctOf=CM.pctOf, shareOf=CM.shareOf, partOf=CM.partOf, fPct=CM.fPct, communShareOf=CM.communShareOf, effPct=CM.effPct;
       var COLP="#8a92a6", COLC="#7c9cf4", COLR="#e0a458";
       // bouton « Produits partagés » (en haut à droite de la carte) : les compter ou non dans les parts, les graphiques et les bulles
       var prodOn=state.comProd; if(prodOn==null) prodOn=store.read("comProd", true); prodOn=!!prodOn;
       var prodV=prodOn?D.prod:0;
-      partOf=function(p){ return persoOf(p)+communShareOf(p)+prodV*pctOf(p)/100; };
-      effPct=function(p){ var pot=D.commun+prodV; return pot>0 ? (communShareOf(p)+prodV*pctOf(p)/100)/pot*100 : pctOf(p); };
+      function prodPart(p){ return prodOn ? prodShareOf(p) : 0; }
+      partOf=function(p){ return persoOf(p)+communShareOf(p)+prodPart(p); };
+      effPct=function(p){ var pot=D.commun+prodV; return pot>0 ? (communShareOf(p)+prodPart(p))/pot*100 : pctOf(p); };
       // bandeau des personnes : la personne choisie (Moi par défaut) ou tout le foyer
       var cpv=pvActive() ? pvCur() : "moi", cw=(cpv==="all") ? null : pvName(cpv), cMe=(cw===me);
       function mShort(m){ var pm=m.split("-"); return new Date(+pm[0], +pm[1]-1, 1).toLocaleDateString("fr-FR",{month:"short"}).replace(".",""); }
@@ -5302,7 +5380,7 @@
         rp=[me].concat(rRest);
         var mx=0; rp.forEach(function(p){ mx=Math.max(mx, partOf(p)); }); if(!mx) mx=1;
         function seg(v,col){ return v>0?'<i style="width:'+(v/mx*100).toFixed(2)+'%;background:'+col+'"></i>':''; }
-        function repVals(p){ var a=[[persoOf(p),COLP],[communShareOf(p),COLC],[prodV*pctOf(p)/100,COLR]].filter(function(x){ return x[0]>0.004; });
+        function repVals(p){ var a=[[persoOf(p),COLP],[communShareOf(p),COLC],[prodPart(p),COLR]].filter(function(x){ return x[0]>0.004; });
           return a.length?'<div class="crep-v">'+a.map(function(x){ return '<span><i style="background:'+x[1]+'"></i>'+fmtK(x[0])+'</span>'; }).join("")+'</div>':''; }
         function repRow(p){ var pc=effPct(p);
           return '<div class="crep-r" data-p="'+esc(p)+'" style="cursor:pointer;'+(cw && p!==cw?'opacity:.5':'')+'"><div class="crep-h"><span>'+esc(p)+(p===me?' <small>toi</small>':'')+'<small class="pc">'+pctTxt(pc)+'</small></span>'+(p===me?'':'<b>'+fmtK(partOf(p))+'</b>')+'</div><div class="crep-b">'+seg(persoOf(p),COLP)+seg(communShareOf(p),COLC)+seg(prodV*pctOf(p)/100,COLR)+'</div>'+repVals(p)+'</div>'; }
@@ -5329,7 +5407,7 @@
         // chaque mois : frais perso + frais communs + produits partagés (la part de la personne affichée, ou tout le foyer)
         function shareAt(d, m, who){ var t=0; (d.byP.Commun?d.byP.Commun.items:[]).forEach(function(f){ var P=fraisPartsAt(f, m); t+=fraisPartV(f, m)*(P?partsPct(P, who):pctOf(who))/100; }); return t; }
         var rows0=six.map(function(m){ var d=monthData(m);
-          if(cw) return { m:m, f:(d.byP[cw]?d.byP[cw].total:0), c:shareAt(d, m, cw), p:(prodOn?d.prod*pctOf(cw)/100:0) };
+          if(cw) return { m:m, f:(d.byP[cw]?d.byP[cw].total:0), c:shareAt(d, m, cw), p:(prodOn?CM.prodPartIn(d, cw):0) };
           return { m:m, f:d.fraisTot-d.commun, c:d.commun, p:(prodOn?d.prod:0) }; });
         var S=(cr==="all") ? trimLead(rows0, function(r){ return (r.f+r.c+r.p); }) : rows0, smx=0;   // 6 et 12 mois : toujours 6 ou 12 cases, même avant le début du suivi
         S.forEach(function(r){ smx=Math.max(smx, (r.f+r.c+r.p)); }); if(!smx) smx=1;
@@ -5355,7 +5433,7 @@
       // Les chiffres de la personne de ce téléphone (sur le téléphone de Sylvette : ceux de Sylvette)
       if(cw){
         hst.push({l:"Total frais fixes", v:fmtS(persoOf(cw)+communShareOf(cw)), d:"perso + commun"});
-        hst.push({l:"Frais partagés", v:fmtS(D.prod*pctOf(cw)/100), d:(prodOn?(cMe?"ta part":"sa part"):"non comptés")});
+        hst.push({l:"Frais partagés", v:fmtS(prodShareOf(cw)), d:(prodOn?(cMe?"ta part":"sa part"):"non comptés")});
       } else {
         hst.push({l:"Frais fixes", v:fmtS(D.fraisTot), d:"du foyer"});
         hst.push({l:"Frais partagés", v:fmtS(D.prod), d:(prodOn?"produits":"non comptés")});
@@ -5395,10 +5473,10 @@
       var g1=grp("commun", COLC, "Frais communs", ci.length?nb(ci.length,"frais","frais")+" · "+paidCount(ci)+" payé"+(paidCount(ci)>1?"s":"")+" sur "+ci.length:"aucun", D.commun,
         ci.length?fraisRows(ci):'<div class="muted" style="font-size:11px;margin:4px 2px">Aucun frais commun. Ajoute un frais fixe et garde « Commun ».</div>');
       var pB='';
-      if(!D.rows.length) pB='<div class="muted" style="font-size:11px;margin:4px 2px">Aucun produit coché ce mois-ci. Coche « Dépense à deux » sur les articles d\'un ticket.</div>';
-      else { D.rows.forEach(function(r){ pB+='<div class="entry ecomp" data-id="'+esc(r.id)+'"><span class="n">'+esc(r.label)+'<small>'+esc(r.marchand||"")+'</small></span><span class="d">'+esc((r.date||"").split("-").reverse().slice(0,2).join("/"))+'</span><span class="a">'+fmtK(r.prix)+'</span></div>'; });
-        pB+='<div class="dsub" style="margin-top:10px"><span>Ta part ('+pctTxt(myPc)+')</span><span>'+fmtK(D.prod*myPc/100)+'</span></div>'; }
-      var g2=grp("prod", COLR, "Produits partagés", D.rows.length?nb(D.rows.length,"article","articles")+" · ta part "+fmtK(D.prod*myPc/100):"aucun", D.prod, pB);
+      if(!D.rows.length) pB='<div class="muted" style="font-size:11px;margin:4px 2px">Aucun produit coché ce mois-ci. Coche « Dépense commune » sur les articles d\'un ticket.</div>';
+      else { D.rows.forEach(function(r){ pB+='<div class="entry ecomp" data-id="'+esc(r.id)+'"><span class="n">'+esc(r.label)+'<small>'+esc((r.marchand||"")+(r.sh?" · avec "+shareLabel(r.sh):""))+'</small></span><span class="d">'+esc((r.date||"").split("-").reverse().slice(0,2).join("/"))+'</span><span class="a">'+fmtK(r.prix)+'</span></div>'; });
+        pB+='<div class="dsub" style="margin-top:10px"><span>Ta part</span><span>'+fmtK(prodShareOf(me))+'</span></div>'; }
+      var g2=grp("prod", COLR, "Produits partagés", D.rows.length?nb(D.rows.length,"article","articles")+" · ta part "+fmtK(prodShareOf(me)):"aucun", D.prod, pB);
       // Frais perso : un seul groupe dépliable, une sous-partie par personne
       var pW=ppl.filter(function(w){ return D.byP[w] && D.byP[w].items.length; }), gp='';
       if(pW.length===1){ var it1=D.byP[pW[0]].items;
@@ -11490,7 +11568,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       // Commun : ta part du mois et les frais communs pas encore payés
       try{ var CM=communModel(m), ci=(CM.D.byP.Commun?CM.D.byP.Commun.items:[]), todo=0, pc=CM.effPct(CM.me);
         ci.forEach(function(f){ if(!fraisDone(f, m)) todo++; });
-        snap.commun={ part:r2(CM.partOf(CM.me)), pct:Math.round(pc*10)/10, todo:todo, n:ci.length, perso:r2(CM.persoOf(CM.me)), com:r2(CM.communShareOf(CM.me)), prod:r2(CM.D.prod*pc/100) }; }catch(e){}
+        snap.commun={ part:r2(CM.partOf(CM.me)), pct:Math.round(pc*10)/10, todo:todo, n:ci.length, perso:r2(CM.persoOf(CM.me)), com:r2(CM.communShareOf(CM.me)), prod:r2(CM.prodShareOf(CM.me)) }; }catch(e){}
       // Mois en cours : tickets du mois, budget, 3 plus grosses catégories
       var mois=state.entries.filter(function(e){ return monthKey(e.date)===m; }), spent=0, byCat={}, bud=0, day=new Date().getDate();
       mois.forEach(function(e){ var v=Number(e.montant)||0, c=e.categorie||"Autre"; spent+=v; byCat[c]=(byCat[c]||0)+v; });
