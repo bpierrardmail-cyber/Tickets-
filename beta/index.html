@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="03/11 18:03" />
+  <meta name="build" content="03/11 23:22" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -204,6 +204,8 @@
     .fct-teaser{ padding:18px; border-radius:20px; background:var(--card); border:1px solid var(--line); }
     .fct-teaser h3{ margin:0 0 8px; font-size:18px; } .fct-teaser p{ margin:0 0 8px; font-size:13.5px; line-height:1.5; color:var(--ink-soft); }
     .fct-teaser ul{ margin:0; padding-left:20px; font-size:13.5px; line-height:1.75; color:var(--ink-soft); }
+    .csv-ck{ display:flex; gap:10px; align-items:center; padding:9px 2px; border-top:1px solid var(--line); font-size:14.5px; cursor:pointer; }
+    .csv-ck input{ width:20px; height:20px; accent-color:var(--accent); }
     .f-share{ display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:12px; background:var(--card2); color:var(--ink); font:inherit; font-size:14px; text-align:left; cursor:pointer; }
     .f-share b{ color:var(--accent); font-weight:700; text-align:right; }
     .f-allcom{ display:block; margin:8px 0 0 auto; background:none; border:0; color:var(--accent); font:inherit; font-size:12.5px; cursor:pointer; padding:4px 2px; }
@@ -1387,7 +1389,7 @@
                fyFull ? row("persons","👥","Personnes",plist.length+" personne"+(plist.length>1?"s":"")) : "",
                !fyM ? row("backup","💾","Sauvegarder",bk.label,(bk.days===null || bk.days>=7)?"var(--coral)":"var(--accent)") : "",
                row("stockage","🗂️","Stockage",fmtBytes(photosBytes()+dataBytes())) ]);
-      h+=grp([ row("pdf","📄","Exporter en PDF","bilan") ]);
+      h+=grp([ row("pdf","📄","Exporter","PDF ou tableur") ]);
       h+=grp([ row("aide","❓","Aide","accueil, guide"), row("settings","⚙️","Réglages",[fyFull?"devise":"", "code", !fyM?"restaurer":""].filter(function(x){ return x; }).join(", "),"",true) ]);
       h+='<div class="dr-foot"><span class="beta-tag">Version β · '+esc((document.querySelector('meta[name=build]')||{}).content||'')+(capNative()?(EDITION==="store"?' · appli Store':' · appli Perso'):' · navigateur'+(EDITION==="store"?' (Store)':''))+'</span></div>';
       h+='</div>';
@@ -1397,7 +1399,7 @@
       function closeAnim(){ ov.classList.remove("open"); setTimeout(closeMenu, 200); }
       ov.onclick=function(e){ if(e.target===ov) closeAnim(); };
       ov.querySelector(".dr-x").onclick=closeAnim;
-      var acts={ settings:openSettings, import:function(){ impStart(null); }, gallery:function(){ state.view="gallery"; render(); window.scrollTo(0,0); }, stockage:function(){ state.view="stockage"; render(); window.scrollTo(0,0); }, aide:openAide, plus:function(){ plusShow(null); }, perso:espaceAsk, foyer:persoOn() ? espaceFoyer : function(){ state.view="foyer"; render(); window.scrollTo(0,0); }, backup:backupData, restore:function(){ restorein.click(); }, lockSetup:lockSetup, lockBio:lockEnableBio, lockOff:lockDisable, devise:chooseCurrency, pdf:choosePdfPeriod, persons:managePersons };
+      var acts={ settings:openSettings, import:function(){ impStart(null); }, gallery:function(){ state.view="gallery"; render(); window.scrollTo(0,0); }, stockage:function(){ state.view="stockage"; render(); window.scrollTo(0,0); }, aide:openAide, plus:function(){ plusShow(null); }, perso:espaceAsk, foyer:persoOn() ? espaceFoyer : function(){ state.view="foyer"; render(); window.scrollTo(0,0); }, backup:backupData, restore:function(){ restorein.click(); }, lockSetup:lockSetup, lockBio:lockEnableBio, lockOff:lockDisable, devise:chooseCurrency, pdf:exportChoose, persons:managePersons };
       [].forEach.call(ov.querySelectorAll(".dr-row"), function(b){ b.onclick=function(){ var fn=acts[b.getAttribute("data-k")]; closeMenu(); if(fn) fn(); }; });
     }
     // Âge de la dernière sauvegarde, en jours de calendrier (une sauvegarde de la veille au soir = « hier »)
@@ -10431,8 +10433,10 @@
         return zipBuild(files, function(i, n){ pr.set("Sauvegarde complète… "+Math.round(i*100/n)+" %"); }).then(function(z){ pr.close(); saveZip(z, "tickets-sauvegarde-complete-"+todayISO()+".zip"); });
       }).catch(function(e){ pr.close(); window.alert("Sauvegarde impossible : "+((e&&e.message)||e)); });
     }
-    function saveZip(z, fname){
-      function done(msg){ var now=new Date().toISOString(); store.write("lastBackup", now); store.write("lastBackupFull", now); uiToast(msg); if(state.view==="list" || state.view==="stockage") setTimeout(render, 50); }
+    // Enregistre un fichier : Documents/Tickets ou partage (Android), téléchargement (navigateur). o = { what, done }
+    function saveFile(z, fname, o){
+      o=o||{}; var what=o.what||"Fichier";
+      function done(msg){ if(o.done) o.done(); uiToast(msg); if(state.view==="list" || state.view==="stockage") setTimeout(render, 50); }
       var FS=capPlugin("Filesystem"), SH=capPlugin("Share");
       if(FS){
         // par morceaux de 3 Mo (multiple de 3 : chaque morceau en base64 se suffit)
@@ -10442,22 +10446,84 @@
               pr.set("Enregistrement… "+Math.min(100, Math.round(pos*100/z.size))+" %"); return first ? FS.writeFile(a) : FS.appendFile(a); })
               .then(function(r){ if(first && r && r.uri) uri=r.uri; return nx(false); }); }
           return nx(true).catch(function(e){ pr.close(); throw e; }); };
-        var toPhone=function(){ write("Tickets/"+fname, "DOCUMENTS").then(function(){ done("Sauvegarde complète dans Documents/Tickets ✓"); })
-          .catch(function(e){ window.alert("Sauvegarde impossible dans Documents : "+((e&&e.message)||e)+"\nEssaie « Envoyer vers… »."); }); };
+        var toPhone=function(){ write("Tickets/"+fname, "DOCUMENTS").then(function(){ done(what+" dans Documents/Tickets ✓"); })
+          .catch(function(e){ window.alert("Enregistrement impossible dans Documents : "+((e&&e.message)||e)+"\nEssaie « Envoyer vers… »."); }); };
         var toShare=function(){ var old=store.read("zipCache", null); if(old && old!==fname){ try{ FS.deleteFile({ path:old, directory:"CACHE" }).catch(function(){}); }catch(e){} }
-          write(fname, "CACHE").then(function(uri){ store.write("zipCache", fname); return SH.share({ title:"Sauvegarde complète Tickets", files:[uri] }); })
-          .then(function(){ done("Sauvegarde complète envoyée ✓"); })
+          write(fname, "CACHE").then(function(uri){ store.write("zipCache", fname); return SH.share({ title:what+" · Tickets", files:[uri] }); })
+          .then(function(){ done(what+" envoyé"+(o.fem?"e":"")+" ✓"); })
           .catch(function(e){ var m=(e&&e.message)||String(e); if(!/cancel|annul/i.test(m)) window.alert("Envoi impossible : "+m); }); };
         if(!SH){ toPhone(); return; }
-        uiChoice("Sauvegarde complète · "+fmtBytes(z.size), esc("Garde le fichier sur le téléphone, ou envoie-le vers Google Drive, un ordinateur…"), [
+        uiChoice(what+" · "+fmtBytes(z.size), esc("Garde le fichier sur le téléphone, ou envoie-le vers Google Drive, un ordinateur…"), [
           { l:"Sur le téléphone (Documents/Tickets)", fn:toPhone }, { l:"Envoyer vers… (Drive, mail)", fn:toShare } ]);
         return;
       }
       try{
         var url=URL.createObjectURL(z), a=document.createElement("a"); a.href=url; a.download=fname; document.body.appendChild(a); a.click();
-        done("Sauvegarde complète téléchargée ✓");
+        done(what+" téléchargé"+(o.fem?"e":"")+" ✓");
         setTimeout(function(){ try{ document.body.removeChild(a); }catch(e){} URL.revokeObjectURL(url); }, 4000);
-      }catch(e){ window.alert("Sauvegarde impossible : "+((e&&e.message)||e)); }
+      }catch(e){ window.alert("Enregistrement impossible : "+((e&&e.message)||e)); }
+    }
+    function saveZip(z, fname){
+      saveFile(z, fname, { what:"Sauvegarde complète", fem:true, done:function(){ var now=new Date().toISOString(); store.write("lastBackup", now); store.write("lastBackupFull", now); } });
+    }
+    // ---------- Export pour un tableur (CSV : point-virgule, virgule décimale, UTF-8 avec BOM pour Excel) ----------
+    function csvCell(v){ if(v===null || v===undefined) return ""; if(typeof v==="number") return String(Math.round(v*100)/100).replace(".", ",");
+      v=String(v); return /[";\n\r]/.test(v) ? '"'+v.replace(/"/g, '""')+'"' : v; }
+    function csvText(head, rows){ return "\uFEFF"+[head].concat(rows).map(function(r){ return r.map(csvCell).join(";"); }).join("\r\n")+"\r\n"; }
+    function csvDate(d){ d=String(d||""); return /^\d{4}-\d{2}-\d{2}/.test(d) ? d.slice(8,10)+"/"+d.slice(5,7)+"/"+d.slice(0,4) : d; }
+    function csvMonths(per){   // mois de la période : ce mois, l'année en cours, ou tout depuis le 1er ticket / virement
+      var cur=monthKey(todayISO()), out=[], m;
+      if(per==="m") return [cur];
+      if(per==="y"){ for(m=cur.slice(0,4)+"-01"; m<=cur; m=nextMonthKey(m)) out.push(m); return out; }
+      var first=cur; state.entries.forEach(function(e){ var k=e.date && monthKey(e.date); if(k && k<first) first=k; }); virements.forEach(function(v){ if(v.month && v.month<first) first=v.month; });
+      for(m=first; m<=cur && out.length<240; m=nextMonthKey(m)) out.push(m); return out;
+    }
+    function csvBuild(per, what){
+      var ms=csvMonths(per), inM={}, files=[], acc=function(k){ var a=acctByKey(k); return a ? a.nom : ""; };
+      ms.forEach(function(m){ inM[m]=1; });
+      var E=state.entries.filter(function(e){ return e.date && inM[monthKey(e.date)]; }).sort(function(a,b){ return String(a.date).localeCompare(String(b.date)); });
+      if(what.tickets) files.push({ n:"tickets.csv", t:csvText(["Date","Magasin","Montant","Catégorie","Payé par","Compte","Articles","Partagé avec"],
+        E.map(function(e){ var ca=e.compte ? acc(e.compte) : (comptes.filter(function(a){ return ticketInAcct(e, a.key); })[0]||{}).nom||"";
+          return [csvDate(e.date), e.marchand||"", Number(e.montant)||0, e.categorie||"", payerOf(e), ca, (e.articles||[]).length, e.share ? Object.keys(e.share).join(", ") : ""]; })) });
+      if(what.articles){ var R=[]; E.forEach(function(e){ (e.articles||[]).forEach(function(a){ R.push([csvDate(e.date), e.marchand||"", a.label||"", a.produit||"", Number(a.prix)||0, a.commun?"oui":""]); }); });
+        files.push({ n:"articles.csv", t:csvText(["Date","Magasin","Article","Produit","Prix","Dépense commune"], R) }); }
+      if(what.ops){ var O=[]; comptes.filter(function(a){ return a.key!=="__tickets"; }).forEach(function(a){ ms.forEach(function(m){ var X=cptOps(a.key, m);
+          X.done.concat(X.todo).forEach(function(o){ var dd=o.d ? m+"-"+(o.d<10?"0":"")+o.d : m+"-01";
+            O.push([csvDate(dd), a.nom, o.n||"", o.k==="t"?"Ticket":(o.k==="f"?"Frais fixe":"Virement"), o.s||"", o.a, X.done.indexOf(o)>=0?"oui":"non"]); }); }); });
+        O.sort(function(x,y){ return x[0].split("/").reverse().join("").localeCompare(y[0].split("/").reverse().join("")); });
+        files.push({ n:"operations.csv", t:csvText(["Date","Compte","Libellé","Type","Détail","Montant","Fait"], O) }); }
+      if(what.frais){
+        files.push({ n:"frais-fixes.csv", t:csvText(["Libellé","Pour qui","Montant","Chaque mois","Début","Fin","Compte","Chacun sa part"],
+          fraisCommuns.map(function(f){ return [f.label||"", (f.personne||"").trim()||"Commun", fraisMontant(f, monthKey(todayISO())), f.recurrent?"oui":"non", f.recurrent?(f.startMonth||fraisStart(f)||""):(f.month||""), f.endMonth||"", f.compte?acc(f.compte):"", f.split?"oui":""]; })) });
+        files.push({ n:"provisions.csv", t:csvText(["Provision","Par mois","Solde","Prévu"],
+          provisions.map(function(p){ var b=0; try{ b=provBalance(p, monthKey(todayISO())); }catch(e){} return [p.nom||"", mensuelAt(p, monthKey(todayISO())), b, Number(p.prevu)||0]; })) });
+      }
+      return files;
+    }
+    function csvExport(){
+      var per="y", what={ tickets:true, articles:true, ops:true, frais:false };
+      var s=uiSheet('<div class="sheet-title">Exporter pour un tableur</div><div class="ui-intro">Des fichiers CSV qui s\'ouvrent dans Excel, LibreOffice ou Google Sheets.</div>'+
+        '<label class="f">Période</label><div class="seg2" id="csvPer"><button type="button" data-p="m">Ce mois</button><button type="button" data-p="y">Cette année</button><button type="button" data-p="all">Tout</button></div>'+
+        '<label class="f">Contenu</label><div id="csvWhat">'+[["tickets","Tickets"],["articles","Articles des tickets"],["ops","Opérations des comptes"],["frais","Frais fixes et provisions"]].map(function(x){
+          return '<label class="csv-ck"><input type="checkbox" data-w="'+x[0]+'"'+(what[x[0]]?' checked':'')+'><span>'+x[1]+'</span></label>'; }).join("")+'</div>'+
+        '<div class="ui-err" style="display:none"></div><div class="ui-stack"><button type="button" class="btn primary" id="csvGo">Exporter</button><button type="button" class="btn ghost ui-no">Annuler</button></div>');
+      function paint(){ [].forEach.call(s.qa("#csvPer button"), function(b){ b.classList.toggle("on", b.getAttribute("data-p")===per); }); }
+      [].forEach.call(s.qa("#csvPer button"), function(b){ b.onclick=function(){ per=b.getAttribute("data-p"); paint(); }; });
+      s.q(".ui-no").onclick=s.close;
+      s.q("#csvGo").onclick=function(){
+        [].forEach.call(s.qa("#csvWhat input"), function(c){ what[c.getAttribute("data-w")]=c.checked; });
+        if(!what.tickets && !what.articles && !what.ops && !what.frais){ var er=s.q(".ui-err"); er.textContent="Coche au moins un contenu."; er.style.display=""; return; }
+        var F=csvBuild(per, what), tag=per==="m" ? monthKey(todayISO()) : (per==="y" ? todayISO().slice(0,4) : "tout"); s.close();
+        if(F.length===1){ saveFile(new Blob([F[0].t], { type:"text/csv" }), F[0].n.replace(".csv", "")+"-"+tag+".csv", { what:"Export" }); return; }
+        zipBuild(F.map(function(f){ return { n:f.n, b:new Blob([f.t], { type:"text/csv" }) }; }), null).then(function(z){ saveFile(z, "tickets-export-"+tag+".zip", { what:"Export" }); })
+          .catch(function(e){ window.alert("Export impossible : "+((e&&e.message)||e)); });
+      };
+      paint();
+    }
+    function exportChoose(){
+      uiChoice("Exporter", esc("Un bilan à imprimer, ou tes données pour un tableur."), [
+        { l:"PDF · bilan imprimable", fn:choosePdfPeriod },
+        { l:"Tableur · fichiers CSV", primary:false, fn:csvExport } ]);
     }
     function restoreZip(file){
       var pr=uiProgress("Lecture de la sauvegarde…");

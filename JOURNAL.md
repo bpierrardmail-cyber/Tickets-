@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `03/11 18:03`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `03/11 23:22`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -117,6 +117,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **03/11** : à ajouter, dans l'ordre : export CSV (gratuit), groupes ponctuels voyage / sortie (✦ Plus ; les participants du foyer y retrouvent les informations, graphiques et virements de l'appli), rappels hors ligne (gratuits).
 - **03/11** : Compte › Graphiques sans Épargne ni Provisions (déjà dans le sous-onglet Épargne et dans À venir) ; le graphique d'épargne de Graphiques remplace celui du sous-onglet Épargne.
 - **02/11** : un membre du foyer a un espace privé « Mes comptes », gratuit pour l'instant ; les deux espaces restent séparés, mais un ticket perso peut être « envoyé aussi au foyer » (case ajoutée à la demande de Benoît le même jour) ; pas d'espace privé pour le propriétaire.
 - **02/11** : les graphiques sont toujours visibles en entier, jamais réduits pour tenir dans l'écran : la page défile s'il le faut.
@@ -187,6 +188,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 03/11
+- **Export pour un tableur** (comparaison avec les concurrents ; maquette ; « OK 1 à 3 », ordre 1 → 3 → 2) : Menu › Exporter → PDF (bilan) ou Tableur (CSV) : période (ce mois, cette année, tout), contenu (tickets, articles, opérations des comptes, frais fixes et provisions) ; CSV pour Excel en français (BOM, « ; », virgule décimale) ; un fichier, ou un ZIP s'il y en a plusieurs ; gratuit. `saveFile` commun avec la sauvegarde complète. Test `t121`.
 - **Bourse : seulement « ⚙︎ Gérer »** au-dessus du graphique (« le bouton Gérer suffit ») : « ＋ Compte » et « ＋ Action ou crypto » retirés, ils sont dans Gérer.
 - **Compte › Graphiques allégé** (« le graphique épargne est mieux fait que dans l'onglet Épargne ; on peut retirer le graphique épargne et provisions » ; « intègre directement ; pour l'accueil fais le nécessaire, personne n'utilise encore l'appli ») : le sous-onglet Épargne prend le graphique de Graphiques (période 6 / 12 mois / Tout, cases Sur la période, Dont provisions, Disponible) ; Graphiques garde Ce mois, Dépenses, Solde, Entrées-sorties (une ligne d'onglets) ; Provisions est dans À venir › Provisions ; Accueil : `compte:ep` → `epargne`, `compte:prov` → `provisions`, sans doublon. Tests t106 et t97 mis à jour.
 
