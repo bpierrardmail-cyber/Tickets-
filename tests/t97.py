@@ -51,9 +51,9 @@ with sync_playwright() as p:
     check(state(pg)[:2]==[5,5], "retour sur l'Accueil : page 5 %s"%state(pg))
     pg.reload(); pg.wait_for_timeout(1500)
     check(state(pg)[:2]==[5,5], "appli relancée : page 5 %s"%state(pg))
-    # la courbe de l'épargne (Compte · Épargne) n'est pas prise pour un anneau : elle prend la largeur de la carte
-    ep=pg.evaluate("()=>{ var c=document.querySelector('.hmini[data-id=\"compte:ep\"]'); var sv=c&&c.querySelector('.hm-ch svg'); return sv?[sv.parentNode.className, Math.round(sv.getBoundingClientRect().width), sv.querySelectorAll('circle').length]:null; }")
-    check(ep and ep[0]=="mbar" and ep[1]>120 and ep[2]==0, "petite carte Compte · Épargne : la courbe occupe la carte, sans points ovales %s"%ep)
+    # anciennes cartes « Compte · Épargne » et « Compte · Provisions » (retirées le 03/11) : remplacées par Épargne et Provisions, sans doublon
+    ids=pg.evaluate("()=>[...document.querySelectorAll('.hmini[data-id]')].map(x=>x.getAttribute('data-id'))")
+    check("compte:ep" not in ids and ids.count("epargne")==1 and ids.count("provisions")==1, "Accueil : plus de « Compte · Épargne / Provisions », une seule carte Épargne et Provisions %s"%ids)
     check(not errs, "pas d'erreur %s"%errs[:3])
     b.close()
 print("\n%d échec(s)"%len(fails))

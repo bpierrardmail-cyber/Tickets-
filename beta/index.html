@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="02/11 20:34" />
+  <meta name="build" content="03/11 07:51" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -3921,7 +3921,7 @@
     // ---------- Graphiques de l'accueil : choix ----------
     // « homeCharts » : liste ordonnée d'identifiants (« analyse:mois », « compte:solde », « bourse »…) ; absente = le graphique ★ de chaque onglet
     var HC_TABS={
-      compte:{ name:"Compte", key:"cptChart", defKey:"cptChartDef", fb:"mois", modes:[["mois","Ce mois"],["dep","Dépenses"],["solde","Solde"],["es","Entrées-sorties"],["ep","Épargne"],["prov","Provisions"]] },
+      compte:{ name:"Compte", key:"cptChart", defKey:"cptChartDef", fb:"mois", modes:[["mois","Ce mois"],["dep","Dépenses"],["solde","Solde"],["es","Entrées-sorties"]] },   // l'épargne et les provisions : cartes « epargne » et « provisions »
       analyse:{ name:"Analyse", key:"anChart", defKey:"anChartDef", fb:"mois", modes:[["mois","Mois"],["rep","Répartition"],["rec","Récurrentes"],["pay","Qui a payé"]] },
       communes:{ name:"Commun", key:"comChart", defKey:"comChartDef", fb:"rep", modes:[["rep","Répartition"],["postes","Postes"],["6m","Mois"]] },
       articles:{ name:"Articles", key:"artChart", defKey:"artChartDef", fb:"prod", modes:[["prod","Mes produits"],["hausse","Hausses"],["mag","Magasins"],["fam","Familles"],["bud","Budgets"]] }
@@ -3939,7 +3939,8 @@
     function hcList(){   // liste effective (identifiants concrets), sans ce qui n'est plus disponible
       var l=store.read("homeCharts", null), av=hcAvail(), seen={};
       if(!Array.isArray(l)) l=["bourse","analyse:*","communes:*","articles:*","epargne","provisions"];
-      return l.map(function(id){ var t=id.split(":"); return (t[1]==="*" && HC_TABS[t[0]]) ? t[0]+":"+hcStar(t[0]) : id; })
+      var OLD={ "compte:ep":"epargne", "compte:prov":"provisions" };   // anciens graphiques de Compte › Graphiques (retirés le 03/11)
+      return l.map(function(id){ id=OLD[id]||id; var t=id.split(":"); return (t[1]==="*" && HC_TABS[t[0]]) ? t[0]+":"+hcStar(t[0]) : id; })
               .filter(function(id){ if(seen[id] || av.indexOf(id)<0) return false; seen[id]=1; return true; });
     }
     function hcLabel(id){ var t=id.split(":"), T=HC_TABS[t[0]]; if(!T) return HC_SOLO[id]||id; var m=T.modes.filter(function(x){ return x[0]===t[1]; })[0]; return T.name+" · "+(m?m[1]:t[1]); }
@@ -6038,7 +6039,7 @@
 
       var cptOpen = state.cptOpen || (state.cptOpen={});
       var virIn=0, virOut=0; virs.forEach(function(v){ var x=Number(v.montant)||0; if(x>=0) virIn+=x; else virOut+=x; });
-      var CMODES=[["mois","Ce mois"],["dep","Dépenses"],["solde","Solde"],["es","Entrées-sorties"],["ep","Épargne"],["prov","Provisions"]];
+      var CMODES=[["mois","Ce mois"],["dep","Dépenses"],["solde","Solde"],["es","Entrées-sorties"]];   // Épargne : sous-onglet Épargne ; Provisions : À venir › Provisions
       // Répartition des dépenses du mois (catégories de tickets + frais fixes), de la plus grosse à la plus petite
       var dParts=[], byCat={};
       paid.forEach(function(e){ var c=(e.categorie||"Autre"); byCat[c]=(byCat[c]||0)+(Number(e.montant)||0); });
@@ -6078,7 +6079,7 @@
       function cRangeBtn(){ var nx={ "6":"12", "12":"all", "all":"6" }[crange], lb={ "6":"6 mois", "12":"12 mois", "all":"Tout" }[crange];
         return '<button type="button" class="anfx anfx-corner crange-c" data-r="'+nx+'" aria-label="Période : '+lb+' (toucher pour changer)">'+lb+' ⇄</button>'; }
       function inOut(m){ var inn=0, out=computeDepensesMonth(person,m); virementsOf(person,m).forEach(function(v){ var x=Number(v.montant)||0; if(x>=0) inn+=x; else out+=-x; }); return { inn:inn, out:out }; }
-      var chart=chartTabsHTML(CMODES, cmode, "cptChartDef", "mois").replace('<div class="cch-tabs">','<div class="cch-tabs wrap2">')+'<div class="cch">';   // 6 choix : sur deux lignes
+      var chart=chartTabsHTML(CMODES, cmode, "cptChartDef", "mois")+'<div class="cch">';
 
       var pvCpt=provSumWhere(month, function(w, p){ return (acct.main && w==="cpt") || w==="cpt:"+acct.key; });
       var hero={ label:(multi?esc(acct.nom):"Solde du compte")+(futur?" · fin "+esc(monthLabelOf(month))+" prévue":" (banque estimée)"), big:soldeBanque, color:(soldeBanque<0?"var(--coral)":"var(--ink)"), sub:(futur?"Prévu, tout ce qui est planifié compris, sans le liquide":"Estimé, sans le liquide")+(pvCpt>0.004?" · dont provisions "+fmtK(pvCpt)+", disponible "+fmtK(soldeBanque-pvCpt):"") };
@@ -6282,9 +6283,13 @@
                extra:'<div class="cch">'+compteSixMonthsSVG(esRows, month)+'<div class="cch-leg"><span><i style="background:var(--accent)"></i>Entrées</span><span><i style="background:var(--coral)"></i>Sorties (dépenses + virements envoyés)</span></div></div>' };
           pb=bIn;
         } else {
-          var hasB2=epargne.some(function(c){ return c.bourseLink; }), epR=six.map(function(m){ return { m:m, lbl:mShort(m), v:epTotAt(m), v2:(hasB2?bourseEpAt(m):null) }; });
-          ph={ label:"Épargne totale", big:totCur, color:"var(--ink)", sub:(totPrev!==null?(totCur-totPrev>=0?"+":"")+fmtK(totCur-totPrev)+" vs mois précédent":"")+(hasB2?(totPrev!==null?" · ":"")+"dont Bourse "+fmtS(bourseEpAt(month)):""),
-               extra:'<div class="cch">'+compteLineSVG(epR, month, "#7c9cf4")+'<div class="cch-note">Total de tes comptes épargne'+(hasB2?' (pointillés : dont Bourse)':'')+', sur 6 mois</div></div>' };
+          var hasB2=epargne.some(function(c){ return c.bourseLink; }), eFirst2=month;
+          epargne.forEach(function(c){ Object.keys(c.vals||{}).forEach(function(k){ if(k<eFirst2) eFirst2=k; }); });
+          var epR=cRangeMonths(eFirst2).map(function(m){ return { m:m, lbl:mShort(m), v:epTotAt(m), v2:(hasB2?bourseEpAt(m):null) }; }), eA=epR[epR.length-2].v, eB=epR[epR.length-1].v;
+          var epP2=provSumWhere(month, function(w){ return w.indexOf("ep:")===0; }), eGain2=eB-epR[0].v;
+          ph={ label:"Épargne totale", big:eB, color:"var(--ink)", sub:(epR.length>1?(eB-eA>=0?"+":"")+fmtK(eB-eA)+" vs mois précédent":"")+(hasB2?(epR.length>1?" · ":"")+"dont Bourse "+fmtS(epR[epR.length-1].v2):""),
+               extra:'<div class="cnr">'+cRangeBtn().replace('anfx anfx-corner','anfx')+'</div><div class="cch">'+compteLineSVG(epR, month, "#7c9cf4")+'<div class="cch-note">Total de tes comptes épargne'+(hasB2?' (pointillés : dont Bourse)':'')+', '+cRangeNote(epR.map(function(r){ return r.m; }))+'</div></div>',
+               stats:[ { l:"Sur la période", v:(eGain2>=0?"+":"−")+fmtS(Math.abs(eGain2)), c:(eGain2<0?"var(--coral)":"var(--accent)") }, { l:"Dont provisions", v:fmtS(epP2) }, { l:"Disponible", v:fmtS(eB-epP2) } ] };
           pb=bEp;
         }
         if(multi && page==="es") ph.label+=' · '+esc(acct.nom);

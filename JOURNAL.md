@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `02/11 20:34`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `03/11 07:51`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -37,7 +37,7 @@ Après chaque modification, dans le même commit :
   - toucher un virement : Modifier, « ↻ Reprendre ce virement », « 📅 Passer en frais fixe » (virement envoyé) ;
   - Opérations : « ＋ Ajouter › ↻ Reprendre des virements » du mois d'avant (mois suivant, un mois, une période ou chaque mois ; les virements « chaque mois » se créent seuls, 12 mois à l'avance) ;
   - Opérations : la **liste des opérations du mois**, comme un relevé de banque : solde estimé, Entrées / Sorties / Fin de mois, filtres Tout · Entrées · Sorties · À venir, recherche (nom ou montant, avec le total), bloc « À venir » avec un rond pour marquer « fait », puis les opérations par jour (le plus récent en haut) avec le solde du soir, et le report en bas ;
-  - Graphiques : les 6 graphiques (Ce mois, Dépenses, Solde, Entrées-sorties, Épargne, Provisions), touchables (une barre ouvre Virements ou les Opérations filtrées) ;
+  - Graphiques : 4 graphiques (Ce mois, Dépenses, Solde, Entrées-sorties ; l'épargne est dans le sous-onglet Épargne, les provisions dans À venir), touchables (une barre ouvre Virements ou les Opérations filtrées) ;
   - plusieurs comptes par personne, sur une rangée qui défile (la carte des comptes garde la même hauteur) ;
   - Épargne : comptes épargne et objectifs, avec la ligne Provisions qui ouvre À venir › Provisions ; plus de page « Configuration », ni de pages Dépenses et Solde bancaire ;
   - bouton « Liquide » ;
@@ -117,6 +117,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **03/11** : Compte › Graphiques sans Épargne ni Provisions (déjà dans le sous-onglet Épargne et dans À venir) ; le graphique d'épargne de Graphiques remplace celui du sous-onglet Épargne.
 - **02/11** : un membre du foyer a un espace privé « Mes comptes », gratuit pour l'instant ; les deux espaces restent séparés, mais un ticket perso peut être « envoyé aussi au foyer » (case ajoutée à la demande de Benoît le même jour) ; pas d'espace privé pour le propriétaire.
 - **02/11** : les graphiques sont toujours visibles en entier, jamais réduits pour tenir dans l'écran : la page défile s'il le faut.
 - **02/11** : pour la sortie Store, dans l'ordre : stockage sans limite (fait), écran « Licences » et mention INSEE, suppression du foyer, politique de confidentialité et fiche « Sécurité des données » (statistiques ML Kit).
@@ -184,6 +185,9 @@ Après chaque modification, dans le même commit :
 ---
 
 ## Historique (le plus récent en haut)
+
+### 03/11
+- **Compte › Graphiques allégé** (« le graphique épargne est mieux fait que dans l'onglet Épargne ; on peut retirer le graphique épargne et provisions » ; « intègre directement ; pour l'accueil fais le nécessaire, personne n'utilise encore l'appli ») : le sous-onglet Épargne prend le graphique de Graphiques (période 6 / 12 mois / Tout, cases Sur la période, Dont provisions, Disponible) ; Graphiques garde Ce mois, Dépenses, Solde, Entrées-sorties (une ligne d'onglets) ; Provisions est dans À venir › Provisions ; Accueil : `compte:ep` → `epargne`, `compte:prov` → `provisions`, sans doublon. Tests t106 et t97 mis à jour.
 
 ### 02/11
 - **« Envoyer aussi au foyer » sur un ticket de l'espace perso** (« il faut aussi la case envoyer au foyer ») : case décochée par défaut sur la fiche (si l'Accueil du membre est en modification) ; cochée, le ticket est copié dans le foyer mis de côté, payé par le membre, et part chez le propriétaire au retour dans le foyer ; décocher le retire ; rouvert, « déjà envoyé ». Test t120 complété.
