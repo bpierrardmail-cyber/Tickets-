@@ -128,7 +128,7 @@ Compte comme payé pour le commun : les frais communs (selon le compte qui les p
 **✦ Groupes** (Tickets Plus), en bas de l'onglet : pour un voyage ou une sortie, même avec des amis qui n'ont pas l'appli.
 
 - « ＋ Nouveau groupe » : un nom, les personnes du foyer à cocher, les autres prénoms séparés par des virgules ;
-- « ＋ Dépense » : quoi, combien, payé par qui ; ou, sur la fiche d'un ticket, « Groupe » pour l'y mettre ;
+- « ＋ Dépense » : scanner un ticket, le saisir, prendre un ticket déjà enregistré, ou une dépense sans ticket (quoi, combien, payé par qui) ; un ticket ajouté depuis le groupe va aussi dans tes dépenses ; sur la fiche d'un ticket, « Groupe » le met dans un groupe ou l'en retire ;
 - chaque dépense est partagée à parts égales ; les barres et « qui doit combien à qui » marchent comme pour le commun ;
 - « Remboursé » : avec un virement entre les comptes du foyer, ou sans virement ;
 - « Envoyer le récap » : un texte à envoyer par SMS ou WhatsApp ; « ⋯ » pour changer les participants, clore ou supprimer le groupe.

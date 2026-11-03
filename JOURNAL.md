@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `03/11 23:41`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `03/11 23:50`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -189,6 +189,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 03/11
+- **Ajouter un ticket depuis un groupe** (« il faut pouvoir ajouter un ticket directement depuis le groupe ») : « ＋ Dépense » propose Scanner un ticket, Saisir un ticket, Un ticket déjà enregistré (60 derniers jours, dans aucun groupe), Dépense sans ticket ; le ticket commencé depuis le groupe y est mis (`grpDraftHook`) et l'enregistrement ramène au groupe. t122 complété.
 - **Groupes ponctuels** (✦ Plus, « quand 2 personnes ou plus sont du foyer ils peuvent utiliser les systèmes présents pour les informations, graphique et virements ») : Commun › Groupes ; participants du foyer ou non (amis sans l'appli) ; dépenses à la main ou ticket mis dans le groupe (« Groupe » sur la fiche) ; parts égales ; barres et remboursements minimaux comme « Qui doit combien à qui » ; « Remboursé » avec virement entre comptes du foyer ou sans ; « Envoyer le récap » (texte) ; clore / rouvrir / supprimer (annulable). Données `groupes` (foyer : onglet Commun, sauvegarde). Test t122.
 - **Export pour un tableur** (comparaison avec les concurrents ; maquette ; « OK 1 à 3 », ordre 1 → 3 → 2) : Menu › Exporter → PDF (bilan) ou Tableur (CSV) : période (ce mois, cette année, tout), contenu (tickets, articles, opérations des comptes, frais fixes et provisions) ; CSV pour Excel en français (BOM, « ; », virgule décimale) ; un fichier, ou un ZIP s'il y en a plusieurs ; gratuit. `saveFile` commun avec la sauvegarde complète. Test `t121`.
 - **Bourse : seulement « ⚙︎ Gérer »** au-dessus du graphique (« le bouton Gérer suffit ») : « ＋ Compte » et « ＋ Action ou crypto » retirés, ils sont dans Gérer.

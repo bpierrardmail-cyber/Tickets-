@@ -15,7 +15,8 @@ def check(c, m):
 def norm(t): return t.replace(" "," ").replace("\xa0"," ")
 data={"askName":False,"devise":"EUR","personnes":[{"nom":"Marie"}],
   "comptes":[{"key":"Alex","nom":"Compte Alex","payer":"Alex","main":True},{"key":"Marie","nom":"Compte Marie","payer":"Marie"}],
-  "entries":[{"id":1,"date":"2026-10-24","marchand":"Restaurant du Lac","montant":90,"categorie":"Loisirs","payePar":"Alex","articles":[]}]}
+  "entries":[{"id":1,"date":"2026-10-24","marchand":"Restaurant du Lac","montant":90,"categorie":"Loisirs","payePar":"Alex","articles":[]},
+             {"id":2,"date":"2026-10-28","marchand":"Boulangerie","montant":12,"categorie":"Alimentation","payePar":"Alex","articles":[]}]}
 with sync_playwright() as p:
     b=p.chromium.launch(); errs=[]
     c=b.new_context(viewport={'width':412,'height':900}); pg=c.new_page(); pg.on('pageerror', lambda e: errs.append(str(e)))
@@ -40,6 +41,7 @@ with sync_playwright() as p:
     # ---------- 2. dépenses à la main
     def dep(label, mt, who):
         pg.locator("#gdAdd").click(); pg.wait_for_timeout(300)
+        pg.locator(".sheet-overlay button", has_text="Dépense sans ticket").click(); pg.wait_for_timeout(300)
         ov=pg.locator(".sheet-overlay").last
         ov.locator("input").nth(0).fill(label); ov.locator("input").nth(1).fill(mt); ov.locator("select").select_option(who)
         ov.locator("button.primary").click(); pg.wait_for_timeout(400)
@@ -87,6 +89,25 @@ with sync_playwright() as p:
     pg.locator("#gMore").click(); pg.wait_for_timeout(300)
     pg.locator(".sheet-overlay button", has_text="Clore le groupe").click(); pg.wait_for_timeout(500)
     t=app(); check(G()[0].get("clos") and "1 groupe clos" in t, "groupe clos : rangé dans « 1 groupe clos »")
+    # ---------- 6. ajouter un ticket depuis le groupe
+    pg.locator("#grpNew").click(); pg.wait_for_timeout(300)
+    pg.locator("#grpNom").fill("Sortie ciné"); pg.locator('.sheet-overlay input[data-p="Marie"]').check(); pg.locator("#grpOk").click(); pg.wait_for_timeout(500)
+    pg.locator("#gdAdd").click(); pg.wait_for_timeout(300)
+    ch=norm(pg.locator(".sheet-overlay").last.inner_text())
+    check("Scanner un ticket" in ch and "Saisir un ticket" in ch and "Un ticket déjà enregistré" in ch and "Dépense sans ticket" in ch, "＋ Dépense : scanner, saisir, ticket déjà enregistré, sans ticket")
+    pg.locator(".sheet-overlay button", has_text="Saisir un ticket").click(); pg.wait_for_timeout(500)
+    check(pg.locator('#grpc .chip.on', has_text="Sortie ciné").count()==1, "fiche du nouveau ticket : groupe « Sortie ciné » déjà choisi")
+    pg.locator("#f-montant").fill("24"); pg.locator("#f-marchand").fill("Cinéma"); pg.locator("#save").click(); pg.wait_for_timeout(600)
+    if pg.locator("#cksave").count(): pg.locator("#cksave").click(); pg.wait_for_timeout(500)
+    t=app(); ents=pg.evaluate("()=>JSON.parse(localStorage.getItem('entries'))")
+    check("Sortie ciné" in t and "Cinéma" in t and "Tu dois" not in t and "Marie te doit 12,00 €" in t, "enregistré : retour au groupe, Cinéma 24 € dedans, Marie te doit 12 €")
+    check(any(e["marchand"]=="Cinéma" for e in ents), "le ticket est aussi dans les dépenses")
+    pg.locator("#gdAdd").click(); pg.wait_for_timeout(300)
+    pg.locator(".sheet-overlay button", has_text="Un ticket déjà enregistré").click(); pg.wait_for_timeout(300)
+    ch=norm(pg.locator(".sheet-overlay").last.inner_text())
+    check("Boulangerie" in ch and "Restaurant du Lac" not in ch and "Cinéma" not in ch, "tickets proposés : seulement ceux qui ne sont dans aucun groupe")
+    pg.locator(".sheet-overlay button", has_text="Boulangerie").click(); pg.wait_for_timeout(500)
+    t=app(); check("Boulangerie" in t and "Marie te doit 18,00 €" in t, "Boulangerie ajoutée : Marie te doit 18 €")
     # Store sans Plus
     c2=b.new_context(viewport={'width':412,'height':900}, user_agent="Mozilla/5.0 TicketsApp/store"); p2=c2.new_page(); p2.on('pageerror', lambda e: errs.append(str(e)))
     p2.route("**/*", lambda r: r.continue_() if r.request.url.startswith("file:") else r.abort())
