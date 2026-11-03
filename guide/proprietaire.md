@@ -125,6 +125,14 @@ Les parts ne changent pas les soldes de tes comptes : elles disent seulement qui
 
 Compte comme payé pour le commun : les frais communs (selon le compte qui les paie) et les articles « Dépense commune » des tickets.
 
+**✦ Groupes** (Tickets Plus), en bas de l'onglet : pour un voyage ou une sortie, même avec des amis qui n'ont pas l'appli.
+
+- « ＋ Nouveau groupe » : un nom, les personnes du foyer à cocher, les autres prénoms séparés par des virgules ;
+- « ＋ Dépense » : quoi, combien, payé par qui ; ou, sur la fiche d'un ticket, « Groupe » pour l'y mettre ;
+- chaque dépense est partagée à parts égales ; les barres et « qui doit combien à qui » marchent comme pour le commun ;
+- « Remboursé » : avec un virement entre les comptes du foyer, ou sans virement ;
+- « Envoyer le récap » : un texte à envoyer par SMS ou WhatsApp ; « ⋯ » pour changer les participants, clore ou supprimer le groupe.
+
 ## Foyer partagé
 
 ✦ Tickets Plus. Ton téléphone reste le centre : il garde toutes les données et envoie à chaque membre seulement ce que tu partages avec lui. Les données sont chiffrées : personne d'autre ne peut les lire.
