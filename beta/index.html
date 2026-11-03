@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="03/11 07:51" />
+  <meta name="build" content="03/11 18:03" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -6478,7 +6478,7 @@
       }
       // Page principale (total + deux boutons) ou sous-page : « comptes » (les fiches) / « gerer » (les actions)
       var bSub=state.bSub; if(bSub!=="comptes" && bSub!=="gerer") bSub=null;
-      var h=header(!!bSub, bSub==="comptes"?"Mes comptes":(bSub==="gerer"?"Gérer":""))+(bSub==="gerer"?'':'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>')+(bSub?'':tabTools([["addbrs","＋ Compte"],["addpos","＋ Action ou crypto"],["bgoMng","⚙︎ Gérer"]]))+'%%HERO%%', accH='';
+      var h=header(!!bSub, bSub==="comptes"?"Mes comptes":(bSub==="gerer"?"Gérer":""))+(bSub==="gerer"?'':'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>')+(bSub?'':tabTools([["bgoMng","⚙︎ Gérer"]]))+'%%HERO%%', accH='';
       var emptyB=''; if(!bourse.some(function(c){ return bAt(c,month) && !bClosedAt(c,month); })) emptyB='<div class="muted" style="font-size:12px;margin:4px 2px 8px">Aucun compte'+(month===curM?". Ajoute ton premier compte bourse.":" ce mois-ci.")+'</div>';
       var totCap=0, totVal=0, totCash=0, totPrevVal=null, totFirstVal=null, totFirstCap=null;
       var pm=prevMonthKey(month);
