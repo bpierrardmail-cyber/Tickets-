@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `03/11 23:50`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `04/11 00:10`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -79,7 +79,7 @@ Après chaque modification, dans le même commit :
 **Version Store** : `PLUS_FEATURES = widgets, foyer, avancee, factures` (« factures » = importer et suivre ses factures ; le reste d'À venir est gratuit). L'achat de Plus n'est pas encore branché. L'import de relevé est gratuit pour l'instant.
 
 ## En cours / à reprendre
-- **Nouveautés 1 → 3 → 2** (03/11) : export CSV et groupes faits ; reste les **rappels hors ligne** (gratuits : prélèvement ou facture demain, budget à 80 %, virement pas fait, sauvegarde de plus de 7 jours ; notifications locales Capacitor, nouvel APK).
+- **Rappels** (03/11) : à essayer par Benoît avec les nouveaux APK (Menu › Réglages › Rappels, accepter les notifications) ; vérifier qu'ils arrivent appli fermée et en mode avion.
 - **Guide** : intégré le 02/11 ; à peaufiner avec Benoît (ses corrections dans les documents « Guide de Tickets » → `guide/*.md` → `guide/maj.py`).
 
 - **Réorganisation de l'appli** (31/10) : il trouve l'organisation et l'accès aux fonctions peu clairs. Plan proposé dans la maquette « Tickets — Plan de l'appli » : un onglet = une question, chaque chose à un seul endroit, sous-onglets visibles au lieu de « Configuration », ✦ partout pareil (on voit la fonction, seul le bouton demande Plus). Onglets proposés : Accueil · Dépenses (Articles + Analyse) · Compte (Opérations · Virements · Épargne · Graphiques, roue du compte) · À venir (ex Factures, ouvert à tous : 12 mois · Frais fixes · Provisions gratuits, Factures ✦, Projection ✦) · Commun (parts seulement) · Bourse. En 4 étapes, À venir d'abord (sa question : les provisions dans Factures). Décidé le 31/10 : nom « À venir », 12 mois gratuits. **Les 4 étapes sont intégrées (31/10).** À essayer par Benoît sur son téléphone ; à revoir selon ses retours.
@@ -189,6 +189,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 03/11
+- **Rappels hors ligne** (gratuits, « Oui rappels gratuit ») : Menu › Réglages › Rappels (appli Android). Notifications locales (`@capacitor/local-notifications`, nouvel APK) programmées sur le téléphone pour 14 jours, reprogrammées à chaque ouverture ou changement : prélèvement ou facture la veille, virement pas fait le jour même, budget à 80 % et dépassé (tout de suite, une fois par mois), sauvegarde de plus de 7 jours (propriétaire) ; heure au choix ; canal privé (rien sur l'écran verrouillé) ; toucher un rappel ouvre À venir, Compte › À venir, Dépenses › Budgets ou Sauvegarder. Permission POST_NOTIFICATIONS (patch-manifest), icône `tk_ic_notif`. Dans un navigateur : expliqué, pas activable. Test t123.
 - **Ajouter un ticket depuis un groupe** (« il faut pouvoir ajouter un ticket directement depuis le groupe ») : « ＋ Dépense » propose Scanner un ticket, Saisir un ticket, Un ticket déjà enregistré (60 derniers jours, dans aucun groupe), Dépense sans ticket ; le ticket commencé depuis le groupe y est mis (`grpDraftHook`) et l'enregistrement ramène au groupe. t122 complété.
 - **Groupes ponctuels** (✦ Plus, « quand 2 personnes ou plus sont du foyer ils peuvent utiliser les systèmes présents pour les informations, graphique et virements ») : Commun › Groupes ; participants du foyer ou non (amis sans l'appli) ; dépenses à la main ou ticket mis dans le groupe (« Groupe » sur la fiche) ; parts égales ; barres et remboursements minimaux comme « Qui doit combien à qui » ; « Remboursé » avec virement entre comptes du foyer ou sans ; « Envoyer le récap » (texte) ; clore / rouvrir / supprimer (annulable). Données `groupes` (foyer : onglet Commun, sauvegarde). Test t122.
 - **Export pour un tableur** (comparaison avec les concurrents ; maquette ; « OK 1 à 3 », ordre 1 → 3 → 2) : Menu › Exporter → PDF (bilan) ou Tableur (CSV) : période (ce mois, cette année, tout), contenu (tickets, articles, opérations des comptes, frais fixes et provisions) ; CSV pour Excel en français (BOM, « ; », virgule décimale) ; un fichier, ou un ZIP s'il y en a plusieurs ; gratuit. `saveFile` commun avec la sauvegarde complète. Test `t121`.

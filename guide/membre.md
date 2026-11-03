@@ -49,6 +49,10 @@ En plus du foyer, tu as un espace à toi : Menu › Mes comptes.
 - La pastille « 🔒 Mes comptes · privé » sous le titre rappelle où tu es ; touche-la pour revenir au foyer.
 - Pendant que tu es dans Mes comptes, le foyer n'est pas mis à jour ; il le sera à ton retour.
 
+## Rappels
+
+Menu › Réglages › Rappels (appli Android) : tes prélèvements de la veille, tes virements à faire, tes budgets à 80 %. Ils arrivent même appli fermée et sans internet ; rien ne s'affiche sur l'écran verrouillé.
+
 ## Code et sécurité
 
 - Un code à 6 chiffres et ton empreinte protègent l'appli : obligatoires dans un foyer.

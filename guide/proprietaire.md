@@ -147,6 +147,16 @@ Compte comme payé pour le commun : les frais communs (selon le compte qui les p
 
 Retirer un membre coupe son accès tout de suite. Ses tickets déjà arrivés chez toi restent ; ce qu'il a ajouté depuis sa dernière mise à jour serait perdu : vérifie qu'il est « à jour » avant (l'appli te prévient). Pour juste le reconnecter, « Nouveau téléphone : nouveau QR code » suffit.
 
+## Rappels
+
+Menu › Réglages › Rappels (appli Android) : des notifications sur ton téléphone, même appli fermée et sans internet.
+
+- **Prélèvement ou facture demain** : la veille, avec le montant et le compte.
+- **Virement** à faire ou attendu : le jour même, s'il n'est pas encore « fait ».
+- **Budget** : à 80 %, puis s'il est dépassé ; une seule fois par mois.
+- **Sauvegarde** : si la dernière a plus de 7 jours.
+- Tu choisis l'heure. Rien ne s'affiche sur l'écran verrouillé ; touche un rappel pour ouvrir l'écran qui le concerne.
+
 ## Photos et sauvegardes
 
 Tes données sont seulement sur ton téléphone : si tu le perds, seule une sauvegarde les fait revenir.

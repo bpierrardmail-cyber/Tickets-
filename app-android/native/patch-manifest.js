@@ -50,5 +50,9 @@ x = x.replace("</application>", add + "    </application>");
 if (!x.includes("android.permission.ACCESS_NETWORK_STATE")) {
   x = x.replace("<application", '<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n    <application');
 }
+// Rappels (notifications locales, Android 13 et plus) : la permission est demandée quand on active les rappels
+if (!x.includes("android.permission.POST_NOTIFICATIONS")) {
+  x = x.replace("<application", '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <application');
+}
 fs.writeFileSync(file, x);
 console.log("widgets ajoutés au manifeste");
