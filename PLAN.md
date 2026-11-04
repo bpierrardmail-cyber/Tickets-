@@ -77,6 +77,8 @@ L'utilisateur active la sauvegarde une fois ; ensuite elle part seule, chiffrée
 
 ### Étape 2 — restaurer et vérifier
 
+Maquette « Tickets — Restaurer depuis Drive » (8 écrans) validée le 04/11, avec ses 4 décisions (voir `JOURNAL.md`, Décisions).
+
 1. « Vérifier » : lit la dernière sauvegarde en arrière-plan sans rien changer (« lisible : 312 tickets, 8 comptes… »).
 2. « Restaurer » : liste des sauvegardes (date, nombre de tickets), choix d'une sauvegarde, confirmation.
 3. Avant de restaurer, l'état actuel est gardé sur le téléphone ; « Annuler la restauration » le remet.
