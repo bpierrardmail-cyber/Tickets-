@@ -40,6 +40,7 @@ Sans ces identifiants, tout peut être préparé et testé avec un faux Drive, m
 
 Aujourd'hui, il n'y a pas de site, seulement le domaine chez IONOS. Le site doit exister avant d'activer la connexion à Google, car l'écran de consentement demande le lien de la politique de confidentialité.
 
+- Adresses retenues le 04/11 (pas de domaine copek.fr pour l'instant) : page de l'appli `bpierrard.fr/copek`, politique de confidentialité `bpierrard.fr/copek/confidentialite`, contact `contact@bpierrard.fr`. copek.fr pourra être pris plus tard pour protéger le nom.
 - Une petite page gratuite hébergée par **Cloudflare Pages** (usage commercial autorisé, même compte que le relais). Le DNS du domaine est confié à Cloudflare ; IONOS garde le nom de domaine.
 - [ ] Claude prépare les pages : présentation, politique de confidentialité, conditions, mentions légales (brouillons dans `legal/`).
 - [ ] Benoît, dans IONOS › Domaines : remplacer les serveurs DNS par ceux de Cloudflare (donnés au moment voulu) ; prise en compte en quelques heures.
