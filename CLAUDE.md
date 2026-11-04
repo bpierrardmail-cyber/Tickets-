@@ -26,6 +26,8 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 | `.github/workflows/apk-beta.yml` | Compile deux APK (Perso et Store) quand `app-android/**` ou `beta/**` change ; publiés dans la release `apk-beta`. |
 | `tests/` | Tests Playwright (Python) avec données fictives, relais local, `run.sh` ; mode d'emploi dans `tests/README.md`. `tests/vitrine.py` refait les captures de `beta/vitrine/`. |
 | `guide/` | Le guide : `proprietaire.md` et `membre.md` (source) ; `python3 guide/maj.py` les met dans `beta/index.html` (`var GUIDE`, entre `/* GUIDE-DEBUT */` et `/* GUIDE-FIN */`). Brouillons partagés avec Benoît dans deux documents « Guide de Tickets » (propriétaire, membre) : reporter ses corrections dans les `.md` puis relancer `maj.py`. |
+| `PLAN.md` | Plan détaillé des chantiers à partir du 06/11/2026 (sauvegarde Drive, Plus du foyer, import en un geste, monnaie) et ce que Benoît doit préparer. |
+| `legal/` | Textes légaux à relire (confidentialité, conditions, mentions légales), à publier sur bpierrard.fr. |
 | `beta/vitrine/` | Captures de l'appli (données inventées, 544 × 500, ~20 Ko) pour l'accueil et le carrousel Plus ; copiées dans l'APK avec la β. |
 
 ## Code de `beta/index.html`
