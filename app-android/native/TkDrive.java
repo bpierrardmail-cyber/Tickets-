@@ -341,10 +341,10 @@ public class TkDrive {
                 // un autre téléphone envoie aussi ses sauvegardes ici (après la 1re sauvegarde de celui-ci)
                 long since = p.getLong("since", 0), other = p.getLong("otherAt", 0);
                 String me = dev(c);
-                for (JSONObject f : all) {
-                    JSONObject ap = f.optJSONObject("appProperties");
+                for (JSONObject x : all) {
+                    JSONObject ap = x.optJSONObject("appProperties");
                     String d = ap == null ? "" : ap.optString("d", "");
-                    long t = created(f);
+                    long t = created(x);
                     if (!d.isEmpty() && !d.equals(me) && t > since && t > other) other = t;
                 }
                 p.edit().putLong("otherAt", other).putInt("count", prune(c, token, all)).apply();
