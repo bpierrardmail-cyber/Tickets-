@@ -36,6 +36,12 @@ Gratuit, environ 20 minutes, guidé écran par écran. De préférence avec un c
 
 Sans ces identifiants, tout peut être préparé et testé avec un faux Drive, mais rien ne peut partir sur un vrai Drive.
 
+**Fait le 04/11** : projet Google Cloud `app-budget-sbpi`, API Drive activée, écran de consentement « Copek » (Externe, statut Test), deux clients Android créés (ordre de création : Perso puis Store, à confirmer) :
+- `164495007599-l2hent14c6mfg5i5276ragac6c94b28q.apps.googleusercontent.com`
+- `164495007599-ossl60rii5gedj8nqjbk6nfa8o12g3i9.apps.googleusercontent.com`
+
+Ces identifiants ne sont pas secrets (Google les relie au package et à l'empreinte SHA-1). En statut Test, seuls les utilisateurs de test peuvent se connecter ; avant la sortie Store, passer l'appli « En production » (accès `drive.file` : pas de vérification Google, mais page d'accueil et politique de confidentialité en ligne).
+
 ### Le site bpierrard.fr
 
 Aujourd'hui, il n'y a pas de site, seulement le domaine chez IONOS. Le site doit exister avant d'activer la connexion à Google, car l'écran de consentement demande le lien de la politique de confidentialité.
