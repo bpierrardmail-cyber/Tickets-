@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `04/11 18:19`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `04/11 19:26`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -200,6 +200,7 @@ Après chaque modification, dans le même commit :
 
 ### 04/11
 
+- **Sauvegarde Drive : l'alerte restait affichée une fois le réseau revenu** (essai de Benoît : fichier bien sur son Drive, « Vérifier » OK, mais « en attente » jusqu'à ce qu'il touche Vérifier) : l'état n'était relu qu'au retour dans l'appli, et Android attend de plus en plus longtemps entre deux essais ratés. Maintenant (`drvWatch`) : au retour dans l'appli et quand le réseau revient (`online`), un envoi en attente est relancé tout de suite (`driveSendNow` remplace l'essai en attente : `enqueue(c, true)`, nouvel APK), puis l'état est relu toutes les 20 s tant qu'il attend ; la ligne du menu et l'accueil se mettent à jour seuls. Une seule sauvegarde par jour gardée sur Drive (la plus récente), comme prévu. t125 complété.
 - **Sauvegarde sur Google Drive, étape 1** (maquette « Tickets — Sauvegarde Drive » validée ; « On peut continuer pour pouvoir tester sur mon drive ? ») :
   - Android (nouvel APK) : `TkDrive` (accès `drive.file` par `AuthorizationClient` de `play-services-auth` 21.2.0, dossier « Tickets – sauvegardes », envoi multipart avec `appProperties` `tk=1`, `kf` (empreinte de la clé), `n` (nombre de tickets), conservation : la plus récente de chaque jour / mois / année selon `keepD` / `keepM` / `keepY`, jamais la plus récente, seulement après un envoi réussi), `TkDriveWorker` (WorkManager, réseau ou Wi-Fi seulement, réessais), `TkDriveCheckWorker` (rappel 24 h si les rappels sont activés) ; méthodes `driveConnect`, `driveSetup`, `driveStage`, `driveSendNow`, `driveStatus`, `driveFetch` dans `TicketsNativePlugin` ;
   - appli : Menu › Sauvegarder (`backupMenu`) : Google Drive en tête, complète, données seules ; présentation, connexion Google, code de secours (26 caractères, case « J'ai noté » obligatoire ; le même que le foyer pour un propriétaire, et un foyer créé ensuite reprend ce code), compte qui a déjà des sauvegardes : code demandé et vérifié (« Repartir de zéro ») ; écran de la sauvegarde (vue `drive`) : état, compte, nombre, conservation, Wi-Fi seulement, Vérifier (ouvre la dernière sauvegarde), durées, Désactiver ; ligne du menu « Drive · aujourd'hui 09:12 » (rouge si en attente ou compte à reconnecter), bandeau sur l'accueil après 1 h d'attente (fermable) ou compte à reconnecter ; rappel « 7 jours » remplacé quand Drive est actif ; une sauvegarde partie compte comme dernière sauvegarde ;

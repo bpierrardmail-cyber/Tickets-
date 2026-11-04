@@ -153,6 +153,13 @@ with sync_playwright() as p:
     check("En attente" in t and "Android réessaie tout seul" in t and pg.locator("#drvNow").count()==1, "écran : « En attente », « Envoyer maintenant »")
     pg.evaluate("()=>{ __dv.autoSend=true; __dvSave(); }"); pg.locator("#drvNow").click(); pg.wait_for_timeout(4500)
     check("send" in pg.evaluate("()=>__dv.calls") and "À jour" in norm(pg.locator("#app").inner_text()), "« Envoyer maintenant » : envoyée, « À jour »")
+    # le réseau revient pendant que l'appli est ouverte : envoi relancé, l'état est relu sans quitter l'appli
+    pg.evaluate("()=>{ __dv.autoSend=false; __dv.staged=__dv.lastData; __dv.pendingSince=Date.now()-5*60000; __dvSave(); }"); show(pg)
+    r,col=menu_row(pg); check("en attente" in r, "envoi en attente : ligne rouge")
+    n0=len([c for c in pg.evaluate("()=>__dv.calls") if c=="send"])
+    pg.evaluate("()=>{ __dv.autoSend=true; __dvSave(); window.dispatchEvent(new Event('online')); }"); pg.wait_for_timeout(25000)
+    r,col=menu_row(pg)
+    check(len([c for c in pg.evaluate("()=>__dv.calls") if c=="send"])>n0 and "Drive · aujourd'hui" in r and "accent" in col, "réseau revenu, appli ouverte : envoi relancé et la ligne redevient verte toute seule")
     # ---------- 4. compte à reconnecter
     pg.evaluate("()=>{ __dv.err='auth'; __dvSave(); }"); pg.locator("#hback").click(); pg.wait_for_timeout(300); show(pg)
     t=norm(pg.locator("#app").inner_text())

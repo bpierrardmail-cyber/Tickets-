@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="04/11 18:19" />
+  <meta name="build" content="04/11 19:26" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -12332,12 +12332,24 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
         }, function(){ uiToast("Sauvegarde illisible avec la clé de ce téléphone"); });
       }).catch(function(e){ var m=String((e && (e.code||e.message))||""); uiToast(/auth/.test(m) ? "Reconnecte ton compte Google (écran de la sauvegarde)" : (/none/.test(m) ? "Aucune sauvegarde sur Drive pour l'instant" : "Lecture impossible : "+((e && e.message)||"réseau"))); });
     }
+    // état relu : redessine l'accueil ou l'écran de la sauvegarde s'il a changé ; tant qu'un envoi attend, relu toutes les 20 s
+    var drvWatchTm=0;
+    function drvWatch(kick){
+      clearTimeout(drvWatchTm);
+      if(!drvOn() || !drvNative() || document.hidden) return;
+      var st0=drvSt||{};
+      (kick && st0.pendingSince ? npCall("driveSendNow").catch(function(){}) : Promise.resolve()).then(drvRefresh).then(function(st){
+        var sig=JSON.stringify(st||{}); if(sig!==drvSig0){ drvSig0=sig; if(state.view==="list" || state.view==="drive") render(); }
+        if(st && st.pendingSince) drvWatchTm=setTimeout(function(){ drvWatch(false); }, 20000);
+      });
+    }
     document.addEventListener("visibilitychange", function(){
       if(!drvOn()) return;
-      if(document.hidden) drvPrep(false);
-      else drvRefresh().then(function(st){ var sig=JSON.stringify(st||{}); if(sig!==drvSig0){ drvSig0=sig; if(state.view==="list" || state.view==="drive") render(); } });
+      if(document.hidden){ clearTimeout(drvWatchTm); drvPrep(false); }
+      else drvWatch(true);   // au retour : si un envoi attend, Android le relance tout de suite
     });
-    setTimeout(function(){ if(drvOn()) drvRefresh().then(function(st){ drvSig0=JSON.stringify(st||{}); if(st && (state.view==="list" || state.view==="drive")) render(); }); }, 1000);
+    window.addEventListener("online", function(){ setTimeout(function(){ drvWatch(true); }, 2000); });   // le réseau revient
+    setTimeout(function(){ drvWatch(true); }, 1000);
 
     var RAP_DEF={ on:false, h:9, frais:true, vir:true, bud:true, bk:true }, RAP_BUD0=900000, rapSig="", rapTm=0, rapLsn=false;
     function rapCfg(){ var c=store.read("rappels", null)||{}, o={}; Object.keys(RAP_DEF).forEach(function(k){ o[k]=(k in c) ? c[k] : RAP_DEF[k]; }); return o; }

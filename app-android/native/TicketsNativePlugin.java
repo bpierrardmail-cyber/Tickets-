@@ -323,7 +323,7 @@ public class TicketsNativePlugin extends Plugin {
     public void driveSendNow(PluginCall call) {
         Context c = getContext();
         TkDrive.prefs(c).edit().remove("err").apply();
-        TkDrive.enqueue(c);
+        if (TkDrive.pendingFile(c).exists()) TkDrive.enqueue(c, true);
         call.resolve(driveStatusJS());
     }
 

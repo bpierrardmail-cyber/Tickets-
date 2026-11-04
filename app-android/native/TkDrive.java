@@ -272,14 +272,17 @@ public class TkDrive {
         if (remind) scheduleCheck(c);
     }
 
-    static void enqueue(Context c) {
+    static void enqueue(Context c) { enqueue(c, false); }
+
+    /** now : relancer tout de suite (remplace un essai qui attend après un échec). */
+    static void enqueue(Context c, boolean now) {
         boolean wifi = prefs(c).getBoolean("wifi", false);
         Constraints k = new Constraints.Builder().setRequiredNetworkType(wifi ? NetworkType.UNMETERED : NetworkType.CONNECTED).build();
         OneTimeWorkRequest r = new OneTimeWorkRequest.Builder(TkDriveWorker.class)
                 .setConstraints(k)
                 .setBackoffCriteria(androidx.work.BackoffPolicy.EXPONENTIAL, 60, TimeUnit.SECONDS)
                 .build();
-        WorkManager.getInstance(c).enqueueUniqueWork(WORK, ExistingWorkPolicy.APPEND_OR_REPLACE, r);
+        WorkManager.getInstance(c).enqueueUniqueWork(WORK, now ? ExistingWorkPolicy.REPLACE : ExistingWorkPolicy.APPEND_OR_REPLACE, r);
     }
 
     static void scheduleCheck(Context c) {
