@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `04/11 05:44`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `04/11 06:36`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -189,6 +189,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 04/11
+- **Fiche du ticket réorganisée, partage, corbeille** (« la lecture d'un ticket devient compliquée », « tout le foyer fait penser que chaque personne paye » ; maquette, « tu peux intégrer ») : photo à côté du montant ; Date et Payé par côte à côte (liste `#f-payer`) ; 6 catégories les plus utilisées + « Autres ▾ » (`state.catAll`) ; « Options » replié avec résumé (`#fopt`, `state.optOpen`) : Compte (`#f-acct`, « Auto · compte de … »), Groupe (`#f-grp`), Partage (`#fshare`) ; en bas seulement Annuler / Enregistrer, Supprimer dans ⋯ (`#fMore`, avec Changer la photo et Copier la lecture). Partage : « Qui paie ce ticket ? » (`shareSheet` : Seulement X / Le commun du foyer / Certaines personnes ; « Tout le ticket » si seuls quelques articles sont partagés ; `shareState`), « Partage : Non » par défaut ; case de l'article « partager cet article ». Corbeille : `corbeille` (sur le téléphone) `[{e, at, ph}]`, 30 jours (`corbPurge` au démarrage), `delEntryUndo` et ⋯ › Supprimer y mettent le ticket (photos gardées), Dépenses › Tickets › Corbeille (`renderCorbeille`, « Remettre » `corbRestore`, ⋯ › Vider avec confirmation). « Tout le ticket en commun » retiré (remplacé par le partage). Test t124 ; t84, t85, t117, t122 adaptés.
 - **Groupes : « Pour qui ? » et « Retirer du groupe »** (« parfois les dépenses groupe ne concernent pas tout le groupe » ; maquette, « Oui ») : une dépense peut ne compter que pour certains participants (`d.pour`, `grpPour`, parts égales entre eux ; feuille `grpPourSheet` avec la part de chacun ; « Pour qui : Tout le groupe / Choisir… » dans la dépense sans ticket) ; toucher une dépense : Pour qui ? · Ouvrir le ticket · Retirer du groupe (ticket gardé dans les dépenses, annulable) ou Pour qui ? · Modifier · Supprimer ; ligne « pour 3 personnes » / « tout le groupe » ; récap « (payé par X, pour A, B) » ; en-tête « ta part » si les parts diffèrent. t122 complété.
 
 ### 03/11

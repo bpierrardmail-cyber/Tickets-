@@ -28,7 +28,8 @@ Touche **Scan**, puis « Prendre une photo » ou « Choisir dans la galerie ». 
 - Ticket à plat, bien éclairé, pris en entier ; un ticket très long en plusieurs photos.
 - Vérifie le montant, le magasin et la date. Ce qui est en orange est à regarder.
 - Pas de ticket ? « ✍️ Saisie » pour noter une dépense à la main.
-- Une dépense à partager : coche « Dépense commune » sur les articles, puis « Partagé avec » pour choisir les personnes.
+- Une dépense à partager : Options › Partage (« Qui paie ce ticket ? ») : seulement toi, le commun du foyer, ou certaines personnes.
+- Supprimé par erreur ? Dépenses › Tickets › Corbeille › « Remettre » (30 jours).
 
 Ton ticket part chez le propriétaire du foyer dès que ton téléphone est connecté.
 

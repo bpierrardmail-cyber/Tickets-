@@ -35,7 +35,7 @@ with sync_playwright() as p:
     check("intermarché" in sh.lower() and "Ouvrir le ticket" in sh and "Supprimer" in sh, "appui long : menu « Ouvrir le ticket » / « Supprimer »")
     check(pg.locator("#f-montant").count()==0, "l'appui long n'ouvre pas en plus le ticket")
     pg.locator(".sheet-overlay button", has_text="Supprimer").click(); pg.wait_for_timeout(400)
-    check(len(ls("entries"))==2 and pg.locator(".ui-toast.undo").count()==1 and "Ticket supprimé" in pg.locator(".ui-toast.undo").inner_text(), "supprimé, message « Ticket supprimé · Annuler »")
+    check(len(ls("entries"))==2 and pg.locator(".ui-toast.undo").count()==1 and "Ticket mis à la corbeille" in pg.locator(".ui-toast.undo").inner_text(), "supprimé, message « Ticket mis à la corbeille · Annuler »")
     pg.locator(".ui-toast.undo button").click(); pg.wait_for_timeout(400)
     E=ls("entries"); check(len(E)==3 and [e["id"] for e in E]==[1,2,3], "« Annuler » : le ticket revient, à sa place")
     # supprimé pour de bon : le message disparaît après le délai

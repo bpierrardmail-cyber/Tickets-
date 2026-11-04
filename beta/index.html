@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="04/11 05:44" />
+  <meta name="build" content="04/11 06:36" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -177,6 +177,18 @@
     .art .art-prix.need, .art .art-prod.need{ border-color:#e0a458; box-shadow:inset 0 0 0 1px rgba(224,164,88,.5); }
     /* Ticket : articles comparés au montant, photo en vignette */
     .f-mrow{ display:flex; gap:10px; align-items:center; }
+    .f-thumb.f-noph{ display:grid; place-items:center; background:var(--card2); font-size:20px; color:var(--muted); }
+    .f-two{ display:flex; gap:10px; } .f-two>div{ flex:1; min-width:0; } .f-two select.f, .f-two input.f{ width:100%; box-sizing:border-box; }
+    .f-opt{ margin-top:14px; background:var(--card2); border:1px solid var(--line); border-radius:14px; padding:2px 12px; }
+    .f-opth{ display:flex; width:100%; justify-content:space-between; align-items:center; background:none; border:0; color:var(--ink); padding:11px 0; text-align:left; font-size:14.5px; cursor:pointer; }
+    .f-opth small{ display:block; color:var(--muted); font-size:12px; margin-top:3px; font-weight:400; } .f-opth .ch{ color:var(--muted); }
+    .f-ol{ display:flex; width:100%; justify-content:space-between; align-items:center; gap:10px; padding:10px 0; border:0; border-top:1px solid var(--line); background:none; color:var(--ink); font-size:14.5px; text-align:left; cursor:pointer; }
+    .f-ol b, .f-ol select{ color:var(--accent); font-weight:600; } .f-ol select{ background:none; border:0; font-size:14.5px; text-align:right; max-width:62%; }
+    .f-osub{ font-size:11.5px; margin:-4px 0 10px; text-align:right; }
+    .f-artadd{ display:flex; gap:8px; margin-top:10px; } .f-artadd .btn{ flex:1; }
+    .sh-m{ display:flex; gap:12px; align-items:flex-start; width:100%; text-align:left; background:none; border:0; border-top:1px solid var(--line); padding:11px 4px; color:var(--ink); cursor:pointer; }
+    .sh-m .rd{ width:18px; height:18px; border-radius:50%; border:2px solid var(--accent); flex:none; margin-top:2px; box-sizing:border-box; }
+    .sh-m.on .rd{ background:radial-gradient(var(--accent) 42%, transparent 48%); } .sh-m b{ font-size:14.5px; } .sh-m small{ display:block; color:var(--muted); font-size:12px; margin-top:2px; }
     .f-mrow input.f{ flex:1; min-width:0; }
     .f-thumb{ flex:0 0 48px; width:48px; height:48px; padding:0; border-radius:10px; border:1px solid var(--line2); background:#e9e6dd; overflow:hidden; cursor:pointer; }
     .f-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
@@ -332,7 +344,7 @@
     .combo-opt:last-child{ border-bottom:0; }
     .combo-opt.new{ color:var(--accent); font-weight:600; }
     .art-row .art-del{ flex:0 0 auto; padding:10px 13px; }
-    .art-com{ display:flex; align-items:center; gap:8px; margin-top:9px; font-size:13px; color:var(--ink-soft); }
+    .art-com{ display:flex; align-items:center; gap:8px; margin-top:9px; font-size:12.5px; color:var(--muted); }
     .art-com input{ width:19px; height:19px; accent-color:var(--accent); flex:0 0 auto; }
     .leader.fam{ margin-top:10px; }
     .leader.fam .lbl{ font-weight:700; letter-spacing:.01em; }
@@ -3372,13 +3384,47 @@
       t.querySelector("button").onclick=function(){ if(done) return; done=true; clearTimeout(tm); try{ document.body.removeChild(t); }catch(e){} onUndo(); };
     }
     // Supprimer un ticket, avec « Annuler » (la photo n'est effacée qu'à la fin du délai)
+    // ---------- Corbeille : un ticket supprimé y reste 30 jours (photos gardées), « Remettre » le rend tel quel ----------
+    var CORB_J=30;
+    function corbList(){ return store.read("corbeille", [])||[]; }
+    function corbPurge(all){
+      var L=corbList(), lim=Date.now()-CORB_J*86400000, keep=[], out=[];
+      L.forEach(function(x){ if(all || !(new Date(x.at).getTime()>lim)) out.push(x); else keep.push(x); });
+      if(!out.length) return 0;
+      out.forEach(function(x){ var id=x.e && x.e.id; if(id==null) return; idbDel(id); origDel(id);
+        groupes.forEach(function(g){ g.dep=(g.dep||[]).filter(function(d){ return String(d.ticketId)!==String(id); }); }); });
+      persistGroupes(); store.write("corbeille", keep); return out.length;
+    }
+    function corbPut(e, ph){ var L=corbList().filter(function(x){ return !(x.e && String(x.e.id)===String(e.id)); }); L.unshift({ e:e, at:new Date().toISOString(), ph:ph||"" }); store.write("corbeille", L.slice(0, 500)); }
+    function corbRestore(id){
+      var L=corbList(), x=L.filter(function(y){ return y.e && String(y.e.id)===String(id); })[0]; if(!x) return false;
+      if(!state.entries.some(function(e){ return String(e.id)===String(id); })) state.entries.push(x.e);
+      if(x.ph) PHOTOS[String(id)]=x.ph;
+      store.write("corbeille", L.filter(function(y){ return y!==x; })); persist(); return true;
+    }
+    function corbForget(id){ store.write("corbeille", corbList().filter(function(y){ return !(y.e && String(y.e.id)===String(id)); })); }
+    function renderCorbeille(){
+      var L=corbList(), now=Date.now();
+      var h=header(true, "Corbeille").replace('</header>', L.length && !fyRO() ? '<button type="button" class="hgear" id="corbMore" aria-label="Plus">⋯</button></header>' : '</header>')+
+        '<section class="paper cacc"><div class="muted" style="font-size:12.5px;margin:4px 2px 8px">Les tickets supprimés restent ici '+CORB_J+' jours, avec leur photo, puis partent tout seuls.</div>';
+      if(!L.length) h+='<div class="muted" style="margin:20px 2px">La corbeille est vide.</div>';
+      L.forEach(function(x){ var e=x.e||{}, j=Math.max(0, CORB_J-Math.floor((now-new Date(x.at).getTime())/86400000));
+        h+='<div class="grp-row corb-r" data-id="'+esc(e.id)+'"><span class="n">'+esc(e.marchand||"Ticket")+'<small>'+esc(csvDate(e.date).slice(0,5)+" · "+fmtS(e.montant)+" · supprimé le "+csvDate(String(x.at).slice(0,10)).slice(0,5)+" · encore "+j+" jour"+(j>1?"s":""))+'</small></span>'+
+           (fyRO() ? '' : '<button type="button" class="cbal-ok corb-back" data-id="'+esc(e.id)+'">Remettre</button>')+'</div>'; });
+      h+='</section>';
+      app.innerHTML=h; setNav("tickets", true);
+      bindBack(function(){ state.view="tickets"; render(); window.scrollTo(0,0); });
+      [].forEach.call(document.querySelectorAll(".corb-back"), function(b){ b.onclick=function(ev){ ev.stopPropagation(); if(corbRestore(b.getAttribute("data-id"))){ render(); uiToast("Ticket remis"); } }; });
+      var cm=document.getElementById("corbMore"); if(cm) cm.onclick=function(){ uiChoice("Corbeille", "", [{ l:"Vider la corbeille", danger:true, fn:function(){
+        uiChoice("Vider la corbeille ?", esc(L.length+" ticket"+(L.length>1?"s":"")+" et leurs photos seront supprimés pour de bon."), [{ l:"Vider", danger:true, fn:function(){ corbPurge(true); render(); uiToast("Corbeille vidée"); } }]); } }]); };
+    }
     function delEntryUndo(id){
       var i=-1; state.entries.forEach(function(x, k){ if(String(x.id)===String(id)) i=k; }); if(i<0) return;
       var e=state.entries[i], ph=PHOTOS[String(e.id)];
-      state.entries.splice(i, 1); delete PHOTOS[String(e.id)]; persist(); render();
-      uiUndoToast("Ticket supprimé", "Annuler", function(){
-        state.entries.splice(Math.min(i, state.entries.length), 0, e); if(ph) PHOTOS[String(e.id)]=ph; persist(); render(); uiToast("Ticket remis");
-      }, function(){ if(ph || e.photo) idbDel(e.id); origDel(e.id); });
+      state.entries.splice(i, 1); delete PHOTOS[String(e.id)]; corbPut(e, ph); persist(); render();
+      uiUndoToast("Ticket mis à la corbeille", "Annuler", function(){
+        corbForget(e.id); state.entries.splice(Math.min(i, state.entries.length), 0, e); if(ph) PHOTOS[String(e.id)]=ph; persist(); render(); uiToast("Ticket remis");
+      });
     }
     // Appui long sur un ticket (listes, Compte, Analyse, Articles) : Ouvrir ou Supprimer
     function wireTicketLongPress(root){
@@ -3670,6 +3716,7 @@
       if(state.view==="stockage") return renderStockage();
       if(state.view==="aide") return renderAide();
       if(state.view==="groupe") return renderGroupe();
+      if(state.view==="corbeille") return renderCorbeille();
       if(state.view==="patrimoine") return renderPatrimoine();
       if(state.view==="provisions"){ state.view="factures"; state.avnSub="prov"; }   // la page Provisions est dans À venir
       if(state.view==="factures") return renderFactures();
@@ -4368,7 +4415,8 @@
       if(tkPage) tkH=header(false, "Dépenses")+depTabsHTML()+pvBarHTML()+'<div class="tabtop">'+monthNavHTML(esc(capFirst(monthLabel)), month, curM)+'</div>'+
         '<section class="paper cacc" style="padding:4px 14px 10px"><div class="dtot" style="padding:12px 2px 6px"><span>'+mois.length+' ticket'+(mois.length>1?'s':'')+'</span><span class="v" style="color:var(--ink)">'+fmtK(totalMois)+'</span></div>'+
         (tSub?'<div class="dgs" style="margin:0 2px 8px">'+tSub+'</div>':'')+tB+'</section>'+
-        '<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="gogallery"><span class="t"><span class="tic">🖼️</span> Photos des tickets<small>la galerie</small></span><span class="ch">›</span></div></div></section>';
+        '<section class="paper cacc"><div class="cacc-sec"><div class="cacc-h" id="gogallery"><span class="t"><span class="tic">🖼️</span> Photos des tickets<small>la galerie</small></span><span class="ch">›</span></div></div>'+
+        (corbList().length ? '<div class="cacc-sec"><div class="cacc-h" id="gocorb"><span class="t"><span class="tic">🗑️</span> Corbeille · '+corbList().length+'<small>gardés '+CORB_J+' jours, puis supprimés</small></span><span class="ch">›</span></div></div>' : '')+'</section>';
       var hOpen=state.homeOpen||{};
       function hGrp(key, open, title, n, v, sub, body, id){
         return '<div class="dgrp'+(open?' open':'')+'" data-g="'+key+'"><div class="dgh"'+(id?' id="'+id+'"':'')+'><span class="t">'+title+(n?'<small>'+n+'</small>':'')+'</span><span class="v">'+v+'</span><span class="chev">›</span></div>'+
@@ -4385,6 +4433,7 @@
 
       var manual2=document.getElementById("manual2"); if(manual2) manual2.onclick=newDraft;
       var gogallery=document.getElementById("gogallery"); if(gogallery) gogallery.onclick=function(){ state.view="gallery"; render(); };
+      var gocorb=document.getElementById("gocorb"); if(gocorb) gocorb.onclick=function(){ state.view="corbeille"; render(); window.scrollTo(0,0); };
       var db=document.getElementById("datebtn"); if(db) db.onclick=function(){ state.dateFilterOpen=!state.dateFilterOpen; render(); };
       var dFrom=document.getElementById("dateFrom"); if(dFrom) dFrom.onchange=function(){ state.dateFrom=dFrom.value||null; render(); };
       var dTo=document.getElementById("dateTo"); if(dTo) dTo.onchange=function(){ state.dateTo=dTo.value||null; render(); };
@@ -4461,7 +4510,7 @@
           '</div>'+
           '<button class="btn ghost art-del" type="button">✕</button>'+
         '</div>'+
-        '<label class="art-com"><input type="checkbox" class="art-comc"'+(a.commun?" checked":"")+'><span>Dépense commune</span></label>'+
+        '<label class="art-com"><input type="checkbox" class="art-comc"'+(a.commun?" checked":"")+'><span>'+(a.commun ? "partagé" : "partager cet article")+'</span></label>'+
       '</div>';
     }
 
@@ -4479,19 +4528,33 @@
       if(out.length) t+=" · "+(out.length<=2 ? out.join(" et ") : out.length+" personnes")+" ne paie"+(out.length>1?"nt":"")+" rien";
       return t;
     }
+    // état du partage d'un ticket : personne (pas d'article partagé), commun du foyer, ou certaines personnes
+    function shareState(d){
+      var A=d.articles||[], n=A.filter(function(a){ return a.commun; }).length, who=payerOf(d);
+      if(!n) return { mode:"seul", short:"pas partagé", long:"Non" };
+      var part=n<A.length ? n+" article"+(n>1?"s":"")+" · " : "", w=d.share ? shareLabel(d.share) : "commun du foyer";
+      return { mode:d.share ? "pick" : "all", short:"partagé : "+part+w, long:part+(d.share ? w : "Commun du foyer") };
+    }
     function shareSheet(){
-      var d=state.draft, C=shareCands(d), mode=d.share ? "pick" : "all", sel={}, pc={};
+      var d=state.draft, C=shareCands(d), st=shareState(d), mode=st.mode, sel={}, pc={}, who=payerOf(d);
       if(d.share) C.forEach(function(p){ var v=Number(d.share[p])||0; if(v>0){ sel[p]=1; pc[p]=v; } });
       else C.forEach(function(p){ sel[p]=1; });
       function eqAll(){ var L=C.filter(function(p){ return sel[p]; }); pc={}; L.forEach(function(p){ pc[p]=Math.round(10000/L.length)/100; }); }
       if(!d.share) eqAll();
       var tot=0, prix=0; (d.articles||[]).forEach(function(a){ if(a.commun) prix+=num(a.prix)||0; });
-      var s=uiSheet('<div class="sheet-title">Partagé avec</div><div class="seg2" id="shMode"><button type="button" data-m="all">Tout le foyer</button><button type="button" data-m="pick">Choisir</button></div><div id="shBody"></div><div class="ui-err" style="display:none"></div>'+
+      var A0=d.articles||[], nCom=A0.filter(function(a){ return a.commun; }).length, partial=nCom>0 && nCom<A0.length, whole=!partial;
+      if(!nCom) A0.forEach(function(a){ prix+=num(a.prix)||0; }); if(!A0.length) prix=num(d.montant)||0;
+      var s=uiSheet('<div class="sheet-title">Qui paie ce ticket ?</div><div class="ui-intro">'+esc(fmtS(num(d.montant)||0)+" · payé par "+(who ? shareWho(who) : "—"))+'</div><div id="shMode">'+
+        [["seul", who ? "Seulement "+(who===mePerson() ? "toi" : who) : "La personne qui a payé", "pas partagé : c'est sa dépense"], ["all", "Le commun du foyer", "chacun selon sa part (Commun › Parts)"], ["pick", "Certaines personnes", "à parts égales, ou ajustées"]].map(function(x){
+          return '<button type="button" class="sh-m" data-m="'+x[0]+'"><span class="rd"></span><span><b>'+esc(x[1])+'</b><small>'+esc(x[2])+'</small></span></button>'; }).join("")+'</div><div id="shBody"></div>'+
+        (partial ? '<label class="csv-ck" id="shWholeL"><input type="checkbox" id="shWhole"><span>Tout le ticket<small style="display:block;color:var(--muted);font-size:11.5px">sinon seulement les '+nCom+' articles marqués « partagé »</small></span></label>' : '')+
+        '<div class="ui-err" style="display:none"></div>'+
         '<div class="ui-stack"><button type="button" class="btn primary" id="shOk">Valider</button><button type="button" class="btn ghost ui-no">Annuler</button></div>');
       function paint(){
         [].forEach.call(s.qa("#shMode button"), function(b){ b.classList.toggle("on", b.getAttribute("data-m")===mode); });
+        var wl=s.q("#shWholeL"); if(wl) wl.style.display=mode==="seul" ? "none" : "";
         var h='';
-        if(mode==="all") h='<div class="muted" style="font-size:12.5px;line-height:1.5;margin:10px 2px">Chacun selon sa part du commun (Commun › Parts).</div>';
+        if(mode!=="pick") h='';
         else { tot=0; C.forEach(function(p){ if(sel[p]) tot+=Number(pc[p])||0; });
           C.forEach(function(p){ var on=!!sel[p], v=on ? (Number(pc[p])||0) : 0;
             h+='<div class="sh-r'+(on?'':' off')+'" data-p="'+esc(p)+'"><input type="checkbox" class="sh-c"'+(on?' checked':'')+'><span class="nm">'+esc(shareWho(p))+'</span>'+
@@ -4504,78 +4567,95 @@
       [].forEach.call(s.qa("#shMode button"), function(b){ b.onclick=function(){ mode=b.getAttribute("data-m"); paint(); }; });
       s.q(".ui-no").onclick=s.close;
       s.q("#shOk").onclick=function(){
-        if(mode==="all"){ d.share=null; s.close(); render(); return; }
+        var wh=s.q("#shWhole"); if(wh && wh.checked) whole=true;
+        function comAll(){ var mt=num(d.montant); if(!(d.articles||[]).length){ if(mt>0) d.articles=[{ label:"Divers", prix:String(d.montant), produit:"", commun:true }]; }
+          else if(whole || !(d.articles||[]).some(function(a){ return a.commun; })) d.articles.forEach(function(a){ a.commun=true; }); }
+        if(mode==="seul"){ d.share=null; (d.articles||[]).forEach(function(a){ a.commun=false; }); s.close(); render(); return; }
+        if(mode==="all"){ d.share=null; comAll(); s.close(); render(); return; }
         var L=C.filter(function(p){ return sel[p] && (Number(pc[p])||0)>0; }), t=0; L.forEach(function(p){ t+=Number(pc[p])||0; });
         var er=s.q(".ui-err");
         if(!L.length){ er.textContent="Coche au moins une personne."; er.style.display=""; return; }
         if(Math.abs(t-100)>=0.05){ er.textContent="Le total doit faire 100 % (il fait "+pctTxt(t)+")."; er.style.display=""; return; }
-        var o={}; L.forEach(function(p){ o[p]=Number(pc[p]); }); d.share=o;
-        if(!(d.articles||[]).some(function(a){ return a.commun; })){ var mt=num(d.montant); if((d.articles||[]).length) d.articles.forEach(function(a){ a.commun=true; }); else if(mt>0) d.articles=[{ label:"Divers", prix:String(d.montant), produit:"", commun:true }]; }
+        var o={}; L.forEach(function(p){ o[p]=Number(pc[p]); }); d.share=o; comAll();
         s.close(); render(); };
       paint();
     }
     function renderForm(){
       var d = state.draft;
-      var h = header("list") + '<section class="paper">';
+      var h = header("list", "Ticket").replace('</header>', '<button type="button" class="hgear" id="fMore" aria-label="Plus">⋯</button></header>') + '<section class="paper">';
       if(state.note){ h += '<div class="center" style="font-size:11px;color:var(--accent);margin-bottom:8px">'+esc(state.note)+(state.ocrRaw && !state.busy ? ' · <button type="button" class="ocr-raw" id="ocrRawBtn">Copier la lecture</button>' : '')+'</div>'; }
       if(state.busy){
         h += '<div class="scanbox"><span id="scanmsg">'+esc(state.scanMsg||"Lecture du ticket en cours…")+'</span>'+
                '<div class="progress"><i id="bar" style="width:'+state.prog+'%"></i></div>'+
                '<div class="muted" style="font-size:11px;margin-top:8px">Tu peux déjà corriger les champs ci-dessous.</div></div>';
       }
-      h += '<label class="f" for="f-montant">Montant ('+curSym()+')</label><div class="f-mrow"><input class="f" id="f-montant" inputmode="decimal" value="'+esc(d.montant)+'" placeholder="0,00">'+
-           (d.photo ? '<button type="button" class="f-thumb" id="photoview" aria-label="Voir la photo du ticket"><img src="'+d.photo+'" alt=""></button>' : '')+'</div><div id="artchk"></div><div id="srcchk"></div><div id="bankchk"></div>';
+      h += '<label class="f" for="f-montant">Montant ('+curSym()+')</label><div class="f-mrow">'+
+           (d.photo ? '<button type="button" class="f-thumb" id="photoview" aria-label="Voir la photo du ticket"><img src="'+d.photo+'" alt=""></button>' : (state.draftRO ? '' : '<button type="button" class="f-thumb f-noph" id="photoadd" aria-label="Ajouter une photo">📷</button>'))+
+           '<input class="f" id="f-montant" inputmode="decimal" value="'+esc(d.montant)+'" placeholder="0,00"></div><div id="artchk"></div><div id="srcchk"></div><div id="bankchk"></div>';
       h += '<label class="f">Enseigne</label><input class="f" id="f-marchand" value="'+esc(d.marchand)+'" placeholder="Nom du magasin">';
-      h += '<label class="f">Date</label><input class="f" id="f-date" type="date" value="'+esc(d.date)+'">';
+      var fyLim=fyMember() && fyCfg.accts!=null;   // foyer, accès limité à ses comptes : seulement leurs titulaires
+      var payers=fyLim ? fyPayers() : uniquePersons(); if(d.payePar && d.payePar!=="Commun" && payers.indexOf(d.payePar)<0) payers.push(d.payePar);
+      h += '<div class="f-two"><div><label class="f">Date</label><input class="f" id="f-date" type="date" value="'+esc(d.date)+'"></div>'+
+           '<div><label class="f" for="f-payer">Payé par</label><select class="f" id="f-payer">'+(fyLim ? '' : '<option value=""'+(!(d.payePar||"")?' selected':'')+'>—</option>')+
+           payers.map(function(p){ return '<option value="'+esc(p)+'"'+(d.payePar===p?' selected':'')+'>'+esc(p)+'</option>'; }).join("")+(fyLim ? '' : '<option value="__new">+ Autre…</option>')+'</select></div></div>';
       if(persoOn() && !state.draftRO){ var pc=persoSendOk();
         h += pc ? '<label class="f-sendfy"><input type="checkbox" id="f-tofy"'+(d.toFoyer?' checked':'')+'><span>Envoyer aussi au foyer de '+esc(persoOwner())+'<small>'+(d.foyerId?'déjà envoyé · décocher le retire du foyer':'il part à ton retour dans le foyer')+'</small></span></label>'
                 : '<div class="muted" style="font-size:11px;margin:8px 2px 0">Le foyer de '+esc(persoOwner())+' est en lecture pour tes tickets : tu ne peux pas y envoyer ce ticket.</div>'; }
-      if(!d.photo) h += '<label class="f">Photo du ticket</label><button class="btn ghost" id="photoadd" type="button">📷 Ajouter une photo</button>';   // la photo : vignette à côté du montant
+      // catégories : les 6 plus utilisées (et celle du ticket), « Autres ▾ » pour toutes
+      var catN={}; state.entries.forEach(function(e){ if(e.categorie) catN[e.categorie]=(catN[e.categorie]||0)+1; });
+      var catTop=CATS.slice().sort(function(a,b){ return (catN[b]||0)-(catN[a]||0) || CATS.indexOf(a)-CATS.indexOf(b); }).slice(0, 6);
+      if(d.categorie && catTop.indexOf(d.categorie)<0) catTop.push(d.categorie);
+      var catShow=state.catAll ? CATS : CATS.filter(function(c){ return catTop.indexOf(c)>=0; });
+      if(d.categorie && catShow.indexOf(d.categorie)<0) catShow=catShow.concat([d.categorie]);
       h += '<label class="f">Catégorie</label><div class="chips" id="chips">';
-      CATS.forEach(function(c){ h += '<button class="chip'+(d.categorie===c?" on":"")+'" data-cat="'+esc(c)+'">'+esc(c)+'</button>'; });
+      catShow.forEach(function(c){ h += '<button class="chip'+(d.categorie===c?" on":"")+'" data-cat="'+esc(c)+'">'+esc(c)+'</button>'; });
+      if(!state.catAll && catShow.length<CATS.length) h += '<button class="chip" id="catMore">Autres ▾</button>';
       h += '</div>';
-      var fyLim=fyMember() && fyCfg.accts!=null;   // foyer, accès limité à ses comptes : seulement leurs titulaires
-      var payers=fyLim ? fyPayers() : uniquePersons(); if(d.payePar && d.payePar!=="Commun" && payers.indexOf(d.payePar)<0) payers.push(d.payePar);
-      h += '<label class="f">Payé par</label><div class="chips" id="payer">';
-      if(!fyLim) h += '<button class="chip'+(!(d.payePar||"")?" on":"")+'" data-payer="">—</button>';
-      payers.forEach(function(p){ h += '<button class="chip'+(d.payePar===p?" on":"")+'" data-payer="'+esc(p)+'">'+esc(p)+'</button>'; });
-      if(!fyLim) h += '<button class="chip" data-payer="__new">+ Autre</button>';
-      h += '</div>';
-      if(comptes.length>1){
-        h += '<label class="f">Compte</label><div class="chips" id="acctc"><button class="chip'+(!d.compte?" on":"")+'" data-acct="">Auto</button>';
-        comptes.forEach(function(a){ h += '<button class="chip'+(d.compte===a.key?" on":"")+'" data-acct="'+esc(a.key)+'">'+esc(a.nom)+'</button>'; });
-        h += '</div><div class="muted" style="font-size:10.5px;margin:4px 2px 0">Auto = selon « payé par »</div>';
-      }
-      var gOpen=canUse("groupes") ? groupes.filter(function(g){ return !g.clos; }) : [];
-      if(gOpen.length && !state.draftRO){
-        h += '<label class="f">Groupe (voyage, sortie)</label><div class="chips" id="grpc"><button class="chip'+(!d.groupe?" on":"")+'" data-g="">Aucun</button>'+
-             gOpen.map(function(g){ return '<button class="chip'+(String(d.groupe)===String(g.id)?" on":"")+'" data-g="'+esc(g.id)+'">'+esc(g.nom)+'</button>'; }).join("")+'</div>';
-      }
-      var shC=shareCands(d);
-      if(shC.length>1){
-        var allC=(d.articles||[]).length && d.articles.every(function(a){ return a.commun; });
-        h += '<label class="f">Dépense commune</label><button type="button" class="f-share" id="fshare"'+(state.draftRO?' disabled':'')+'><span>Partagé avec</span><b>'+esc(shareLabel(d.share))+' ▾</b></button>'+
-             '<div class="muted" style="font-size:11px;margin:4px 2px 0">'+esc(shareSub(d.share, shC))+'</div>'+
-             (state.draftRO ? '' : '<button type="button" class="f-allcom" id="allcom">'+(allC?'Retirer tout le ticket du commun':'Tout le ticket en commun')+'</button>');
+      // Options repliées : compte, groupe, partage
+      var gOpen=canUse("groupes") ? groupes.filter(function(g){ return !g.clos; }) : [], gCur=d.groupe ? grpById(d.groupe) : null;
+      var shC=shareCands(d), autoA=payAcctOf(payerOf(d)) || (comptes.filter(function(a){ return a.main; })[0]||null);
+      var cTxt=d.compte && acctByKey(d.compte) ? acctByKey(d.compte).nom : "compte auto";
+      var oSum=[comptes.length>1 ? cTxt : "", (gOpen.length || gCur) ? (gCur ? "groupe « "+gCur.nom+" »" : "sans groupe") : "", shC.length>1 ? shareState(d).short : ""].filter(function(x){ return x; });
+      if(oSum.length){
+        h += '<div class="f-opt'+(state.optOpen?' open':'')+'"><button type="button" class="f-opth" id="fopt"><span><b>Options</b>'+(state.optOpen ? '' : '<small>'+esc(oSum.join(" · "))+'</small>')+'</span><span class="ch">'+(state.optOpen?'⌄':'›')+'</span></button>';
+        if(state.optOpen){
+          if(comptes.length>1) h += '<div class="f-ol"><span>Compte</span><select id="f-acct"'+(state.draftRO?' disabled':'')+'><option value="">Auto'+(autoA ? ' · '+esc(autoA.nom) : '')+'</option>'+
+            comptes.filter(function(a){ return a.key!=="__tickets"; }).map(function(a){ return '<option value="'+esc(a.key)+'"'+(d.compte===a.key?' selected':'')+'>'+esc(a.nom)+'</option>'; }).join("")+'</select></div>';
+          if((gOpen.length || gCur) && !state.draftRO) h += '<div class="f-ol"><span>Groupe</span><select id="f-grp"><option value="">Aucun</option>'+
+            gOpen.concat(gCur && gCur.clos ? [gCur] : []).map(function(g){ return '<option value="'+esc(g.id)+'"'+(String(d.groupe)===String(g.id)?' selected':'')+'>'+esc(g.nom)+'</option>'; }).join("")+'</select></div>';
+          if(shC.length>1) h += '<button type="button" class="f-ol" id="fshare"'+(state.draftRO?' disabled':'')+'><span>Partage</span><b>'+esc(shareState(d).long)+' ›</b></button>';
+          if(shC.length>1 && d.share && shareState(d).mode==="pick") h += '<div class="muted f-osub">'+esc(shareSub(d.share, shC))+'</div>';
+        }
+        h += '</div>';
       }
       h += '<div class="f-arth" id="artshead"><label class="f">Articles (rangés par produit)</label><span id="artsum"></span></div><div id="arts">';
       (d.articles||[]).forEach(function(a){ h += artRow(a); });
-      h += '</div><button class="btn ghost" id="addart" type="button" style="margin-top:10px">+ Ajouter un article</button>'+
-           ' <button class="btn ghost" id="addremise" type="button" style="margin-top:10px">+ Remise / promo</button>';
-      h += '<div class="btns"><button class="btn ghost" id="cancel" type="button">Annuler</button>'+
-           (d.id?'<button class="btn" id="del" type="button">Supprimer</button>':'')+
+      h += '</div><div class="f-artadd"><button class="btn ghost" id="addart" type="button">＋ Article</button>'+
+           '<button class="btn ghost" id="addremise" type="button">＋ Remise</button></div>';
+      h += '<div class="btns f-bar"><button class="btn ghost" id="cancel" type="button">Annuler</button>'+
            '<button class="btn primary" id="save" type="button">Enregistrer</button></div></section>';
       app.innerHTML = h;
       setNav(null, false);
       bindBack(function(){ state.view=formBackView(); state.draft=null; render(); });
 
       document.getElementById("cancel").onclick=function(){ state.view=formBackView(); state.draft=null; render(); };
-      var del=document.getElementById("del"); if(del) del.onclick=delDraft;
+      document.getElementById("fMore").onclick=function(){ readForm(); var C=[];
+        if(!state.draftRO) C.push({ l:state.draft.photo ? "📷 Changer la photo" : "📷 Ajouter une photo", primary:false, fn:function(){ var pi=document.getElementById("photoin"); if(pi) pi.click(); } });
+        if(state.ocrRaw) C.push({ l:"📋 Copier la lecture", primary:false, fn:ocrRawSheet });
+        if(state.draft.id && !state.draftRO) C.push({ l:"🗑️ Supprimer", danger:true, fn:delDraft });
+        if(!C.length){ uiToast("Rien à faire sur ce ticket"); return; }
+        uiChoice("Ticket", "", C); };
+      var fop=document.getElementById("fopt"); if(fop) fop.onclick=function(){ readForm(); state.optOpen=!state.optOpen; render(); };
+      var cmo=document.getElementById("catMore"); if(cmo) cmo.onclick=function(){ readForm(); state.catAll=true; render(); };
+      var fac=document.getElementById("f-acct"); if(fac) fac.onchange=function(){ state.draft.compte=fac.value||""; };
+      var fgr=document.getElementById("f-grp"); if(fgr) fgr.onchange=function(){ state.draft.groupe=fgr.value||null; };
       document.getElementById("save").onclick=function(){ saveDraft(); };
       artChkPaint(); tkBankPaint();
       var fmi=document.getElementById("f-montant"); if(fmi){ fmi.addEventListener("input", artChkPaint); fmi.addEventListener("change", tkBankPaint); }
       ["f-marchand","f-date"].forEach(function(id){ var x=document.getElementById(id); if(x) x.addEventListener("change", tkBankPaint); });
-      var artsBox=document.getElementById("arts"); if(artsBox) artsBox.addEventListener("input", function(ev){ var t=ev.target; if(t && t.classList && (t.classList.contains("art-prix") || t.classList.contains("art-prod"))) artChkPaint(); });
+      var artsBox=document.getElementById("arts");
+      if(artsBox) artsBox.addEventListener("change", function(ev){ var t=ev.target; if(t && t.classList && t.classList.contains("art-comc")){ readForm(); render(); } });   // le résumé « Partage » suit
+      if(artsBox) artsBox.addEventListener("input", function(ev){ var t=ev.target; if(t && t.classList && (t.classList.contains("art-prix") || t.classList.contains("art-prod"))) artChkPaint(); });
       // article tapé à la main : son dernier produit pour cette personne, si le produit est encore vide
       if(artsBox) artsBox.addEventListener("change", function(ev){ var t=ev.target; if(!t || !t.classList || !t.classList.contains("art-name")) return;
         var pi=t.parentNode && t.parentNode.querySelector(".art-prod"); if(!pi || pi.value.trim()) return;
@@ -4596,35 +4676,23 @@
       var photodel=document.getElementById("photodel"); if(photodel) photodel.onclick=function(){ readForm(); state.draft.photo=""; state.draft.photoFiles=null; render(); };
       document.getElementById("addart").onclick=function(){ readForm(); state.draft.articles.push({label:"",prix:"",produit:""}); render(); };
       var fsh=document.getElementById("fshare"); if(fsh) fsh.onclick=function(){ readForm(); shareSheet(); };
-      [].forEach.call(document.querySelectorAll("#grpc .chip"), function(b){ b.onclick=function(){ readForm(); state.draft.groupe=b.getAttribute("data-g")||null; render(); }; });
-      var alc=document.getElementById("allcom"); if(alc) alc.onclick=function(){ readForm(); var A=state.draft.articles||[], all=A.length && A.every(function(a){ return a.commun; });
-        if(!A.length){ var mt=num(state.draft.montant); if(mt>0) A.push({ label:"Divers", prix:String(state.draft.montant), produit:"", commun:true }); state.draft.articles=A; }
-        else A.forEach(function(a){ a.commun=!all; });
-        render(); };
+
       var orb=document.getElementById("ocrRawBtn"); if(orb) orb.onclick=ocrRawSheet;
       var addr=document.getElementById("addremise"); if(addr) addr.onclick=function(){ readForm(); state.draft.articles.push({label:"Remise",prix:"",produit:"Remise"}); render(); };
-      [].forEach.call(document.querySelectorAll("#chips .chip"), function(btn){
+      [].forEach.call(document.querySelectorAll("#chips .chip[data-cat]"), function(btn){
         btn.onclick=function(){
           state.draft.categorie=btn.getAttribute("data-cat");
           [].forEach.call(document.querySelectorAll("#chips .chip"), function(b){ b.classList.remove("on"); });
           btn.classList.add("on");
         };
       });
-      [].forEach.call(document.querySelectorAll("#payer .chip"), function(btn){
-        btn.onclick=function(){
-          var v=btn.getAttribute("data-payer");
-          if(v==="__new"){ var nm=(window.prompt("Payé par qui ?")||"").trim(); readForm(); state.draft.payePar=nm; render(); return; }
-          state.draft.payePar=v;
-          readForm(); var who=payerOf(state.draft), ch=false;
-          (state.draft.articles||[]).forEach(function(a){ if(a.produit && !a.auto) return; var pr=lookupAppris(a.label, who); if(pr!==(a.produit||"")){ a.produit=pr; a.auto=!!pr; ch=true; } });
-          if(ch){ render(); return; }
-          [].forEach.call(document.querySelectorAll("#payer .chip"), function(b){ b.classList.remove("on"); });
-          btn.classList.add("on");
-        };
-      });
-      [].forEach.call(document.querySelectorAll("#acctc .chip"), function(btn){
-        btn.onclick=function(){ state.draft.compte=btn.getAttribute("data-acct")||""; [].forEach.call(document.querySelectorAll("#acctc .chip"), function(b){ b.classList.remove("on"); }); btn.classList.add("on"); };
-      });
+      var fpy=document.getElementById("f-payer"); if(fpy) fpy.onchange=function(){
+        var v=fpy.value;
+        if(v==="__new"){ var nm=(window.prompt("Payé par qui ?")||"").trim(); readForm(); state.draft.payePar=nm; render(); return; }
+        readForm(); state.draft.payePar=v; var who=payerOf(state.draft), ch=false;
+        (state.draft.articles||[]).forEach(function(a){ if(a.produit && !a.auto) return; var pr=lookupAppris(a.label, who); if(pr!==(a.produit||"")){ a.produit=pr; a.auto=!!pr; ch=true; } });
+        render();   // le compte « Auto », le partage « X seule » suivent la personne
+      };
       [].forEach.call(document.querySelectorAll(".art-del"), function(b,i){
         b.onclick=function(){ readForm(); state.draft.articles.splice(i,1); render(); };
       });
@@ -4771,7 +4839,7 @@
       state.formFrom=(state.view==="analyse" || state.view==="month" || state.view==="artDetail" || state.view==="articles" || state.view==="compte" || state.view==="comptedet" || state.view==="groupe") ? state.view : null;
       state.view="form"; render();
     }
-    function formBackView(){ var v=state.formFrom||"list"; state.formFrom=null; return v; }
+    function formBackView(){ var v=state.formFrom||"list"; state.formFrom=null; state.optOpen=false; state.catAll=false; return v; }
     function saveDraft(force){
       if(state.draftRO) return;
       readForm();
@@ -4845,8 +4913,9 @@
     }
     function delDraft(){
       if(state.draftRO) return;
-      if(state.draft && state.draft.id){ idbDel(state.draft.id); origDel(state.draft.id); delete PHOTOS[String(state.draft.id)]; state.entries=state.entries.filter(function(e){ return String(e.id)!==String(state.draft.id); }); persist(); }
-      state.view=formBackView(); state.draft=null; render();
+      var id=state.draft && state.draft.id;
+      state.view=formBackView(); state.draft=null;
+      if(id!=null) delEntryUndo(id); else render();
     }
     // ---------- Articles : même présentation que Compte, Commun et Analyse ----------
     var ARTPAL=["#7c9cf4","#e0a458","#4fd6a0","#c78bd6","#5bc0d4","#e88fb0","#9bd35e","#d4a05b","#8a92e0","#6fcaa8","#d98c5f","#b0b6c2","#f4796b"];
@@ -10827,7 +10896,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       argentMois:2, liquideMois:2, soldeInit:2, budgets:1, budgetsP:2, appris:1, familleDe:1, communParts:0, commRemb:"id", groupes:"id", cats:0, familles:0, produits:0, devise:0 };
     var FY_OWNER_ONLY={ bourse:1 };   // la Bourse se gère depuis le téléphone du propriétaire (cours mis à jour en continu)
     var FY_TABS=[{v:"list",l:"Accueil"},{v:"articles",l:"Dépenses : produits"},{v:"analyse",l:"Dépenses : analyse"},{v:"compte",l:"Compte"},{v:"factures",l:"À venir"},{v:"communes",l:"Commun"}].concat(FEAT.bourse?[{v:"bourse",l:"Bourse"}]:[]);
-    var FY_SUB={ tickets:"list", aide:"list", groupe:"communes", stockage:"list", import:"compte", avancee:"analyse", epargne:"compte", form:"list", gallery:"list", photo:"list", produits:"articles", artDetail:"articles", comptedet:"compte", patrimoine:"compte", provisions:"factures", factlue:"factures", factserie:"factures", month:"analyse", graph:"analyse", history:"analyse" };
+    var FY_SUB={ tickets:"list", aide:"list", groupe:"communes", corbeille:"list", stockage:"list", import:"compte", avancee:"analyse", epargne:"compte", form:"list", gallery:"list", photo:"list", produits:"articles", artDetail:"articles", comptedet:"compte", patrimoine:"compte", provisions:"factures", factlue:"factures", factserie:"factures", month:"analyse", graph:"analyse", history:"analyse" };
     var FY_SEP="\u001f", FY_SKIP={};
     function fyRole(){ return fyCfg ? fyCfg.role : null; }
     function fyMember(){ return !!fyCfg && fyCfg.role!=="owner"; }
@@ -11826,7 +11895,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       var n=0; (function wait(){ if(document.getElementById("lockscreen") || document.querySelector(".sheet-overlay")){ if(++n<240) setTimeout(wait, 500); return; } welcomeShow(null); })();
     }
     // ---------- Aide : le guide (guide/*.md, mis dans la page par guide/maj.py), lisible sans réseau ----------
-    /* GUIDE-DEBUT */ var GUIDE={"proprietaire": [{"t": "Pour commencer", "h": "<p>Tickets garde tout sur ton téléphone : pas de compte à créer, pas besoin d'internet.</p><ol><li><b>Ton prénom</b> : demandé au premier démarrage. Il sert pour « Payé par » et pour partager les dépenses. Tu peux le changer dans Menu › Personnes.</li><li><b>Les personnes du foyer</b> : Menu › Personnes. Ajoute chaque personne qui paie ou pour qui tu dépenses.</li><li><b>Ton compte</b> : un compte courant est créé tout seul, c'est ton compte principal. Pour en ajouter un autre ou le modifier : onglet Compte, puis la roue ⚙ en haut à droite.</li></ol><p><b>L'écran d'accueil</b></p><ul><li>En haut, les graphiques que tu choisis : ⚙ Choisir, ou un appui long sur une carte pour la changer, la déplacer ou la masquer.</li><li>« ✍️ Saisie » note une dépense à la main ; « 🧾 Tickets » ouvre la liste du mois.</li><li>Le bouton en haut à droite choisit qui tu regardes : toi, une personne, ou tout le foyer.</li><li>En bas, le bouton <b>Scan</b> pour photographier un ticket.</li></ul><p>Tu peux revoir l'accueil de l'appli dans Menu › Aide. Les fonctions marquées ✦ font partie de Tickets Plus : Menu › ✦ Tickets Plus les présente toutes.</p>"}, {"t": "Scanner un ticket", "h": "<p>Touche <b>Scan</b> en bas de l'écran, puis « Prendre une photo » ou « Choisir dans la galerie ». Le ticket est lu sur le téléphone, rien ne part sur internet.</p><p><b>Pour une bonne lecture</b></p><ul><li>Ticket à plat, bien éclairé, pris en entier.</li><li>Un ticket très long : prends-le en plusieurs photos.</li><li>Sur Android, le scanner recadre et redresse la photo tout seul.</li></ul><p><b>Vérifier avant d'enregistrer</b></p><ul><li>Le montant, le magasin et la date sont remplis. Regarde le montant en premier.</li><li>Ce qui est en orange est à vérifier : un article sans prix, un produit vide, un écart entre les articles et le total.</li><li>Si la carte bancaire ou la TVA du ticket donnent un autre total, l'appli le dit et propose « Prendre … € ».</li><li>La photo reste avec le ticket : touche la vignette à côté du montant pour la revoir.</li></ul><p><b>Ce que l'appli apprend</b></p><ul><li>Le 1er ticket d'un magasin demande parfois une correction du total : l'appli retient où il était et lit les suivants au même endroit.</li><li>Chaque article reçoit le produit que tu lui as donné la dernière fois (lait, pain…). Chaque personne a les siens.</li></ul><p><b>Sans ticket</b> : « ✍️ Saisie » sur l'accueil pour noter une dépense à la main.</p><p><b>Partager une dépense</b></p><ul><li>Coche « Dépense commune » sur les articles à partager, ou touche « Tout le ticket en commun ».</li><li>« Partagé avec » choisit avec qui : tout le foyer (selon les parts du commun), ou seulement certaines personnes, en parts égales ou ajustées. Exemple : un resto à 3 sur une famille de 5.</li></ul><p>Un appui long sur un ticket, dans n'importe quelle liste, propose Ouvrir ou Supprimer. Une suppression peut s'annuler quelques secondes.</p>"}, {"t": "Dépenses", "h": "<p>L'onglet Dépenses a quatre parties, en boutons sous le titre.</p><ul><li><b>Tickets</b> : les tickets du mois, avec la recherche et le calendrier. En bas, « Photos des tickets » ouvre la galerie, rangée par mois.</li><li><b>Produits</b> : ce que tu achètes et à quel prix. Mes produits, Hausses (ce qui augmente), Magasins (où c'est le moins cher), Familles. Touche un produit pour voir tous ses achats.</li><li><b>Budgets</b> : un budget par catégorie, pour le foyer ou par personne. L'appli montre où tu en es dans le mois.</li><li><b>Analyse</b> : tes dépenses par mois, par catégorie, les dépenses qui reviennent et qui a payé. « + Frais fixes » ajoute les loyers, abonnements… pour voir tout ce qui sort vraiment.</li></ul><p>✦ <b>Analyse avancée</b> (Tickets Plus) : ton inflation personnelle comparée à celle de l'INSEE, cette année contre l'an dernier, les alertes, le reste à vivre, des pistes d'économies.</p><p>Le bouton personne, en haut à droite, choisit les dépenses montrées dans Produits et Analyse : les tiennes, celles d'une personne, ou tout le foyer.</p>"}, {"t": "Compte", "h": "<p>L'onglet Compte montre ton compte en banque comme un relevé : tickets, frais fixes et virements du mois, jour par jour, avec le solde du soir.</p><p><b>Opérations</b></p><ul><li>En haut, le solde estimé, puis Entrées, Sorties et Fin de mois.</li><li>Filtres Tout, Entrées, Sorties, À venir ; la recherche trouve un nom ou un montant, avec le total.</li><li>Le bloc « À venir » liste ce qui n'est pas encore passé. Touche le rond quand c'est fait : l'appli note le jour.</li><li>« ＋ Ajouter » : un virement reçu ou envoyé, un frais fixe, un ticket.</li><li>Touche un virement pour le modifier, le reprendre le mois suivant (ou chaque mois), ou le passer en frais fixe.</li></ul><p><b>Épargne</b> : tes livrets et ce que tu y mets chaque mois.</p><p><b>Graphiques</b> : ce mois, dépenses, solde, entrées et sorties, épargne, provisions. Touche une barre pour voir le détail.</p><p><b>La roue ⚙ du compte</b> : modifier le compte, le solde reporté, importer un relevé, annuler le dernier import.</p><p><b>Importer un relevé de banque</b></p><p>Télécharge le relevé sur le site de ta banque (fichier OFX, QIF ou CSV), puis roue ⚙ › Importer un relevé. Tout est lu sur le téléphone.</p><ul><li>Les paiements par carte deviennent des tickets, les prélèvements des frais fixes, le reste des virements.</li><li>Ce qui est déjà dans l'appli est repéré et n'est pas compté deux fois. Un ticket au même nom avec un total un peu différent est corrigé.</li><li>Tu peux décocher une ligne ou changer son type avant de valider.</li><li>« Annuler le dernier import » remet tout comme avant.</li></ul>"}, {"t": "À venir", "h": "<p>L'onglet À venir montre ce qui va sortir de tes comptes. Il a quatre parties.</p><ul><li><b>12 mois</b> : les mois à venir avec ce qui est prévu, et « À payer bientôt ». « Tes comptes dans 12 mois » ouvre la projection.</li><li><b>Frais fixes</b> : loyer, électricité, abonnements… Chaque mois, ou une seule fois. Pour un frais commun, il est payé par un compte en entier, ou chacun paie sa part.</li><li><b>Provisions</b> : l'argent mis de côté chaque mois pour une grosse dépense (taxe foncière, assurance, vacances). La mise de côté apparaît dans les frais fixes. Le graphique montre ce qui est déjà de côté et ce qui est prévu ; l'appli propose un montant mensuel si une provision ne suffit pas.</li><li>✦ <b>Factures</b> (Tickets Plus) : importe tes factures, par PDF ou en photos.</li></ul><p><b>Importer une facture</b></p><ul><li>Un PDF se lit mieux qu'une photo. Tu peux en importer plusieurs d'un coup.</li><li>En photos : une photo par page ; plusieurs factures mélangées sont retrouvées et rangées.</li><li>Rien n'est enregistré avant « Appliquer » : vérifie le fournisseur, la date et le montant.</li><li>La 1re facture d'un fournisseur peut demander une correction : l'appli retient où lire et lit les suivantes au même endroit.</li><li>Si un relevé a été importé, l'appli vérifie le montant avec ta banque.</li><li>L'appli estime la prochaine facture (selon la saison pour l'énergie) et peut la payer avec une provision.</li></ul>"}, {"t": "Commun", "h": "<p>L'onglet Commun montre combien chacun doit payer des frais communs du mois.</p><ul><li><b>Les parts</b> : la part de chacun dans le commun, en %. Un frais peut avoir ses propres parts.</li><li><b>Frais communs</b> : ceux du mois. Pour les modifier, le lien mène à À venir › Frais fixes.</li><li><b>Produits partagés</b> : les articles marqués « Dépense commune » sur les tickets, et ta part.</li></ul><p>Les parts ne changent pas les soldes de tes comptes : elles disent seulement qui doit combien. Touche le titre d'une partie pour l'ouvrir ou la fermer.</p><p><b>✦ Qui doit combien à qui</b> (Tickets Plus), en haut de l'onglet :</p><ul><li>une barre par personne : ce qu'elle a vraiment payé pour le commun ; le trait marque sa part ;</li><li>le résultat : « Marie te doit 220 € », ou, à plusieurs, le moins de remboursements possible ;</li><li>« Remboursé » : avec un virement (tu choisis les comptes) ou sans virement (liquide) ; un remboursement peut être partiel ;</li><li>ce qui reste d'un mois passe au suivant ; l'historique garde tous les remboursements.</li></ul><p>Compte comme payé pour le commun : les frais communs (selon le compte qui les paie) et les articles « Dépense commune » des tickets.</p><p><b>✦ Groupes</b> (Tickets Plus), en bas de l'onglet : pour un voyage ou une sortie, même avec des amis qui n'ont pas l'appli.</p><ul><li>« ＋ Nouveau groupe » : un nom, les personnes du foyer à cocher, les autres prénoms séparés par des virgules ;</li><li>« ＋ Dépense » : scanner un ticket, le saisir, prendre un ticket déjà enregistré, ou une dépense sans ticket (quoi, combien, payé par qui) ; un ticket ajouté depuis le groupe va aussi dans tes dépenses ; sur la fiche d'un ticket, « Groupe » le met dans un groupe ou l'en retire ;</li><li>chaque dépense est partagée à parts égales entre tout le groupe, ou seulement entre certaines personnes : touche la dépense › « Pour qui ? » ; les barres et « qui doit combien à qui » marchent comme pour le commun ;</li><li>toucher une dépense : « Pour qui ? », « Ouvrir le ticket » ou « Retirer du groupe » (le ticket reste dans tes dépenses) ; une dépense sans ticket : Modifier ou Supprimer ;</li><li>« Remboursé » : avec un virement entre les comptes du foyer, ou sans virement ;</li><li>« Envoyer le récap » : un texte à envoyer par SMS ou WhatsApp ; « ⋯ » pour changer les participants, clore ou supprimer le groupe.</li></ul>"}, {"t": "Foyer partagé", "h": "<p>✦ Tickets Plus. Ton téléphone reste le centre : il garde toutes les données et envoie à chaque membre seulement ce que tu partages avec lui. Les données sont chiffrées : personne d'autre ne peut les lire.</p><ol><li>Menu › Foyer partagé, puis crée ton foyer.</li><li>Ajoute un membre : choisis la personne, puis ses droits.</li><li>Il scanne le QR code avec Tickets (« Rejoindre un foyer » au premier démarrage). Rejoindre un foyer est gratuit.</li></ol><p><b>Les droits, onglet par onglet</b> : Masqué, Lecture ou Modif. Tu choisis aussi les comptes qu'il voit, et s'il voit tous les tickets du foyer ou seulement les siens. Un enfant est en lecture seule.</p><p><b>Code et empreinte</b> : obligatoires sur tous les téléphones du foyer. Garde bien ton code de récupération (26 caractères) : il permet de retrouver ton foyer sur un nouveau téléphone.</p><p>Retirer un membre coupe son accès tout de suite. Ses tickets déjà arrivés chez toi restent ; ce qu'il a ajouté depuis sa dernière mise à jour serait perdu : vérifie qu'il est « à jour » avant (l'appli te prévient). Pour juste le reconnecter, « Nouveau téléphone : nouveau QR code » suffit.</p>"}, {"t": "Rappels", "h": "<p>Menu › Réglages › Rappels (appli Android) : des notifications sur ton téléphone, même appli fermée et sans internet.</p><ul><li><b>Prélèvement ou facture demain</b> : la veille, avec le montant et le compte.</li><li><b>Virement</b> à faire ou attendu : le jour même, s'il n'est pas encore « fait ».</li><li><b>Budget</b> : à 80 %, puis s'il est dépassé ; une seule fois par mois.</li><li><b>Sauvegarde</b> : si la dernière a plus de 7 jours.</li><li>Tu choisis l'heure. Rien ne s'affiche sur l'écran verrouillé ; touche un rappel pour ouvrir l'écran qui le concerne.</li></ul>"}, {"t": "Photos et sauvegardes", "h": "<p>Tes données sont seulement sur ton téléphone : si tu le perds, seule une sauvegarde les fait revenir.</p><p><b>Sauvegarder</b> (Menu › Sauvegarder)</p><ul><li><b>Sauvegarde complète</b> : données et photos des tickets, dans un fichier ZIP. À faire de temps en temps.</li><li><b>Données seules</b> : un petit fichier, sans photos. Pour tous les jours.</li><li>Garde le fichier sur le téléphone (Documents/Tickets) ou envoie-le ailleurs (Google Drive, mail, ordinateur). Le mieux : ailleurs.</li></ul><p><b>Restaurer</b> (Menu › Réglages › Restaurer une sauvegarde) : choisis le fichier ZIP ou JSON. Il remplace les données du téléphone.</p><p><b>Les photos des tickets</b></p><ul><li>Elles sont gardées en qualité d'origine, pour pouvoir les relire.</li><li>Menu › Stockage montre la place prise, année par année, mois par mois.</li><li>Pour faire de la place : « Supprimer » sur un mois ou une année, ou ⋯ dans la galerie. Les tickets restent ; seules leurs photos partent.</li><li>« Garder les photos d'origine » : Toujours, 5 ans ou 2 ans. Au-delà, une petite photo reste.</li><li>La galerie photo du téléphone est à part : Tickets n'y touche jamais.</li></ul>"}, {"t": "Questions fréquentes", "h": "<p><b>Le total lu est faux.</b> Corrige le montant avant d'enregistrer, ou touche « Prendre … € » si l'appli propose le bon. Pour ce magasin, l'appli lira le total au même endroit la prochaine fois.</p><p><b>Une facture est mal lue.</b> Corrige la date ou le montant dans la fiche, puis « Appliquer » : l'appli s'en souvient pour ce fournisseur. Si ça recommence, « Copier la lecture » et envoie-la.</p><p><b>Mon solde ne correspond pas à la banque.</b> Vérifie le solde reporté (roue ⚙ du compte) et ce qui est coché « fait ». Le plus sûr : importer le relevé du mois.</p><p><b>J'ai supprimé un ticket par erreur.</b> Touche « Annuler » tout de suite. Après, seule une sauvegarde le fait revenir.</p><p><b>Je change de téléphone.</b> Fais une sauvegarde complète, envoie-la sur Drive ou sur un ordinateur, puis Menu › Réglages › Restaurer sur le nouveau. Avec un foyer partagé : ton code de récupération.</p><p><b>Le téléphone manque de place.</b> Menu › Stockage : supprime les photos des années anciennes, ou garde les photos d'origine 2 ou 5 ans.</p><p><b>Faut-il internet ?</b> Non. Seuls le foyer partagé et l'achat de Tickets Plus en ont besoin.</p><p><b>Mes données partent-elles quelque part ?</b> Non. Tout reste sur ton téléphone. Avec un foyer partagé, les copies envoyées aux membres sont chiffrées.</p>"}], "membre": [{"t": "Ce que tu vois", "h": "<p>Tu as rejoint le foyer de quelqu'un : c'est son téléphone qui garde les données du foyer. Il t'envoie seulement ce qu'il partage avec toi, chiffré : personne d'autre ne peut le lire.</p><ul><li><b>Les onglets</b> : chacun est masqué, en lecture ou en modification, selon ses choix. Il peut les changer à tout moment.</li><li><b>Les comptes</b> : tu vois les comptes qu'il a choisis pour toi, ou seulement tes tickets.</li><li><b>Les tickets</b> : les tiens, ou ceux de tout le foyer s'il l'a décidé (ceux des autres en lecture seule).</li><li>Menu › Foyer montre tes droits et la dernière mise à jour.</li></ul><p>Rejoindre un foyer est gratuit.</p>"}, {"t": "Ton accueil", "h": "<p>Ton accueil est à toi : il montre toujours tes chiffres, pas ceux du foyer.</p><ul><li><b>Banque</b> : le solde de ton compte, si tu le vois.</li><li><b>Ma part du commun</b> : ce que tu dois payer des frais communs du mois.</li><li><b>Mes tickets</b> : tes dépenses du mois.</li></ul><p>Le bouton <b>Scan</b> en bas de l'écran sert à photographier un ticket.</p>"}, {"t": "Ajouter un ticket", "h": "<p>Touche <b>Scan</b>, puis « Prendre une photo » ou « Choisir dans la galerie ». Le ticket est lu sur ton téléphone.</p><ul><li>Ticket à plat, bien éclairé, pris en entier ; un ticket très long en plusieurs photos.</li><li>Vérifie le montant, le magasin et la date. Ce qui est en orange est à regarder.</li><li>Pas de ticket ? « ✍️ Saisie » pour noter une dépense à la main.</li><li>Une dépense à partager : coche « Dépense commune » sur les articles, puis « Partagé avec » pour choisir les personnes.</li></ul><p>Ton ticket part chez le propriétaire du foyer dès que ton téléphone est connecté.</p>"}, {"t": "Ce que tu peux modifier", "h": "<ul><li><b>En lecture</b> : tu vois les chiffres, tu ne peux rien changer. Si tu essaies, l'appli te le dit.</li><li><b>En modification</b> : ce que tu ajoutes ou changes part chez le propriétaire, tout seul. S'il a modifié la même chose de son côté, le changement le plus récent l'emporte.</li><li>Les tickets et les frais des autres restent en lecture seule.</li><li>Si tu es connecté, la mise à jour se fait toute seule ; Menu › Foyer › « Mettre à jour maintenant » la lance tout de suite.</li></ul>"}, {"t": "Mes comptes (privé)", "h": "<p>En plus du foyer, tu as un espace à toi : Menu › Mes comptes.</p><ul><li>Tickets, comptes, frais fixes, épargne : une appli complète pour toi, avec ta propre sauvegarde.</li><li>Rien n'en sort : ni le propriétaire ni le relais ne le voient.</li><li>Une dépense pour le foyer ? Coche « Envoyer aussi au foyer » sur le ticket : il part chez le propriétaire à ton retour dans le foyer. Décocher le retire.</li><li>La pastille « 🔒 Mes comptes · privé » sous le titre rappelle où tu es ; touche-la pour revenir au foyer.</li><li>Pendant que tu es dans Mes comptes, le foyer n'est pas mis à jour ; il le sera à ton retour.</li></ul>"}, {"t": "Rappels", "h": "<p>Menu › Réglages › Rappels (appli Android) : tes prélèvements de la veille, tes virements à faire, tes budgets à 80 %. Ils arrivent même appli fermée et sans internet ; rien ne s'affiche sur l'écran verrouillé.</p>"}, {"t": "Code et sécurité", "h": "<ul><li>Un code à 6 chiffres et ton empreinte protègent l'appli : obligatoires dans un foyer.</li><li>Si tu quittes le foyer (Menu › Foyer › Quitter le foyer), les données du foyer partent de ton téléphone ; tu retrouves celles que tu avais avant de le rejoindre.</li><li>Si le propriétaire te retire du foyer, ton accès est coupé tout de suite.</li></ul>"}, {"t": "Questions fréquentes", "h": "<p><b>Je ne vois pas un onglet.</b> Le propriétaire l'a masqué pour toi. Demande-lui de changer tes droits.</p><p><b>Mes changements n'apparaissent pas chez lui.</b> Ton téléphone doit être connecté, et le sien aussi pour les recevoir. Menu › Foyer montre la dernière mise à jour.</p><p><b>Je ne peux rien modifier.</b> Tu es en lecture pour cet onglet. Le propriétaire peut le passer en modification.</p><p><b>Je change de téléphone.</b> Installe Tickets sur le nouveau, puis demande au propriétaire un nouveau QR code d'invitation.</p><p><b>Faut-il internet ?</b> Oui, pour recevoir et envoyer les données du foyer. Le reste marche sans.</p>"}]}; /* GUIDE-FIN */
+    /* GUIDE-DEBUT */ var GUIDE={"proprietaire": [{"t": "Pour commencer", "h": "<p>Tickets garde tout sur ton téléphone : pas de compte à créer, pas besoin d'internet.</p><ol><li><b>Ton prénom</b> : demandé au premier démarrage. Il sert pour « Payé par » et pour partager les dépenses. Tu peux le changer dans Menu › Personnes.</li><li><b>Les personnes du foyer</b> : Menu › Personnes. Ajoute chaque personne qui paie ou pour qui tu dépenses.</li><li><b>Ton compte</b> : un compte courant est créé tout seul, c'est ton compte principal. Pour en ajouter un autre ou le modifier : onglet Compte, puis la roue ⚙ en haut à droite.</li></ol><p><b>L'écran d'accueil</b></p><ul><li>En haut, les graphiques que tu choisis : ⚙ Choisir, ou un appui long sur une carte pour la changer, la déplacer ou la masquer.</li><li>« ✍️ Saisie » note une dépense à la main ; « 🧾 Tickets » ouvre la liste du mois.</li><li>Le bouton en haut à droite choisit qui tu regardes : toi, une personne, ou tout le foyer.</li><li>En bas, le bouton <b>Scan</b> pour photographier un ticket.</li></ul><p>Tu peux revoir l'accueil de l'appli dans Menu › Aide. Les fonctions marquées ✦ font partie de Tickets Plus : Menu › ✦ Tickets Plus les présente toutes.</p>"}, {"t": "Scanner un ticket", "h": "<p>Touche <b>Scan</b> en bas de l'écran, puis « Prendre une photo » ou « Choisir dans la galerie ». Le ticket est lu sur le téléphone, rien ne part sur internet.</p><p><b>Pour une bonne lecture</b></p><ul><li>Ticket à plat, bien éclairé, pris en entier.</li><li>Un ticket très long : prends-le en plusieurs photos.</li><li>Sur Android, le scanner recadre et redresse la photo tout seul.</li></ul><p><b>Vérifier avant d'enregistrer</b></p><ul><li>Le montant, le magasin et la date sont remplis. Regarde le montant en premier.</li><li>Ce qui est en orange est à vérifier : un article sans prix, un produit vide, un écart entre les articles et le total.</li><li>Si la carte bancaire ou la TVA du ticket donnent un autre total, l'appli le dit et propose « Prendre … € ».</li><li>La photo reste avec le ticket : touche la vignette à côté du montant pour la revoir.</li><li>Les catégories les plus utilisées sont montrées ; « Autres ▾ » les affiche toutes.</li><li>« Options » (replié) : le compte (Auto = celui de la personne qui a payé), le groupe, le partage. La ligne résume ce qui est choisi.</li></ul><p><b>Ce que l'appli apprend</b></p><ul><li>Le 1er ticket d'un magasin demande parfois une correction du total : l'appli retient où il était et lit les suivants au même endroit.</li><li>Chaque article reçoit le produit que tu lui as donné la dernière fois (lait, pain…). Chaque personne a les siens.</li></ul><p><b>Sans ticket</b> : « ✍️ Saisie » sur l'accueil pour noter une dépense à la main.</p><p><b>Partager une dépense</b> : Options › Partage, « Qui paie ce ticket ? »</p><ul><li><b>Seulement</b> la personne qui a payé : pas partagé (par défaut).</li><li><b>Le commun du foyer</b> : chacun selon sa part (Commun › Parts).</li><li><b>Certaines personnes</b> : en parts égales ou ajustées. Exemple : un resto à 3 sur une famille de 5.</li><li>Pour ne partager qu'une partie du ticket : « partager cet article » sur les articles concernés.</li></ul><p><b>Supprimer un ticket</b> : ⋯ en haut de la fiche › Supprimer, ou un appui long sur le ticket dans une liste. Il part dans la <b>corbeille</b> (Dépenses › Tickets, en bas) : « Annuler » tout de suite, ou « Remettre » pendant 30 jours, avec sa photo. Après 30 jours, il est supprimé pour de bon.</p><p>Un appui long sur un ticket, dans n'importe quelle liste, propose Ouvrir ou Supprimer.</p>"}, {"t": "Dépenses", "h": "<p>L'onglet Dépenses a quatre parties, en boutons sous le titre.</p><ul><li><b>Tickets</b> : les tickets du mois, avec la recherche et le calendrier. En bas, « Photos des tickets » ouvre la galerie, rangée par mois.</li><li><b>Produits</b> : ce que tu achètes et à quel prix. Mes produits, Hausses (ce qui augmente), Magasins (où c'est le moins cher), Familles. Touche un produit pour voir tous ses achats.</li><li><b>Budgets</b> : un budget par catégorie, pour le foyer ou par personne. L'appli montre où tu en es dans le mois.</li><li><b>Analyse</b> : tes dépenses par mois, par catégorie, les dépenses qui reviennent et qui a payé. « + Frais fixes » ajoute les loyers, abonnements… pour voir tout ce qui sort vraiment.</li></ul><p>✦ <b>Analyse avancée</b> (Tickets Plus) : ton inflation personnelle comparée à celle de l'INSEE, cette année contre l'an dernier, les alertes, le reste à vivre, des pistes d'économies.</p><p>Le bouton personne, en haut à droite, choisit les dépenses montrées dans Produits et Analyse : les tiennes, celles d'une personne, ou tout le foyer.</p>"}, {"t": "Compte", "h": "<p>L'onglet Compte montre ton compte en banque comme un relevé : tickets, frais fixes et virements du mois, jour par jour, avec le solde du soir.</p><p><b>Opérations</b></p><ul><li>En haut, le solde estimé, puis Entrées, Sorties et Fin de mois.</li><li>Filtres Tout, Entrées, Sorties, À venir ; la recherche trouve un nom ou un montant, avec le total.</li><li>Le bloc « À venir » liste ce qui n'est pas encore passé. Touche le rond quand c'est fait : l'appli note le jour.</li><li>« ＋ Ajouter » : un virement reçu ou envoyé, un frais fixe, un ticket.</li><li>Touche un virement pour le modifier, le reprendre le mois suivant (ou chaque mois), ou le passer en frais fixe.</li></ul><p><b>Épargne</b> : tes livrets et ce que tu y mets chaque mois.</p><p><b>Graphiques</b> : ce mois, dépenses, solde, entrées et sorties, épargne, provisions. Touche une barre pour voir le détail.</p><p><b>La roue ⚙ du compte</b> : modifier le compte, le solde reporté, importer un relevé, annuler le dernier import.</p><p><b>Importer un relevé de banque</b></p><p>Télécharge le relevé sur le site de ta banque (fichier OFX, QIF ou CSV), puis roue ⚙ › Importer un relevé. Tout est lu sur le téléphone.</p><ul><li>Les paiements par carte deviennent des tickets, les prélèvements des frais fixes, le reste des virements.</li><li>Ce qui est déjà dans l'appli est repéré et n'est pas compté deux fois. Un ticket au même nom avec un total un peu différent est corrigé.</li><li>Tu peux décocher une ligne ou changer son type avant de valider.</li><li>« Annuler le dernier import » remet tout comme avant.</li></ul>"}, {"t": "À venir", "h": "<p>L'onglet À venir montre ce qui va sortir de tes comptes. Il a quatre parties.</p><ul><li><b>12 mois</b> : les mois à venir avec ce qui est prévu, et « À payer bientôt ». « Tes comptes dans 12 mois » ouvre la projection.</li><li><b>Frais fixes</b> : loyer, électricité, abonnements… Chaque mois, ou une seule fois. Pour un frais commun, il est payé par un compte en entier, ou chacun paie sa part.</li><li><b>Provisions</b> : l'argent mis de côté chaque mois pour une grosse dépense (taxe foncière, assurance, vacances). La mise de côté apparaît dans les frais fixes. Le graphique montre ce qui est déjà de côté et ce qui est prévu ; l'appli propose un montant mensuel si une provision ne suffit pas.</li><li>✦ <b>Factures</b> (Tickets Plus) : importe tes factures, par PDF ou en photos.</li></ul><p><b>Importer une facture</b></p><ul><li>Un PDF se lit mieux qu'une photo. Tu peux en importer plusieurs d'un coup.</li><li>En photos : une photo par page ; plusieurs factures mélangées sont retrouvées et rangées.</li><li>Rien n'est enregistré avant « Appliquer » : vérifie le fournisseur, la date et le montant.</li><li>La 1re facture d'un fournisseur peut demander une correction : l'appli retient où lire et lit les suivantes au même endroit.</li><li>Si un relevé a été importé, l'appli vérifie le montant avec ta banque.</li><li>L'appli estime la prochaine facture (selon la saison pour l'énergie) et peut la payer avec une provision.</li></ul>"}, {"t": "Commun", "h": "<p>L'onglet Commun montre combien chacun doit payer des frais communs du mois.</p><ul><li><b>Les parts</b> : la part de chacun dans le commun, en %. Un frais peut avoir ses propres parts.</li><li><b>Frais communs</b> : ceux du mois. Pour les modifier, le lien mène à À venir › Frais fixes.</li><li><b>Produits partagés</b> : les articles marqués « Dépense commune » sur les tickets, et ta part.</li></ul><p>Les parts ne changent pas les soldes de tes comptes : elles disent seulement qui doit combien. Touche le titre d'une partie pour l'ouvrir ou la fermer.</p><p><b>✦ Qui doit combien à qui</b> (Tickets Plus), en haut de l'onglet :</p><ul><li>une barre par personne : ce qu'elle a vraiment payé pour le commun ; le trait marque sa part ;</li><li>le résultat : « Marie te doit 220 € », ou, à plusieurs, le moins de remboursements possible ;</li><li>« Remboursé » : avec un virement (tu choisis les comptes) ou sans virement (liquide) ; un remboursement peut être partiel ;</li><li>ce qui reste d'un mois passe au suivant ; l'historique garde tous les remboursements.</li></ul><p>Compte comme payé pour le commun : les frais communs (selon le compte qui les paie) et les articles « Dépense commune » des tickets.</p><p><b>✦ Groupes</b> (Tickets Plus), en bas de l'onglet : pour un voyage ou une sortie, même avec des amis qui n'ont pas l'appli.</p><ul><li>« ＋ Nouveau groupe » : un nom, les personnes du foyer à cocher, les autres prénoms séparés par des virgules ;</li><li>« ＋ Dépense » : scanner un ticket, le saisir, prendre un ticket déjà enregistré, ou une dépense sans ticket (quoi, combien, payé par qui) ; un ticket ajouté depuis le groupe va aussi dans tes dépenses ; sur la fiche d'un ticket, « Groupe » le met dans un groupe ou l'en retire ;</li><li>chaque dépense est partagée à parts égales entre tout le groupe, ou seulement entre certaines personnes : touche la dépense › « Pour qui ? » ; les barres et « qui doit combien à qui » marchent comme pour le commun ;</li><li>toucher une dépense : « Pour qui ? », « Ouvrir le ticket » ou « Retirer du groupe » (le ticket reste dans tes dépenses) ; une dépense sans ticket : Modifier ou Supprimer ;</li><li>« Remboursé » : avec un virement entre les comptes du foyer, ou sans virement ;</li><li>« Envoyer le récap » : un texte à envoyer par SMS ou WhatsApp ; « ⋯ » pour changer les participants, clore ou supprimer le groupe.</li></ul>"}, {"t": "Foyer partagé", "h": "<p>✦ Tickets Plus. Ton téléphone reste le centre : il garde toutes les données et envoie à chaque membre seulement ce que tu partages avec lui. Les données sont chiffrées : personne d'autre ne peut les lire.</p><ol><li>Menu › Foyer partagé, puis crée ton foyer.</li><li>Ajoute un membre : choisis la personne, puis ses droits.</li><li>Il scanne le QR code avec Tickets (« Rejoindre un foyer » au premier démarrage). Rejoindre un foyer est gratuit.</li></ol><p><b>Les droits, onglet par onglet</b> : Masqué, Lecture ou Modif. Tu choisis aussi les comptes qu'il voit, et s'il voit tous les tickets du foyer ou seulement les siens. Un enfant est en lecture seule.</p><p><b>Code et empreinte</b> : obligatoires sur tous les téléphones du foyer. Garde bien ton code de récupération (26 caractères) : il permet de retrouver ton foyer sur un nouveau téléphone.</p><p>Retirer un membre coupe son accès tout de suite. Ses tickets déjà arrivés chez toi restent ; ce qu'il a ajouté depuis sa dernière mise à jour serait perdu : vérifie qu'il est « à jour » avant (l'appli te prévient). Pour juste le reconnecter, « Nouveau téléphone : nouveau QR code » suffit.</p>"}, {"t": "Rappels", "h": "<p>Menu › Réglages › Rappels (appli Android) : des notifications sur ton téléphone, même appli fermée et sans internet.</p><ul><li><b>Prélèvement ou facture demain</b> : la veille, avec le montant et le compte.</li><li><b>Virement</b> à faire ou attendu : le jour même, s'il n'est pas encore « fait ».</li><li><b>Budget</b> : à 80 %, puis s'il est dépassé ; une seule fois par mois.</li><li><b>Sauvegarde</b> : si la dernière a plus de 7 jours.</li><li>Tu choisis l'heure. Rien ne s'affiche sur l'écran verrouillé ; touche un rappel pour ouvrir l'écran qui le concerne.</li></ul>"}, {"t": "Photos et sauvegardes", "h": "<p>Tes données sont seulement sur ton téléphone : si tu le perds, seule une sauvegarde les fait revenir.</p><p><b>Sauvegarder</b> (Menu › Sauvegarder)</p><ul><li><b>Sauvegarde complète</b> : données et photos des tickets, dans un fichier ZIP. À faire de temps en temps.</li><li><b>Données seules</b> : un petit fichier, sans photos. Pour tous les jours.</li><li>Garde le fichier sur le téléphone (Documents/Tickets) ou envoie-le ailleurs (Google Drive, mail, ordinateur). Le mieux : ailleurs.</li></ul><p><b>Restaurer</b> (Menu › Réglages › Restaurer une sauvegarde) : choisis le fichier ZIP ou JSON. Il remplace les données du téléphone.</p><p><b>Les photos des tickets</b></p><ul><li>Elles sont gardées en qualité d'origine, pour pouvoir les relire.</li><li>Menu › Stockage montre la place prise, année par année, mois par mois.</li><li>Pour faire de la place : « Supprimer » sur un mois ou une année, ou ⋯ dans la galerie. Les tickets restent ; seules leurs photos partent.</li><li>« Garder les photos d'origine » : Toujours, 5 ans ou 2 ans. Au-delà, une petite photo reste.</li><li>La galerie photo du téléphone est à part : Tickets n'y touche jamais.</li></ul>"}, {"t": "Questions fréquentes", "h": "<p><b>Le total lu est faux.</b> Corrige le montant avant d'enregistrer, ou touche « Prendre … € » si l'appli propose le bon. Pour ce magasin, l'appli lira le total au même endroit la prochaine fois.</p><p><b>Une facture est mal lue.</b> Corrige la date ou le montant dans la fiche, puis « Appliquer » : l'appli s'en souvient pour ce fournisseur. Si ça recommence, « Copier la lecture » et envoie-la.</p><p><b>Mon solde ne correspond pas à la banque.</b> Vérifie le solde reporté (roue ⚙ du compte) et ce qui est coché « fait ». Le plus sûr : importer le relevé du mois.</p><p><b>J'ai supprimé un ticket par erreur.</b> Touche « Annuler » tout de suite, ou retrouve-le dans Dépenses › Tickets › Corbeille (30 jours) et touche « Remettre ».</p><p><b>Je change de téléphone.</b> Fais une sauvegarde complète, envoie-la sur Drive ou sur un ordinateur, puis Menu › Réglages › Restaurer sur le nouveau. Avec un foyer partagé : ton code de récupération.</p><p><b>Le téléphone manque de place.</b> Menu › Stockage : supprime les photos des années anciennes, ou garde les photos d'origine 2 ou 5 ans.</p><p><b>Faut-il internet ?</b> Non. Seuls le foyer partagé et l'achat de Tickets Plus en ont besoin.</p><p><b>Mes données partent-elles quelque part ?</b> Non. Tout reste sur ton téléphone. Avec un foyer partagé, les copies envoyées aux membres sont chiffrées.</p>"}], "membre": [{"t": "Ce que tu vois", "h": "<p>Tu as rejoint le foyer de quelqu'un : c'est son téléphone qui garde les données du foyer. Il t'envoie seulement ce qu'il partage avec toi, chiffré : personne d'autre ne peut le lire.</p><ul><li><b>Les onglets</b> : chacun est masqué, en lecture ou en modification, selon ses choix. Il peut les changer à tout moment.</li><li><b>Les comptes</b> : tu vois les comptes qu'il a choisis pour toi, ou seulement tes tickets.</li><li><b>Les tickets</b> : les tiens, ou ceux de tout le foyer s'il l'a décidé (ceux des autres en lecture seule).</li><li>Menu › Foyer montre tes droits et la dernière mise à jour.</li></ul><p>Rejoindre un foyer est gratuit.</p>"}, {"t": "Ton accueil", "h": "<p>Ton accueil est à toi : il montre toujours tes chiffres, pas ceux du foyer.</p><ul><li><b>Banque</b> : le solde de ton compte, si tu le vois.</li><li><b>Ma part du commun</b> : ce que tu dois payer des frais communs du mois.</li><li><b>Mes tickets</b> : tes dépenses du mois.</li></ul><p>Le bouton <b>Scan</b> en bas de l'écran sert à photographier un ticket.</p>"}, {"t": "Ajouter un ticket", "h": "<p>Touche <b>Scan</b>, puis « Prendre une photo » ou « Choisir dans la galerie ». Le ticket est lu sur ton téléphone.</p><ul><li>Ticket à plat, bien éclairé, pris en entier ; un ticket très long en plusieurs photos.</li><li>Vérifie le montant, le magasin et la date. Ce qui est en orange est à regarder.</li><li>Pas de ticket ? « ✍️ Saisie » pour noter une dépense à la main.</li><li>Une dépense à partager : Options › Partage (« Qui paie ce ticket ? ») : seulement toi, le commun du foyer, ou certaines personnes.</li><li>Supprimé par erreur ? Dépenses › Tickets › Corbeille › « Remettre » (30 jours).</li></ul><p>Ton ticket part chez le propriétaire du foyer dès que ton téléphone est connecté.</p>"}, {"t": "Ce que tu peux modifier", "h": "<ul><li><b>En lecture</b> : tu vois les chiffres, tu ne peux rien changer. Si tu essaies, l'appli te le dit.</li><li><b>En modification</b> : ce que tu ajoutes ou changes part chez le propriétaire, tout seul. S'il a modifié la même chose de son côté, le changement le plus récent l'emporte.</li><li>Les tickets et les frais des autres restent en lecture seule.</li><li>Si tu es connecté, la mise à jour se fait toute seule ; Menu › Foyer › « Mettre à jour maintenant » la lance tout de suite.</li></ul>"}, {"t": "Mes comptes (privé)", "h": "<p>En plus du foyer, tu as un espace à toi : Menu › Mes comptes.</p><ul><li>Tickets, comptes, frais fixes, épargne : une appli complète pour toi, avec ta propre sauvegarde.</li><li>Rien n'en sort : ni le propriétaire ni le relais ne le voient.</li><li>Une dépense pour le foyer ? Coche « Envoyer aussi au foyer » sur le ticket : il part chez le propriétaire à ton retour dans le foyer. Décocher le retire.</li><li>La pastille « 🔒 Mes comptes · privé » sous le titre rappelle où tu es ; touche-la pour revenir au foyer.</li><li>Pendant que tu es dans Mes comptes, le foyer n'est pas mis à jour ; il le sera à ton retour.</li></ul>"}, {"t": "Rappels", "h": "<p>Menu › Réglages › Rappels (appli Android) : tes prélèvements de la veille, tes virements à faire, tes budgets à 80 %. Ils arrivent même appli fermée et sans internet ; rien ne s'affiche sur l'écran verrouillé.</p>"}, {"t": "Code et sécurité", "h": "<ul><li>Un code à 6 chiffres et ton empreinte protègent l'appli : obligatoires dans un foyer.</li><li>Si tu quittes le foyer (Menu › Foyer › Quitter le foyer), les données du foyer partent de ton téléphone ; tu retrouves celles que tu avais avant de le rejoindre.</li><li>Si le propriétaire te retire du foyer, ton accès est coupé tout de suite.</li></ul>"}, {"t": "Questions fréquentes", "h": "<p><b>Je ne vois pas un onglet.</b> Le propriétaire l'a masqué pour toi. Demande-lui de changer tes droits.</p><p><b>Mes changements n'apparaissent pas chez lui.</b> Ton téléphone doit être connecté, et le sien aussi pour les recevoir. Menu › Foyer montre la dernière mise à jour.</p><p><b>Je ne peux rien modifier.</b> Tu es en lecture pour cet onglet. Le propriétaire peut le passer en modification.</p><p><b>Je change de téléphone.</b> Installe Tickets sur le nouveau, puis demande au propriétaire un nouveau QR code d'invitation.</p><p><b>Faut-il internet ?</b> Oui, pour recevoir et envoyer les données du foyer. Le reste marche sans.</p>"}]}; /* GUIDE-FIN */
     function openAide(){ state.view="aide"; state.aideQ=""; state.aideOpen={}; render(); window.scrollTo(0,0); }
     function renderAide(){
       var L=GUIDE[fyMember() ? "membre" : "proprietaire"]||[], q=norm(state.aideQ||""), open=state.aideOpen||(state.aideOpen={});
@@ -12110,6 +12179,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       };
     }
     document.addEventListener("visibilitychange", function(){ if(document.hidden) rapSync(true); });
+    setTimeout(function(){ try{ if(corbPurge(false)) render(); }catch(e){} }, 1500);   // tickets de plus de 30 jours dans la corbeille
     setTimeout(function(){ rapSync(true); }, 900);
 
     var wLast="", wTimer=0;

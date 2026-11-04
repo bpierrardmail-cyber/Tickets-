@@ -52,8 +52,9 @@ with sync_playwright() as p:
     # ---------- 3. un ticket mis dans le groupe
     pg.locator('#nav .navi[data-view="depenses"]').click(); pg.wait_for_timeout(500)
     pg.locator('.entry[data-id="1"]').first.click(); pg.wait_for_timeout(500)
-    check(pg.locator("#grpc").count()==1, "fiche du ticket : choix « Groupe »")
-    pg.locator('#grpc .chip', has_text="Week-end Annecy").click(); pg.wait_for_timeout(300)
+    pg.locator("#fopt").click(); pg.wait_for_timeout(300)
+    check(pg.locator("#f-grp").count()==1, "fiche du ticket : Options › Groupe")
+    pg.locator("#f-grp").select_option(label="Week-end Annecy"); pg.wait_for_timeout(200)
     pg.locator("#save").click(); pg.wait_for_timeout(600)
     if pg.locator("#cksave").count(): pg.locator("#cksave").click(); pg.wait_for_timeout(500)
     g=G(); tk=[d for d in g[0]["dep"] if d.get("ticketId")==1]
@@ -96,7 +97,7 @@ with sync_playwright() as p:
     ch=norm(pg.locator(".sheet-overlay").last.inner_text())
     check("Scanner un ticket" in ch and "Saisir un ticket" in ch and "Un ticket déjà enregistré" in ch and "Dépense sans ticket" in ch, "＋ Dépense : scanner, saisir, ticket déjà enregistré, sans ticket")
     pg.locator(".sheet-overlay button", has_text="Saisir un ticket").click(); pg.wait_for_timeout(500)
-    check(pg.locator('#grpc .chip.on', has_text="Sortie ciné").count()==1, "fiche du nouveau ticket : groupe « Sortie ciné » déjà choisi")
+    check("groupe « Sortie ciné »" in norm(pg.locator("#fopt").inner_text()), "fiche du nouveau ticket : groupe « Sortie ciné » déjà choisi")
     pg.locator("#f-montant").fill("24"); pg.locator("#f-marchand").fill("Cinéma"); pg.locator("#save").click(); pg.wait_for_timeout(600)
     if pg.locator("#cksave").count(): pg.locator("#cksave").click(); pg.wait_for_timeout(500)
     t=app(); ents=pg.evaluate("()=>JSON.parse(localStorage.getItem('entries'))")

@@ -33,6 +33,8 @@ Touche **Scan** en bas de l'écran, puis « Prendre une photo » ou « Choisir d
 - Ce qui est en orange est à vérifier : un article sans prix, un produit vide, un écart entre les articles et le total.
 - Si la carte bancaire ou la TVA du ticket donnent un autre total, l'appli le dit et propose « Prendre … € ».
 - La photo reste avec le ticket : touche la vignette à côté du montant pour la revoir.
+- Les catégories les plus utilisées sont montrées ; « Autres ▾ » les affiche toutes.
+- « Options » (replié) : le compte (Auto = celui de la personne qui a payé), le groupe, le partage. La ligne résume ce qui est choisi.
 
 **Ce que l'appli apprend**
 
@@ -41,12 +43,16 @@ Touche **Scan** en bas de l'écran, puis « Prendre une photo » ou « Choisir d
 
 **Sans ticket** : « ✍️ Saisie » sur l'accueil pour noter une dépense à la main.
 
-**Partager une dépense**
+**Partager une dépense** : Options › Partage, « Qui paie ce ticket ? »
 
-- Coche « Dépense commune » sur les articles à partager, ou touche « Tout le ticket en commun ».
-- « Partagé avec » choisit avec qui : tout le foyer (selon les parts du commun), ou seulement certaines personnes, en parts égales ou ajustées. Exemple : un resto à 3 sur une famille de 5.
+- **Seulement** la personne qui a payé : pas partagé (par défaut).
+- **Le commun du foyer** : chacun selon sa part (Commun › Parts).
+- **Certaines personnes** : en parts égales ou ajustées. Exemple : un resto à 3 sur une famille de 5.
+- Pour ne partager qu'une partie du ticket : « partager cet article » sur les articles concernés.
 
-Un appui long sur un ticket, dans n'importe quelle liste, propose Ouvrir ou Supprimer. Une suppression peut s'annuler quelques secondes.
+**Supprimer un ticket** : ⋯ en haut de la fiche › Supprimer, ou un appui long sur le ticket dans une liste. Il part dans la **corbeille** (Dépenses › Tickets, en bas) : « Annuler » tout de suite, ou « Remettre » pendant 30 jours, avec sa photo. Après 30 jours, il est supprimé pour de bon.
+
+Un appui long sur un ticket, dans n'importe quelle liste, propose Ouvrir ou Supprimer.
 
 ## Dépenses
 
@@ -186,7 +192,7 @@ Tes données sont seulement sur ton téléphone : si tu le perds, seule une sauv
 
 **Mon solde ne correspond pas à la banque.** Vérifie le solde reporté (roue ⚙ du compte) et ce qui est coché « fait ». Le plus sûr : importer le relevé du mois.
 
-**J'ai supprimé un ticket par erreur.** Touche « Annuler » tout de suite. Après, seule une sauvegarde le fait revenir.
+**J'ai supprimé un ticket par erreur.** Touche « Annuler » tout de suite, ou retrouve-le dans Dépenses › Tickets › Corbeille (30 jours) et touche « Remettre ».
 
 **Je change de téléphone.** Fais une sauvegarde complète, envoie-la sur Drive ou sur un ordinateur, puis Menu › Réglages › Restaurer sur le nouveau. Avec un foyer partagé : ton code de récupération.
 
