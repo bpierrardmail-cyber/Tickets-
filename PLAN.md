@@ -106,7 +106,7 @@ L'utilisateur active la sauvegarde une fois ; ensuite elle part seule, chiffrée
 - [ ] **Appli de démonstration** : un « Mode démo » avec un foyer inventé (tickets, comptes, frais, groupes, factures), séparé des vraies données, pour présenter l'appli sans rien montrer de perso ; on en sort d'un geste et les vraies données reviennent telles quelles. Aussi en lien web, pour une présentation sur ordinateur.
 - [ ] **Présentation gratuit / Plus à revoir** : fiche du Play Store (texte, captures) et diapos du premier démarrage, avec les nouveautés (groupes, corbeille, rappels, sauvegarde Drive, un achat pour tout le foyer).
 - [ ] **Guides de l'Aide à revoir** (propriétaire et membre), avec les corrections de Benoît.
-- [ ] **Nouveau nom de l'appli** (plus centré sur les comptes du foyer que sur le scan) : à choisir avant la première publication sur le Play Store, car l'identifiant Store (`fr.bpierrard.tickets.store`, provisoire) ne pourra plus changer ensuite. Vérifier qu'il est libre (Play Store, INPI, nom de domaine). Le changement touche les textes, l'icône, la présentation et les guides, pas les données.
+- [ ] **Nouveau nom de l'appli : Copek** (choisi le 04/11), à confirmer après la vérification de la marque à l'INPI et des domaines copek.fr / copek.app ; identifiant Store prévu `fr.bpierrard.copek`. Pour mémoire : à choisir avant la première publication sur le Play Store, car l'identifiant Store (`fr.bpierrard.tickets.store`, provisoire) ne pourra plus changer ensuite. Vérifier qu'il est libre (Play Store, INPI, nom de domaine). Le changement touche les textes, l'icône, la présentation et les guides, pas les données.
 
 ### Nouvelles fonctions pour le foyer
 
