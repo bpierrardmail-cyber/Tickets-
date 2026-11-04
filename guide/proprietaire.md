@@ -176,7 +176,12 @@ Tes données sont seulement sur ton téléphone : si tu le perds, seule une sauv
 - **Données seules** : un petit fichier, sans photos. Pour tous les jours.
 - Garde le fichier sur le téléphone (Documents/Tickets) ou envoie-le ailleurs (Google Drive, mail, ordinateur). Le mieux : ailleurs.
 
-**Restaurer** (Menu › Réglages › Restaurer une sauvegarde) : choisis le fichier ZIP ou JSON. Il remplace les données du téléphone.
+**Restaurer** (Menu › Réglages › Restaurer une sauvegarde) : depuis Google Drive, ou un fichier ZIP ou JSON. La sauvegarde remplace les données du téléphone.
+
+- Depuis Drive : Menu › Sauvegarder › Google Drive › Restaurer, puis choisis la date. Avant, l'état actuel part aussi sur Drive et reste gardé 30 jours sur le téléphone : « Annuler la restauration » le remet (bandeau de l'accueil, ou l'écran de la sauvegarde).
+- Les photos des tickets, ton code, ton empreinte et tes réglages ne changent pas.
+- Nouveau téléphone : au premier démarrage, « Restaurer depuis Google Drive », ton compte Google, puis ton code de secours. Les photos ne reviennent qu'avec une sauvegarde complète (ZIP).
+- Si un autre téléphone envoie des sauvegardes dans ton dossier, l'appli te prévient. N'utilise pas deux téléphones avec les mêmes sauvegardes.
 
 **Les photos des tickets**
 
@@ -196,7 +201,9 @@ Tes données sont seulement sur ton téléphone : si tu le perds, seule une sauv
 
 **J'ai supprimé un ticket par erreur.** Touche « Annuler » tout de suite, ou retrouve-le dans Dépenses › Tickets › Corbeille (30 jours) et touche « Remettre ».
 
-**Je change de téléphone.** Fais une sauvegarde complète, envoie-la sur Drive ou sur un ordinateur, puis Menu › Réglages › Restaurer sur le nouveau. Avec un foyer partagé : ton code de récupération.
+**Je change de téléphone.** Avec la sauvegarde Drive : au premier démarrage du nouveau, « Restaurer depuis Google Drive » et ton code de secours. Pour les photos aussi : une sauvegarde complète (ZIP), puis Menu › Réglages › Restaurer. Avec un foyer partagé : « Récupérer mon foyer » avec ton code de récupération.
+
+**Mon code de secours.** Ne le donne à personne, même pas à un membre du foyer : il ouvre ton foyer et tes sauvegardes. Les membres n'en ont pas besoin, ils ont leur propre accès.
 
 **Le téléphone manque de place.** Menu › Stockage : supprime les photos des années anciennes, ou garde les photos d'origine 2 ou 5 ans.
 

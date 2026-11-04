@@ -307,11 +307,12 @@ public class TicketsNativePlugin extends Plugin {
         if (!TkDrive.prefs(c).getBoolean("on", false)) { call.reject("sauvegarde Drive désactivée", "off"); return; }
         final String name = call.getString("name", "tickets.tkb");
         final int n = call.getInt("n", 0);
+        final int nc = call.getInt("c", 0);
         final String kf = call.getString("kf", "");
         final boolean remind = Boolean.TRUE.equals(call.getBoolean("remind", false));
         new Thread(() -> {
             try {
-                TkDrive.stage(c, data, name, n, kf, remind);
+                TkDrive.stage(c, data, name, n, nc, kf, remind);
                 call.resolve(driveStatusJS());
             } catch (Exception e) {
                 call.reject("Sauvegarde impossible : " + e.getMessage(), "fail");
@@ -327,9 +328,45 @@ public class TicketsNativePlugin extends Plugin {
         call.resolve(driveStatusJS());
     }
 
+    /** Liste des sauvegardes : { files: [{ id, created, n, c, d, kf, size }], dev } (la plus récente d'abord). */
+    @PluginMethod
+    public void driveList(final PluginCall call) {
+        final Context c = getContext();
+        new Thread(() -> {
+            try {
+                String token = TkDrive.silentToken(c);
+                if (token == null) { call.reject("Reconnecte ton compte Google", "auth"); return; }
+                String folder = TkDrive.ensureFolder(c, token);
+                List<JSONObject> l = TkDrive.list(token, folder);
+                JSArray a = new JSArray();
+                for (JSONObject f : l) {
+                    JSONObject ap = f.optJSONObject("appProperties");
+                    JSObject o = new JSObject();
+                    o.put("id", f.optString("id"));
+                    o.put("created", TkDrive.created(f));
+                    o.put("size", f.optString("size", ""));
+                    o.put("n", ap == null ? "" : ap.optString("n", ""));
+                    o.put("c", ap == null ? "" : ap.optString("c", ""));
+                    o.put("d", ap == null ? "" : ap.optString("d", ""));
+                    o.put("kf", ap == null ? "" : ap.optString("kf", ""));
+                    a.put(o);
+                }
+                TkDrive.prefs(c).edit().putInt("count", l.size()).apply();
+                JSObject r = new JSObject();
+                r.put("files", a);
+                r.put("dev", TkDrive.dev(c));
+                call.resolve(r);
+            } catch (Exception e) {
+                call.reject("Drive : " + e.getMessage(), "fail");
+            }
+        }).start();
+    }
+
+    /** Une sauvegarde ({ id }), sinon la plus récente : { data, name, created, count }. */
     @PluginMethod
     public void driveFetch(final PluginCall call) {
         final Context c = getContext();
+        final String want = call.getString("id", null);
         new Thread(() -> {
             try {
                 String token = TkDrive.silentToken(c);
@@ -338,6 +375,11 @@ public class TicketsNativePlugin extends Plugin {
                 List<JSONObject> l = TkDrive.list(token, folder);
                 if (l.isEmpty()) { call.reject("Aucune sauvegarde sur Drive", "none"); return; }
                 JSONObject f = l.get(0);
+                if (want != null) {
+                    f = null;
+                    for (JSONObject x : l) if (want.equals(x.optString("id"))) { f = x; break; }
+                    if (f == null) { call.reject("Sauvegarde introuvable sur Drive", "none"); return; }
+                }
                 JSObject r = new JSObject();
                 r.put("data", TkDrive.download(token, f.getString("id")));
                 r.put("name", f.optString("name", ""));

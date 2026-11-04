@@ -62,6 +62,14 @@ public class TkDrive {
     static SharedPreferences prefs(Context c) { return c.getSharedPreferences("tk_drive", Context.MODE_PRIVATE); }
     static File pendingFile(Context c) { return new File(c.getFilesDir(), "tk_drive_pending.txt"); }
 
+    /** Identifiant de ce téléphone (tiré au hasard, rien de personnel) : repère les sauvegardes d'un autre téléphone. */
+    static String dev(Context c) {
+        SharedPreferences p = prefs(c);
+        String d = p.getString("dev", null);
+        if (d == null) { d = java.util.UUID.randomUUID().toString().substring(0, 12); p.edit().putString("dev", d).apply(); }
+        return d;
+    }
+
     static AuthorizationRequest request() {
         List<Scope> s = Collections.singletonList(new Scope(SCOPE));
         return AuthorizationRequest.builder().setRequestedScopes(s).build();
@@ -175,7 +183,7 @@ public class TkDrive {
         return out;
     }
 
-    static JSONObject upload(String token, String folder, String name, byte[] data, String kf, int n) throws Exception {
+    static JSONObject upload(String token, String folder, String name, byte[] data, String kf, int n, int nc, String dev) throws Exception {
         JSONObject meta = new JSONObject();
         meta.put("name", name);
         meta.put("mimeType", "text/plain");
@@ -184,6 +192,8 @@ public class TkDrive {
         ap.put("tk", "1");
         ap.put("kf", kf == null ? "" : kf);
         ap.put("n", String.valueOf(n));
+        ap.put("c", String.valueOf(nc));
+        ap.put("d", dev == null ? "" : dev);
         meta.put("appProperties", ap);
         String b = "tkdrive" + System.currentTimeMillis();
         ByteArrayOutputStream body = new ByteArrayOutputStream();
@@ -255,7 +265,7 @@ public class TkDrive {
 
     // ---------- préparer, envoyer, rappeler ----------
     /** Le fichier chiffré est écrit sur le téléphone ; l'envoi part dès que le réseau est là. */
-    static void stage(Context c, String data, String name, int n, String kf, boolean remind) throws IOException {
+    static void stage(Context c, String data, String name, int n, int nc, String kf, boolean remind) throws IOException {
         File f = pendingFile(c), tmp = new File(c.getFilesDir(), "tk_drive_pending.tmp");
         try (FileOutputStream o = new FileOutputStream(tmp)) { o.write(data.getBytes(StandardCharsets.UTF_8)); }
         if (!tmp.renameTo(f)) throw new IOException("écriture impossible");
@@ -264,6 +274,7 @@ public class TkDrive {
                 .putLong("seq", p.getLong("seq", 0) + 1)
                 .putString("pname", name)
                 .putInt("pn", n)
+                .putInt("pc", nc)
                 .putString("kf", kf)
                 .putBoolean("remind", remind);
         if (p.getLong("pendingSince", 0) == 0) e.putLong("pendingSince", System.currentTimeMillis());
@@ -310,7 +321,7 @@ public class TkDrive {
             String token = silentToken(c);
             if (token == null) throw new DriveErr("accord à redonner", true, false);
             String folder = ensureFolder(c, token);
-            upload(token, folder, p.getString("pname", "tickets.tkb"), data, p.getString("kf", ""), p.getInt("pn", 0));
+            upload(token, folder, p.getString("pname", "tickets.tkb"), data, p.getString("kf", ""), p.getInt("pn", 0), p.getInt("pc", 0), dev(c));
             SharedPreferences.Editor e = p.edit()
                     .putLong("lastOk", System.currentTimeMillis())
                     .putLong("lastSize", data.length)
@@ -318,13 +329,26 @@ public class TkDrive {
                     .remove("err");
             boolean done = p.getLong("seq", 0) == seq;
             if (done) e.remove("pendingSince");
+            if (p.getLong("since", 0) == 0) e.putLong("since", System.currentTimeMillis());
             e.apply();
             if (done) {
                 //noinspection ResultOfMethodCallIgnored
                 f.delete();
                 WorkManager.getInstance(c).cancelUniqueWork(CHECK);
             }
-            try { p.edit().putInt("count", prune(c, token, list(token, folder))).apply(); } catch (Exception ignored) {}
+            try {
+                List<JSONObject> all = list(token, folder);
+                // un autre téléphone envoie aussi ses sauvegardes ici (après la 1re sauvegarde de celui-ci)
+                long since = p.getLong("since", 0), other = p.getLong("otherAt", 0);
+                String me = dev(c);
+                for (JSONObject f : all) {
+                    JSONObject ap = f.optJSONObject("appProperties");
+                    String d = ap == null ? "" : ap.optString("d", "");
+                    long t = created(f);
+                    if (!d.isEmpty() && !d.equals(me) && t > since && t > other) other = t;
+                }
+                p.edit().putLong("otherAt", other).putInt("count", prune(c, token, all)).apply();
+            } catch (Exception ignored) {}
             return null;
         } catch (DriveErr e) {
             p.edit().putString("err", e.auth ? "auth" : ("fail:" + e.getMessage())).apply();
@@ -357,6 +381,8 @@ public class TkDrive {
             o.put("pendingSince", pendingFile(c).exists() ? p.getLong("pendingSince", 0) : 0);
             o.put("count", p.getInt("count", 0));
             o.put("err", p.getString("err", ""));
+            o.put("dev", dev(c));
+            o.put("otherAt", p.getLong("otherAt", 0));
         } catch (Exception ignored) {}
         return o;
     }

@@ -96,7 +96,7 @@ with sync_playwright() as p:
         pg.route("**/*", lambda r: r.continue_() if r.request.url.startswith("file:") else r.abort())
         pg.goto(url); pg.wait_for_timeout(1200)   # laisser le 1er démarrage (vide) se terminer avant d'écrire les données
         for _ in range(3):
-            pg.evaluate("d=>{localStorage.clear(); for(const k in d) localStorage.setItem(k, JSON.stringify(d[k]));}", data); pg.reload(); pg.wait_for_timeout(1500)
+            pg.evaluate("d=>{localStorage.clear(); for(const k in d) localStorage.setItem(k, JSON.stringify(d[k]));}", data); pg.wait_for_timeout(600); pg.reload(); pg.wait_for_timeout(1500)
             if not pg.locator(".sheet-overlay").count(): break
         return pg
     pg=page()
@@ -131,7 +131,7 @@ with sync_playwright() as p:
     pg.locator("#hback").click(); pg.wait_for_timeout(400)
     n0=len(calls(pg, "stage")); hide(pg); show(pg)
     check(len(calls(pg, "stage"))==n0, "quitter sans rien changer : rien de préparé")
-    pg.evaluate("()=>{ var e=JSON.parse(localStorage.getItem('entries')); e.push({id:3,date:'2026-10-29',marchand:'Pharmacie',montant:12,categorie:'Santé',payePar:'Alex',articles:[]}); localStorage.setItem('entries', JSON.stringify(e)); }")
+    pg.evaluate("()=>{ var e=JSON.parse(localStorage.getItem('entries')); e.push({id:3,date:'2026-10-29',marchand:'Pharmacie',montant:12,categorie:'Santé',payePar:'Alex',articles:[]}); localStorage.setItem('entries', JSON.stringify(e)); }"); pg.wait_for_timeout(600)
     pg.reload(); pg.wait_for_timeout(1500)
     hide(pg); G=calls(pg, "stage")
     check(len(G)==n0+1 and G[-1]["n"]==3, "un ticket de plus puis quitter : nouvelle sauvegarde préparée (3 tickets)")
