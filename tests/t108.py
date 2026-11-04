@@ -79,7 +79,7 @@ with sync_playwright() as p:
         t=norm(pg.locator("#app").inner_text())
         check("Lue comme les précédentes factures de ce fournisseur" in t and "1re facture" not in t, "bandeau « ✓ Lue comme les précédentes factures de ce fournisseur »")
         # la sauvegarde garde ce qui a été appris
-        check('"factAppris"' in H.split("function backupData")[1][:900], "la sauvegarde contient factAppris")
+        check('"factAppris"' in H.split("function backupDump")[1][:900], "la sauvegarde contient factAppris")
     check(not errs, "pas d'erreur %s"%errs[:3])
     b.close()
 print("\n%d échec(s)"%len(fails)); sys.exit(1 if fails else 0)

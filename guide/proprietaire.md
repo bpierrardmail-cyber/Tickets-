@@ -161,7 +161,7 @@ Menu › Réglages › Rappels (appli Android) : des notifications sur ton tél�
 - **Prélèvement ou facture demain** : la veille, avec le montant et le compte.
 - **Virement** à faire ou attendu : le jour même, s'il n'est pas encore « fait ».
 - **Budget** : à 80 %, puis s'il est dépassé ; une seule fois par mois.
-- **Sauvegarde** : si la dernière a plus de 7 jours.
+- **Sauvegarde** : si la dernière a plus de 7 jours ; avec la sauvegarde Drive, si elle n'est pas partie depuis 24 h.
 - Tu choisis l'heure. Rien ne s'affiche sur l'écran verrouillé ; touche un rappel pour ouvrir l'écran qui le concerne.
 
 ## Photos et sauvegardes
@@ -170,6 +170,8 @@ Tes données sont seulement sur ton téléphone : si tu le perds, seule une sauv
 
 **Sauvegarder** (Menu › Sauvegarder)
 
+- ✦ **Sauvegarde sur Google Drive** (appli Android) : activée une fois, elle part toute seule quand tu quittes l'appli, dès qu'il y a du réseau. Chiffrée sur ton téléphone, sans photos ; l'appli ne voit que son dossier « Tickets – sauvegardes ». Garde bien le **code de secours** montré à l'activation (le même que celui du foyer si tu en as un) : sans lui, une sauvegarde ne peut pas être ouverte.
+- Si un envoi n'est pas parti, la ligne du menu passe en rouge, et un bandeau s'affiche sur l'accueil au bout d'une heure. « Vérifier » ouvre la dernière sauvegarde sans rien changer ; « Wi-Fi seulement » et les durées de conservation se règlent dans le même écran.
 - **Sauvegarde complète** : données et photos des tickets, dans un fichier ZIP. À faire de temps en temps.
 - **Données seules** : un petit fichier, sans photos. Pour tous les jours.
 - Garde le fichier sur le téléphone (Documents/Tickets) ou envoie-le ailleurs (Google Drive, mail, ordinateur). Le mieux : ailleurs.

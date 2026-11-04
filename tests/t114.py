@@ -120,7 +120,7 @@ with sync_playwright() as p:
     check(old not in D["photos"] and lib and not lib[0].get("photo") and pg.locator('.sto-yh[data-y="2023"]').count()==0, "« Supprimer » 2023 : photo effacée, le ticket reste")
     # ---------- 4. sauvegardes
     pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="backup"]').click(); pg.wait_for_timeout(300)
-    s=norm(pg.locator(".sheet-overlay").last.inner_text()); check("Sauvegarde complète · données + 3 photos" in s and "Données seules" in s, "Sauvegarder : complète (3 photos) ou données seules")
+    s=norm(pg.locator(".sheet-overlay").last.inner_text()); check("Sauvegarde complète" in s and "Données + 3 photos" in s and "Données seules" in s, "Sauvegarder (appli Android) : Google Drive, complète (3 photos) ou données seules")
     with pg.expect_download(timeout=30000) as dl: pg.locator(".sheet-overlay button", has_text="Sauvegarde complète").click()
     ZP=os.path.join(TMP, dl.value.suggested_filename); dl.value.save_as(ZP); pg.wait_for_timeout(400)
     z=zipfile.ZipFile(ZP); names=z.namelist(); print("  zip :", names)

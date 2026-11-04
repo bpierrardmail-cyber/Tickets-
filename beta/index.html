@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="04/11 06:36" />
+  <meta name="build" content="04/11 18:19" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -1166,6 +1166,31 @@
     .rec-row .ry small{ display:block; font-family:var(--sans); font-size:10px; color:var(--muted); }
     .bk-banner{ display:flex; align-items:center; gap:12px; background:rgba(230,180,80,.09); border:1px solid rgba(230,180,80,.35); border-radius:16px; padding:11px 13px; margin-bottom:12px; font-size:12.5px; color:var(--ink); }
     .bk-banner div{ flex:1; line-height:1.35; }
+    .bk-banner.drv{ background:rgba(244,121,107,.10); border-color:rgba(244,121,107,.38); }
+    .bk-banner .drv-x{ flex:0 0 auto; background:none; border:0; color:var(--muted); font-size:17px; padding:4px 6px; }
+    .drv-card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:13px 14px; margin-top:12px; }
+    .drv-stat{ display:flex; gap:12px; align-items:center; }
+    .drv-dot{ width:11px; height:11px; border-radius:50%; flex:0 0 auto; background:var(--accent); box-shadow:0 0 0 4px rgba(79,214,160,.14); }
+    .drv-dot.c{ background:var(--coral); box-shadow:0 0 0 4px rgba(244,121,107,.14); }
+    .drv-dot.n{ background:var(--muted); box-shadow:none; }
+    .drv-big{ font-size:16px; font-weight:650; }
+    .drv-sub{ font-size:12px; color:var(--muted); margin-top:2px; }
+    .drv-kv{ display:flex; justify-content:space-between; gap:10px; font-size:13px; padding:7px 0; border-top:1px solid var(--line); }
+    .drv-kv:first-child{ border-top:0; }
+    .drv-kv span:first-child{ color:var(--ink-soft); }
+    .drv-kv span:last-child{ font-family:var(--mono); font-size:12.5px; text-align:right; word-break:break-all; }
+    .drv-prog{ height:6px; border-radius:99px; background:var(--card2); overflow:hidden; margin-top:11px; }
+    .drv-prog i{ display:block; height:100%; width:40%; background:var(--accent); border-radius:99px; animation:drvGo 1.4s ease-in-out infinite; }
+    @keyframes drvGo{ 0%{ transform:translateX(-100%); } 100%{ transform:translateX(250%); } }
+    @media (prefers-reduced-motion:reduce){ .drv-prog i{ animation:none; width:60%; } }
+    .drv-bul{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:8px; }
+    .drv-bul li{ display:flex; gap:9px; font-size:13.5px; line-height:1.4; color:var(--ink-soft); }
+    .drv-bul li i{ font-style:normal; color:var(--accent); flex:0 0 14px; }
+    .drv-bul li b{ color:var(--ink); }
+    .drv-seg{ display:flex; gap:6px; flex-wrap:wrap; margin:6px 0 12px; }
+    .drv-seg button{ font:inherit; font-size:13px; border:1px solid var(--line2); background:var(--card2); color:var(--ink-soft); border-radius:999px; padding:6px 12px; font-family:var(--mono); }
+    .drv-seg button.on{ border-color:var(--accent); color:var(--accent); background:rgba(79,214,160,.10); }
+    .drv-err{ color:var(--coral); font-size:12.5px; min-height:16px; margin-top:6px; }
     .bk-banner .btn{ flex:0 0 auto; padding:8px 12px; font-size:12px; }
     /* Écran de verrouillage */
     #lockscreen{ position:fixed; inset:0; z-index:300; background:var(--bg0); display:flex; align-items:center; justify-content:center; padding:24px; }
@@ -1402,7 +1427,7 @@
                fyM ? row("perso","🔒","Mes comptes","privé") : "",
                (plusOffer() && !fyM) ? row("plus","✦","Tickets Plus","découvrir","#f2c76b") : "",
                fyFull ? row("persons","👥","Personnes",plist.length+" personne"+(plist.length>1?"s":"")) : "",
-               !fyM ? row("backup","💾","Sauvegarder",bk.label,(bk.days===null || bk.days>=7)?"var(--coral)":"var(--accent)") : "",
+               !fyM ? (drvOn() ? row("backup","💾","Sauvegarder",drvMenuLabel().t,drvMenuLabel().col) : row("backup","💾","Sauvegarder",bk.label,(bk.days===null || bk.days>=7)?"var(--coral)":"var(--accent)")) : "",
                row("stockage","🗂️","Stockage",fmtBytes(photosBytes()+dataBytes())) ]);
       h+=grp([ row("pdf","📄","Exporter","PDF ou tableur") ]);
       h+=grp([ row("aide","❓","Aide","accueil, guide"), row("settings","⚙️","Réglages",[fyFull?"devise":"", "rappels", "code", !fyM?"restaurer":""].filter(function(x){ return x; }).join(", "),"",true) ]);
@@ -1661,7 +1686,7 @@
     var FEAT={ bourse: EDITION!=="store" };
     // Version Plus (achat dans l'appli Store) : la liste des fonctions réservées sera remplie quand le partage
     // gratuit / Plus sera décidé. Tant qu'elle est vide, tout est ouvert.
-    var PLUS_FEATURES=["widgets","foyer","avancee","factures","equilibre","groupes"];   // à compléter (par ex. "scan", "provisions", "epargne")
+    var PLUS_FEATURES=["widgets","foyer","avancee","factures","equilibre","groupes","drive"];   // à compléter (par ex. "scan", "provisions", "epargne")
     function plusUnlocked(){ return EDITION!=="store" || !!store.read("plusUnlocked", false); }
     function canUse(f){ return PLUS_FEATURES.indexOf(f)<0 || plusUnlocked(); }
     function mainAcct(){ return comptes.filter(function(c){ return c.main; })[0] || comptes[0]; }
@@ -3599,7 +3624,7 @@
       var when=backupAge().label;
       return { col:col, label:"sauvegardé "+when };
     }
-    var VIEW_TITLES={ import:"Import", avancee:"Analyse avancée", list:"Accueil", form:"Ticket", articles:"Articles", produits:"Produits & catégories", graph:"Analyse", history:"Analyse", analyse:"Analyse", month:"Analyse", artDetail:"Articles", communes:"Commun", compte:"Compte", bourse:"Bourse", gallery:"Galerie", photo:"Photo", patrimoine:"Patrimoine", provisions:"Provisions", bilan:"Bilan", foyer:"Foyer partagé" };
+    var VIEW_TITLES={ drive:"Sauvegarde Drive", import:"Import", avancee:"Analyse avancée", list:"Accueil", form:"Ticket", articles:"Articles", produits:"Produits & catégories", graph:"Analyse", history:"Analyse", analyse:"Analyse", month:"Analyse", artDetail:"Articles", communes:"Commun", compte:"Compte", bourse:"Bourse", gallery:"Galerie", photo:"Photo", patrimoine:"Patrimoine", provisions:"Provisions", bilan:"Bilan", foyer:"Foyer partagé" };
     function capFirst(t){ t=String(t||""); return t.charAt(0).toUpperCase()+t.slice(1); }
     // Onglet Dépenses : Tickets (vue « tickets ») · Produits et Budgets (vue « articles ») · Analyse (vue « analyse »)
     // Foyer : Produits et Budgets suivent les droits de l'ancien onglet Articles, Analyse ceux d'Analyse ; Tickets est toujours là.
@@ -3714,6 +3739,7 @@
       if(state.view==="gallery") return renderGallery();
       if(state.view==="photo") return renderPhoto();
       if(state.view==="stockage") return renderStockage();
+      if(state.view==="drive") return renderDrive();
       if(state.view==="aide") return renderAide();
       if(state.view==="groupe") return renderGroupe();
       if(state.view==="corbeille") return renderCorbeille();
@@ -4254,8 +4280,9 @@
         }
 
         // --- Rappel de sauvegarde
-        var bkAge=backupAgeDays();
-        if(!fyMember() && (bkAge===null || bkAge>=7)){
+        var bkAge=backupAgeDays(), drvB=drvBannerHTML();
+        if(drvB) h += drvB;
+        else if(!fyMember() && !drvOn() && (bkAge===null || bkAge>=7)){
           h += '<div class="bk-banner"><span style="font-size:20px">💾</span><div>'+(bkAge===null?'<b>Aucune sauvegarde</b> de tes données pour l\'instant.':'<b>Dernière sauvegarde il y a '+bkAge+' jours.</b>')+'<br><span style="color:var(--ink-soft);font-size:11px">'+(capNative()?"Si l\'appli est désinstallée, tout serait perdu.":"Si le navigateur se vide, tout serait perdu.")+'</span></div><button class="btn primary" id="bkNow" type="button">Sauvegarder</button></div>';
         }
 
@@ -4459,6 +4486,7 @@
         else { state.view=g; render(); window.scrollTo(0,0); } }; });
       var be=document.getElementById("budEdit"); if(be) be.onclick=function(ev){ ev.stopPropagation(); editBudgets(month); };
       var bkn=document.getElementById("bkNow"); if(bkn) bkn.onclick=backupData;
+      drvBannerWire();
       var rt=document.getElementById("recToggle"); if(rt) rt.onclick=function(){ state.recOpen=!state.recOpen; render(); };
       var gf=document.getElementById("goFrais"); if(gf) gf.onclick=function(){ state.view="communes"; render(); };
       var gb=document.getElementById("goBilan"); if(gb) gb.onclick=function(){ state.bilanMonth=month; state.bilanFrom=month; state.bilanTo=month; state.view="bilan"; render(); window.scrollTo(0,0); };
@@ -10546,10 +10574,15 @@
       state.factDraft=null; state.factKey=key; state.view="factserie"; render(); window.scrollTo(0,0);
       uiToast("Facture ajoutée"+histTxt+(made.length?" · "+made.join(", "):"")+(learnt?" · lecture retenue pour "+p.four:""));
     }
-    function backupData(mode){
+    function backupDump(){
       var keys=["entries","cats","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","factAppris","releve","tkAppris","photoKeep","commRemb","groupes","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"];
       var dump={ _app:"tickets", _version:1, _date:new Date().toISOString(), data:{} };
       keys.forEach(function(k){ var v=store.read(k, null); if(v!==null) dump.data[k]=v; });
+      return dump;
+    }
+    function backupData(mode){
+      if(mode!=="data" && mode!=="full" && drvAvail()){ backupMenu(); return; }
+      var dump=backupDump();
       // deux sauvegardes : complète (ZIP : données + photos d'origine) ou données seules (petit fichier JSON, sans photos)
       var nph=photoEntries().length;
       if(mode!=="data" && mode!=="full"){
@@ -10896,7 +10929,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       argentMois:2, liquideMois:2, soldeInit:2, budgets:1, budgetsP:2, appris:1, familleDe:1, communParts:0, commRemb:"id", groupes:"id", cats:0, familles:0, produits:0, devise:0 };
     var FY_OWNER_ONLY={ bourse:1 };   // la Bourse se gère depuis le téléphone du propriétaire (cours mis à jour en continu)
     var FY_TABS=[{v:"list",l:"Accueil"},{v:"articles",l:"Dépenses : produits"},{v:"analyse",l:"Dépenses : analyse"},{v:"compte",l:"Compte"},{v:"factures",l:"À venir"},{v:"communes",l:"Commun"}].concat(FEAT.bourse?[{v:"bourse",l:"Bourse"}]:[]);
-    var FY_SUB={ tickets:"list", aide:"list", groupe:"communes", corbeille:"list", stockage:"list", import:"compte", avancee:"analyse", epargne:"compte", form:"list", gallery:"list", photo:"list", produits:"articles", artDetail:"articles", comptedet:"compte", patrimoine:"compte", provisions:"factures", factlue:"factures", factserie:"factures", month:"analyse", graph:"analyse", history:"analyse" };
+    var FY_SUB={ drive:"list", tickets:"list", aide:"list", groupe:"communes", corbeille:"list", stockage:"list", import:"compte", avancee:"analyse", epargne:"compte", form:"list", gallery:"list", photo:"list", produits:"articles", artDetail:"articles", comptedet:"compte", patrimoine:"compte", provisions:"factures", factlue:"factures", factserie:"factures", month:"analyse", graph:"analyse", history:"analyse" };
     var FY_SEP="\u001f", FY_SKIP={};
     function fyRole(){ return fyCfg ? fyCfg.role : null; }
     function fyMember(){ return !!fyCfg && fyCfg.role!=="owner"; }
@@ -11538,7 +11571,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       if(!fyPlusOk()) return;
       if(!window.crypto || !crypto.subtle){ uiToast("Foyer partagé indisponible sur ce navigateur"); return; }
       uiConfirm("Créer ton foyer partagé ?<br><small style=\"color:var(--ink-soft)\">Tu en es le propriétaire : tes données restent sur ton téléphone, chaque membre reçoit une copie chiffrée de ce que tu choisis. Un code et ton empreinte seront demandés à l'ouverture de Tickets.</small>", function(){
-        var sec=randBytes(16);
+        var ds=store.read("driveSec", null), sec=ds ? fyUnb64u(ds) : randBytes(16);   // même code que la sauvegarde Drive
         fyFromSecret(sec).then(function(o){
           return fySha(o.tok).then(function(hh){ return fyCall("POST","/create",{ fid:o.fid, otok:hh }, true); }).then(function(r){
             if(r.status!==200) throw new Error(r.j.error||("relais "+r.status));
@@ -11895,7 +11928,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       var n=0; (function wait(){ if(document.getElementById("lockscreen") || document.querySelector(".sheet-overlay")){ if(++n<240) setTimeout(wait, 500); return; } welcomeShow(null); })();
     }
     // ---------- Aide : le guide (guide/*.md, mis dans la page par guide/maj.py), lisible sans réseau ----------
-    /* GUIDE-DEBUT */ var GUIDE={"proprietaire": [{"t": "Pour commencer", "h": "<p>Tickets garde tout sur ton téléphone : pas de compte à créer, pas besoin d'internet.</p><ol><li><b>Ton prénom</b> : demandé au premier démarrage. Il sert pour « Payé par » et pour partager les dépenses. Tu peux le changer dans Menu › Personnes.</li><li><b>Les personnes du foyer</b> : Menu › Personnes. Ajoute chaque personne qui paie ou pour qui tu dépenses.</li><li><b>Ton compte</b> : un compte courant est créé tout seul, c'est ton compte principal. Pour en ajouter un autre ou le modifier : onglet Compte, puis la roue ⚙ en haut à droite.</li></ol><p><b>L'écran d'accueil</b></p><ul><li>En haut, les graphiques que tu choisis : ⚙ Choisir, ou un appui long sur une carte pour la changer, la déplacer ou la masquer.</li><li>« ✍️ Saisie » note une dépense à la main ; « 🧾 Tickets » ouvre la liste du mois.</li><li>Le bouton en haut à droite choisit qui tu regardes : toi, une personne, ou tout le foyer.</li><li>En bas, le bouton <b>Scan</b> pour photographier un ticket.</li></ul><p>Tu peux revoir l'accueil de l'appli dans Menu › Aide. Les fonctions marquées ✦ font partie de Tickets Plus : Menu › ✦ Tickets Plus les présente toutes.</p>"}, {"t": "Scanner un ticket", "h": "<p>Touche <b>Scan</b> en bas de l'écran, puis « Prendre une photo » ou « Choisir dans la galerie ». Le ticket est lu sur le téléphone, rien ne part sur internet.</p><p><b>Pour une bonne lecture</b></p><ul><li>Ticket à plat, bien éclairé, pris en entier.</li><li>Un ticket très long : prends-le en plusieurs photos.</li><li>Sur Android, le scanner recadre et redresse la photo tout seul.</li></ul><p><b>Vérifier avant d'enregistrer</b></p><ul><li>Le montant, le magasin et la date sont remplis. Regarde le montant en premier.</li><li>Ce qui est en orange est à vérifier : un article sans prix, un produit vide, un écart entre les articles et le total.</li><li>Si la carte bancaire ou la TVA du ticket donnent un autre total, l'appli le dit et propose « Prendre … € ».</li><li>La photo reste avec le ticket : touche la vignette à côté du montant pour la revoir.</li><li>Les catégories les plus utilisées sont montrées ; « Autres ▾ » les affiche toutes.</li><li>« Options » (replié) : le compte (Auto = celui de la personne qui a payé), le groupe, le partage. La ligne résume ce qui est choisi.</li></ul><p><b>Ce que l'appli apprend</b></p><ul><li>Le 1er ticket d'un magasin demande parfois une correction du total : l'appli retient où il était et lit les suivants au même endroit.</li><li>Chaque article reçoit le produit que tu lui as donné la dernière fois (lait, pain…). Chaque personne a les siens.</li></ul><p><b>Sans ticket</b> : « ✍️ Saisie » sur l'accueil pour noter une dépense à la main.</p><p><b>Partager une dépense</b> : Options › Partage, « Qui paie ce ticket ? »</p><ul><li><b>Seulement</b> la personne qui a payé : pas partagé (par défaut).</li><li><b>Le commun du foyer</b> : chacun selon sa part (Commun › Parts).</li><li><b>Certaines personnes</b> : en parts égales ou ajustées. Exemple : un resto à 3 sur une famille de 5.</li><li>Pour ne partager qu'une partie du ticket : « partager cet article » sur les articles concernés.</li></ul><p><b>Supprimer un ticket</b> : ⋯ en haut de la fiche › Supprimer, ou un appui long sur le ticket dans une liste. Il part dans la <b>corbeille</b> (Dépenses › Tickets, en bas) : « Annuler » tout de suite, ou « Remettre » pendant 30 jours, avec sa photo. Après 30 jours, il est supprimé pour de bon.</p><p>Un appui long sur un ticket, dans n'importe quelle liste, propose Ouvrir ou Supprimer.</p>"}, {"t": "Dépenses", "h": "<p>L'onglet Dépenses a quatre parties, en boutons sous le titre.</p><ul><li><b>Tickets</b> : les tickets du mois, avec la recherche et le calendrier. En bas, « Photos des tickets » ouvre la galerie, rangée par mois.</li><li><b>Produits</b> : ce que tu achètes et à quel prix. Mes produits, Hausses (ce qui augmente), Magasins (où c'est le moins cher), Familles. Touche un produit pour voir tous ses achats.</li><li><b>Budgets</b> : un budget par catégorie, pour le foyer ou par personne. L'appli montre où tu en es dans le mois.</li><li><b>Analyse</b> : tes dépenses par mois, par catégorie, les dépenses qui reviennent et qui a payé. « + Frais fixes » ajoute les loyers, abonnements… pour voir tout ce qui sort vraiment.</li></ul><p>✦ <b>Analyse avancée</b> (Tickets Plus) : ton inflation personnelle comparée à celle de l'INSEE, cette année contre l'an dernier, les alertes, le reste à vivre, des pistes d'économies.</p><p>Le bouton personne, en haut à droite, choisit les dépenses montrées dans Produits et Analyse : les tiennes, celles d'une personne, ou tout le foyer.</p>"}, {"t": "Compte", "h": "<p>L'onglet Compte montre ton compte en banque comme un relevé : tickets, frais fixes et virements du mois, jour par jour, avec le solde du soir.</p><p><b>Opérations</b></p><ul><li>En haut, le solde estimé, puis Entrées, Sorties et Fin de mois.</li><li>Filtres Tout, Entrées, Sorties, À venir ; la recherche trouve un nom ou un montant, avec le total.</li><li>Le bloc « À venir » liste ce qui n'est pas encore passé. Touche le rond quand c'est fait : l'appli note le jour.</li><li>« ＋ Ajouter » : un virement reçu ou envoyé, un frais fixe, un ticket.</li><li>Touche un virement pour le modifier, le reprendre le mois suivant (ou chaque mois), ou le passer en frais fixe.</li></ul><p><b>Épargne</b> : tes livrets et ce que tu y mets chaque mois.</p><p><b>Graphiques</b> : ce mois, dépenses, solde, entrées et sorties, épargne, provisions. Touche une barre pour voir le détail.</p><p><b>La roue ⚙ du compte</b> : modifier le compte, le solde reporté, importer un relevé, annuler le dernier import.</p><p><b>Importer un relevé de banque</b></p><p>Télécharge le relevé sur le site de ta banque (fichier OFX, QIF ou CSV), puis roue ⚙ › Importer un relevé. Tout est lu sur le téléphone.</p><ul><li>Les paiements par carte deviennent des tickets, les prélèvements des frais fixes, le reste des virements.</li><li>Ce qui est déjà dans l'appli est repéré et n'est pas compté deux fois. Un ticket au même nom avec un total un peu différent est corrigé.</li><li>Tu peux décocher une ligne ou changer son type avant de valider.</li><li>« Annuler le dernier import » remet tout comme avant.</li></ul>"}, {"t": "À venir", "h": "<p>L'onglet À venir montre ce qui va sortir de tes comptes. Il a quatre parties.</p><ul><li><b>12 mois</b> : les mois à venir avec ce qui est prévu, et « À payer bientôt ». « Tes comptes dans 12 mois » ouvre la projection.</li><li><b>Frais fixes</b> : loyer, électricité, abonnements… Chaque mois, ou une seule fois. Pour un frais commun, il est payé par un compte en entier, ou chacun paie sa part.</li><li><b>Provisions</b> : l'argent mis de côté chaque mois pour une grosse dépense (taxe foncière, assurance, vacances). La mise de côté apparaît dans les frais fixes. Le graphique montre ce qui est déjà de côté et ce qui est prévu ; l'appli propose un montant mensuel si une provision ne suffit pas.</li><li>✦ <b>Factures</b> (Tickets Plus) : importe tes factures, par PDF ou en photos.</li></ul><p><b>Importer une facture</b></p><ul><li>Un PDF se lit mieux qu'une photo. Tu peux en importer plusieurs d'un coup.</li><li>En photos : une photo par page ; plusieurs factures mélangées sont retrouvées et rangées.</li><li>Rien n'est enregistré avant « Appliquer » : vérifie le fournisseur, la date et le montant.</li><li>La 1re facture d'un fournisseur peut demander une correction : l'appli retient où lire et lit les suivantes au même endroit.</li><li>Si un relevé a été importé, l'appli vérifie le montant avec ta banque.</li><li>L'appli estime la prochaine facture (selon la saison pour l'énergie) et peut la payer avec une provision.</li></ul>"}, {"t": "Commun", "h": "<p>L'onglet Commun montre combien chacun doit payer des frais communs du mois.</p><ul><li><b>Les parts</b> : la part de chacun dans le commun, en %. Un frais peut avoir ses propres parts.</li><li><b>Frais communs</b> : ceux du mois. Pour les modifier, le lien mène à À venir › Frais fixes.</li><li><b>Produits partagés</b> : les articles marqués « Dépense commune » sur les tickets, et ta part.</li></ul><p>Les parts ne changent pas les soldes de tes comptes : elles disent seulement qui doit combien. Touche le titre d'une partie pour l'ouvrir ou la fermer.</p><p><b>✦ Qui doit combien à qui</b> (Tickets Plus), en haut de l'onglet :</p><ul><li>une barre par personne : ce qu'elle a vraiment payé pour le commun ; le trait marque sa part ;</li><li>le résultat : « Marie te doit 220 € », ou, à plusieurs, le moins de remboursements possible ;</li><li>« Remboursé » : avec un virement (tu choisis les comptes) ou sans virement (liquide) ; un remboursement peut être partiel ;</li><li>ce qui reste d'un mois passe au suivant ; l'historique garde tous les remboursements.</li></ul><p>Compte comme payé pour le commun : les frais communs (selon le compte qui les paie) et les articles « Dépense commune » des tickets.</p><p><b>✦ Groupes</b> (Tickets Plus), en bas de l'onglet : pour un voyage ou une sortie, même avec des amis qui n'ont pas l'appli.</p><ul><li>« ＋ Nouveau groupe » : un nom, les personnes du foyer à cocher, les autres prénoms séparés par des virgules ;</li><li>« ＋ Dépense » : scanner un ticket, le saisir, prendre un ticket déjà enregistré, ou une dépense sans ticket (quoi, combien, payé par qui) ; un ticket ajouté depuis le groupe va aussi dans tes dépenses ; sur la fiche d'un ticket, « Groupe » le met dans un groupe ou l'en retire ;</li><li>chaque dépense est partagée à parts égales entre tout le groupe, ou seulement entre certaines personnes : touche la dépense › « Pour qui ? » ; les barres et « qui doit combien à qui » marchent comme pour le commun ;</li><li>toucher une dépense : « Pour qui ? », « Ouvrir le ticket » ou « Retirer du groupe » (le ticket reste dans tes dépenses) ; une dépense sans ticket : Modifier ou Supprimer ;</li><li>« Remboursé » : avec un virement entre les comptes du foyer, ou sans virement ;</li><li>« Envoyer le récap » : un texte à envoyer par SMS ou WhatsApp ; « ⋯ » pour changer les participants, clore ou supprimer le groupe.</li></ul>"}, {"t": "Foyer partagé", "h": "<p>✦ Tickets Plus. Ton téléphone reste le centre : il garde toutes les données et envoie à chaque membre seulement ce que tu partages avec lui. Les données sont chiffrées : personne d'autre ne peut les lire.</p><ol><li>Menu › Foyer partagé, puis crée ton foyer.</li><li>Ajoute un membre : choisis la personne, puis ses droits.</li><li>Il scanne le QR code avec Tickets (« Rejoindre un foyer » au premier démarrage). Rejoindre un foyer est gratuit.</li></ol><p><b>Les droits, onglet par onglet</b> : Masqué, Lecture ou Modif. Tu choisis aussi les comptes qu'il voit, et s'il voit tous les tickets du foyer ou seulement les siens. Un enfant est en lecture seule.</p><p><b>Code et empreinte</b> : obligatoires sur tous les téléphones du foyer. Garde bien ton code de récupération (26 caractères) : il permet de retrouver ton foyer sur un nouveau téléphone.</p><p>Retirer un membre coupe son accès tout de suite. Ses tickets déjà arrivés chez toi restent ; ce qu'il a ajouté depuis sa dernière mise à jour serait perdu : vérifie qu'il est « à jour » avant (l'appli te prévient). Pour juste le reconnecter, « Nouveau téléphone : nouveau QR code » suffit.</p>"}, {"t": "Rappels", "h": "<p>Menu › Réglages › Rappels (appli Android) : des notifications sur ton téléphone, même appli fermée et sans internet.</p><ul><li><b>Prélèvement ou facture demain</b> : la veille, avec le montant et le compte.</li><li><b>Virement</b> à faire ou attendu : le jour même, s'il n'est pas encore « fait ».</li><li><b>Budget</b> : à 80 %, puis s'il est dépassé ; une seule fois par mois.</li><li><b>Sauvegarde</b> : si la dernière a plus de 7 jours.</li><li>Tu choisis l'heure. Rien ne s'affiche sur l'écran verrouillé ; touche un rappel pour ouvrir l'écran qui le concerne.</li></ul>"}, {"t": "Photos et sauvegardes", "h": "<p>Tes données sont seulement sur ton téléphone : si tu le perds, seule une sauvegarde les fait revenir.</p><p><b>Sauvegarder</b> (Menu › Sauvegarder)</p><ul><li><b>Sauvegarde complète</b> : données et photos des tickets, dans un fichier ZIP. À faire de temps en temps.</li><li><b>Données seules</b> : un petit fichier, sans photos. Pour tous les jours.</li><li>Garde le fichier sur le téléphone (Documents/Tickets) ou envoie-le ailleurs (Google Drive, mail, ordinateur). Le mieux : ailleurs.</li></ul><p><b>Restaurer</b> (Menu › Réglages › Restaurer une sauvegarde) : choisis le fichier ZIP ou JSON. Il remplace les données du téléphone.</p><p><b>Les photos des tickets</b></p><ul><li>Elles sont gardées en qualité d'origine, pour pouvoir les relire.</li><li>Menu › Stockage montre la place prise, année par année, mois par mois.</li><li>Pour faire de la place : « Supprimer » sur un mois ou une année, ou ⋯ dans la galerie. Les tickets restent ; seules leurs photos partent.</li><li>« Garder les photos d'origine » : Toujours, 5 ans ou 2 ans. Au-delà, une petite photo reste.</li><li>La galerie photo du téléphone est à part : Tickets n'y touche jamais.</li></ul>"}, {"t": "Questions fréquentes", "h": "<p><b>Le total lu est faux.</b> Corrige le montant avant d'enregistrer, ou touche « Prendre … € » si l'appli propose le bon. Pour ce magasin, l'appli lira le total au même endroit la prochaine fois.</p><p><b>Une facture est mal lue.</b> Corrige la date ou le montant dans la fiche, puis « Appliquer » : l'appli s'en souvient pour ce fournisseur. Si ça recommence, « Copier la lecture » et envoie-la.</p><p><b>Mon solde ne correspond pas à la banque.</b> Vérifie le solde reporté (roue ⚙ du compte) et ce qui est coché « fait ». Le plus sûr : importer le relevé du mois.</p><p><b>J'ai supprimé un ticket par erreur.</b> Touche « Annuler » tout de suite, ou retrouve-le dans Dépenses › Tickets › Corbeille (30 jours) et touche « Remettre ».</p><p><b>Je change de téléphone.</b> Fais une sauvegarde complète, envoie-la sur Drive ou sur un ordinateur, puis Menu › Réglages › Restaurer sur le nouveau. Avec un foyer partagé : ton code de récupération.</p><p><b>Le téléphone manque de place.</b> Menu › Stockage : supprime les photos des années anciennes, ou garde les photos d'origine 2 ou 5 ans.</p><p><b>Faut-il internet ?</b> Non. Seuls le foyer partagé et l'achat de Tickets Plus en ont besoin.</p><p><b>Mes données partent-elles quelque part ?</b> Non. Tout reste sur ton téléphone. Avec un foyer partagé, les copies envoyées aux membres sont chiffrées.</p>"}], "membre": [{"t": "Ce que tu vois", "h": "<p>Tu as rejoint le foyer de quelqu'un : c'est son téléphone qui garde les données du foyer. Il t'envoie seulement ce qu'il partage avec toi, chiffré : personne d'autre ne peut le lire.</p><ul><li><b>Les onglets</b> : chacun est masqué, en lecture ou en modification, selon ses choix. Il peut les changer à tout moment.</li><li><b>Les comptes</b> : tu vois les comptes qu'il a choisis pour toi, ou seulement tes tickets.</li><li><b>Les tickets</b> : les tiens, ou ceux de tout le foyer s'il l'a décidé (ceux des autres en lecture seule).</li><li>Menu › Foyer montre tes droits et la dernière mise à jour.</li></ul><p>Rejoindre un foyer est gratuit.</p>"}, {"t": "Ton accueil", "h": "<p>Ton accueil est à toi : il montre toujours tes chiffres, pas ceux du foyer.</p><ul><li><b>Banque</b> : le solde de ton compte, si tu le vois.</li><li><b>Ma part du commun</b> : ce que tu dois payer des frais communs du mois.</li><li><b>Mes tickets</b> : tes dépenses du mois.</li></ul><p>Le bouton <b>Scan</b> en bas de l'écran sert à photographier un ticket.</p>"}, {"t": "Ajouter un ticket", "h": "<p>Touche <b>Scan</b>, puis « Prendre une photo » ou « Choisir dans la galerie ». Le ticket est lu sur ton téléphone.</p><ul><li>Ticket à plat, bien éclairé, pris en entier ; un ticket très long en plusieurs photos.</li><li>Vérifie le montant, le magasin et la date. Ce qui est en orange est à regarder.</li><li>Pas de ticket ? « ✍️ Saisie » pour noter une dépense à la main.</li><li>Une dépense à partager : Options › Partage (« Qui paie ce ticket ? ») : seulement toi, le commun du foyer, ou certaines personnes.</li><li>Supprimé par erreur ? Dépenses › Tickets › Corbeille › « Remettre » (30 jours).</li></ul><p>Ton ticket part chez le propriétaire du foyer dès que ton téléphone est connecté.</p>"}, {"t": "Ce que tu peux modifier", "h": "<ul><li><b>En lecture</b> : tu vois les chiffres, tu ne peux rien changer. Si tu essaies, l'appli te le dit.</li><li><b>En modification</b> : ce que tu ajoutes ou changes part chez le propriétaire, tout seul. S'il a modifié la même chose de son côté, le changement le plus récent l'emporte.</li><li>Les tickets et les frais des autres restent en lecture seule.</li><li>Si tu es connecté, la mise à jour se fait toute seule ; Menu › Foyer › « Mettre à jour maintenant » la lance tout de suite.</li></ul>"}, {"t": "Mes comptes (privé)", "h": "<p>En plus du foyer, tu as un espace à toi : Menu › Mes comptes.</p><ul><li>Tickets, comptes, frais fixes, épargne : une appli complète pour toi, avec ta propre sauvegarde.</li><li>Rien n'en sort : ni le propriétaire ni le relais ne le voient.</li><li>Une dépense pour le foyer ? Coche « Envoyer aussi au foyer » sur le ticket : il part chez le propriétaire à ton retour dans le foyer. Décocher le retire.</li><li>La pastille « 🔒 Mes comptes · privé » sous le titre rappelle où tu es ; touche-la pour revenir au foyer.</li><li>Pendant que tu es dans Mes comptes, le foyer n'est pas mis à jour ; il le sera à ton retour.</li></ul>"}, {"t": "Rappels", "h": "<p>Menu › Réglages › Rappels (appli Android) : tes prélèvements de la veille, tes virements à faire, tes budgets à 80 %. Ils arrivent même appli fermée et sans internet ; rien ne s'affiche sur l'écran verrouillé.</p>"}, {"t": "Code et sécurité", "h": "<ul><li>Un code à 6 chiffres et ton empreinte protègent l'appli : obligatoires dans un foyer.</li><li>Si tu quittes le foyer (Menu › Foyer › Quitter le foyer), les données du foyer partent de ton téléphone ; tu retrouves celles que tu avais avant de le rejoindre.</li><li>Si le propriétaire te retire du foyer, ton accès est coupé tout de suite.</li></ul>"}, {"t": "Questions fréquentes", "h": "<p><b>Je ne vois pas un onglet.</b> Le propriétaire l'a masqué pour toi. Demande-lui de changer tes droits.</p><p><b>Mes changements n'apparaissent pas chez lui.</b> Ton téléphone doit être connecté, et le sien aussi pour les recevoir. Menu › Foyer montre la dernière mise à jour.</p><p><b>Je ne peux rien modifier.</b> Tu es en lecture pour cet onglet. Le propriétaire peut le passer en modification.</p><p><b>Je change de téléphone.</b> Installe Tickets sur le nouveau, puis demande au propriétaire un nouveau QR code d'invitation.</p><p><b>Faut-il internet ?</b> Oui, pour recevoir et envoyer les données du foyer. Le reste marche sans.</p>"}]}; /* GUIDE-FIN */
+    /* GUIDE-DEBUT */ var GUIDE={"proprietaire": [{"t": "Pour commencer", "h": "<p>Tickets garde tout sur ton téléphone : pas de compte à créer, pas besoin d'internet.</p><ol><li><b>Ton prénom</b> : demandé au premier démarrage. Il sert pour « Payé par » et pour partager les dépenses. Tu peux le changer dans Menu › Personnes.</li><li><b>Les personnes du foyer</b> : Menu › Personnes. Ajoute chaque personne qui paie ou pour qui tu dépenses.</li><li><b>Ton compte</b> : un compte courant est créé tout seul, c'est ton compte principal. Pour en ajouter un autre ou le modifier : onglet Compte, puis la roue ⚙ en haut à droite.</li></ol><p><b>L'écran d'accueil</b></p><ul><li>En haut, les graphiques que tu choisis : ⚙ Choisir, ou un appui long sur une carte pour la changer, la déplacer ou la masquer.</li><li>« ✍️ Saisie » note une dépense à la main ; « 🧾 Tickets » ouvre la liste du mois.</li><li>Le bouton en haut à droite choisit qui tu regardes : toi, une personne, ou tout le foyer.</li><li>En bas, le bouton <b>Scan</b> pour photographier un ticket.</li></ul><p>Tu peux revoir l'accueil de l'appli dans Menu › Aide. Les fonctions marquées ✦ font partie de Tickets Plus : Menu › ✦ Tickets Plus les présente toutes.</p>"}, {"t": "Scanner un ticket", "h": "<p>Touche <b>Scan</b> en bas de l'écran, puis « Prendre une photo » ou « Choisir dans la galerie ». Le ticket est lu sur le téléphone, rien ne part sur internet.</p><p><b>Pour une bonne lecture</b></p><ul><li>Ticket à plat, bien éclairé, pris en entier.</li><li>Un ticket très long : prends-le en plusieurs photos.</li><li>Sur Android, le scanner recadre et redresse la photo tout seul.</li></ul><p><b>Vérifier avant d'enregistrer</b></p><ul><li>Le montant, le magasin et la date sont remplis. Regarde le montant en premier.</li><li>Ce qui est en orange est à vérifier : un article sans prix, un produit vide, un écart entre les articles et le total.</li><li>Si la carte bancaire ou la TVA du ticket donnent un autre total, l'appli le dit et propose « Prendre … € ».</li><li>La photo reste avec le ticket : touche la vignette à côté du montant pour la revoir.</li><li>Les catégories les plus utilisées sont montrées ; « Autres ▾ » les affiche toutes.</li><li>« Options » (replié) : le compte (Auto = celui de la personne qui a payé), le groupe, le partage. La ligne résume ce qui est choisi.</li></ul><p><b>Ce que l'appli apprend</b></p><ul><li>Le 1er ticket d'un magasin demande parfois une correction du total : l'appli retient où il était et lit les suivants au même endroit.</li><li>Chaque article reçoit le produit que tu lui as donné la dernière fois (lait, pain…). Chaque personne a les siens.</li></ul><p><b>Sans ticket</b> : « ✍️ Saisie » sur l'accueil pour noter une dépense à la main.</p><p><b>Partager une dépense</b> : Options › Partage, « Qui paie ce ticket ? »</p><ul><li><b>Seulement</b> la personne qui a payé : pas partagé (par défaut).</li><li><b>Le commun du foyer</b> : chacun selon sa part (Commun › Parts).</li><li><b>Certaines personnes</b> : en parts égales ou ajustées. Exemple : un resto à 3 sur une famille de 5.</li><li>Pour ne partager qu'une partie du ticket : « partager cet article » sur les articles concernés.</li></ul><p><b>Supprimer un ticket</b> : ⋯ en haut de la fiche › Supprimer, ou un appui long sur le ticket dans une liste. Il part dans la <b>corbeille</b> (Dépenses › Tickets, en bas) : « Annuler » tout de suite, ou « Remettre » pendant 30 jours, avec sa photo. Après 30 jours, il est supprimé pour de bon.</p><p>Un appui long sur un ticket, dans n'importe quelle liste, propose Ouvrir ou Supprimer.</p>"}, {"t": "Dépenses", "h": "<p>L'onglet Dépenses a quatre parties, en boutons sous le titre.</p><ul><li><b>Tickets</b> : les tickets du mois, avec la recherche et le calendrier. En bas, « Photos des tickets » ouvre la galerie, rangée par mois.</li><li><b>Produits</b> : ce que tu achètes et à quel prix. Mes produits, Hausses (ce qui augmente), Magasins (où c'est le moins cher), Familles. Touche un produit pour voir tous ses achats.</li><li><b>Budgets</b> : un budget par catégorie, pour le foyer ou par personne. L'appli montre où tu en es dans le mois.</li><li><b>Analyse</b> : tes dépenses par mois, par catégorie, les dépenses qui reviennent et qui a payé. « + Frais fixes » ajoute les loyers, abonnements… pour voir tout ce qui sort vraiment.</li></ul><p>✦ <b>Analyse avancée</b> (Tickets Plus) : ton inflation personnelle comparée à celle de l'INSEE, cette année contre l'an dernier, les alertes, le reste à vivre, des pistes d'économies.</p><p>Le bouton personne, en haut à droite, choisit les dépenses montrées dans Produits et Analyse : les tiennes, celles d'une personne, ou tout le foyer.</p>"}, {"t": "Compte", "h": "<p>L'onglet Compte montre ton compte en banque comme un relevé : tickets, frais fixes et virements du mois, jour par jour, avec le solde du soir.</p><p><b>Opérations</b></p><ul><li>En haut, le solde estimé, puis Entrées, Sorties et Fin de mois.</li><li>Filtres Tout, Entrées, Sorties, À venir ; la recherche trouve un nom ou un montant, avec le total.</li><li>Le bloc « À venir » liste ce qui n'est pas encore passé. Touche le rond quand c'est fait : l'appli note le jour.</li><li>« ＋ Ajouter » : un virement reçu ou envoyé, un frais fixe, un ticket.</li><li>Touche un virement pour le modifier, le reprendre le mois suivant (ou chaque mois), ou le passer en frais fixe.</li></ul><p><b>Épargne</b> : tes livrets et ce que tu y mets chaque mois.</p><p><b>Graphiques</b> : ce mois, dépenses, solde, entrées et sorties, épargne, provisions. Touche une barre pour voir le détail.</p><p><b>La roue ⚙ du compte</b> : modifier le compte, le solde reporté, importer un relevé, annuler le dernier import.</p><p><b>Importer un relevé de banque</b></p><p>Télécharge le relevé sur le site de ta banque (fichier OFX, QIF ou CSV), puis roue ⚙ › Importer un relevé. Tout est lu sur le téléphone.</p><ul><li>Les paiements par carte deviennent des tickets, les prélèvements des frais fixes, le reste des virements.</li><li>Ce qui est déjà dans l'appli est repéré et n'est pas compté deux fois. Un ticket au même nom avec un total un peu différent est corrigé.</li><li>Tu peux décocher une ligne ou changer son type avant de valider.</li><li>« Annuler le dernier import » remet tout comme avant.</li></ul>"}, {"t": "À venir", "h": "<p>L'onglet À venir montre ce qui va sortir de tes comptes. Il a quatre parties.</p><ul><li><b>12 mois</b> : les mois à venir avec ce qui est prévu, et « À payer bientôt ». « Tes comptes dans 12 mois » ouvre la projection.</li><li><b>Frais fixes</b> : loyer, électricité, abonnements… Chaque mois, ou une seule fois. Pour un frais commun, il est payé par un compte en entier, ou chacun paie sa part.</li><li><b>Provisions</b> : l'argent mis de côté chaque mois pour une grosse dépense (taxe foncière, assurance, vacances). La mise de côté apparaît dans les frais fixes. Le graphique montre ce qui est déjà de côté et ce qui est prévu ; l'appli propose un montant mensuel si une provision ne suffit pas.</li><li>✦ <b>Factures</b> (Tickets Plus) : importe tes factures, par PDF ou en photos.</li></ul><p><b>Importer une facture</b></p><ul><li>Un PDF se lit mieux qu'une photo. Tu peux en importer plusieurs d'un coup.</li><li>En photos : une photo par page ; plusieurs factures mélangées sont retrouvées et rangées.</li><li>Rien n'est enregistré avant « Appliquer » : vérifie le fournisseur, la date et le montant.</li><li>La 1re facture d'un fournisseur peut demander une correction : l'appli retient où lire et lit les suivantes au même endroit.</li><li>Si un relevé a été importé, l'appli vérifie le montant avec ta banque.</li><li>L'appli estime la prochaine facture (selon la saison pour l'énergie) et peut la payer avec une provision.</li></ul>"}, {"t": "Commun", "h": "<p>L'onglet Commun montre combien chacun doit payer des frais communs du mois.</p><ul><li><b>Les parts</b> : la part de chacun dans le commun, en %. Un frais peut avoir ses propres parts.</li><li><b>Frais communs</b> : ceux du mois. Pour les modifier, le lien mène à À venir › Frais fixes.</li><li><b>Produits partagés</b> : les articles marqués « Dépense commune » sur les tickets, et ta part.</li></ul><p>Les parts ne changent pas les soldes de tes comptes : elles disent seulement qui doit combien. Touche le titre d'une partie pour l'ouvrir ou la fermer.</p><p><b>✦ Qui doit combien à qui</b> (Tickets Plus), en haut de l'onglet :</p><ul><li>une barre par personne : ce qu'elle a vraiment payé pour le commun ; le trait marque sa part ;</li><li>le résultat : « Marie te doit 220 € », ou, à plusieurs, le moins de remboursements possible ;</li><li>« Remboursé » : avec un virement (tu choisis les comptes) ou sans virement (liquide) ; un remboursement peut être partiel ;</li><li>ce qui reste d'un mois passe au suivant ; l'historique garde tous les remboursements.</li></ul><p>Compte comme payé pour le commun : les frais communs (selon le compte qui les paie) et les articles « Dépense commune » des tickets.</p><p><b>✦ Groupes</b> (Tickets Plus), en bas de l'onglet : pour un voyage ou une sortie, même avec des amis qui n'ont pas l'appli.</p><ul><li>« ＋ Nouveau groupe » : un nom, les personnes du foyer à cocher, les autres prénoms séparés par des virgules ;</li><li>« ＋ Dépense » : scanner un ticket, le saisir, prendre un ticket déjà enregistré, ou une dépense sans ticket (quoi, combien, payé par qui) ; un ticket ajouté depuis le groupe va aussi dans tes dépenses ; sur la fiche d'un ticket, « Groupe » le met dans un groupe ou l'en retire ;</li><li>chaque dépense est partagée à parts égales entre tout le groupe, ou seulement entre certaines personnes : touche la dépense › « Pour qui ? » ; les barres et « qui doit combien à qui » marchent comme pour le commun ;</li><li>toucher une dépense : « Pour qui ? », « Ouvrir le ticket » ou « Retirer du groupe » (le ticket reste dans tes dépenses) ; une dépense sans ticket : Modifier ou Supprimer ;</li><li>« Remboursé » : avec un virement entre les comptes du foyer, ou sans virement ;</li><li>« Envoyer le récap » : un texte à envoyer par SMS ou WhatsApp ; « ⋯ » pour changer les participants, clore ou supprimer le groupe.</li></ul>"}, {"t": "Foyer partagé", "h": "<p>✦ Tickets Plus. Ton téléphone reste le centre : il garde toutes les données et envoie à chaque membre seulement ce que tu partages avec lui. Les données sont chiffrées : personne d'autre ne peut les lire.</p><ol><li>Menu › Foyer partagé, puis crée ton foyer.</li><li>Ajoute un membre : choisis la personne, puis ses droits.</li><li>Il scanne le QR code avec Tickets (« Rejoindre un foyer » au premier démarrage). Rejoindre un foyer est gratuit.</li></ol><p><b>Les droits, onglet par onglet</b> : Masqué, Lecture ou Modif. Tu choisis aussi les comptes qu'il voit, et s'il voit tous les tickets du foyer ou seulement les siens. Un enfant est en lecture seule.</p><p><b>Code et empreinte</b> : obligatoires sur tous les téléphones du foyer. Garde bien ton code de récupération (26 caractères) : il permet de retrouver ton foyer sur un nouveau téléphone.</p><p>Retirer un membre coupe son accès tout de suite. Ses tickets déjà arrivés chez toi restent ; ce qu'il a ajouté depuis sa dernière mise à jour serait perdu : vérifie qu'il est « à jour » avant (l'appli te prévient). Pour juste le reconnecter, « Nouveau téléphone : nouveau QR code » suffit.</p>"}, {"t": "Rappels", "h": "<p>Menu › Réglages › Rappels (appli Android) : des notifications sur ton téléphone, même appli fermée et sans internet.</p><ul><li><b>Prélèvement ou facture demain</b> : la veille, avec le montant et le compte.</li><li><b>Virement</b> à faire ou attendu : le jour même, s'il n'est pas encore « fait ».</li><li><b>Budget</b> : à 80 %, puis s'il est dépassé ; une seule fois par mois.</li><li><b>Sauvegarde</b> : si la dernière a plus de 7 jours ; avec la sauvegarde Drive, si elle n'est pas partie depuis 24 h.</li><li>Tu choisis l'heure. Rien ne s'affiche sur l'écran verrouillé ; touche un rappel pour ouvrir l'écran qui le concerne.</li></ul>"}, {"t": "Photos et sauvegardes", "h": "<p>Tes données sont seulement sur ton téléphone : si tu le perds, seule une sauvegarde les fait revenir.</p><p><b>Sauvegarder</b> (Menu › Sauvegarder)</p><ul><li>✦ <b>Sauvegarde sur Google Drive</b> (appli Android) : activée une fois, elle part toute seule quand tu quittes l'appli, dès qu'il y a du réseau. Chiffrée sur ton téléphone, sans photos ; l'appli ne voit que son dossier « Tickets – sauvegardes ». Garde bien le <b>code de secours</b> montré à l'activation (le même que celui du foyer si tu en as un) : sans lui, une sauvegarde ne peut pas être ouverte.</li><li>Si un envoi n'est pas parti, la ligne du menu passe en rouge, et un bandeau s'affiche sur l'accueil au bout d'une heure. « Vérifier » ouvre la dernière sauvegarde sans rien changer ; « Wi-Fi seulement » et les durées de conservation se règlent dans le même écran.</li><li><b>Sauvegarde complète</b> : données et photos des tickets, dans un fichier ZIP. À faire de temps en temps.</li><li><b>Données seules</b> : un petit fichier, sans photos. Pour tous les jours.</li><li>Garde le fichier sur le téléphone (Documents/Tickets) ou envoie-le ailleurs (Google Drive, mail, ordinateur). Le mieux : ailleurs.</li></ul><p><b>Restaurer</b> (Menu › Réglages › Restaurer une sauvegarde) : choisis le fichier ZIP ou JSON. Il remplace les données du téléphone.</p><p><b>Les photos des tickets</b></p><ul><li>Elles sont gardées en qualité d'origine, pour pouvoir les relire.</li><li>Menu › Stockage montre la place prise, année par année, mois par mois.</li><li>Pour faire de la place : « Supprimer » sur un mois ou une année, ou ⋯ dans la galerie. Les tickets restent ; seules leurs photos partent.</li><li>« Garder les photos d'origine » : Toujours, 5 ans ou 2 ans. Au-delà, une petite photo reste.</li><li>La galerie photo du téléphone est à part : Tickets n'y touche jamais.</li></ul>"}, {"t": "Questions fréquentes", "h": "<p><b>Le total lu est faux.</b> Corrige le montant avant d'enregistrer, ou touche « Prendre … € » si l'appli propose le bon. Pour ce magasin, l'appli lira le total au même endroit la prochaine fois.</p><p><b>Une facture est mal lue.</b> Corrige la date ou le montant dans la fiche, puis « Appliquer » : l'appli s'en souvient pour ce fournisseur. Si ça recommence, « Copier la lecture » et envoie-la.</p><p><b>Mon solde ne correspond pas à la banque.</b> Vérifie le solde reporté (roue ⚙ du compte) et ce qui est coché « fait ». Le plus sûr : importer le relevé du mois.</p><p><b>J'ai supprimé un ticket par erreur.</b> Touche « Annuler » tout de suite, ou retrouve-le dans Dépenses › Tickets › Corbeille (30 jours) et touche « Remettre ».</p><p><b>Je change de téléphone.</b> Fais une sauvegarde complète, envoie-la sur Drive ou sur un ordinateur, puis Menu › Réglages › Restaurer sur le nouveau. Avec un foyer partagé : ton code de récupération.</p><p><b>Le téléphone manque de place.</b> Menu › Stockage : supprime les photos des années anciennes, ou garde les photos d'origine 2 ou 5 ans.</p><p><b>Faut-il internet ?</b> Non. Seuls le foyer partagé et l'achat de Tickets Plus en ont besoin.</p><p><b>Mes données partent-elles quelque part ?</b> Non. Tout reste sur ton téléphone. Avec un foyer partagé, les copies envoyées aux membres sont chiffrées.</p>"}], "membre": [{"t": "Ce que tu vois", "h": "<p>Tu as rejoint le foyer de quelqu'un : c'est son téléphone qui garde les données du foyer. Il t'envoie seulement ce qu'il partage avec toi, chiffré : personne d'autre ne peut le lire.</p><ul><li><b>Les onglets</b> : chacun est masqué, en lecture ou en modification, selon ses choix. Il peut les changer à tout moment.</li><li><b>Les comptes</b> : tu vois les comptes qu'il a choisis pour toi, ou seulement tes tickets.</li><li><b>Les tickets</b> : les tiens, ou ceux de tout le foyer s'il l'a décidé (ceux des autres en lecture seule).</li><li>Menu › Foyer montre tes droits et la dernière mise à jour.</li></ul><p>Rejoindre un foyer est gratuit.</p>"}, {"t": "Ton accueil", "h": "<p>Ton accueil est à toi : il montre toujours tes chiffres, pas ceux du foyer.</p><ul><li><b>Banque</b> : le solde de ton compte, si tu le vois.</li><li><b>Ma part du commun</b> : ce que tu dois payer des frais communs du mois.</li><li><b>Mes tickets</b> : tes dépenses du mois.</li></ul><p>Le bouton <b>Scan</b> en bas de l'écran sert à photographier un ticket.</p>"}, {"t": "Ajouter un ticket", "h": "<p>Touche <b>Scan</b>, puis « Prendre une photo » ou « Choisir dans la galerie ». Le ticket est lu sur ton téléphone.</p><ul><li>Ticket à plat, bien éclairé, pris en entier ; un ticket très long en plusieurs photos.</li><li>Vérifie le montant, le magasin et la date. Ce qui est en orange est à regarder.</li><li>Pas de ticket ? « ✍️ Saisie » pour noter une dépense à la main.</li><li>Une dépense à partager : Options › Partage (« Qui paie ce ticket ? ») : seulement toi, le commun du foyer, ou certaines personnes.</li><li>Supprimé par erreur ? Dépenses › Tickets › Corbeille › « Remettre » (30 jours).</li></ul><p>Ton ticket part chez le propriétaire du foyer dès que ton téléphone est connecté.</p>"}, {"t": "Ce que tu peux modifier", "h": "<ul><li><b>En lecture</b> : tu vois les chiffres, tu ne peux rien changer. Si tu essaies, l'appli te le dit.</li><li><b>En modification</b> : ce que tu ajoutes ou changes part chez le propriétaire, tout seul. S'il a modifié la même chose de son côté, le changement le plus récent l'emporte.</li><li>Les tickets et les frais des autres restent en lecture seule.</li><li>Si tu es connecté, la mise à jour se fait toute seule ; Menu › Foyer › « Mettre à jour maintenant » la lance tout de suite.</li></ul>"}, {"t": "Mes comptes (privé)", "h": "<p>En plus du foyer, tu as un espace à toi : Menu › Mes comptes.</p><ul><li>Tickets, comptes, frais fixes, épargne : une appli complète pour toi, avec ta propre sauvegarde.</li><li>Rien n'en sort : ni le propriétaire ni le relais ne le voient.</li><li>Une dépense pour le foyer ? Coche « Envoyer aussi au foyer » sur le ticket : il part chez le propriétaire à ton retour dans le foyer. Décocher le retire.</li><li>La pastille « 🔒 Mes comptes · privé » sous le titre rappelle où tu es ; touche-la pour revenir au foyer.</li><li>Pendant que tu es dans Mes comptes, le foyer n'est pas mis à jour ; il le sera à ton retour.</li></ul>"}, {"t": "Rappels", "h": "<p>Menu › Réglages › Rappels (appli Android) : tes prélèvements de la veille, tes virements à faire, tes budgets à 80 %. Ils arrivent même appli fermée et sans internet ; rien ne s'affiche sur l'écran verrouillé.</p>"}, {"t": "Code et sécurité", "h": "<ul><li>Un code à 6 chiffres et ton empreinte protègent l'appli : obligatoires dans un foyer.</li><li>Si tu quittes le foyer (Menu › Foyer › Quitter le foyer), les données du foyer partent de ton téléphone ; tu retrouves celles que tu avais avant de le rejoindre.</li><li>Si le propriétaire te retire du foyer, ton accès est coupé tout de suite.</li></ul>"}, {"t": "Questions fréquentes", "h": "<p><b>Je ne vois pas un onglet.</b> Le propriétaire l'a masqué pour toi. Demande-lui de changer tes droits.</p><p><b>Mes changements n'apparaissent pas chez lui.</b> Ton téléphone doit être connecté, et le sien aussi pour les recevoir. Menu › Foyer montre la dernière mise à jour.</p><p><b>Je ne peux rien modifier.</b> Tu es en lecture pour cet onglet. Le propriétaire peut le passer en modification.</p><p><b>Je change de téléphone.</b> Installe Tickets sur le nouveau, puis demande au propriétaire un nouveau QR code d'invitation.</p><p><b>Faut-il internet ?</b> Oui, pour recevoir et envoyer les données du foyer. Le reste marche sans.</p>"}]}; /* GUIDE-FIN */
     function openAide(){ state.view="aide"; state.aideQ=""; state.aideOpen={}; render(); window.scrollTo(0,0); }
     function renderAide(){
       var L=GUIDE[fyMember() ? "membre" : "proprietaire"]||[], q=norm(state.aideQ||""), open=state.aideOpen||(state.aideOpen={});
@@ -12077,6 +12110,235 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
     // ---------- Rappels (notifications locales du téléphone, sans réseau) ----------
     // Programmés à l'avance sur le téléphone (14 jours) à chaque ouverture ou changement : ils arrivent même appli fermée, sans internet.
     // Réglages (sur ce téléphone, pas dans le foyer) : rappels = {on, h, frais, vir, bud, bk}. Canal privé : rien d'affiché sur l'écran verrouillé.
+    // ---------- Sauvegarde sur Google Drive ----------
+    // Activée une fois ; ensuite, en quittant l'appli, la sauvegarde (données sans photos) est chiffrée ici puis
+    // confiée à Android, qui l'envoie dès que le réseau est là (TkDrive, accès « drive.file » : seulement ses fichiers).
+    // Clé : un secret de 16 octets (code de secours de 26 caractères), le même que celui du foyer pour un propriétaire.
+    // Sur le téléphone seulement, jamais dans une sauvegarde : driveCfg {on, email, since}, driveSec, driveSig, driveBanX.
+    var drvSt=null, drvSig0="", drvPollTm=0;
+    function drvCfg(){ return store.read("driveCfg", null)||{}; }
+    function drvOn(){ return !!drvCfg().on && !fyMember(); }
+    function drvAvail(){ return capNative() && !fyMember(); }
+    function drvNative(){ var NP=capPlugin("TicketsNative"); return !!(NP && typeof NP.driveConnect==="function"); }
+    function drvSec(){ var s=store.read("driveSec", null); if(s) return fyUnb64u(s); return (fyCfg && fyCfg.role==="owner" && fyCfg.sec) ? fyUnb64u(fyCfg.sec) : null; }
+    function drvKeys(sec){ return Promise.all([fyHkdf(sec, "drive", 32), fyHkdf(sec, "drive-kf", 9)]).then(function(a){ return { key:fyB64u(a[0]), kf:fyB64u(a[1]) }; }); }
+    function drvHash(t){ var h=5381; for(var i=0;i<t.length;i++) h=((h*33)^t.charCodeAt(i))|0; return t.length+":"+h; }
+    function drv2(n){ return (n<10?"0":"")+n; }
+    function drvName(){ var d=new Date(); return "tickets-"+d.getFullYear()+"-"+drv2(d.getMonth()+1)+"-"+drv2(d.getDate())+"-"+drv2(d.getHours())+"h"+drv2(d.getMinutes())+".tkb"; }
+    function drvWhen(t){
+      var d=new Date(t), n=new Date(), d0=new Date(d.getFullYear(), d.getMonth(), d.getDate()), n0=new Date(n.getFullYear(), n.getMonth(), n.getDate());
+      var days=Math.round((n0-d0)/86400000), hm=drv2(d.getHours())+":"+drv2(d.getMinutes());
+      return days===0 ? "aujourd'hui "+hm : (days===1 ? "hier "+hm : drv2(d.getDate())+"/"+drv2(d.getMonth()+1)+" "+hm);
+    }
+    // état : ok (à jour), wait (en attente), auth (compte à reconnecter), first (première sauvegarde en cours), off
+    function drvState(){
+      var st=drvSt||{};
+      if(!drvOn()) return { k:"off" };
+      if(st.err==="auth") return { k:"auth" };
+      if(st.pendingSince && !st.lastOk) return { k:"first" };
+      if(st.pendingSince) return { k:"wait", since:st.pendingSince };
+      if(st.lastOk) return { k:"ok" };
+      return { k:"first" };
+    }
+    function drvMenuLabel(){
+      var S=drvState(), st=drvSt||{};
+      if(S.k==="auth") return { t:"Drive · à reconnecter", col:"var(--coral)" };
+      if(S.k==="wait") return { t:"Drive · en attente", col:"var(--coral)" };
+      if(S.k==="ok") return { t:"Drive · "+drvWhen(st.lastOk), col:"var(--accent)" };
+      return { t:"Drive", col:"var(--accent)" };
+    }
+    // état donné par Android ; une sauvegarde partie compte comme « dernière sauvegarde »
+    function drvRefresh(){
+      if(!drvOn() || !drvNative()) return Promise.resolve(null);
+      return npCall("driveStatus").then(function(st){
+        drvSt=st||null;
+        if(st && st.lastOk){ var lb=store.read("lastBackup", null); if(!lb || new Date(lb).getTime()<st.lastOk) store.write("lastBackup", new Date(st.lastOk).toISOString()); }
+        return st;
+      }).catch(function(){ return null; });
+    }
+    // prépare la sauvegarde chiffrée si les données ont changé (en quittant l'appli) ; Android l'envoie
+    function drvPrep(force){
+      if(!drvOn() || !drvNative()) return Promise.resolve(false);
+      var sec=drvSec(); if(!sec) return Promise.resolve(false);
+      var dump=backupDump(), sig=drvHash(JSON.stringify(dump.data));
+      if(!force && sig===(store.read("driveSig", "")||"")) return Promise.resolve(false);
+      var rc=rapCfg();
+      return drvKeys(sec).then(function(k){
+        return fySeal(k.key, dump).then(function(str){
+          return npCall("driveStage", { data:str, name:drvName(), n:(dump.data.entries||[]).length, kf:k.kf, remind:!!(rc.on && rc.bk) });
+        });
+      }).then(function(st){ store.write("driveSig", sig); if(st) drvSt=st; return true; })
+        .catch(function(e){ try{ console.warn("drive", e); }catch(_){} return false; });
+    }
+    // Menu › Sauvegarder (appli Android) : Drive, sauvegarde complète, données seules
+    function backupMenu(){
+      var nph=photoEntries().length, S=drvState(), on=drvOn(), plus=!canUse("drive");
+      function row(k, ic, t, sub, st, stCol){ return '<button type="button" class="dr-row tall" data-k="'+k+'"><span class="ic">'+ic+'</span><span class="t">'+t+(sub?'<small>'+esc(sub)+'</small>':'')+'</span>'+(st?'<span class="st" style="color:'+(stCol||"var(--accent)")+'">'+esc(st)+'</span>':'')+'<span class="chev">›</span></button>'; }
+      var ml=on ? drvMenuLabel() : null;
+      var h='<div class="sheet-title">Sauvegarder mes données</div><div class="dr-grp">'+
+        row("drive","☁️",'Sauvegarde sur Google Drive'+(plus?' <span style="color:#f2c76b">✦</span>':''), "Automatique, chiffrée, sans photos", on ? ml.t.replace("Drive · ","") : (plus ? "Plus" : "Nouveau"), on ? ml.col : (plus ? "#f2c76b" : "var(--accent)"))+
+        row("full","🗜️","Sauvegarde complète", nph ? "Données + "+nph+" photo"+(nph>1?"s":"")+" · ZIP" : "Données et photos · ZIP")+
+        row("data","📄","Données seules","Petit fichier JSON")+'</div>'+
+        '<div class="ui-stack" style="margin-top:12px"><button type="button" class="btn ghost ui-no">Fermer</button></div>';
+      var s=uiSheet(h); s.q(".ui-no").onclick=s.close;
+      [].forEach.call(s.qa(".dr-row"), function(b){ b.onclick=function(){ var k=b.getAttribute("data-k"); s.close();
+        if(k==="drive"){ if(on){ state.view="drive"; render(); window.scrollTo(0,0); drvRefresh().then(function(){ if(state.view==="drive") render(); }); } else drvIntro(); }
+        else backupData(k); }; });
+    }
+    // Écran 2 de la maquette (ou la présentation Tickets Plus dans la version Store)
+    function drvIntro(){
+      var plus=!canUse("drive");
+      var bul=plus ? [["✦","Tes données partent chaque jour, chiffrées, sur ton Google Drive"],["✦","Un téléphone perdu ou cassé ? Tu retrouves tout avec ton code de secours"],["✦","Ni Google ni nous ne pouvons la lire"],["✦","Les sauvegardes à la main restent gratuites"]]
+        : [["✓","<b>Automatique</b> : envoyée en quittant l'appli, même fermée, dès qu'il y a du réseau (Wi-Fi ou données mobiles)."],["✓","<b>Chiffrée</b> sur ton téléphone : ni Google ni nous ne pouvons la lire."],["✓","<b>Sans photos</b> : un petit fichier. Les photos restent dans la sauvegarde complète."],["✓","L'appli ne voit que son dossier « Tickets – sauvegardes », rien d'autre de ton Drive."],["✓","Gardées 30 jours, puis une par mois sur 12 mois, une par an sur 5 ans."]];
+      var s=uiSheet('<div class="sheet-title">Sauvegarde sur Google Drive</div><div class="muted" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin:-4px 0 10px">✦ Tickets Plus</div>'+
+        '<ul class="drv-bul">'+bul.map(function(x){ return '<li><i>'+x[0]+'</i><span>'+x[1]+'</span></li>'; }).join("")+'</ul>'+
+        '<div class="ui-stack" style="margin-top:14px">'+(plus ? '<button type="button" class="btn primary" id="drvGo">✦ Découvrir Tickets Plus</button>' : '<button type="button" class="btn primary" id="drvGo">Choisir le compte Google</button>')+'<button type="button" class="btn ghost ui-no">Plus tard</button></div>');
+      s.q(".ui-no").onclick=s.close;
+      s.q("#drvGo").onclick=function(){ s.close(); if(plus) plusShow(null); else drvConnect(); };
+    }
+    function drvConnect(){
+      if(!drvNative()){ uiToast("Installe la nouvelle version de l'appli pour la sauvegarde Drive"); return; }
+      if(!window.crypto || !crypto.subtle){ uiToast("Sauvegarde Drive indisponible sur ce téléphone"); return; }
+      uiToast("Connexion à Google…");
+      npCall("driveConnect").then(function(r){
+        r=r||{}; var kfs=r.kfs||[], mine=drvSec();
+        return (mine ? drvKeys(mine) : Promise.resolve(null)).then(function(k){
+          if(k && (kfs.indexOf(k.kf)>=0 || (drvCfg().since && !kfs.length))) return drvActivate(mine, r);   // même clé : rien à redemander
+          if(kfs.length) return drvAskCode(r);
+          drvShowCode(mine || randBytes(16), r);
+        });
+      }).catch(function(e){ var m=String((e && (e.code||e.message))||e||""); if(/cancel/i.test(m)) return; uiToast((e && e.message) || "Connexion Google impossible"); });
+    }
+    // Écran 3 : le code de secours, montré une seule fois
+    function drvShowCode(sec, r){
+      var code=fyCodeTxt(fyB64u(sec)), foyer=fyCfg && fyCfg.role==="owner" && fyCfg.sec===fyB64u(sec);
+      var s=uiSheet('<div class="sheet-title">Ton code de secours</div><div class="ui-intro">Il ouvre tes sauvegardes sur un autre téléphone. <b>Il n\'apparaîtra plus</b> : note-le sur papier ou dans un gestionnaire de mots de passe.</div>'+
+        '<div class="fy-code">'+esc(code)+'</div>'+
+        (foyer ? '<div class="ui-intro" style="font-size:12.5px">Ton foyer partagé a déjà ce code de récupération : <b>c\'est le même</b>. Un seul code à garder.</div>' : '')+
+        '<label class="csv-ck"><input type="checkbox" id="drvNoted"><span>J\'ai noté le code, je sais que sans lui une sauvegarde ne peut pas être ouverte.</span></label>'+
+        '<div class="ui-stack" style="margin-top:10px"><button type="button" class="btn" id="drvCopy">Copier</button><button type="button" class="btn primary" id="drvOk" disabled>Activer la sauvegarde</button><button type="button" class="btn ghost ui-no">Annuler</button></div>');
+      s.q(".ui-no").onclick=s.close;
+      s.q("#drvNoted").onchange=function(){ s.q("#drvOk").disabled=!this.checked; };
+      s.q("#drvCopy").onclick=function(){ try{ navigator.clipboard.writeText(code.replace(/-/g,"")).then(function(){ uiToast("Code copié"); }, function(){ uiToast("Copie impossible : recopie-le à la main"); }); }catch(e){ uiToast("Copie impossible : recopie-le à la main"); } };
+      s.q("#drvOk").onclick=function(){ if(!s.q("#drvNoted").checked) return; s.close(); drvActivate(sec, r); };
+    }
+    // Écran 3 bis : le compte a déjà des sauvegardes d'une autre clé
+    function drvAskCode(r){
+      var s=uiSheet('<div class="sheet-title">Sauvegardes trouvées</div><div class="ui-intro">Ce compte Google a déjà <b>'+(r.count||0)+' sauvegarde'+((r.count||0)>1?'s':'')+'</b> de Tickets'+(r.last?' (dernière : '+esc(drvWhen(r.last))+')':'')+'. Tape ton code de secours pour continuer avec la même clé.</div>'+
+        '<input class="f" id="drvCode" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX-…" style="font-family:var(--mono);letter-spacing:.05em"><div class="drv-err" id="drvErr"></div>'+
+        '<div class="ui-stack" style="margin-top:8px"><button type="button" class="btn primary" id="drvOk">Continuer</button><button type="button" class="btn ghost" id="drvZero">Code perdu ? Repartir de zéro</button><button type="button" class="btn ghost ui-no">Annuler</button></div>');
+      s.q(".ui-no").onclick=s.close;
+      s.q("#drvOk").onclick=function(){
+        var sec=fyUnb32(s.q("#drvCode").value), err=s.q("#drvErr");
+        if(sec.length!==16){ err.textContent="Code incomplet : il fait 26 caractères (lettres et chiffres 2 à 7)."; return; }
+        drvKeys(sec).then(function(k){ if((r.kfs||[]).indexOf(k.kf)<0){ err.textContent="Ce code ne correspond pas aux sauvegardes de ce compte Google."; return; } s.close(); drvActivate(sec, r); });
+      };
+      s.q("#drvZero").onclick=function(){ s.close();
+        uiConfirm("Repartir de zéro ?<br><small style=\"color:var(--ink-soft)\">Une nouvelle clé est créée. Les anciennes sauvegardes restent sur ton Drive mais ne pourront plus être ouvertes sans leur code. L'appli ne les supprime jamais.</small>", function(){
+          var own=fyCfg && fyCfg.role==="owner" && fyCfg.sec ? fyUnb64u(fyCfg.sec) : null;
+          drvShowCode(own || randBytes(16), { count:0, kfs:[], email:r.email });
+        }, { ok:"Nouvelle clé", danger:true });
+      };
+    }
+    function drvActivate(sec, r){
+      store.write("driveSec", fyB64u(sec));
+      var c=drvCfg(); c.on=true; c.email=(r && r.email) || c.email || ""; if(!c.since) c.since=Date.now(); store.write("driveCfg", c);
+      store.write("driveSig", "");
+      var rc=rapCfg();
+      return npCall("driveSetup", { on:true, remind:!!(rc.on && rc.bk) }).then(function(){ return drvPrep(true); }).then(function(){ return npCall("driveSendNow"); }).then(function(st){
+        if(st) drvSt=st; state.view="drive"; render(); window.scrollTo(0,0); uiToast("Sauvegarde Drive activée"); drvPoll(0);
+      }).catch(function(e){ uiToast("Activation impossible : "+((e && e.message)||"réessaie")); });
+    }
+    // pendant la première sauvegarde : l'écran suit l'envoi
+    function drvPoll(n){
+      clearTimeout(drvPollTm);
+      drvPollTm=setTimeout(function(){
+        if(state.view!=="drive") return;
+        drvRefresh().then(function(){ if(state.view!=="drive") return; render(); var k=drvState().k; if((k==="first" || k==="wait") && n<40) drvPoll(n+1); });
+      }, 3000);
+    }
+    function drvBannerHTML(){
+      if(!drvOn()) return "";
+      var S=drvState(), st=drvSt||{};
+      if(S.k==="auth") return '<div class="bk-banner drv"><span style="font-size:20px">☁️</span><div><b>Sauvegarde Drive arrêtée</b><br><span style="color:var(--ink-soft);font-size:11px">Google demande de reconnecter ton compte.</span></div><button class="btn primary" id="drvBanGo" type="button">Reconnecter</button></div>';
+      if(S.k==="wait" && Date.now()-st.pendingSince>3600000 && String(store.read("driveBanX", ""))!==String(st.pendingSince))
+        return '<div class="bk-banner drv"><span style="font-size:20px">☁️</span><div><b>Pas encore sur Drive</b><br><span style="color:var(--ink-soft);font-size:11px">Tes modifications de '+esc(drvWhen(st.pendingSince))+' n\'ont pas pu partir. Elles partiront dès qu\'il y aura du réseau.</span></div><button class="drv-x" id="drvBanX" type="button" aria-label="Fermer">✕</button></div>';
+      return "";
+    }
+    function drvBannerWire(){
+      var g=document.getElementById("drvBanGo"); if(g) g.onclick=drvConnect;
+      var x=document.getElementById("drvBanX"); if(x) x.onclick=function(){ store.write("driveBanX", String((drvSt||{}).pendingSince||"")); render(); };
+    }
+    // Écran de la sauvegarde (Menu › Sauvegarder › Drive)
+    function renderDrive(){
+      var c=drvCfg(), st=drvSt||{}, S=drvState(), h=header("list")+'<section class="paper">';
+      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Sauvegarde Drive</div><hr class="rule">';
+      if(!drvOn()){
+        h+='<div class="drv-card"><div class="drv-stat"><span class="drv-dot n"></span><div><div class="drv-big">Désactivée</div><div class="drv-sub">Tes anciennes sauvegardes restent sur ton Drive.</div></div></div></div>';
+        h+='<div class="ui-stack" style="margin-top:14px"><button type="button" class="btn primary" id="drvOnBtn">Activer la sauvegarde Drive</button></div></section>';
+        app.innerHTML=h; setNav(null,false); bindBack(function(){ state.view="list"; render(); });
+        document.getElementById("drvOnBtn").onclick=drvIntro; return;
+      }
+      var big, sub, dot="", extra="";
+      if(S.k==="ok"){ big="À jour"; sub="Dernière : "+drvWhen(st.lastOk)+(st.lastSize?" · "+fmtBytes(st.lastSize):""); }
+      else if(S.k==="first"){ big="Première sauvegarde…"; sub="Préparée sur le téléphone, chiffrée"; extra='<div class="drv-prog"><i></i></div><div class="drv-sub" style="margin-top:8px">Tu peux fermer l\'appli : la suite se fait toute seule, à chaque fois que tu la quittes.</div>'; }
+      else if(S.k==="wait"){ big="En attente"; dot=" c"; sub="Depuis "+drvWhen(st.pendingSince)+(st.lastOk?" · dernière partie : "+drvWhen(st.lastOk):"");
+        extra='<div class="drv-sub" style="margin:8px 0 10px">'+(st.err==="net" || !st.err ? "Pas de réseau quand tu as quitté l'appli"+(st.wifi?" (ou pas de Wi-Fi)":"")+". Android réessaie tout seul." : "Envoi refusé par Google : "+esc(String(st.err).replace(/^fail:/,"")))+'</div><button type="button" class="btn" id="drvNow">Envoyer maintenant</button>'; }
+      else { big="Compte à reconnecter"; dot=" c"; sub="Google demande de redonner l'accès à Drive"; extra='<div style="margin-top:10px"><button type="button" class="btn primary" id="drvRe">Reconnecter</button></div>'; }
+      h+='<div class="drv-card"><div class="drv-stat"><span class="drv-dot'+dot+'"></span><div><div class="drv-big">'+esc(big)+'</div><div class="drv-sub">'+esc(sub)+'</div></div></div>'+extra+'</div>';
+      h+='<div class="drv-card"><div class="drv-kv"><span>Compte</span><span>'+esc(c.email||st.email||"—")+'</span></div>'+
+         '<div class="drv-kv"><span>Sauvegardes gardées</span><span>'+(st.count||0)+'</span></div>'+
+         '<div class="drv-kv"><span>Conservation</span><span>'+(st.keepD||30)+' j · '+(st.keepM||12)+' mois · '+(st.keepY||5)+' ans</span></div></div>';
+      h+='<label class="csv-ck" style="margin-top:8px;border-top:0"><input type="checkbox" id="drvWifi"'+(st.wifi?' checked':'')+'><span>Wi-Fi seulement<br><small class="muted">Sinon aussi en données mobiles (petit fichier)</small></span></label>';
+      h+='<div class="dr-grp">'+
+        '<button type="button" class="dr-row tall" id="drvVerify"><span class="ic">🔍</span><span class="t">Vérifier<small>Lit la dernière sauvegarde sans rien changer</small></span><span class="chev">›</span></button>'+
+        '<button type="button" class="dr-row tall" id="drvRestore"><span class="ic">↩️</span><span class="t">Restaurer<small>Bientôt dans l\'appli</small></span><span class="chev">›</span></button>'+
+        '<button type="button" class="dr-row tall" id="drvKeep"><span class="ic">⏱️</span><span class="t">Durées de conservation</span><span class="chev">›</span></button>'+
+        '<button type="button" class="dr-row tall" id="drvOff"><span class="ic">⏸️</span><span class="t">Désactiver<small>Arrête l\'envoi, ne supprime rien</small></span><span class="chev">›</span></button></div>';
+      h+='<div class="muted" style="font-size:11px;margin-top:14px;line-height:1.5">L\'appli ne voit que son dossier « Tickets – sauvegardes ». Pour ouvrir une sauvegarde sur un autre téléphone, il faut ton code de secours.</div></section>';
+      app.innerHTML=h; setNav(null,false);
+      bindBack(function(){ state.view="list"; render(); });
+      function on(id, fn){ var el=document.getElementById(id); if(el) el.onclick=fn; }
+      on("drvNow", function(){ npCall("driveSendNow").then(function(x){ if(x) drvSt=x; uiToast("Envoi relancé"); render(); drvPoll(0); }).catch(function(){ uiToast("Envoi impossible pour l'instant"); }); });
+      on("drvRe", drvConnect);
+      on("drvVerify", drvVerify);
+      on("drvRestore", function(){ uiToast("La restauration depuis Drive arrive à la prochaine étape. En attendant : Menu › Réglages › Restaurer, avec un fichier."); });
+      on("drvKeep", drvKeepSheet);
+      on("drvOff", function(){ uiConfirm("Désactiver la sauvegarde Drive ?<br><small style=\"color:var(--ink-soft)\">L'envoi s'arrête. Rien n'est supprimé de ton Drive ; en la réactivant, l'appli reprend la même clé et le même dossier.</small>", function(){
+        var cc=drvCfg(); cc.on=false; store.write("driveCfg", cc);
+        npCall("driveSetup", { on:false }).catch(function(){}); drvSt=null; render(); uiToast("Sauvegarde Drive désactivée"); }, { ok:"Désactiver" }); });
+      var w=document.getElementById("drvWifi"); if(w) w.onchange=function(){ var v=w.checked; npCall("driveSetup", { wifi:v }).then(function(x){ if(x) drvSt=x; uiToast(v ? "Envoi en Wi-Fi seulement" : "Envoi en Wi-Fi ou données mobiles"); }).catch(function(){}); };
+      if(S.k==="first" || S.k==="wait") drvPoll(0);
+    }
+    function drvKeepSheet(){
+      var st=drvSt||{}, cur={ keepD:st.keepD||30, keepM:st.keepM||12, keepY:st.keepY||5 };
+      var R=[["keepD","Une par jour pendant",[[7,"7 j"],[30,"30 j"],[90,"90 j"]]],["keepM","Une par mois pendant",[[6,"6 mois"],[12,"12 mois"],[24,"24 mois"]]],["keepY","Une par an pendant",[[2,"2 ans"],[5,"5 ans"],[10,"10 ans"]]]];
+      var s=uiSheet('<div class="sheet-title">Durées de conservation</div><div class="ui-intro">L\'appli supprime seulement ses sauvegardes sorties de ces durées. Jamais la plus récente, et rien si un envoi a échoué.</div>'+
+        R.map(function(r){ return '<div style="font-size:13px">'+r[1]+'</div><div class="drv-seg" data-k="'+r[0]+'">'+r[2].map(function(o){ return '<button type="button" data-v="'+o[0]+'"'+(cur[r[0]]===o[0]?' class="on"':'')+'>'+o[1]+'</button>'; }).join("")+'</div>'; }).join("")+
+        '<div class="ui-stack"><button type="button" class="btn primary" id="drvKeepOk">Enregistrer</button><button type="button" class="btn ghost ui-no">Annuler</button></div>');
+      s.q(".ui-no").onclick=s.close;
+      [].forEach.call(s.qa(".drv-seg button"), function(b){ b.onclick=function(){ var g=b.parentNode; cur[g.getAttribute("data-k")]=+b.getAttribute("data-v"); [].forEach.call(g.querySelectorAll("button"), function(x){ x.className=(x===b)?"on":""; }); }; });
+      s.q("#drvKeepOk").onclick=function(){ s.close(); npCall("driveSetup", cur).then(function(x){ if(x) drvSt=x; render(); uiToast("Durées enregistrées"); }).catch(function(){ uiToast("Enregistrement impossible"); }); };
+    }
+    // lit la dernière sauvegarde de Drive et l'ouvre avec la clé du téléphone, sans rien changer
+    function drvVerify(){
+      var sec=drvSec(); if(!sec){ uiToast("Clé introuvable sur ce téléphone"); return; }
+      uiToast("Lecture de la dernière sauvegarde…");
+      npCall("driveFetch").then(function(r){
+        return drvKeys(sec).then(function(k){ return fyOpen(k.key, r.data); }).then(function(obj){
+          var d=(obj && obj.data)||{}, nt=(d.entries||[]).length, nc=(d.comptes||[]).length, nf=(d.factures||[]).length;
+          var sh=uiSheet('<div class="sheet-title">Sauvegarde lisible ✓</div><div class="ui-intro">'+esc("Dernière sauvegarde : "+drvWhen(r.created)+" · "+nt+" ticket"+(nt>1?"s":"")+", "+nc+" compte"+(nc>1?"s":"")+(nf?", "+nf+" facture"+(nf>1?"s":""):"")+".")+'<br>'+esc((r.count||1)+" sauvegarde"+((r.count||1)>1?"s":"")+" sur ton Drive. Rien n'a été changé sur ce téléphone.")+'</div><div class="ui-stack"><button type="button" class="btn primary ui-no">OK</button></div>');
+          sh.q(".ui-no").onclick=sh.close;
+        }, function(){ uiToast("Sauvegarde illisible avec la clé de ce téléphone"); });
+      }).catch(function(e){ var m=String((e && (e.code||e.message))||""); uiToast(/auth/.test(m) ? "Reconnecte ton compte Google (écran de la sauvegarde)" : (/none/.test(m) ? "Aucune sauvegarde sur Drive pour l'instant" : "Lecture impossible : "+((e && e.message)||"réseau"))); });
+    }
+    document.addEventListener("visibilitychange", function(){
+      if(!drvOn()) return;
+      if(document.hidden) drvPrep(false);
+      else drvRefresh().then(function(st){ var sig=JSON.stringify(st||{}); if(sig!==drvSig0){ drvSig0=sig; if(state.view==="list" || state.view==="drive") render(); } });
+    });
+    setTimeout(function(){ if(drvOn()) drvRefresh().then(function(st){ drvSig0=JSON.stringify(st||{}); if(st && (state.view==="list" || state.view==="drive")) render(); }); }, 1000);
+
     var RAP_DEF={ on:false, h:9, frais:true, vir:true, bud:true, bk:true }, RAP_BUD0=900000, rapSig="", rapTm=0, rapLsn=false;
     function rapCfg(){ var c=store.read("rappels", null)||{}, o={}; Object.keys(RAP_DEF).forEach(function(k){ o[k]=(k in c) ? c[k] : RAP_DEF[k]; }); return o; }
     function rapLN(){ var L=capPlugin("LocalNotifications"); return (L && typeof L.schedule==="function") ? L : null; }
@@ -12098,7 +12360,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
         if(v.month!==m || v.done) return; var d=virDay(v), a=Number(v.montant)||0; if(!d || !a) return;
         add(rapAt(rapISO(m, d), c.h), (a<0 ? "Virement à faire aujourd'hui : " : "Virement attendu aujourd'hui : ")+(v.label||"virement"), fmtS(Math.abs(a))+" · touche « fait » dans Compte quand il est passé", "compte");
       }); });
-      if(c.bk && !mem && state.entries.length){
+      if(c.bk && !mem && state.entries.length && !drvOn()){
         var lb=store.read("lastBackup", null), base=lb ? new Date(lb) : new Date(store.read("rappelsBk0", null) || now.toISOString());
         if(!lb && !store.read("rappelsBk0", null)) store.write("rappelsBk0", now.toISOString());
         var due=new Date(base.getTime()+7*86400000), at=new Date(due.getTime()); at.setHours(c.h, 0, 0, 0); if(at<due) at.setDate(at.getDate()+1);
@@ -12170,7 +12432,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       s.q("#rapOn").onchange=function(){ s.q("#rapOpts").style.opacity=this.checked ? "" : ".5"; };
       var ok=s.q("#rapOk"); if(ok) ok.onclick=function(){
         var n={ on:s.q("#rapOn").checked, h:+s.q("#rapH").value }; [].forEach.call(s.qa("input[data-r]"), function(b){ n[b.getAttribute("data-r")]=b.checked; }); if(mem) n.bk=c.bk;
-        function save(){ store.write("rappels", n); s.close(); rapSync(true); uiToast(n.on ? "Rappels activés" : "Rappels désactivés"); }
+        function save(){ store.write("rappels", n); s.close(); rapSync(true); if(drvOn()) npCall("driveSetup", { remind:!!(n.on && n.bk) }).catch(function(){}); uiToast(n.on ? "Rappels activés" : "Rappels désactivés"); }
         if(!n.on){ save(); return; }
         Promise.resolve(L.requestPermissions ? L.requestPermissions() : { display:"granted" }).then(function(p){
           if(p && p.display && p.display!=="granted"){ uiToast("Autorise les notifications de Tickets dans les réglages du téléphone"); return; }
@@ -12203,6 +12465,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
     function openFromWidget(t){
       if(document.getElementById("lockscreen")){ var n=0, iv=setInterval(function(){ if(!document.getElementById("lockscreen") || ++n>240){ clearInterval(iv); if(n<=240) openFromWidget(t); } }, 500); return; }
       if(t==="plus"){ plusShow("widgets"); return; }
+      if(t==="drive"){ state.view="drive"; render(); window.scrollTo(0,0); drvRefresh().then(function(){ if(state.view==="drive") render(); }); return; }
       if(t==="scan"){ state.view="list"; render(); widgetScan(); return; }
       if(t==="compte_foyer" || t==="foyer") state.compteSel=(comptes.length>1)?"__all":myAcct().key;
       else if(t==="compte") state.compteSel=myAcct().key;
