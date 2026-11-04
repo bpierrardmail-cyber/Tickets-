@@ -47,6 +47,8 @@ Aujourd'hui, il n'y a pas de site, seulement le domaine chez IONOS. Le site doit
 
 ## Étapes 1 et 2 : sauvegarde Google Drive
 
+Maquette de l'étape 1 validée le 04/11 : artefact « Tickets — Sauvegarde Drive » (12 écrans).
+
 L'utilisateur active la sauvegarde une fois ; ensuite elle part seule, chiffrée, sans photos, et l'appli ne touche qu'à ses propres fichiers.
 
 ### Étape 1 — activer et envoyer
@@ -55,13 +57,15 @@ L'utilisateur active la sauvegarde une fois ; ensuite elle part seule, chiffrée
 2. Clé :
    - si le dossier est vide, une seule clé est créée et gardée dans le téléphone (empreinte), puis affichée une fois en code de secours (« Copier », « J'ai noté le code ») ;
    - si le dossier a déjà des sauvegardes, le code est demandé et vérifié au lieu d'en créer une ;
-   - propriétaire d'un foyer : même code que la récupération du foyer.
+   - propriétaire d'un foyer : même code que la récupération du foyer ;
+   - code de secours au même format que le code de récupération du foyer (26 caractères) pour tout le monde (décidé le 04/11).
 3. À chaque modification, le fichier chiffré est préparé sur le téléphone ; en quittant l'appli, Android l'envoie (WorkManager), même appli fermée, dès que le réseau est là (Wi-Fi ou données mobiles).
 4. Conservation automatique : la dernière de chaque jour sur 30 jours, de chaque mois sur 12 mois, de chaque année sur 5 ans (durées modifiables). Seules les sauvegardes de l'appli sorties des durées sont supprimées ; jamais la plus récente, et rien si un envoi a échoué.
 5. Désactiver arrête l'envoi sans rien supprimer ; réactiver reprend la même clé et le même dossier.
+   Case « Wi-Fi seulement », décochée par défaut (décidé le 04/11).
 6. Alertes :
    - « Dernière sauvegarde : aujourd'hui 09:12 » dans le menu ;
-   - **dès qu'une modification n'est pas partie** (décidé le 04/11 ; vérifié à la réouverture de l'appli si elle est encore en attente) : un bandeau sur l'accueil (qu'on peut fermer), une ligne qui reste dans le menu et un rappel.
+   - **dès qu'une modification n'est pas partie** (décidé le 04/11) : la ligne du menu passe en rouge tout de suite ; à la réouverture, un bandeau sur l'accueil (qu'on peut fermer) si l'envoi attend depuis plus d'1 heure ; un rappel après 24 h sans envoi, qui remplace le rappel « sauvegarde de plus de 7 jours » quand Drive est actif.
 7. Membres d'un foyer : ils sauvegardent leur propre espace (« Mes comptes » et leurs changements pas encore envoyés).
 
 ### Étape 2 — restaurer et vérifier
