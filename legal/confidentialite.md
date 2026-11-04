@@ -10,8 +10,9 @@ Benoît Pierrard, entrepreneur individuel, SIRET [à compléter], [adresse], con
 
 - Tickets, photos des tickets, comptes, frais fixes, épargne, provisions, factures, budgets, personnes du foyer.
 - La lecture des tickets et des factures se fait sur le téléphone, sans envoi sur internet.
+- La lecture des tickets et le scanner de documents utilisent ML Kit de Google, sur le téléphone. ML Kit peut envoyer à Google des statistiques d'utilisation anonymes, jamais les photos ni le texte lu.
 - Les rappels sont programmés sur le téléphone.
-- L'appli ne demande ni compte, ni adresse e-mail, ni numéro de téléphone. Elle ne contient ni publicité ni outil de mesure d'audience.
+- L'appli ne demande ni compte, ni adresse e-mail, ni numéro de téléphone. Elle ne contient ni publicité ni outil de mesure d'audience de notre part.
 
 ## Quand l'appli utilise internet
 
