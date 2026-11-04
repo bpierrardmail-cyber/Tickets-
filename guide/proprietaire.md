@@ -129,7 +129,8 @@ Compte comme payé pour le commun : les frais communs (selon le compte qui les p
 
 - « ＋ Nouveau groupe » : un nom, les personnes du foyer à cocher, les autres prénoms séparés par des virgules ;
 - « ＋ Dépense » : scanner un ticket, le saisir, prendre un ticket déjà enregistré, ou une dépense sans ticket (quoi, combien, payé par qui) ; un ticket ajouté depuis le groupe va aussi dans tes dépenses ; sur la fiche d'un ticket, « Groupe » le met dans un groupe ou l'en retire ;
-- chaque dépense est partagée à parts égales ; les barres et « qui doit combien à qui » marchent comme pour le commun ;
+- chaque dépense est partagée à parts égales entre tout le groupe, ou seulement entre certaines personnes : touche la dépense › « Pour qui ? » ; les barres et « qui doit combien à qui » marchent comme pour le commun ;
+- toucher une dépense : « Pour qui ? », « Ouvrir le ticket » ou « Retirer du groupe » (le ticket reste dans tes dépenses) ; une dépense sans ticket : Modifier ou Supprimer ;
 - « Remboursé » : avec un virement entre les comptes du foyer, ou sans virement ;
 - « Envoyer le récap » : un texte à envoyer par SMS ou WhatsApp ; « ⋯ » pour changer les participants, clore ou supprimer le groupe.
 

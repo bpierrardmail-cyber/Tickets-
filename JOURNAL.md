@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `04/11 00:10`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `04/11 05:44`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -187,6 +187,9 @@ Après chaque modification, dans le même commit :
 ---
 
 ## Historique (le plus récent en haut)
+
+### 04/11
+- **Groupes : « Pour qui ? » et « Retirer du groupe »** (« parfois les dépenses groupe ne concernent pas tout le groupe » ; maquette, « Oui ») : une dépense peut ne compter que pour certains participants (`d.pour`, `grpPour`, parts égales entre eux ; feuille `grpPourSheet` avec la part de chacun ; « Pour qui : Tout le groupe / Choisir… » dans la dépense sans ticket) ; toucher une dépense : Pour qui ? · Ouvrir le ticket · Retirer du groupe (ticket gardé dans les dépenses, annulable) ou Pour qui ? · Modifier · Supprimer ; ligne « pour 3 personnes » / « tout le groupe » ; récap « (payé par X, pour A, B) » ; en-tête « ta part » si les parts diffèrent. t122 complété.
 
 ### 03/11
 - **Rappels hors ligne** (gratuits, « Oui rappels gratuit ») : Menu › Réglages › Rappels (appli Android). Notifications locales (`@capacitor/local-notifications`, nouvel APK) programmées sur le téléphone pour 14 jours, reprogrammées à chaque ouverture ou changement : prélèvement ou facture la veille, virement pas fait le jour même, budget à 80 % et dépassé (tout de suite, une fois par mois), sauvegarde de plus de 7 jours (propriétaire) ; heure au choix ; canal privé (rien sur l'écran verrouillé) ; toucher un rappel ouvre À venir, Compte › À venir, Dépenses › Budgets ou Sauvegarder. Permission POST_NOTIFICATIONS (patch-manifest), icône `tk_ic_notif`. Dans un navigateur : expliqué, pas activable. Test t123.
