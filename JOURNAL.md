@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `05/11 10:07
+- β web : `beta/index.html`, étiquette `05/11 10:41
 ([^`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
@@ -85,7 +85,7 @@ Après chaque modification, dans le même commit :
 - **Sauvegarde Google Drive, étape 2** (04/11) : restaurer intégré et **essayé par Benoît le 05/11** dans l'appli Store (restaurer depuis Drive et annuler la restauration : « fonctionne ») ; la lecture par l'appli Store des sauvegardes faites par l'appli Perso est donc confirmée (même projet Google).
 - **Sauvegarde Drive des membres faite (05/11)** : dans leur espace « Mes comptes », avec leur propre code et leur propre compte Google. À essayer par Benoît avec Sylvette (version Store : couverte par le Plus du propriétaire).
 - **Sauvegarde Google Drive, étape 1** (04/11) : intégrée et **essayée par Benoît le 04/11** (activation, fichier sur son Drive, « Vérifier », mode avion puis retour du réseau : « ça marche »). Étape 2 (restaurer) et sauvegarde des membres faites depuis.
-- **Plan du 6 novembre : étapes 1 à 5 faites (04-05/11).** Sauvegarde Drive des membres faite le 05/11. Restent : « Ensuite » (mode démo, présentation Play Store, guides, nouveau nom Copek), nouvelles fonctions (impôts, garanties, bilan annuel, pointage).
+- **Plan du 6 novembre : étapes 1 à 5 faites (04-05/11).** Sauvegarde Drive des membres faite le 05/11. Mode démo fait le 05/11. Restent : « Ensuite » (présentation Play Store, guides, nouveau nom Copek), nouvelles fonctions (impôts, garanties, bilan annuel, pointage).
 - **Étape 4 faite (05/11), nouvel APK** : import du relevé en un geste (Partager › Tickets depuis l'appli de la banque, ou « Ouvrir avec »). À essayer par Benoît avec l'appli BoursoBank quand il en aura l'occasion (pas urgent).
 - **À faire, dans l'ordre** (04/11) : sauvegarde Google Drive étape 2 (fait le 04/11), import du relevé en un geste, devise renommée « Monnaie de l'appli » (« ne convertit pas les montants », choisie au 1er démarrage).
 - **Ensuite** (04/11) : appli de démonstration (« Mode démo » avec un foyer inventé, séparé des vraies données, aussi en lien web) ; revoir la présentation gratuit / Plus (fiche Play Store, diapos du 1er démarrage) ; revoir les guides de l'Aide ; **changer le nom de l'appli** (plus orientée comptes du foyer que scan), à choisir avant la 1re publication Store (identifiant Store définitif), libre sur le Play Store et à l'INPI. Nouvelles fonctions retenues (après le tour des logiciels de comptabilité) : aide à la déclaration d'impôts (dépenses marquées, total annuel par case avec justificatifs), garanties (durée sur un ticket ou un article, rappel avant la fin), bilan de l'année en PDF, pointage du relevé (« vu sur la banque », écart avec le solde) ; gratuit ou Plus à décider. Pas de comptabilité d'entreprise. Plan complet : doc « Tickets — plan à partir du 6 novembre ». Site bpierrard.fr sur Cloudflare Pages (DNS chez Cloudflare), compte Google dédié à l'appli conseillé.
@@ -206,6 +206,8 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 05/11
+
+- **Mode démo** (« tu peux intégrer ; 1 et 2 ok ; pouvoir faire le plus d'actions possible, voir le plus de données possible ») : Menu › Réglages › Mode démo, « 🎭 Voir un exemple » au premier démarrage, ou le lien web `…/beta/?demo`. Un foyer inventé (Alex, Marie, Léa, Tom) sur les 6 derniers mois, recalculé à partir d'aujourd'hui (`demoSeed`) : ~95 tickets avec articles et hausses de prix, 2 comptes, salaires et virements « chaque mois », frais fixes (Loyer « chacun sa part », crédit auto…), 4 épargnes dont un objectif, 3 provisions, factures électricité / eau / box, budgets (Loisirs dépassé), groupe « Week-end à la mer », remboursement du commun, un ticket dans la corbeille, foyer partagé avec Marie (modification) et Léa (enfant, consultation). Les données de la démo sont rangées à part : `store` préfixe toutes les clés par `demo:` (`DEMO`, `SK`) ; les vraies données ne sont ni lues ni modifiées. Rien ne part : relais simulé (`fyCall`, `fySync`), ni Drive, ni widgets, ni relevé partagé (`npCall`), ni rappels (`rapSync`), pas de code imposé (`fyEnsureLock`), pas de restauration ni de « Rejoindre un foyer ». Plus débloqué ; pastille « 🎭 Démo · Quitter » (`demoMenu`) : Quitter (`demoQuit` : espace démo effacé, photos prises en démo retirées), « Voir la version gratuite » (`demoFree`), « Repartir de l'exemple ». Lien web : l'exemple repart chaque jour. Guides : partie « Mode démo ». Test t130.
 
 - **Fiche de sauvegarde du membre simplifiée** (« il ne faut pas d'ambiguïté, le plus simple possible ») : plus de bouton « Copie du foyer dans un fichier » (un membre ne pouvait pas la restaurer) ; un seul bouton, « Aller dans Mes comptes », et le texte dit que c'est sa seule sauvegarde à faire.
 

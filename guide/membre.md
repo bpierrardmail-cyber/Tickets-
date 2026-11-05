@@ -68,6 +68,15 @@ Menu › Réglages › Rappels (appli Android) : tes prélèvements de la veille
 - Si tu quittes le foyer (Menu › Foyer › Quitter le foyer), les données du foyer partent de ton téléphone ; tu retrouves celles que tu avais avant de le rejoindre.
 - Si le propriétaire te retire du foyer, ton accès est coupé tout de suite.
 
+## Mode démo
+
+Pour essayer l'appli ou la montrer sans tes chiffres : Menu › Réglages › Mode démo (ou « Voir un exemple » au premier démarrage).
+
+- Un foyer inventé : Alex, Marie et leurs deux enfants, sur les 6 derniers mois (tickets avec articles, comptes, frais fixes, provisions, factures, budgets, un groupe, le foyer partagé).
+- Tout est permis : scanner, saisir, modifier, supprimer. Tickets Plus y est débloqué ; « Voir la version gratuite » dans la pastille montre ce qui est payant.
+- Tes vraies données restent de côté, sans être touchées. Rien n'est envoyé pendant la démo (ni foyer, ni Drive, ni rappels, ni widgets).
+- La pastille « 🎭 Démo · Quitter » en haut : un geste et tes données reviennent telles quelles. « Repartir de l'exemple » efface ce que tu as essayé.
+
 ## Questions fréquentes
 
 **Je ne vois pas un onglet.** Le propriétaire l'a masqué pour toi. Demande-lui de changer tes droits.

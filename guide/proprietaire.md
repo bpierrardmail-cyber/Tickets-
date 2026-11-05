@@ -191,6 +191,15 @@ Tes données sont seulement sur ton téléphone : si tu le perds, seule une sauv
 - « Garder les photos d'origine » : Toujours, 5 ans ou 2 ans. Au-delà, une petite photo reste.
 - La galerie photo du téléphone est à part : Tickets n'y touche jamais.
 
+## Mode démo
+
+Pour essayer l'appli ou la montrer sans tes chiffres : Menu › Réglages › Mode démo (ou « Voir un exemple » au premier démarrage).
+
+- Un foyer inventé : Alex, Marie et leurs deux enfants, sur les 6 derniers mois (tickets avec articles, comptes, frais fixes, provisions, factures, budgets, un groupe, le foyer partagé).
+- Tout est permis : scanner, saisir, modifier, supprimer. Tickets Plus y est débloqué ; « Voir la version gratuite » dans la pastille montre ce qui est payant.
+- Tes vraies données restent de côté, sans être touchées. Rien n'est envoyé pendant la démo (ni foyer, ni Drive, ni rappels, ni widgets).
+- La pastille « 🎭 Démo · Quitter » en haut : un geste et tes données reviennent telles quelles. « Repartir de l'exemple » efface ce que tu as essayé.
+
 ## Questions fréquentes
 
 **Le total lu est faux.** Corrige le montant avant d'enregistrer, ou touche « Prendre … € » si l'appli propose le bon. Pour ce magasin, l'appli lira le total au même endroit la prochaine fois.
