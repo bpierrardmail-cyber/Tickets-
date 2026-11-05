@@ -64,7 +64,7 @@ with sync_playwright() as p:
     pg.evaluate("d=>{localStorage.clear(); for(const k in d) localStorage.setItem(k, JSON.stringify(d[k]));}", data); pg.reload(); pg.wait_for_timeout(1200)
     foot=pg.evaluate("()=>{ var t=''; document.querySelectorAll('.beta-tag').forEach(x=>t+=x.textContent); return t; }")
     tabs=pg.evaluate("()=>[].map.call(document.querySelectorAll('#nav .navi'), b=>b.textContent)")
-    check(tabs==["Accueil","Dépenses","Compte","À venir","Commun"], "Store : 5 onglets, sans Bourse %s"%tabs)
+    check(tabs==["Accueil","Opérations","Budget","À venir","Foyer"], "Store : 5 onglets, sans Bourse %s"%tabs)
     for v in ["list","articles","commun","compte","factures","analyse"]:
         loc_=pg.locator('#nav .navi[data-view="%s"]'%v)
         if loc_.count(): loc_.click(); pg.wait_for_timeout(350)

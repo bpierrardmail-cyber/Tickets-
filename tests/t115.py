@@ -53,7 +53,7 @@ with sync_playwright() as p:
     check("Ticket à plat" in norm(pg.locator(".aide-sec.open").inner_text()), "toucher une partie l'ouvre (Scanner un ticket)")
     pg.locator("#aideQ").fill("relevé"); pg.wait_for_timeout(300)
     hs=[norm(x) for x in pg.locator(".aide-h").all_inner_texts()]
-    check(0<len(hs)<9 and any(h.startswith("Compte") for h in hs) and pg.locator(".aide-sec.open").count()==len(hs), "recherche « relevé » : les parties qui en parlent, ouvertes %s" % [h[:10] for h in hs])
+    check(0<len(hs)<9 and any(h.startswith("Opérations") for h in hs) and pg.locator(".aide-sec.open").count()==len(hs), "recherche « relevé » : les parties qui en parlent, ouvertes %s" % [h[:10] for h in hs])
     pg.locator("#aideQ").fill(""); pg.wait_for_timeout(200)
     pg.locator("#aideWlc").click(); pg.wait_for_timeout(300)
     check("Bienvenue dans Tickets" in W(pg), "« Revoir l'accueil » : les diapos")

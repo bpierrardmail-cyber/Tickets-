@@ -23,7 +23,7 @@ with sync_playwright() as p:
     pg.locator("#hmenu").click(); pg.wait_for_timeout(300)
     check(pg.locator('.dr-row[data-k="import"]').count()==0, "menu : plus d'« Importer un relevé »"); pg.locator(".dr-x").click(); pg.wait_for_timeout(300)
     pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(600)
-    check(pg.locator(".htitle").inner_text()=="Compte" and pg.locator("#hback").count()==0 and pg.locator("#cptGear").count()==1, "Compte : titre, pas de retour, roue en haut à droite")
+    check(pg.locator(".htitle").inner_text()=="Opérations" and pg.locator("#hback").count()==0 and pg.locator("#cptGear").count()==1, "Compte : titre, pas de retour, roue en haut à droite")
     check(pg.locator(".avtabs .cpsub.on").inner_text()=="Opérations" and pg.locator("#opsBody").count()==1 and pg.locator("#cptGraph").count()==0, "Opérations par défaut, sans les boutons Graphiques / Configuration")
     pg.screenshot(path=os.path.join(SP,"t94_ops.png"))
     # plus d'onglet Virements : « ＋ Ajouter » dans les Opérations

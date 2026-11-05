@@ -31,7 +31,7 @@ with sync_playwright() as p:
         return c, pg, errs
     # ---------- Perso ----------
     c, pg, errs = ctx_for(APP)
-    check(tabs(pg)==["Accueil","Dépenses","Compte","À venir","Commun","Bourse"], "barre : « À venir » à la place de « Factures » %s"%tabs(pg))
+    check(tabs(pg)==["Accueil","Opérations","Budget","À venir","Foyer"], "barre : « À venir » à la place de « Factures » %s"%tabs(pg))
     pg.locator('#nav .navi[data-view="factures"]').click(); pg.wait_for_timeout(500)
     t=norm(pg.locator("#app").inner_text())
     check(avtabs(pg)==["12 mois","Frais fixes","Provisions","Factures"] and avon(pg)=="12 mois", "À venir : 4 sous-onglets, 12 mois d'abord %s"%avtabs(pg))
@@ -96,7 +96,7 @@ with sync_playwright() as p:
     check(not errs, "Perso : pas d'erreur %s"%errs[:3]); c.close()
     # ---------- Store sans Plus ----------
     c, pg, errs = ctx_for(APP+"?edition=store", {"factures":[], "plusUnlocked":False})
-    check(tabs(pg)==["Accueil","Dépenses","Compte","À venir","Commun"], "Store : 5 onglets %s"%tabs(pg))
+    check(tabs(pg)==["Accueil","Opérations","Budget","À venir","Foyer"], "Store : 5 onglets %s"%tabs(pg))
     pg.locator('#nav .navi[data-view="factures"]').click(); pg.wait_for_timeout(500)
     t=norm(pg.locator("#app").inner_text())
     check("les 12 prochains mois" in t.lower() and "Débloquer" not in t and avtabs(pg)[3].startswith("Factures") and "✦" in avtabs(pg)[3], "Store : 12 mois ouverts, Factures marqué ✦")
