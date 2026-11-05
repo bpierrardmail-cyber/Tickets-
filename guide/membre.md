@@ -50,6 +50,14 @@ En plus du foyer, tu as un espace à toi : Menu › Mes comptes.
 - La pastille « 🔒 Mes comptes · privé » sous le titre rappelle où tu es ; touche-la pour revenir au foyer.
 - Pendant que tu es dans Mes comptes, le foyer n'est pas mis à jour ; il le sera à ton retour.
 
+## Sauvegarder
+
+- **Le foyer** est sauvegardé par le propriétaire : sur un nouveau téléphone, il suffit de le rejoindre à nouveau.
+- **Mes comptes** a sa propre sauvegarde : Menu › Sauvegarder · restaurer › Aller dans Mes comptes, puis Menu › Sauvegarder · restaurer.
+  - Sur Google Drive (appli Android) : automatique, chiffrée, sur **ton** compte Google, avec **ton** code de secours à toi (à noter et garder). Personne du foyer ne peut la lire, pas même le propriétaire.
+  - Ou dans un fichier (ZIP ou JSON) que tu gardes où tu veux.
+- Si le propriétaire a Tickets Plus, la sauvegarde sur Drive est comprise pour toi aussi.
+
 ## Rappels
 
 Menu › Réglages › Rappels (appli Android) : tes prélèvements de la veille, tes virements à faire, tes budgets à 80 %. Ils arrivent même appli fermée et sans internet ; rien ne s'affiche sur l'écran verrouillé.
@@ -68,6 +76,6 @@ Menu › Réglages › Rappels (appli Android) : tes prélèvements de la veille
 
 **Je ne peux rien modifier.** Tu es en lecture pour cet onglet. Le propriétaire peut le passer en modification.
 
-**Je change de téléphone.** Installe Tickets sur le nouveau, puis demande au propriétaire un nouveau QR code d'invitation.
+**Je change de téléphone.** Installe Tickets sur le nouveau, puis demande au propriétaire un nouveau QR code d'invitation. Pour retrouver Mes comptes : va dans Mes comptes, puis Menu › Sauvegarder · restaurer › Depuis Google Drive, avec ton code de secours.
 
 **Faut-il internet ?** Oui, pour recevoir et envoyer les données du foyer. Le reste marche sans.
