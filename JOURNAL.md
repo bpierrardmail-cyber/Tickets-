@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `04/11 21:14`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `05/11 08:17`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -201,6 +201,10 @@ Après chaque modification, dans le même commit :
 ---
 
 ## Historique (le plus récent en haut)
+
+### 05/11
+
+- **Menu « Sauvegarder · restaurer »** (essai de Benoît dans l'appli Store : « la restauration n'est pas disponible ; dans le menu il faut indiquer sauvegarde et restauration, la restauration doit être accessible directement ») : la ligne du menu s'appelle « Sauvegarder · restaurer » et ouvre une seule feuille (`backupMenu`, aussi dans un navigateur) : Sauvegarder (Google Drive dans l'appli Android, complète, données seules) puis Restaurer (Annuler la restauration s'il y a lieu, Depuis Google Drive, Depuis un fichier). Restaurer depuis Drive est possible sans Tickets Plus (version Store) : seule la sauvegarde automatique demande Plus ; sans Plus, elle n'est pas activée après la restauration. t126 complété.
 
 ### 04/11
 

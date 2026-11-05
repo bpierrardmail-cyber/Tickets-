@@ -168,7 +168,7 @@ Menu › Réglages › Rappels (appli Android) : des notifications sur ton tél�
 
 Tes données sont seulement sur ton téléphone : si tu le perds, seule une sauvegarde les fait revenir.
 
-**Sauvegarder** (Menu › Sauvegarder)
+**Sauvegarder** (Menu › Sauvegarder · restaurer)
 
 - ✦ **Sauvegarde sur Google Drive** (appli Android) : activée une fois, elle part toute seule quand tu quittes l'appli, dès qu'il y a du réseau. Chiffrée sur ton téléphone, sans photos ; l'appli ne voit que son dossier « Tickets – sauvegardes ». Garde bien le **code de secours** montré à l'activation (le même que celui du foyer si tu en as un) : sans lui, une sauvegarde ne peut pas être ouverte.
 - Si un envoi n'est pas parti, la ligne du menu passe en rouge, et un bandeau s'affiche sur l'accueil au bout d'une heure. « Vérifier » ouvre la dernière sauvegarde sans rien changer ; « Wi-Fi seulement » et les durées de conservation se règlent dans le même écran.
@@ -176,7 +176,7 @@ Tes données sont seulement sur ton téléphone : si tu le perds, seule une sauv
 - **Données seules** : un petit fichier, sans photos. Pour tous les jours.
 - Garde le fichier sur le téléphone (Documents/Tickets) ou envoie-le ailleurs (Google Drive, mail, ordinateur). Le mieux : ailleurs.
 
-**Restaurer** (Menu › Réglages › Restaurer une sauvegarde) : depuis Google Drive, ou un fichier ZIP ou JSON. La sauvegarde remplace les données du téléphone.
+**Restaurer** (Menu › Sauvegarder · restaurer, ou Menu › Réglages › Restaurer une sauvegarde) : depuis Google Drive, ou un fichier ZIP ou JSON. La sauvegarde remplace les données du téléphone.
 
 - Depuis Drive : Menu › Sauvegarder › Google Drive › Restaurer, puis choisis la date. Avant, l'état actuel part aussi sur Drive et reste gardé 30 jours sur le téléphone : « Annuler la restauration » le remet (bandeau de l'accueil, ou l'écran de la sauvegarde).
 - Les photos des tickets, ton code, ton empreinte et tes réglages ne changent pas.
