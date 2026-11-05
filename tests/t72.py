@@ -31,7 +31,7 @@ with sync_playwright() as p:
             check("personnes" in pg.locator(".sheet-overlay").last.inner_text().lower() and "Sylvette" in pg.locator(".sheet-overlay").last.inner_text(), "Personnes : la fenêtre des personnes s'ouvre"); pg.evaluate("()=>document.querySelectorAll('.sheet-overlay').forEach(x=>x.remove())"); pg.wait_for_timeout(300)
             menu(); pg.locator('.dr-row[data-k="settings"]').click(); pg.wait_for_timeout(400)
             st=pg.locator(".sheet-overlay").last.inner_text(); print("  réglages :", st.replace("\n"," | "))
-            check("Devise principale" in st and "Verrouiller par un code" in st and "Restaurer une sauvegarde" in st, "Réglages : devise, code, restaurer")
+            check("Monnaie de l'appli" in st and "ne convertit pas" in st and "Verrouiller par un code" in st and "Restaurer une sauvegarde" in st, "Réglages : monnaie de l'appli (ne convertit pas), code, restaurer")
             with pg.expect_file_chooser(timeout=3000) as fc: pg.locator('.sheet-overlay .dr-row[data-k="restore"]').click()
             check(fc.value is not None, "Réglages › Restaurer : le choix du fichier s'ouvre"); pg.wait_for_timeout(300)
             menu(); pg.locator('.dr-row[data-k="settings"]').click(); pg.wait_for_timeout(300); pg.locator('.sheet-overlay .dr-row[data-k="devise"]').click(); pg.wait_for_timeout(400)

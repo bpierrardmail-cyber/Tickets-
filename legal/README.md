@@ -23,6 +23,6 @@ Les trois textes sont à mettre sur bpierrard.fr ; le Play Store et l'écran de 
 
 **À garder en tête :**
 
-- La sauvegarde sur Google Drive n'existe pas encore : sa partie est à garder pour le jour où elle sortira.
+- La sauvegarde sur Google Drive existe depuis le 04/11/2026 (texte mis à jour le 05/11).
 - Les textes décrivent l'appli Store (sans Bourse).
 - Ne jamais mettre de données personnelles réelles (relevés, tickets) dans ce dossier : le dépôt est public.

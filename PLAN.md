@@ -108,6 +108,8 @@ Faite le 05/11 (voir `JOURNAL.md`).
 
 ### Étape 5 — monnaie et présentation
 
+Faite le 05/11 (voir `JOURNAL.md`).
+
 - Réglages : « Devise principale » devient « Monnaie de l'appli », avec « ne convertit pas les montants » ; proposée au premier démarrage.
 - Note de la présentation : « *Sauf première connexion, transfert des tickets du foyer et sauvegarde sur Drive. »
 - Carte du relevé : « depuis l'appli de ta banque : Partager › Tickets ».

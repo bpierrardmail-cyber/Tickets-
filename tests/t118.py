@@ -34,12 +34,12 @@ with sync_playwright() as p:
     pg.locator("#wlcPrev").click(); pg.wait_for_timeout(150)   # 3e carte
     pg.locator("#wlcPlus").click(); pg.wait_for_timeout(300)
     t=W(pg, ".wlc.plus")
-    check("Foyer partagé" in t and "✦ Plus" in t and pg.locator(".wlc.plus .wlc-dots i").count()==6 and pg.locator(".wlc.plus .wlc-shot img").count()==1, "carrousel Plus : 6 cartes, la 1re « Foyer partagé » avec sa capture")
+    check("Foyer partagé" in t and "✦ Plus" in t and pg.locator(".wlc.plus .wlc-dots i").count()==7 and pg.locator(".wlc.plus .wlc-shot img").count()==1, "carrousel Plus : 7 cartes, la 1re « Foyer partagé » avec sa capture")
     titres=[]
-    for k in range(6):
+    for k in range(7):
         titres.append(norm(pg.locator(".wlc.plus .wlc-t").inner_text()).replace("✦ Plus","").strip())
         if pg.locator("#plNext").count(): pg.locator("#plNext").click(); pg.wait_for_timeout(120)
-    check(titres==["Foyer partagé","Qui doit combien à qui","Tes factures","Analyse avancée","Widgets","Tout le reste est gratuit"], "cartes : %s" % titres)
+    check(titres==["Foyer partagé","Qui doit combien à qui","Tes factures","Analyse avancée","Sauvegarde sur Google Drive","Widgets","Tout le reste est gratuit"], "cartes : %s" % titres)
     t=W(pg, ".wlc.plus"); check("Prix : bientôt" in t and "Prendre Tickets Plus · bientôt" in t, "dernière carte : « Prix : bientôt », « Prendre Tickets Plus · bientôt »")
     imgs=pg.evaluate("()=>[...document.querySelectorAll('.wlc.plus img')].length")
     pg.locator("#plBuy").click(); pg.wait_for_timeout(300)

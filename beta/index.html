@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="05/11 09:10" />
+  <meta name="build" content="05/11 09:21" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -1452,7 +1452,7 @@
     function openSettings(){
       var fyM=fyMember(), fyFull=!fyM || (fyCfg.role==="edit" && fyCfg.accts==null), rows=[];
       function row(k, ic, t, sub, danger){ return '<button type="button" class="dr-row tall'+(danger?' danger':'')+'" data-k="'+k+'"><span class="ic">'+ic+'</span><span class="t">'+esc(t)+(sub?'<small>'+esc(sub)+'</small>':'')+'</span><span class="chev">›</span></button>'; }
-      if(fyFull) rows.push(row("devise","💱","Devise principale",curSym()+" · "+CURS[BASE].l));
+      if(fyFull) rows.push(row("devise","💱","Monnaie de l'appli",curSym()+" · "+CURS[BASE].l+" · ne convertit pas les montants"));
       var rc=rapCfg(); rows.push(row("rappels","🔔","Rappels", rc.on ? "activés · "+rc.h+" h" : "prélèvements, budgets, sauvegarde"));
       rows.push(lockCfg ? row("lock","🔑","Code et empreinte",lockCfg.bioId?"code + empreinte actifs":"code actif · empreinte à ajouter") : row("lock","🔒","Verrouiller par un code","tu pourras ajouter l'empreinte ensuite"));
       var h='<div class="sheet-title">Réglages</div><div class="dr-grp">'+rows.join("")+'</div>';
@@ -1504,6 +1504,7 @@
         fraisCommuns.forEach(function(f){ if((f.personne||"").trim()===old) f.personne=nm; }); persistFrais();
         a.payer=nm; persistComptes(); store.write("askName", false);
         uiToast("Bonjour "+nm+" !"); render();
+        setTimeout(function(){ chooseCurrencyForm(true, null); }, 600);   // monnaie de l'appli, proposée une fois
       });
     }
     function personForm(old){
@@ -1550,18 +1551,20 @@
         state.bilanFrom=f; state.bilanTo=t; state.view="bilan"; render(); window.scrollTo(0,0);
       });
     }
-    function chooseCurrency(){
-      uiForm({ title:"Devise principale", intro:"Tous les montants de l'appli s'affichent dans cette devise : tickets, budget, comptes, bourse.", fields:[
-        { key:"dev", label:"Devise", type:"select", value:BASE, options:Object.keys(CURS).map(function(c){ return { v:c, l:CURS[c].s+" · "+CURS[c].l }; }),
-          help:"Les montants déjà saisis ne sont pas convertis : change-la seulement si tu les as saisis dans cette devise. Les cours des actions et cryptos, eux, sont convertis automatiquement." }
-      ], ok:"Enregistrer", focus:false }, function(r){
+    function chooseCurrencyForm(first, done){
+      uiForm({ title:"Monnaie de l'appli", intro:(first ? "Dans quelle monnaie tiens-tu tes comptes ? " : "")+"Tous les montants de l'appli s'affichent dans cette monnaie : tickets, budgets, comptes"+(FEAT.bourse?", bourse":"")+". <b>Elle ne convertit pas les montants.</b>", fields:[
+        { key:"dev", label:"Monnaie", type:"select", value:BASE, options:Object.keys(CURS).map(function(c){ return { v:c, l:CURS[c].s+" · "+CURS[c].l }; }),
+          help:first ? "Tu pourras la changer dans Menu › Réglages." : "Les montants déjà saisis ne sont pas convertis : change-la seulement si tu les as saisis dans cette monnaie."+(FEAT.bourse?" Les cours des actions et cryptos, eux, sont convertis automatiquement.":"") }
+      ], ok:first ? "Continuer" : "Enregistrer", focus:false }, function(r){
+        if(done) setTimeout(done, 50);
         if(!r.dev || !CURS[r.dev] || r.dev===BASE) return;
         BASE=r.dev; store.write("devise", BASE);
         state.solPrice=null; state.stockPrices={};
         if(typeof refreshPositions==="function") refreshPositions(true);
-        render(); uiToast("Devise : "+CURS[BASE].l);
+        render(); uiToast("Monnaie de l'appli : "+CURS[BASE].l);
       });
     }
+    function chooseCurrency(){ chooseCurrencyForm(false, null); }
     function curOpts(extra){ var l=[BASE]; ["USD","EUR"].concat(extra?[extra]:[]).forEach(function(c){ if(c && l.indexOf(c)<0) l.push(c); }); return l.map(function(c){ return { v:c, l:(CURS[c]?CURS[c].c:c) }; }); }
     var CATS = store.read("cats", null) || ["Alimentation","Restaurant","Carburant","Maison","Santé","Transport","Loisirs","Autre"];
     if(CATS.indexOf("Autre")<0) CATS.push("Autre");
@@ -11885,13 +11888,13 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
           "Invite ta famille et retrouve ses dépenses ✦",
           "Tes données restent privées : personne ne les récupère, pas même nous",
           "Sans compte, sans pub, hors ligne*" ],
-          n:"*Internet sert seulement au foyer partagé et à l'achat de Tickets Plus." },
+          n:"*Sauf première connexion, transfert des tickets du foyer et sauvegarde sur Drive." },
         { img:"scan", t:"Scanne tes tickets", p:"Montant, magasin, date et articles lus sur ton téléphone. L'appli apprend de tes corrections.",
           tags:["Photo", "Galerie", "Saisie"], n:"Astuce : ticket à plat, bien éclairé, pris en entier." },
-        { img:"releve", t:"Importe ton relevé", p:"Le fichier du site de ta banque devient tickets, frais fixes et virements, sans doublon. Tout est lu sur ton téléphone.",
+        { img:"releve", t:"Importe ton relevé", p:"Depuis l'appli de ta banque : Partager › Tickets. Le relevé devient tickets, frais fixes et virements, sans doublon. Tout est lu sur ton téléphone.",
           tags:["OFX", "QIF", "CSV"] },
-        { img:"avenir", t:"Vois ce qui arrive", p:"Les 12 prochains mois : frais fixes, provisions, ce qui manquera. Sauvegarde complète en un fichier ; le guide est dans Menu › Aide.",
-          tags:["ZIP", "JSON"] } ];
+        { img:"avenir", t:"Vois ce qui arrive", p:"Les 12 prochains mois : frais fixes, provisions, ce qui manquera. Sauvegarde automatique sur Google Drive ✦ ou en un fichier ; le guide est dans Menu › Aide.",
+          tags:["Drive", "ZIP", "JSON"] } ];
     }
     function plusOffer(){ return EDITION==="store" && !plusUnlocked(); }
     function wlcCardHTML(d, S, i, btns, plusLink){
@@ -11912,12 +11915,13 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       ov.addEventListener("touchend", function(ev){ if(x0===null) return; var dx=ev.changedTouches[0].clientX-x0; x0=null; if(dx<-50) go(1); else if(dx>50) go(-1); }, { passive:true }); }
     // ---------- Carrousel Tickets Plus : depuis l'accueil, le menu et chaque bouton ✦ (version Store) ----------
     var PLUS_CARDS=[
-      { k:"foyer", img:"foyer", pro:1, t:"Foyer partagé", p:"Invite ta famille : chacun ses droits, ses tickets arrivent chez toi. Tout est chiffré. Rejoindre le foyer de quelqu'un reste gratuit.", tags:["QR code", "Code + empreinte"] },
+      { k:"foyer", img:"foyer", pro:1, t:"Foyer partagé", p:"Invite ta famille : chacun ses droits, ses tickets arrivent chez toi. Tout est chiffré. Un achat pour tout le foyer : tes membres profitent aussi de Tickets Plus. Rejoindre le foyer de quelqu'un reste gratuit.", tags:["QR code", "Un achat pour le foyer"] },
       { k:"equilibre", img:"equilibre", pro:1, t:"Qui doit combien à qui", p:"Ce que chacun a vraiment payé pour le commun, comparé à sa part, et les remboursements en un geste. Aussi pour un voyage ou une sortie entre amis, même s'ils n'ont pas l'appli.", tags:["Avec ou sans virement", "Groupes"] },
       { k:"factures", img:"factures", pro:1, t:"Tes factures", p:"Électricité, gaz, eau, internet : le prélèvement dans « À venir » et la prochaine facture estimée, selon la saison.", tags:["PDF", "Factur-X", "Photos"] },
       { k:"avancee", img:"analyse", pro:1, t:"Analyse avancée", p:"Ton inflation à toi, tes alertes, ton reste à vivre et des pistes d'économies. Calculé sur ton téléphone.", tags:["Données INSEE"] },
+      { k:"drive", ic:"aide", pro:1, t:"Sauvegarde sur Google Drive", p:"Chaque jour, chiffrée, sur ton Google Drive, même appli fermée. Un téléphone perdu ou cassé ? Tu retrouves tout avec ton code de secours.", tags:["Automatique", "Chiffrée"] },
       { k:"widgets", img:"widgets", pro:1, t:"Widgets", p:"Ton solde et tes dépenses sur l'écran du téléphone, masqués derrière ton empreinte.", tags:["Android"] },
-      { k:"fin", fin:1, t:"Tout le reste est gratuit", p:"Tickets, comptes, frais fixes, provisions, commun, import de relevé, sauvegardes : gratuits, sans limite." } ];
+      { k:"fin", fin:1, t:"Tout le reste est gratuit", p:"Tickets, comptes, frais fixes, provisions, commun, import de relevé, sauvegardes à la main et restauration : gratuits, sans limite." } ];
     function plusShow(start){
       if(document.querySelector(".wlc.plus")) return;
       var S=PLUS_CARDS, i=0; S.forEach(function(c, k){ if(c.k===start) i=k; });
@@ -12234,7 +12238,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
         '<ul class="drv-bul">'+bul.map(function(x){ return '<li><i>'+x[0]+'</i><span>'+x[1]+'</span></li>'; }).join("")+'</ul>'+
         '<div class="ui-stack" style="margin-top:14px">'+(plus ? '<button type="button" class="btn primary" id="drvGo">✦ Découvrir Tickets Plus</button>' : '<button type="button" class="btn primary" id="drvGo">Choisir le compte Google</button>')+'<button type="button" class="btn ghost ui-no">Plus tard</button></div>');
       s.q(".ui-no").onclick=s.close;
-      s.q("#drvGo").onclick=function(){ s.close(); if(plus) plusShow(null); else drvConnect(); };
+      s.q("#drvGo").onclick=function(){ s.close(); if(plus) plusShow("drive"); else drvConnect(); };
     }
     function drvConnect(){
       if(!drvNative()){ uiToast("Installe la nouvelle version de l'appli pour la sauvegarde Drive"); return; }

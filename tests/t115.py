@@ -24,7 +24,7 @@ with sync_playwright() as p:
     W=lambda pg: norm(pg.locator(".wlc").inner_text()) if pg.locator(".wlc").count() else ""
     # ---------- 1. premier démarrage
     c, pg = page(); pg.reload(); pg.wait_for_timeout(1200)
-    t=W(pg); check("Bienvenue dans Tickets" in t and "Gère tes achats, comptes, frais fixes et le commun" in t and "pas même nous" in t and "*Internet sert seulement au foyer partagé" in t and pg.locator(".wlc-dots i").count()==4 and pg.locator(".wlc-shot img").count()==1, "1er démarrage : « Bienvenue dans Tickets », 4 cartes, avec sa capture")
+    t=W(pg); check("Bienvenue dans Tickets" in t and "Gère tes achats, comptes, frais fixes et le commun" in t and "pas même nous" in t and "*Sauf première connexion, transfert des tickets du foyer et sauvegarde sur Drive" in t and pg.locator(".wlc-dots i").count()==4 and pg.locator(".wlc-shot img").count()==1, "1er démarrage : « Bienvenue dans Tickets », 4 cartes, avec sa capture")
     check(pg.evaluate("()=>{ const i=document.querySelector('.wlc-shot img'); return i && i.complete && i.naturalWidth===544; }"), "la capture vitrine/accueil.jpg est chargée")
     check(pg.locator("#wlcPlus").count()==0, "version Perso : pas de lien Tickets Plus")
     pg.locator("#wlcNext").click(); pg.wait_for_timeout(200); t=W(pg)
