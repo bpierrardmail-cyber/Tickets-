@@ -81,6 +81,7 @@ Après chaque modification, dans le même commit :
 
 ## En cours / à reprendre
 - **Refonte de la navigation (05/11)** : direction validée sur maquette (voir Décisions) ; à faire par étapes : 1) barre à 5 onglets + « + », 2) Accueil Résumé / Tableau de bord, 3) Opérations (une liste), 4) Budget, À venir, Foyer, 5) fiche ticket, premier démarrage. Pas encore commencé dans l'appli.
+- **Idée à garder pour plus tard (05/11, Benoît)** : une « vue avancée » qui reprend l'interface d'avant la refonte. Avis donné : plutôt un réglage « Affichage détaillé » dans les nouveaux écrans (toutes les options dépliées, listes denses, tous les anciens graphiques dans le tableau de bord, colonnes en plus) que garder l'ancienne interface entière (deux interfaces à maintenir et à tester) ; pendant la refonte, l'ancienne reste disponible le temps de la transition. À décider.
 - **Étape 3 faite (05/11)** : le Plus du propriétaire couvre le foyer ; groupes selon les droits de Commun. À voir par Benoît avec Sylvette (version Perso : tout est déjà ouvert ; la différence se voit dans la version Store).
 - **Plan détaillé : `PLAN.md`** (5 étapes à partir du 06/11, ce que Benoît doit préparer : identifiants Google Cloud, site bpierrard.fr). Textes légaux à relire : `legal/`.
 - **Sauvegarde Google Drive, étape 2** (04/11) : restaurer intégré et **essayé par Benoît le 05/11** dans l'appli Store (restaurer depuis Drive et annuler la restauration : « fonctionne ») ; la lecture par l'appli Store des sauvegardes faites par l'appli Perso est donc confirmée (même projet Google).
