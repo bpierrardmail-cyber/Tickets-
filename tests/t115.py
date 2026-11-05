@@ -48,7 +48,7 @@ with sync_playwright() as p:
     # ---------- 3. Menu › Aide
     pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="aide"]').click(); pg.wait_for_timeout(300)
     hs=[norm(x) for x in pg.locator(".aide-h").all_inner_texts()]
-    check(len(hs)==10 and hs[0].startswith("Pour commencer") and hs[-1].startswith("Questions fréquentes"), "Menu › Aide : le guide du propriétaire, 10 parties %s" % [h[:14] for h in hs])
+    check(len(hs)==11 and hs[0].startswith("Pour commencer") and hs[-1].startswith("Questions fréquentes"), "Menu › Aide : le guide du propriétaire, 11 parties %s" % [h[:14] for h in hs])
     pg.locator(".aide-h").nth(1).click(); pg.wait_for_timeout(200)
     check("Ticket à plat" in norm(pg.locator(".aide-sec.open").inner_text()), "toucher une partie l'ouvre (Scanner un ticket)")
     pg.locator("#aideQ").fill("relevé"); pg.wait_for_timeout(300)
@@ -74,7 +74,7 @@ with sync_playwright() as p:
     check(pg.locator(".wlc").count()==0 and pg.evaluate("()=>localStorage.getItem('welcomeFy')")=="1", "« Commencer » : fermé, noté pour le membre")
     pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="aide"]').click(); pg.wait_for_timeout(300)
     hs=[norm(x) for x in pg.locator(".aide-h").all_inner_texts()]
-    check(len(hs)==8 and hs[0].startswith("Ce que tu vois") and "Guide du membre" in norm(pg.locator("#app").inner_text()), "membre : Menu › Aide montre le guide du membre (8 parties)")
+    check(len(hs)==10 and hs[0].startswith("Ce que tu vois") and "Guide du membre" in norm(pg.locator("#app").inner_text()), "membre : Menu › Aide montre le guide du membre (10 parties)")
     c.close()
     check(not errs, "pas d'erreur %s"%errs[:3])
     b.close()
