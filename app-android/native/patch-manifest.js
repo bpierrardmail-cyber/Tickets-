@@ -45,6 +45,27 @@ const add =
 `;
 
 if (!x.includes("</application>")) throw new Error("manifeste sans </application>");
+// Relevé de banque partagé vers Tickets (« Partager › Tickets ») ou ouvert avec Tickets : OFX, QFX, QIF, CSV
+const MIMES = ["text/csv", "text/comma-separated-values", "text/x-csv", "application/csv", "application/vnd.ms-excel",
+  "application/x-ofx", "application/ofx", "application/vnd.intu.qfx", "application/x-qfx", "application/qif", "application/x-qif",
+  "text/plain", "application/octet-stream"];
+const share = `
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+${MIMES.map(m => `                <data android:mimeType="${m}" />`).join("\n")}
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+${MIMES.map(m => `                <data android:mimeType="${m}" />`).join("\n")}
+            </intent-filter>
+`;
+const ma = x.indexOf('android:name=".MainActivity"');
+if (ma < 0) throw new Error("MainActivity introuvable dans le manifeste");
+const end = x.indexOf("</activity>", ma);
+x = x.slice(0, end) + share + "        " + x.slice(end);
 x = x.replace("</application>", add + "    </application>");
 // État du réseau : l'appli Perso ouvre sa copie de la page quand il n'y a pas de réseau (TkOfflineClient)
 if (!x.includes("android.permission.ACCESS_NETWORK_STATE")) {

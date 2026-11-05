@@ -87,7 +87,7 @@ L'onglet Compte montre ton compte en banque comme un relevé : tickets, frais fi
 
 **Importer un relevé de banque**
 
-Télécharge le relevé sur le site de ta banque (fichier OFX, QIF ou CSV), puis roue ⚙ › Importer un relevé. Tout est lu sur le téléphone.
+Le plus simple, sur Android : dans l'appli de ta banque, exporte le relevé (OFX, QIF ou CSV), puis **Partager › Tickets** ; Tickets s'ouvre sur l'import et demande le compte s'il y en a plusieurs. Sinon : télécharge le relevé sur le site de ta banque, puis roue ⚙ › Importer un relevé. Tout est lu sur le téléphone.
 
 - Les paiements par carte deviennent des tickets, les prélèvements des frais fixes, le reste des virements.
 - Ce qui est déjà dans l'appli est repéré et n'est pas compté deux fois. Un ticket au même nom avec un total un peu différent est corrigé.

@@ -24,6 +24,7 @@ public class MainActivity extends BridgeActivity {
             if (offline.net() == 0 && offline.hasCopy()) bridge.getWebView().loadUrl(offline.appUrl());
         }
         TicketsNativePlugin.takeIntent(getIntent());
+        TicketsNativePlugin.takeShare(this, getIntent());
         // Geste / bouton retour : la page le gère (fermer une fenêtre, écran précédent, accueil).
         // Plus rien à défaire dans la page : comportement normal d'Android (l'appli se réduit).
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -52,5 +53,6 @@ public class MainActivity extends BridgeActivity {
     public void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         TicketsNativePlugin.takeIntent(intent);
+        TicketsNativePlugin.takeShare(this, intent);
     }
 }

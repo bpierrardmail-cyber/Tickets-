@@ -119,6 +119,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
   - `impOpening` calcule le solde de départ ; `impApply` crée les données ; `impUndo` annule.
   - Le résultat se compare à `acctFigures(compte, mois).banque` (ce qui est fait), comme la carte « banque estimée ».
   - Accessible par la roue du compte si `impCan()` (un vrai compte et, dans un foyer, l'onglet Compte en modification) ; plus dans le menu.
+  - Relevé partagé depuis l'appli de la banque (Partager › Tickets, ou Ouvrir avec) : intent-filters SEND / VIEW ajoutés par `patch-manifest.js`, `TicketsNativePlugin.takeShare` → `sharedFile()` ; côté appli `impShared` (« Dans quel compte ? » puis `impOpen`), vérifié au démarrage et au retour dans l'appli. Test t128.
 - **Analyse « + Frais fixes »** : `fraisLines(mois, qui)` donne ce qui sort réellement du compte de la personne. `anFraisLines` limite le calcul aux mois qui ont des tickets.
 - **Éditions** : `EDITION` vaut `perso` ou `store`. L'appli Android l'annonce par `TicketsApp/<édition>` dans son identifiant de navigateur (plus ` TkOff/1` pour la Perso qui garde elle-même sa copie hors ligne) ; dans un navigateur, ajouter `?edition=store`.
   - La version Store n'a pas la Bourse.

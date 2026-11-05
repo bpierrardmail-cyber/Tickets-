@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.database.Cursor;
+import android.provider.OpenableColumns;
 import android.util.Base64;
 import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
@@ -52,6 +54,7 @@ import org.json.JSONObject;
  *  - driveConnect()               : connexion Google (accès drive.file) ; { email, count, kfs, last, lastN }
  *  - driveSetup({ on, wifi, keepD, keepM, keepY, remind }) / driveStatus() : réglages et état de la sauvegarde Drive
  *  - driveStage({ data, name, n, kf, remind }) : sauvegarde chiffrée préparée, envoyée dès que le réseau est là
+ *  - sharedFile()                 : { name, mime, b64 } ou { text } : relevé partagé vers Tickets (une seule fois)
  *  - driveSendNow()               : relance l'envoi ; driveFetch() : { data, name, created, n } de la dernière sauvegarde
  */
 @CapacitorPlugin(name = "TicketsNative", requestCodes = { TicketsNativePlugin.DOC_REQ, TicketsNativePlugin.DRIVE_REQ })
@@ -390,6 +393,61 @@ public class TicketsNativePlugin extends Plugin {
                 call.reject("Drive : " + e.getMessage(), "fail");
             }
         }).start();
+    }
+
+    // ---------- Relevé partagé vers Tickets (« Partager » depuis l'appli de la banque, ou « Ouvrir avec ») ----------
+    private static JSObject pendingShare = null;
+
+    /** Appelé par MainActivity : lit le fichier partagé (20 Mo au plus) et le garde pour la page. */
+    static void takeShare(Context c, Intent i) {
+        if (i == null) return;
+        String a = i.getAction();
+        if (!Intent.ACTION_SEND.equals(a) && !Intent.ACTION_VIEW.equals(a)) return;
+        Uri u = null;
+        if (Intent.ACTION_SEND.equals(a)) {
+            Object st = i.getExtras() == null ? null : i.getExtras().get(Intent.EXTRA_STREAM);
+            if (st instanceof Uri) u = (Uri) st;
+        } else u = i.getData();
+        JSObject r = new JSObject();
+        try {
+            if (u != null) {
+                String name = null;
+                try (Cursor cu = c.getContentResolver().query(u, new String[]{ OpenableColumns.DISPLAY_NAME }, null, null, null)) {
+                    if (cu != null && cu.moveToFirst()) name = cu.getString(0);
+                } catch (Exception ignored) {}
+                if (name == null) name = u.getLastPathSegment();
+                try (InputStream in = c.getContentResolver().openInputStream(u)) {
+                    if (in == null) return;
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    byte[] buf = new byte[16384];
+                    int n, tot = 0;
+                    while ((n = in.read(buf)) > 0) { out.write(buf, 0, n); tot += n; if (tot > 20 * 1024 * 1024) { r.put("tooBig", true); break; } }
+                    if (!r.has("tooBig")) r.put("b64", Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP));
+                }
+                r.put("name", name == null ? "relevé" : name);
+                r.put("mime", i.getType() == null ? "" : i.getType());
+            } else {
+                String t = i.getStringExtra(Intent.EXTRA_TEXT);
+                if (t == null || t.isEmpty()) return;
+                r.put("text", t);
+                r.put("name", "texte partagé");
+            }
+        } catch (Exception e) {
+            r.put("error", String.valueOf(e.getMessage()));
+        }
+        pendingShare = r;
+        // une rotation ou un retour dans l'appli ne relit pas le même fichier
+        i.setAction(Intent.ACTION_MAIN);
+        i.removeExtra(Intent.EXTRA_STREAM);
+        i.removeExtra(Intent.EXTRA_TEXT);
+        i.setData(null);
+    }
+
+    @PluginMethod
+    public void sharedFile(PluginCall call) {
+        JSObject r = pendingShare == null ? new JSObject() : pendingShare;
+        pendingShare = null;
+        call.resolve(r);
     }
 
     // ---------- Widgets ----------

@@ -100,6 +100,8 @@ Faite le 05/11 (voir `JOURNAL.md`).
 
 ### Étape 4 — import du relevé en un geste
 
+Faite le 05/11 (voir `JOURNAL.md`).
+
 - Dans l'appli de la banque : relevé OFX, QIF ou CSV › Partager › Tickets.
 - Tickets s'ouvre sur l'import, en demandant le compte si l'appli en a plusieurs ; la suite est l'import actuel.
 - Android : Tickets s'inscrit comme destinataire de ces fichiers (dans le même APK que la sauvegarde).
