@@ -15,7 +15,15 @@ import sys, os
 HERE=os.path.dirname(os.path.abspath(__file__)); ROOT=os.path.dirname(HERE)
 from playwright.sync_api import sync_playwright
 import horloge
-APP='file://'+ROOT+'/beta/index.html'; fails=[]
+# servie sur https://localhost (vraie origine : le stockage survit aux rechargements, ce que file:// ne garantit pas)
+APP='https://localhost/beta/index.html'; fails=[]
+def serve(r):
+    u=r.request.url
+    if not u.startswith("https://localhost/"): return r.abort()
+    f=os.path.join(ROOT, u.split("https://localhost/",1)[1].split("?")[0].split("#")[0])
+    if not os.path.isfile(f): return r.fulfill(status=404, body="")
+    ct="text/html; charset=utf-8" if f.endswith(".html") else ("application/javascript" if f.endswith(".js") else "application/octet-stream")
+    return r.fulfill(status=200, body=open(f,"rb").read(), headers={"Content-Type":ct})
 def check(c, m):
     print(("OK   " if c else "FAIL ")+m)
     if not c: fails.append(m)
@@ -93,7 +101,7 @@ with sync_playwright() as p:
         c=b.new_context(viewport={'width':412,'height':900})
         if mock: c.add_init_script(MOCK)
         pg=c.new_page(); pg.on('pageerror', lambda e: errs.append(str(e)))
-        pg.route("**/*", lambda r: r.continue_() if r.request.url.startswith("file:") else r.abort())
+        pg.route("**/*", serve)
         pg.goto(url); pg.wait_for_timeout(1200)   # laisser le 1er démarrage (vide) se terminer avant d'écrire les données
         for _ in range(3):
             pg.evaluate("d=>{localStorage.clear(); for(const k in d) localStorage.setItem(k, JSON.stringify(d[k]));}", data); pg.wait_for_timeout(600); pg.reload(); pg.wait_for_timeout(1500)

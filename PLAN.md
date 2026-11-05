@@ -91,6 +91,8 @@ Maquette « Tickets — Restaurer depuis Drive » (8 écrans) validée le 04/11,
 
 ### Étape 3 — Plus pour tout le foyer, groupes
 
+Faite le 05/11 (voir `JOURNAL.md`).
+
 - Le Plus du propriétaire couvre les membres : groupes, qui doit combien à qui, factures, analyse avancée selon leurs onglets (les widgets restent par téléphone).
 - Groupes : un membre avec Commun en « Modif. » ajoute, retire, rembourse et crée un groupe comme le propriétaire ; avec « Lecture », il voit le groupe sans le changer.
 - Le ticket d'un autre membre peut être retiré du groupe, pas modifié.

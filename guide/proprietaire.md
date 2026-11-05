@@ -142,7 +142,7 @@ Compte comme payé pour le commun : les frais communs (selon le compte qui les p
 
 ## Foyer partagé
 
-✦ Tickets Plus. Ton téléphone reste le centre : il garde toutes les données et envoie à chaque membre seulement ce que tu partages avec lui. Les données sont chiffrées : personne d'autre ne peut les lire.
+✦ Tickets Plus. Un seul achat pour tout le foyer : tes membres profitent aussi des fonctions ✦, selon leurs droits (les widgets restent par téléphone). Dans un groupe, un membre avec Commun en modification ajoute, retire, rembourse et crée des groupes comme toi ; en lecture, il les voit sans les changer. Ton téléphone reste le centre : il garde toutes les données et envoie à chaque membre seulement ce que tu partages avec lui. Les données sont chiffrées : personne d'autre ne peut les lire.
 
 1. Menu › Foyer partagé, puis crée ton foyer.
 2. Ajoute un membre : choisis la personne, puis ses droits.

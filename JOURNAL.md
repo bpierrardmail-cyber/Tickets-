@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `05/11 08:17`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `05/11 08:42`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -79,7 +79,7 @@ Après chaque modification, dans le même commit :
 **Version Store** : `PLUS_FEATURES = widgets, foyer, avancee, factures` (« factures » = importer et suivre ses factures ; le reste d'À venir est gratuit). L'achat de Plus n'est pas encore branché. L'import de relevé est gratuit pour l'instant.
 
 ## En cours / à reprendre
-- **Plus tard — groupes et foyer** (04/11) : un membre du foyer qui est dans un groupe doit pouvoir y ajouter ou retirer un ticket comme le propriétaire (droits de l'onglet Commun ; avec Commun en lecture : groupe en lecture), et utiliser les groupes sans acheter Plus (le Plus du propriétaire couvre le foyer).
+- **Étape 3 faite (05/11)** : le Plus du propriétaire couvre le foyer ; groupes selon les droits de Commun. À voir par Benoît avec Sylvette (version Perso : tout est déjà ouvert ; la différence se voit dans la version Store).
 - **Plan détaillé : `PLAN.md`** (5 étapes à partir du 06/11, ce que Benoît doit préparer : identifiants Google Cloud, site bpierrard.fr). Textes légaux à relire : `legal/`.
 - **Sauvegarde Google Drive, étape 2** (04/11) : restaurer intégré et **essayé par Benoît le 05/11** dans l'appli Store (restaurer depuis Drive et annuler la restauration : « fonctionne ») ; la lecture par l'appli Store des sauvegardes faites par l'appli Perso est donc confirmée (même projet Google).
 - **À faire : sauvegarde Drive des membres d'un foyer** (04/11, demandé par Benoît) : à partir de leur espace « Mes comptes » (qui existe déjà), avec leur propre clé et leur propre compte Google ; aujourd'hui un membre n'a pas de sauvegarde Drive et ne peut pas restaurer.
@@ -203,6 +203,8 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 05/11
+
+- **Étape 3 du plan : Tickets Plus du propriétaire pour tout le foyer** (« tu peux faire le point le plus rapide ») : la copie de chaque membre porte `plus` (le Plus du propriétaire, `plusOwn()`), gardée dans `fyCfg.plus` ; `plusUnlocked()` = Plus de ce téléphone ou du foyer (`plusFoyer()`), donc groupes, qui doit combien à qui, factures et analyse avancée s'ouvrent au membre selon ses onglets ; les widgets restent par téléphone (`canUse("widgets")` = `plusOwn()`). La copie est republiée quand le Plus du propriétaire change (`m.pl`). Groupes : déjà réglés par les droits de Commun (modification : créer, ajouter, retirer, rembourser ; lecture : voir) ; le ticket d'un autre reste en lecture, « Retirer du groupe » ne touche que le groupe. Guides propriétaire et membre complétés. Test `t127` (copie déchiffrée avec la clé du membre ; membre couvert, en lecture, propriétaire sans Plus) ; t125 servi sur https://localhost comme t126 (stockage parfois perdu en file://).
 
 - **Menu « Sauvegarder · restaurer »** (essai de Benoît dans l'appli Store : « la restauration n'est pas disponible ; dans le menu il faut indiquer sauvegarde et restauration, la restauration doit être accessible directement ») : la ligne du menu s'appelle « Sauvegarder · restaurer » et ouvre une seule feuille (`backupMenu`, aussi dans un navigateur) : Sauvegarder (Google Drive dans l'appli Android, complète, données seules) puis Restaurer (Annuler la restauration s'il y a lieu, Depuis Google Drive, Depuis un fichier). Restaurer depuis Drive est possible sans Tickets Plus (version Store) : seule la sauvegarde automatique demande Plus ; sans Plus, elle n'est pas activée après la restauration. t126 complété.
 

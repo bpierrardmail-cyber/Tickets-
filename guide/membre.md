@@ -9,7 +9,7 @@ Tu as rejoint le foyer de quelqu'un : c'est son téléphone qui garde les donné
 - **Les tickets** : les tiens, ou ceux de tout le foyer s'il l'a décidé (ceux des autres en lecture seule).
 - Menu › Foyer montre tes droits et la dernière mise à jour.
 
-Rejoindre un foyer est gratuit.
+Rejoindre un foyer est gratuit. Si le propriétaire a Tickets Plus, ses fonctions ✦ marchent aussi pour toi, selon tes droits (groupes, qui doit combien à qui, factures, analyse avancée) ; les widgets restent à acheter sur chaque téléphone.
 
 ## Ton accueil
 
