@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `05/11 09:45
+- β web : `beta/index.html`, étiquette `05/11 10:07
 ([^`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
@@ -207,7 +207,9 @@ Après chaque modification, dans le même commit :
 
 ### 05/11
 
-- **Sauvegarde Drive des membres d'un foyer** (« note bien la sauvegarde des membres ; la possibilité de créer son compte existe déjà ») : un membre a maintenant Menu › « Sauvegarder · restaurer » (statut « Mes comptes », ou « Mes comptes · Drive ») : une fiche (`drvMemberSheet`) explique que le foyer est sauvegardé par le propriétaire (sur un nouveau téléphone, il suffit de le rejoindre à nouveau) et que « Mes comptes » a sa propre sauvegarde, puis mène à Mes comptes (ou fait une copie du foyer dans un fichier, comme avant). Dans Mes comptes, l'appli est celle du membre : sauvegarde et restauration Drive habituelles, avec **son** code de secours et **son** compte Google (seulement ses données perso, jamais le foyer mis de côté). Le Plus du propriétaire couvre aussi Mes comptes (`plusFoyer()` lit `fyPerso.cfg.plus`). En revenant au foyer, les derniers changements de Mes comptes sont d'abord préparés pour Drive (`espaceFoyer` → `drvPrep`). Guide du membre : partie « Sauvegarder ». Test t129. Pas de nouvel APK nécessaire (Store : à la prochaine compilation).
+- **Fiche de sauvegarde du membre simplifiée** (« il ne faut pas d'ambiguïté, le plus simple possible ») : plus de bouton « Copie du foyer dans un fichier » (un membre ne pouvait pas la restaurer) ; un seul bouton, « Aller dans Mes comptes », et le texte dit que c'est sa seule sauvegarde à faire.
+
+- **Sauvegarde Drive des membres d'un foyer** (« note bien la sauvegarde des membres ; la possibilité de créer son compte existe déjà ») : un membre a maintenant Menu › « Sauvegarder · restaurer » (statut « Mes comptes », ou « Mes comptes · Drive ») : une fiche (`drvMemberSheet`) explique que le foyer est sauvegardé par le propriétaire (sur un nouveau téléphone, il suffit de le rejoindre à nouveau) et que « Mes comptes » a sa propre sauvegarde, puis mène à Mes comptes. Dans Mes comptes, l'appli est celle du membre : sauvegarde et restauration Drive habituelles, avec **son** code de secours et **son** compte Google (seulement ses données perso, jamais le foyer mis de côté). Le Plus du propriétaire couvre aussi Mes comptes (`plusFoyer()` lit `fyPerso.cfg.plus`). En revenant au foyer, les derniers changements de Mes comptes sont d'abord préparés pour Drive (`espaceFoyer` → `drvPrep`). Guide du membre : partie « Sauvegarder ». Test t129. Pas de nouvel APK nécessaire (Store : à la prochaine compilation).
 
 - **Étape 5 du plan : monnaie et présentation** (« oui ») : Réglages › « Monnaie de l'appli · ne convertit pas les montants » (ex « Devise principale ») ; elle est proposée une fois au premier démarrage, après le prénom (`chooseCurrencyForm(first)`) ; la Bourse n'est citée que dans la version Perso. Accueil en diapos : note « *Sauf première connexion, transfert des tickets du foyer et sauvegarde sur Drive. », carte du relevé « Depuis l'appli de ta banque : Partager › Tickets », dernière carte avec la sauvegarde Drive. Carrousel Plus : 7 cartes (+ « Sauvegarde sur Google Drive », sans capture pour l'instant ; « Un achat pour tout le foyer » sur la carte Foyer ; « restauration » gratuite sur la dernière). Politique de confidentialité : la sauvegarde Drive n'est plus « à venir », relevé partagé lu sur le téléphone. Tests t72, t115, t118 adaptés.
 

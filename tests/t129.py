@@ -70,7 +70,7 @@ with sync_playwright() as p:
     check("Sauvegarder · restaurer" in t and "Mes comptes" in t, "membre : ligne « Sauvegarder · restaurer » dans le menu (%s)" % t.replace("\n"," | ")[:160])
     pg.locator('.dr-row[data-k="backup"]').click(); pg.wait_for_timeout(500)
     s=norm(pg.locator(".sheet-overlay").last.inner_text()) if pg.locator(".sheet-overlay").count() else ""
-    check("sauvegardées par Alex" in s and "propre sauvegarde" in s and "Aller dans Mes comptes" in s and "Copie du foyer" in s, "fiche du membre : foyer sauvegardé par Alex, « Mes comptes » à part")
+    check("sauvegardées par Alex" in s and "Ta seule sauvegarde" in s and "Aller dans Mes comptes" in s and "Copie du foyer" not in s and pg.locator(".sheet-overlay").last.locator("button").count()==2, "fiche du membre : foyer sauvegardé par Alex, « Mes comptes » à part")
     nav(pg, pg.locator(".sheet-overlay button", has_text="Aller dans Mes comptes"))
     check(pg.evaluate("()=>!!localStorage.getItem('fyPerso') && !localStorage.getItem('fyCfg')"), "« Aller dans Mes comptes » : espace perso ouvert")
     # ---------- 2. Plus du propriétaire toujours là

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="05/11 09:45" />
+  <meta name="build" content="05/11 10:07" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -12435,10 +12435,9 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
     function drvMemberSheet(){
       var own=(fyCfg && fyCfg.owner)||"le propriétaire", on=!!drvCfg().on;
       uiChoice("Sauvegarder et restaurer", esc("Les données du foyer sont sauvegardées par "+own+" : sur un nouveau téléphone, il suffit de rejoindre à nouveau le foyer.")+
-        '<div style="margin-top:8px">'+esc("Ton espace « Mes comptes » a sa propre sauvegarde, sur ton Google Drive, avec ton code de secours à toi. Personne du foyer ne peut la lire.")+'</div>'+
+        '<div style="margin-top:8px">'+esc("Ta seule sauvegarde à faire : celle de ton espace « Mes comptes », sur ton Google Drive, avec ton code de secours à toi. Personne du foyer ne peut la lire.")+'</div>'+
         (on ? '<div style="margin-top:8px;color:var(--accent)">'+esc("☁️ Sauvegarde Drive de Mes comptes : activée")+'</div>' : ''), [
-        { l:"🔒 Aller dans Mes comptes", fn:espacePerso },
-        { l:"📄 Copie du foyer dans un fichier", primary:false, fn:function(){ backupData("file"); } } ]);
+        { l:"🔒 Aller dans Mes comptes", fn:espacePerso } ]);
     }
     function drvMemberNo(){ uiToast("Tes données viennent du foyer : quitte le foyer avant de restaurer une sauvegarde"); }
     // Écran : liste des sauvegardes
