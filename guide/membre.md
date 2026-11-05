@@ -19,17 +19,17 @@ Ton accueil est à toi : il montre toujours tes chiffres, pas ceux du foyer.
 - **Ma part du commun** : ce que tu dois payer des frais communs du mois.
 - **Mes tickets** : tes dépenses du mois.
 
-Le bouton **Scan** en bas de l'écran sert à photographier un ticket.
+Le bouton vert **＋** en bas à droite sert à ajouter : scanner ou saisir un ticket, et selon tes droits un virement ou un frais fixe.
 
 ## Ajouter un ticket
 
-Touche **Scan**, puis « Prendre une photo » ou « Choisir dans la galerie ». Le ticket est lu sur ton téléphone.
+Touche **＋**, puis « Scanner un ticket » ou « Ticket depuis la galerie ». Le ticket est lu sur ton téléphone.
 
 - Ticket à plat, bien éclairé, pris en entier ; un ticket très long en plusieurs photos.
 - Vérifie le montant, le magasin et la date. Ce qui est en orange est à regarder.
 - Pas de ticket ? « ✍️ Saisie » pour noter une dépense à la main.
 - Une dépense à partager : Options › Partage (« Qui paie ce ticket ? ») : seulement toi, le commun du foyer, ou certaines personnes.
-- Supprimé par erreur ? Dépenses › Tickets › Corbeille › « Remettre » (30 jours).
+- Supprimé par erreur ? Budget › Tickets › Corbeille › « Remettre » (30 jours).
 
 Ton ticket part chez le propriétaire du foyer dès que ton téléphone est connecté.
 

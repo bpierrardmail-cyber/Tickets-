@@ -6,20 +6,20 @@ Tickets garde tout sur ton téléphone : pas de compte à créer, pas besoin d'i
 
 1. **Ton prénom** : demandé au premier démarrage. Il sert pour « Payé par » et pour partager les dépenses. Tu peux le changer dans Menu › Personnes.
 2. **Les personnes du foyer** : Menu › Personnes. Ajoute chaque personne qui paie ou pour qui tu dépenses.
-3. **Ton compte** : un compte courant est créé tout seul, c'est ton compte principal. Pour en ajouter un autre ou le modifier : onglet Compte, puis la roue ⚙ en haut à droite.
+3. **Ton compte** : un compte courant est créé tout seul, c'est ton compte principal. Pour en ajouter un autre ou le modifier : onglet Opérations, puis la roue ⚙ en haut à droite.
 
 **L'écran d'accueil**
 
 - En haut, les graphiques que tu choisis : ⚙ Choisir, ou un appui long sur une carte pour la changer, la déplacer ou la masquer.
 - « ✍️ Saisie » note une dépense à la main ; « 🧾 Tickets » ouvre la liste du mois.
 - Le bouton en haut à droite choisit qui tu regardes : toi, une personne, ou tout le foyer.
-- En bas, le bouton **Scan** pour photographier un ticket.
+- En bas, 5 onglets : Accueil, Opérations, Budget, À venir, Foyer. Le bouton vert **＋** au-dessus ajoute tout : scanner ou saisir un ticket, un virement, un frais fixe, importer un relevé.
 
 Tu peux revoir l'accueil de l'appli dans Menu › Aide. Les fonctions marquées ✦ font partie de Tickets Plus : Menu › ✦ Tickets Plus les présente toutes.
 
 ## Scanner un ticket
 
-Touche **Scan** en bas de l'écran, puis « Prendre une photo » ou « Choisir dans la galerie ». Le ticket est lu sur le téléphone, rien ne part sur internet.
+Touche le bouton vert **＋**, puis « Scanner un ticket » ou « Ticket depuis la galerie ». Le ticket est lu sur le téléphone, rien ne part sur internet.
 
 **Pour une bonne lecture**
 
@@ -46,17 +46,17 @@ Touche **Scan** en bas de l'écran, puis « Prendre une photo » ou « Choisir d
 **Partager une dépense** : Options › Partage, « Qui paie ce ticket ? »
 
 - **Seulement** la personne qui a payé : pas partagé (par défaut).
-- **Le commun du foyer** : chacun selon sa part (Commun › Parts).
+- **Le commun du foyer** : chacun selon sa part (Foyer › Parts).
 - **Certaines personnes** : en parts égales ou ajustées. Exemple : un resto à 3 sur une famille de 5.
 - Pour ne partager qu'une partie du ticket : « partager cet article » sur les articles concernés.
 
-**Supprimer un ticket** : ⋯ en haut de la fiche › Supprimer, ou un appui long sur le ticket dans une liste. Il part dans la **corbeille** (Dépenses › Tickets, en bas) : « Annuler » tout de suite, ou « Remettre » pendant 30 jours, avec sa photo. Après 30 jours, il est supprimé pour de bon.
+**Supprimer un ticket** : ⋯ en haut de la fiche › Supprimer, ou un appui long sur le ticket dans une liste. Il part dans la **corbeille** (Budget › Tickets, en bas) : « Annuler » tout de suite, ou « Remettre » pendant 30 jours, avec sa photo. Après 30 jours, il est supprimé pour de bon.
 
 Un appui long sur un ticket, dans n'importe quelle liste, propose Ouvrir ou Supprimer.
 
-## Dépenses
+## Budget
 
-L'onglet Dépenses a quatre parties, en boutons sous le titre.
+L'onglet Budget (ex Dépenses) a quatre parties, en boutons sous le titre.
 
 - **Tickets** : les tickets du mois, avec la recherche et le calendrier. En bas, « Photos des tickets » ouvre la galerie, rangée par mois.
 - **Produits** : ce que tu achètes et à quel prix. Mes produits, Hausses (ce qui augmente), Magasins (où c'est le moins cher), Familles. Touche un produit pour voir tous ses achats.
@@ -67,9 +67,9 @@ L'onglet Dépenses a quatre parties, en boutons sous le titre.
 
 Le bouton personne, en haut à droite, choisit les dépenses montrées dans Produits et Analyse : les tiennes, celles d'une personne, ou tout le foyer.
 
-## Compte
+## Opérations
 
-L'onglet Compte montre ton compte en banque comme un relevé : tickets, frais fixes et virements du mois, jour par jour, avec le solde du soir.
+L'onglet Opérations (ex Compte) montre ton compte en banque comme un relevé : tickets, frais fixes et virements du mois, jour par jour, avec le solde du soir.
 
 **Opérations**
 
@@ -112,9 +112,9 @@ L'onglet À venir montre ce qui va sortir de tes comptes. Il a quatre parties.
 - Si un relevé a été importé, l'appli vérifie le montant avec ta banque.
 - L'appli estime la prochaine facture (selon la saison pour l'énergie) et peut la payer avec une provision.
 
-## Commun
+## Foyer
 
-L'onglet Commun montre combien chacun doit payer des frais communs du mois.
+L'onglet Foyer (ex Commun) montre combien chacun doit payer des frais communs du mois.
 
 - **Les parts** : la part de chacun dans le commun, en %. Un frais peut avoir ses propres parts.
 - **Frais communs** : ceux du mois. Pour les modifier, le lien mène à À venir › Frais fixes.
@@ -142,7 +142,7 @@ Compte comme payé pour le commun : les frais communs (selon le compte qui les p
 
 ## Foyer partagé
 
-✦ Tickets Plus. Un seul achat pour tout le foyer : tes membres profitent aussi des fonctions ✦, selon leurs droits (les widgets restent par téléphone). Dans un groupe, un membre avec Commun en modification ajoute, retire, rembourse et crée des groupes comme toi ; en lecture, il les voit sans les changer. Ton téléphone reste le centre : il garde toutes les données et envoie à chaque membre seulement ce que tu partages avec lui. Les données sont chiffrées : personne d'autre ne peut les lire.
+✦ Tickets Plus. Un seul achat pour tout le foyer : tes membres profitent aussi des fonctions ✦, selon leurs droits (les widgets restent par téléphone). Dans un groupe, un membre avec Foyer en modification ajoute, retire, rembourse et crée des groupes comme toi ; en lecture, il les voit sans les changer. Ton téléphone reste le centre : il garde toutes les données et envoie à chaque membre seulement ce que tu partages avec lui. Les données sont chiffrées : personne d'autre ne peut les lire.
 
 1. Menu › Foyer partagé, puis crée ton foyer.
 2. Ajoute un membre : choisis la personne, puis ses droits.
@@ -208,7 +208,7 @@ Pour essayer l'appli ou la montrer sans tes chiffres : Menu › Réglages › Mo
 
 **Mon solde ne correspond pas à la banque.** Vérifie le solde reporté (roue ⚙ du compte) et ce qui est coché « fait ». Le plus sûr : importer le relevé du mois.
 
-**J'ai supprimé un ticket par erreur.** Touche « Annuler » tout de suite, ou retrouve-le dans Dépenses › Tickets › Corbeille (30 jours) et touche « Remettre ».
+**J'ai supprimé un ticket par erreur.** Touche « Annuler » tout de suite, ou retrouve-le dans Budget › Tickets › Corbeille (30 jours) et touche « Remettre ».
 
 **Je change de téléphone.** Avec la sauvegarde Drive : au premier démarrage du nouveau, « Restaurer depuis Google Drive » et ton code de secours. Pour les photos aussi : une sauvegarde complète (ZIP), puis Menu › Réglages › Restaurer. Avec un foyer partagé : « Récupérer mon foyer » avec ton code de récupération.
 

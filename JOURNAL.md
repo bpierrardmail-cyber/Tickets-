@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `05/11 10:41
+- β web : `beta/index.html`, étiquette `05/11 16:34
 ([^`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
@@ -80,7 +80,7 @@ Après chaque modification, dans le même commit :
 **Version Store** : `PLUS_FEATURES = widgets, foyer, avancee, factures` (« factures » = importer et suivre ses factures ; le reste d'À venir est gratuit). L'achat de Plus n'est pas encore branché. L'import de relevé est gratuit pour l'instant.
 
 ## En cours / à reprendre
-- **Refonte de la navigation (05/11)** : direction validée sur maquette (voir Décisions) ; à faire par étapes : 1) barre à 5 onglets + « + », 2) Accueil Résumé / Tableau de bord, 3) Opérations (une liste), 4) Budget, À venir, Foyer, 5) fiche ticket, premier démarrage. Pas encore commencé dans l'appli.
+- **Refonte de la navigation (05/11)** : direction validée sur maquette (voir Décisions) ; à faire par étapes : 1) barre à 5 onglets + « + », 2) Accueil Résumé / Tableau de bord, 3) Opérations (une liste), 4) Budget, À venir, Foyer, 5) fiche ticket, premier démarrage. Étape 1 faite le 05/11 (barre à 5 onglets + « + ») ; suite : étape 2, l'Accueil Résumé / Tableau de bord.
 - **Idée à garder pour plus tard (05/11, Benoît)** : une « vue avancée » qui reprend l'interface d'avant la refonte. Avis donné : plutôt un réglage « Affichage détaillé » dans les nouveaux écrans (toutes les options dépliées, listes denses, tous les anciens graphiques dans le tableau de bord, colonnes en plus) que garder l'ancienne interface entière (deux interfaces à maintenir et à tester) ; pendant la refonte, l'ancienne reste disponible le temps de la transition. À décider.
 - **Étape 3 faite (05/11)** : le Plus du propriétaire couvre le foyer ; groupes selon les droits de Commun. À voir par Benoît avec Sylvette (version Perso : tout est déjà ouvert ; la différence se voit dans la version Store).
 - **Plan détaillé : `PLAN.md`** (5 étapes à partir du 06/11, ce que Benoît doit préparer : identifiants Google Cloud, site bpierrard.fr). Textes légaux à relire : `legal/`.
@@ -209,6 +209,8 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 05/11
+
+- **Refonte, étape 1 : barre à 5 onglets et un seul « + »** (« tu peux continuer ») : en bas, Accueil · Opérations (ex Compte) · Budget (ex Dépenses) · À venir · Foyer (ex Commun), avec icônes ; la Bourse (Perso) passe dans le menu. Le bouton rond Scan (Accueil seulement) est remplacé par un « + » vert en bas à droite, sur tous les onglets : Scanner un ticket, Ticket depuis la galerie, Saisir une dépense, Virement reçu / envoyé, Frais fixe, Importer un relevé, selon les droits (membre : onglet en modification ; rien de permis → pas de « + »). Titres des écrans : Opérations, Budget, Foyer. Les écrans eux-mêmes ne changent pas encore (étapes 2 à 5). Guides mis à jour. Tests : t131 (nouveau), t112, t72, t81 adaptés.
 
 - **Mode démo** (« tu peux intégrer ; 1 et 2 ok ; pouvoir faire le plus d'actions possible, voir le plus de données possible ») : Menu › Réglages › Mode démo, « 🎭 Voir un exemple » au premier démarrage, ou le lien web `…/beta/?demo`. Un foyer inventé (Alex, Marie, Léa, Tom) sur les 6 derniers mois, recalculé à partir d'aujourd'hui (`demoSeed`) : ~95 tickets avec articles et hausses de prix, 2 comptes, salaires et virements « chaque mois », frais fixes (Loyer « chacun sa part », crédit auto…), 4 épargnes dont un objectif, 3 provisions, factures électricité / eau / box, budgets (Loisirs dépassé), groupe « Week-end à la mer », remboursement du commun, un ticket dans la corbeille, foyer partagé avec Marie (modification) et Léa (enfant, consultation). Les données de la démo sont rangées à part : `store` préfixe toutes les clés par `demo:` (`DEMO`, `SK`) ; les vraies données ne sont ni lues ni modifiées. Rien ne part : relais simulé (`fyCall`, `fySync`), ni Drive, ni widgets, ni relevé partagé (`npCall`), ni rappels (`rapSync`), pas de code imposé (`fyEnsureLock`), pas de restauration ni de « Rejoindre un foyer ». Plus débloqué ; pastille « 🎭 Démo · Quitter » (`demoMenu`) : Quitter (`demoQuit` : espace démo effacé, photos prises en démo retirées), « Voir la version gratuite » (`demoFree`), « Repartir de l'exemple ». Lien web : l'exemple repart chaque jour. Guides : partie « Mode démo ». Test t130.
 
