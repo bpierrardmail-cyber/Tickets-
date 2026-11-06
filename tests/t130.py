@@ -32,17 +32,20 @@ with sync_playwright() as p:
         pg.evaluate("d=>{ localStorage.clear(); for(const k in d) localStorage.setItem(k, JSON.stringify(d[k])); }", data); pg.wait_for_timeout(200)
         pg.goto(url); pg.wait_for_timeout(1500)
         return pg
-    def nav(pg, v): pg.locator('#nav .navi[data-view="%s"]' % v).first.click(); pg.wait_for_timeout(700); return norm(pg.locator("#app").inner_text())
+    def nav(pg, v):
+        if v=="tickets":
+            pg.locator('#nav .navi[data-view="compte"]').first.click(); pg.wait_for_timeout(500); pg.locator('.cpsub[data-cp="tk"]').click(); pg.wait_for_timeout(700); return norm(pg.locator("#app").inner_text())
+        pg.locator('#nav .navi[data-view="%s"]' % v).first.click(); pg.wait_for_timeout(700); return norm(pg.locator("#app").inner_text())
     def body(pg): return norm(pg.locator("body").inner_text())
     # ---------- 1. entrer dans la démo
     pg=page(BASE, real)
-    check("Vraie Boulangerie" in nav(pg, "depenses"), "avant : les vraies données")
+    check("Vraie Boulangerie" in nav(pg, "tickets"), "avant : les vraies données")
     pg.locator("#hmenu").click(); pg.wait_for_timeout(300); pg.locator('.dr-row[data-k="settings"]').click(); pg.wait_for_timeout(300)
     pg.locator('.dr-row[data-k="demo"]').click(); pg.wait_for_timeout(300)
     with pg.expect_navigation(): pg.locator(".sheet-overlay button", has_text="Entrer dans la démo").click()
     pg.wait_for_timeout(1800)
     check(pg.locator("#demoPill").count()==1 and pg.locator(".sheet-overlay").count()==0, "démo : pastille « Démo · Quitter », pas de code ni d'accueil")
-    t=nav(pg, "depenses")
+    t=nav(pg, "tickets")
     n=pg.evaluate("()=>JSON.parse(localStorage.getItem('demo:entries')).length")
     check(n>80 and "Vraie Boulangerie" not in t and ("Intermarché" in t or "Boulangerie Le Fournil" in t), "démo : %d tickets inventés, pas les vrais" % n)
     check(pg.evaluate("()=>JSON.parse(localStorage.getItem('entries')).length")==1, "vraies données intactes (clé « entries »)")
@@ -55,7 +58,7 @@ with sync_playwright() as p:
     check("Énergie Fictive" in t and pg.locator(".fct-teaser").count()==0, "À venir › Factures : fournisseurs, Plus débloqué")
     pg.locator(".fct-card[data-k]").first.click(); pg.wait_for_timeout(700)
     nav(pg, "list")
-    for sub in ["Produits","Budgets","Analyse"]:
+    for sub in ["Budgets","Analyse","Produits"]:
         nav(pg, "depenses"); pg.locator('.dpsub', has_text=sub).first.click(); pg.wait_for_timeout(600)
     check("Hausses" in body(pg) or True, "Dépenses : Produits, Budgets, Analyse ouverts")
     pg.locator("#hmenu").click(); pg.wait_for_timeout(300); pg.locator('.dr-row[data-k="foyer"]').click(); pg.wait_for_timeout(900)
@@ -72,7 +75,7 @@ with sync_playwright() as p:
     pg.wait_for_timeout(1500)
     keys=pg.evaluate("()=>Object.keys(localStorage)")
     check(pg.locator("#demoPill").count()==0 and not [k for k in keys if k.startswith("demo:") or k=="__demo"], "quitter : plus de pastille, espace démo effacé")
-    check("Vraie Boulangerie" in nav(pg, "depenses"), "quitter : les vraies données reviennent")
+    check("Vraie Boulangerie" in nav(pg, "tickets"), "quitter : les vraies données reviennent")
     # ---------- 4. lien web
     p4=page(BASE+"?demo", {})
     check(p4.locator("#demoPill").count()==1 and p4.evaluate("()=>!localStorage.getItem('__demo') && !!localStorage.getItem('demo:entries')"), "lien « ?demo » : la démo, sans drapeau gardé")

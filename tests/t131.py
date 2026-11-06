@@ -61,7 +61,7 @@ with sync_playwright() as p:
         return m
     pv=page(mem("view", []), code=True)
     check("noplus" in pv.evaluate("()=>document.getElementById('nav').className"), "membre en consultation : pas de « + »")
-    check(tabs(pv)==["Accueil","Budget","À venir","Foyer"], "membre (Accueil + Commun) : onglets selon ses droits %s" % tabs(pv))
+    check(tabs(pv)==["Accueil","Opérations","À venir","Foyer"], "membre (Accueil + Commun) : onglets selon ses droits %s" % tabs(pv))
     pe=page(mem("edit", ["list"]), code=True)
     check(plus(pe)==["scan","gal","man"], "membre, seulement l'Accueil en modification : « + » limité aux tickets")
     check(not errs, "pas d'erreur %s"%errs[:3])

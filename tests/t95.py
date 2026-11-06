@@ -31,6 +31,7 @@ with sync_playwright() as p:
     check(rows==["foyer","persons","backup","stockage","pdf","aide","settings"], "menu allégé : Foyer, Personnes, Sauvegarder, Stockage, PDF, Aide, Réglages %s"%rows)
     pg.locator('#nav .navi[data-view="depenses"]').click(); pg.wait_for_timeout(500)
     check(dp(pg)==["Budgets","Analyse","Produits"] and dpon(pg)=="Budgets" and pg.locator(".htitle").inner_text()=="Budget", "Budget : 3 sous-onglets, Budgets d'abord (Tickets dans Opérations depuis la refonte) %s"%dp(pg))
+    pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(400); pg.locator('.cpsub[data-cp="tk"]').click(); pg.wait_for_timeout(500)
     t=norm(pg.locator("#app").inner_text())
     check("Supermarché" in t and pg.locator("#gogallery").count()==1 and pg.locator("#hback").count()==0, "Tickets : la liste du mois, les photos, pas de retour")
     check("noscan" not in pg.evaluate("()=>document.getElementById('nav').className"), "Tickets : le bouton Scan est là")
@@ -38,8 +39,8 @@ with sync_playwright() as p:
     pg.locator("#gogallery").click(); pg.wait_for_timeout(400)
     check("Galerie" in pg.locator("#app").inner_text(), "Photos des tickets : la galerie")
     pg.locator("#hback").click(); pg.wait_for_timeout(400)
-    check(dpon(pg)=="Tickets", "retour de la galerie : Dépenses › Tickets")
-    pg.locator('.avtabs .dpsub[data-dp="produits"]').click(); pg.wait_for_timeout(500)
+    check(pg.evaluate("()=>{ var b=document.querySelector('.avtabs .cpsub.on'); return b?b.textContent:null; }")=="Tickets", "retour de la galerie : Opérations › Tickets")
+    pg.locator('#nav .navi[data-view="depenses"]').click(); pg.wait_for_timeout(400); pg.locator('.avtabs .dpsub[data-dp="produits"]').click(); pg.wait_for_timeout(500)
     ct=pg.evaluate("()=>[].map.call(document.querySelectorAll('.thero .cch-tabs button'), b=>b.dataset.m)")
     check(dpon(pg)=="Produits" and "bud" not in ct and "prod" in ct and navon(pg)=="depenses", "Produits : les graphiques des produits, sans Budgets %s"%ct)
     pg.locator('.avtabs .dpsub[data-dp="budgets"]').click(); pg.wait_for_timeout(500)
@@ -59,7 +60,7 @@ with sync_playwright() as p:
     # Accueil › Tickets
     pg.locator('#nav .navi[data-view="list"]').click(); pg.wait_for_timeout(400)
     if pg.locator("#pvCap").count(): pg.locator("#pvCap").click(); pg.wait_for_timeout(400)
-    check(dpon(pg)=="Tickets" and navon(pg)=="depenses", "Accueil › Tickets : Dépenses › Tickets")
+    check(pg.evaluate("()=>{ var b=document.querySelector('.avtabs .cpsub.on'); return b?b.textContent:null; }")=="Tickets" and navon(pg)=="compte", "Accueil › Tickets : Opérations › Tickets")
     # À venir : la projection
     pg.locator('#nav .navi[data-view="factures"]').click(); pg.wait_for_timeout(400)
     pg.locator('.avtabs button[data-av="mois"]').click(); pg.wait_for_timeout(400)

@@ -50,7 +50,7 @@ with sync_playwright() as p:
     check("360" in t and "120" in t, "total 360 €, 120 € chacun")
     check("Tu dois 120,00 € à Marie" in t and "Julien doit 60,00 € à Marie" in t, "bilan : tu dois 120 € à Marie, Julien 60 €")
     # ---------- 3. un ticket mis dans le groupe
-    pg.locator('#nav .navi[data-view="depenses"]').click(); pg.wait_for_timeout(500)
+    pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(300); (pg.locator('.cpsub[data-cp="tk"]').click() if pg.locator('.cpsub[data-cp="tk"]').count() else None); pg.wait_for_timeout(500)
     pg.locator('.entry[data-id="1"]').first.click(); pg.wait_for_timeout(500)
     pg.locator("#fopt").click(); pg.wait_for_timeout(300)
     check(pg.locator("#f-grp").count()==1, "fiche du ticket : Options › Groupe")

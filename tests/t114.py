@@ -73,7 +73,7 @@ with sync_playwright() as p:
     check(len(D["orig"])==4 and D["orig"].get(ids["Fleuriste fictif"],{}).get("sizes")==[SZ(P3)], "photo ajoutée à un ticket saisi : gardée en qualité d'origine (%d photos d'origine)" % len(D["orig"]))
     # visionneuse
     pg.goto(APP); pg.wait_for_timeout(1200)
-    pg.locator('#nav .navi[data-view="depenses"]').click(); pg.wait_for_timeout(400)
+    pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(300); (pg.locator('.cpsub[data-cp="tk"]').click() if pg.locator('.cpsub[data-cp="tk"]').count() else None); pg.wait_for_timeout(400)
     pg.locator("#gogallery").click(); pg.wait_for_timeout(500)
     gm=[norm(x) for x in pg.locator(".gmh").all_inner_texts()]; print("  mois :", gm)
     check(len(gm)==4 and gm[0].startswith("Octobre 2026") and gm[1].startswith("Septembre 2026") and gm[2].startswith("Mars 2025") and gm[3].startswith("Mai 2023"), "galerie rangée par mois, du plus récent au plus ancien")
@@ -155,7 +155,7 @@ with sync_playwright() as p:
     check(any("4 ticket(s) et 3 photo(s)" in m for m in dlg), "restauration : « 4 ticket(s) et 3 photo(s) vont REMPLACER… »")
     D=pg.evaluate(IDB); E2=pg.evaluate("()=>JSON.parse(localStorage.getItem('entries')||'[]')")
     check(len(E2)==4 and D["orig"].get(sid,{}).get("sizes")==[SZ(P1), SZ(P2)] and sid in D["photos"] and len(D["photos"])==3, "après restauration : 4 tickets, les photos d'origine (2 pages) et les petites photos")
-    pg.locator('#nav .navi[data-view="depenses"]').click(); pg.wait_for_timeout(400)
+    pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(300); (pg.locator('.cpsub[data-cp="tk"]').click() if pg.locator('.cpsub[data-cp="tk"]').count() else None); pg.wait_for_timeout(400)
     pg.locator("#gogallery").click(); pg.wait_for_timeout(500)
     check(pg.locator(".gimg").count()==3, "galerie : 3 photos après restauration")
     c2.close()

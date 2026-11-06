@@ -26,7 +26,7 @@ with sync_playwright() as p:
         pg.locator("#f-montant").fill(amt); pg.locator("#f-marchand").fill(mag); pg.locator("#f-date").fill("2026-10-20")
         pg.locator("#save").click(); pg.wait_for_timeout(500)
     def tickets():
-        pg.locator('#nav .navi[data-view="depenses"]').click(); pg.wait_for_timeout(400)
+        pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(300); (pg.locator('.cpsub[data-cp="tk"]').click() if pg.locator('.cpsub[data-cp="tk"]').count() else None); pg.wait_for_timeout(400)
         return pg.locator("#app").inner_text()
     # mémoire pleine : le nouveau ticket part dans IndexedDB
     pg.evaluate("()=>sessionStorage.setItem('__q','1')")

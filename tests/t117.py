@@ -26,7 +26,7 @@ with sync_playwright() as p:
     pg.goto(APP); pg.wait_for_timeout(300)
     pg.evaluate("d=>{localStorage.clear(); for(const k in d) localStorage.setItem(k, JSON.stringify(d[k]));}", data); pg.reload(); pg.wait_for_timeout(900)
     E=lambda: pg.evaluate("()=>JSON.parse(localStorage.getItem('entries'))")
-    pg.locator('#nav .navi[data-view="depenses"]').click(); pg.wait_for_timeout(400)
+    pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(300); (pg.locator('.cpsub[data-cp="tk"]').click() if pg.locator('.cpsub[data-cp="tk"]').count() else None); pg.wait_for_timeout(400)
     pg.locator('.entry[data-id="20"]').first.click(); pg.wait_for_timeout(500)
     pg.locator("#fopt").click(); pg.wait_for_timeout(300)
     t=norm(pg.locator("#fshare").inner_text()); check("Partage" in t and "Non" in t, "fiche : Options › « Partage · Non »")
@@ -58,7 +58,7 @@ with sync_playwright() as p:
     tp=norm(pg.locator("#app").inner_text())
     check(re.search(r"avec Toi, (Marie, Léa|Léa, Marie)", tp), "Produits partagés : « · avec Toi, Marie, Léa »")
     # ---------- 3. retour à « Tout le foyer »
-    pg.locator('#nav .navi[data-view="depenses"]').click(); pg.wait_for_timeout(400)
+    pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(300); (pg.locator('.cpsub[data-cp="tk"]').click() if pg.locator('.cpsub[data-cp="tk"]').count() else None); pg.wait_for_timeout(400)
     pg.locator('.entry[data-id="20"]').first.click(); pg.wait_for_timeout(500)
     pg.locator("#fopt").click(); pg.wait_for_timeout(300)
     pg.locator("#fshare").click(); pg.wait_for_timeout(300); pg.locator('#shMode button[data-m="all"]').click(); pg.locator("#shOk").click(); pg.wait_for_timeout(300)

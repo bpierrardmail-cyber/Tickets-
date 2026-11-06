@@ -41,7 +41,7 @@ with sync_playwright() as p:
             menu(); check(pg.locator('.dr-row[data-k="import"]').count()==0, "le menu n'a plus l'import (roue du compte)"); pg.locator(".dr-x").click(); pg.wait_for_timeout(300)
             pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(500); pg.locator("#cptGear").click(); pg.wait_for_timeout(300); pg.locator(".sheet-overlay button", has_text="Importer un relevé").first.click(); pg.wait_for_timeout(400)
             check("importer un relevé" in pg.locator(".sheet-overlay").last.inner_text().lower(), "Importer un relevé (roue du compte) : la fenêtre s'ouvre"); pg.evaluate("()=>document.querySelectorAll('.sheet-overlay').forEach(x=>x.remove())"); pg.wait_for_timeout(300)
-            pg.locator('#nav .navi[data-view="depenses"]').click(); pg.wait_for_timeout(300); pg.locator('.avtabs .dpsub[data-dp="tickets"]').click(); pg.wait_for_timeout(300); pg.locator("#gogallery").click(); pg.wait_for_timeout(500)
+            pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(300); pg.locator('.avtabs .cpsub[data-cp="tk"]').click(); pg.wait_for_timeout(300); pg.locator("#gogallery").click(); pg.wait_for_timeout(500)
             check("Galerie" in pg.locator(".htitle").inner_text(), "Galerie (Dépenses › Tickets) : la page s'ouvre")
             menu(); pg.locator('.dr-row[data-k="pdf"]').click(); pg.wait_for_timeout(400)
             check(pg.locator(".sheet-overlay").count()>=1, "Exporter en PDF : le choix de la période s'ouvre")

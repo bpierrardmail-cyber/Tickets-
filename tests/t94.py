@@ -27,7 +27,7 @@ with sync_playwright() as p:
     check(pg.locator(".avtabs .cpsub.on").inner_text()=="Opérations" and pg.locator("#opsBody").count()==1 and pg.locator("#cptGraph").count()==0, "Opérations par défaut, sans les boutons Graphiques / Configuration")
     pg.screenshot(path=os.path.join(SP,"t94_ops.png"))
     # plus d'onglet Virements : « ＋ Ajouter » dans les Opérations
-    check(pg.evaluate("()=>[].map.call(document.querySelectorAll('.avtabs .cpsub'), b=>b.textContent)")==["Opérations","Épargne","Graphiques"], "3 sous-onglets : Opérations · Épargne · Graphiques")
+    check(pg.evaluate("()=>[].map.call(document.querySelectorAll('.avtabs .cpsub'), b=>b.textContent)")==["Opérations","Tickets","Épargne","Graphiques"], "4 sous-onglets : Opérations · Tickets · Épargne · Graphiques")
     pg.locator("#opsAdd").click(); pg.wait_for_timeout(300)
     ch=[norm(x) for x in pg.locator(".sheet-overlay .ui-stack button").all_inner_texts()]
     check([x for x in ch if x!="Annuler"]==["⬇️ Virement reçu","⬆️ Virement envoyé","📅 Frais fixe","🧾 Ticket"], "« ＋ Ajouter » : virement reçu, envoyé, frais fixe, ticket %s"%ch)

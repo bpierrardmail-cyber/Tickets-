@@ -34,7 +34,7 @@ with sync_playwright() as p:
             for k in "123456": pg.locator('#lockscreen button[data-k="%s"]' % k).click(); pg.wait_for_timeout(60)
         pg.wait_for_timeout(700)
     def tickets():
-        pg.locator('#nav .navi[data-view="depenses"]').click(); pg.wait_for_timeout(500); return norm(pg.locator("#app").inner_text())
+        pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(300); (pg.locator('.cpsub[data-cp="tk"]').click() if pg.locator('.cpsub[data-cp="tk"]').count() else None); pg.wait_for_timeout(500); return norm(pg.locator("#app").inner_text())
     def after_reload():
         pg.wait_for_timeout(1500)
         if pg.locator("#lockscreen").count():
@@ -85,7 +85,7 @@ with sync_playwright() as p:
     mine=[e for e in pg.evaluate("()=>JSON.parse(localStorage.getItem('entries'))") if e["marchand"]=="Courses communes"]
     check(len(fc)==1 and fc[0]["payePar"]=="Lou" and mine and mine[0].get("foyerId")==fc[0]["id"], "copié dans le foyer mis de côté, payé par Lou, relié au ticket perso")
     # décocher : retiré du foyer
-    pg.locator('#nav .navi[data-view="depenses"]').click(); pg.wait_for_timeout(400)
+    pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(300); (pg.locator('.cpsub[data-cp="tk"]').click() if pg.locator('.cpsub[data-cp="tk"]').count() else None); pg.wait_for_timeout(400)
     pg.locator('.entry[data-id="%s"]' % mine[0]["id"]).first.click(); pg.wait_for_timeout(500)
     check(pg.locator("#f-tofy").is_checked() and "déjà envoyé" in norm(pg.locator("#app").inner_text()), "rouvert : coché, « déjà envoyé »")
     pg.locator("#f-tofy").uncheck(); pg.locator("#save").click(); pg.wait_for_timeout(600)
@@ -93,7 +93,7 @@ with sync_playwright() as p:
     P=pg.evaluate("()=>JSON.parse(localStorage.getItem('fyPerso'))")
     check(not [e for e in P["data"]["entries"] if e["marchand"]=="Courses communes"], "décoché : retiré du foyer")
     # recocher puis revenir au foyer : il y est, prêt à partir
-    pg.locator('#nav .navi[data-view="depenses"]').click(); pg.wait_for_timeout(400)
+    pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(300); (pg.locator('.cpsub[data-cp="tk"]').click() if pg.locator('.cpsub[data-cp="tk"]').count() else None); pg.wait_for_timeout(400)
     pg.locator('.entry[data-id="%s"]' % mine[0]["id"]).first.click(); pg.wait_for_timeout(500)
     pg.locator("#f-tofy").check(); pg.locator("#save").click(); pg.wait_for_timeout(600)
     if pg.locator("#cksave").count(): pg.locator("#cksave").click(); pg.wait_for_timeout(500)

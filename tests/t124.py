@@ -30,7 +30,7 @@ with sync_playwright() as p:
     def E(): return pg.evaluate("()=>JSON.parse(localStorage.getItem('entries'))")
     def corb(): return pg.evaluate("()=>JSON.parse(localStorage.getItem('corbeille')||'[]')")
     check(not [x for x in corb() if x["e"]["id"]==77], "ticket de plus de 30 jours dans la corbeille : supprimé pour de bon au démarrage")
-    def depenses(): pg.locator('#nav .navi[data-view="depenses"]').click(); pg.wait_for_timeout(400)
+    def depenses(): pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(300); (pg.locator('.cpsub[data-cp="tk"]').click() if pg.locator('.cpsub[data-cp="tk"]').count() else None); pg.wait_for_timeout(400)
     def open_t(i): depenses(); pg.locator('.entry[data-id="%d"]' % i).first.click(); pg.wait_for_timeout(500)
     # ---------- 1. la fiche
     open_t(1)
