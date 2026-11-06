@@ -37,9 +37,7 @@ with sync_playwright() as p:
     t=norm(pg.locator("#app").inner_text())
     check(pg.locator("#f-payer").count()==1 and pg.locator("#f-payer").input_value()=="Sylvette" and pg.locator(".f-two #f-date").count()==1, "Date et Payé par côte à côte, Payé par = Sylvette (liste)")
     check(pg.locator("#photoadd.f-thumb").count()==1 and pg.locator("#del").count()==0 and pg.locator("#fMore").count()==1, "photo à côté du montant ; plus de bouton Supprimer en bas, menu ⋯ en haut")
-    check(pg.locator("#chips .chip[data-cat]").count()<=7 and pg.locator("#catMore").count()==1, "6 catégories (+ celle du ticket) et « Autres ▾ »")
-    n0=pg.locator("#chips .chip[data-cat]").count(); pg.locator("#catMore").click(); pg.wait_for_timeout(300)
-    check(pg.locator("#catMore").count()==0 and pg.locator("#chips .chip[data-cat]").count()>n0, "« Autres ▾ » : toutes les catégories")
+    check(pg.locator("#chips .chip[data-cat]").count()==10 and pg.locator("#catMore").count()==0, "les 10 grandes catégories, sans « Toutes » (catégories en arbre)")
     check("compte auto · sans groupe · pas partagé" in norm(pg.locator("#fopt").inner_text()), "Options repliées : « compte auto · sans groupe · pas partagé »")
     # ---------- 2. options
     pg.locator("#fopt").click(); pg.wait_for_timeout(300)
