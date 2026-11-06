@@ -68,7 +68,7 @@ L'onglet Budget (ex Dépenses) a trois parties, en boutons sous le titre.
 
 ✦ **Analyse avancée** (Tickets Plus) : ton inflation personnelle comparée à celle de l'INSEE, cette année contre l'an dernier, les alertes, le reste à vivre, des pistes d'économies.
 
-**Les catégories** (Budget › Produits › ⚙ Produits & catégories) : une dizaine de grandes catégories, et dedans tes sous-catégories. Tu peux ajouter une grande catégorie ou une sous-catégorie (＋), renommer, déplacer une sous-catégorie sous une autre grande catégorie (ses tickets et ses budgets suivent) ou supprimer (ses tickets vont dans la grande catégorie, ou dans Autre).
+**Les catégories** (Budget › Produits › ⚙ Produits & catégories) : une dizaine de grandes catégories, et dedans tes sous-catégories. Tu peux ajouter une grande catégorie ou une sous-catégorie (＋), renommer, déplacer une sous-catégorie sous une autre grande catégorie (ses tickets et ses budgets suivent) ou supprimer : rien n'est perdu, ses tickets, ses produits et son budget vont dans la grande catégorie (ou dans Autre), et « Annuler » remet tout.
 
 Le bouton personne, en haut à droite, choisit les dépenses montrées dans Produits et Analyse : les tiennes, celles d'une personne, ou tout le foyer.
 
