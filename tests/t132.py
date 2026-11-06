@@ -48,6 +48,7 @@ with sync_playwright() as p:
     check("Foyer" in t and "Ta part du commun" in t, "Résumé : ligne Foyer")
     pg.reload(); pg.wait_for_timeout(1300)
     check(pg.locator(".rs-hero").count()==1, "choix gardé après rechargement")
+    check("hidden" not in pg.evaluate("()=>document.getElementById('nav').className"), "Résumé à l'ouverture : la barre des onglets est là")
     pg.locator('.rs-row', has_text="Cinéma Rex").click(); pg.wait_for_timeout(700)
     check(pg.evaluate("()=>state && 1") if False else pg.locator("#f-payer").count()==1, "toucher une opération ouvre le ticket")
     pg.reload(); pg.wait_for_timeout(1300)

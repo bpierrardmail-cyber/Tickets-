@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="06/11 09:12" />
+  <meta name="build" content="06/11 09:15" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -4400,7 +4400,7 @@
       else if(!fyMember() && !drvOn() && (bkAge===null || bkAge>=7))
         h+='<div class="bk-banner"><span style="font-size:20px">💾</span><div>'+(bkAge===null?'<b>Aucune sauvegarde</b> de tes données pour l\'instant.':'<b>Dernière sauvegarde il y a '+bkAge+' jours.</b>')+'</div><button type="button" class="btn" id="bkNow">Sauvegarder</button></div>';
       h+=homeModeHTML()+(fyMember() ? rsMemberHTML(m, me) : rsOwnerHTML(m, me));
-      app.innerHTML=h;
+      app.innerHTML=h; setNav("list", true);   // la barre du bas (sinon cachée au démarrage sur le Résumé)
       drvBannerWire(); var bkn=document.getElementById("bkNow"); if(bkn) bkn.onclick=backupData;
       [].forEach.call(document.querySelectorAll("[data-rs]"), function(b){ b.onclick=function(){ var g=b.getAttribute("data-rs");
         if(g==="t"){ editEntry(b.getAttribute("data-id")); return; }
