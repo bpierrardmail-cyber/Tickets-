@@ -1,4 +1,4 @@
-# Refonte, étape 1 : barre à 5 onglets (Accueil · Opérations · Budget · À venir · Foyer) et un seul « + ». Données inventées.
+# Refonte, étape 1 : barre à 5 onglets (Accueil · Opérations · Budget · À venir · Foyer) et un seul « + » (Accueil et Opérations). Données inventées.
 # 1. Propriétaire : les 5 onglets, pas de Bourse dans la barre (dans le menu en Perso), titres Opérations / Budget / Foyer.
 # 2. « + » : scanner, galerie, saisir, virement reçu / envoyé, frais fixe, importer un relevé ; « Virement reçu » ouvre le formulaire.
 # 3. Membre en consultation : pas de « + ». Membre avec seulement l'Accueil en modification : « + » limité aux tickets.
@@ -47,12 +47,15 @@ with sync_playwright() as p:
     for v,t in [("compte","Opérations"),("depenses","Budget"),("communes","Foyer")]:
         pg.locator('#nav .navi[data-view="%s"]' % v).click(); pg.wait_for_timeout(600)
         check(norm(pg.locator(".htitle").first.inner_text())==t, "titre de l'onglet : %s" % t)
-    # ---------- 2. « + »
+    # ---------- 2. « + » : sur l'Accueil et Opérations seulement, posé sur la barre
+    check("noplus" in pg.evaluate("()=>document.getElementById('nav').className"), "pas de « + » sur Foyer")
+    pg.locator('#nav .navi[data-view="list"]').click(); pg.wait_for_timeout(600)
+    check("noplus" not in pg.evaluate("()=>document.getElementById('nav').className"), "« + » sur l'Accueil")
     ks=plus(pg)
     check(ks==["scan","gal","man","vin","vout","frais","imp"], "« + » du propriétaire : %s" % ks)
     pg.locator('.sheet-overlay .dr-row[data-k="vin"]').click(); pg.wait_for_timeout(600)
     t=norm(pg.locator(".sheet-overlay").last.inner_text()) if pg.locator(".sheet-overlay").count() else ""
-    check("virement reçu" in t.lower() and pg.evaluate("()=>document.querySelector('.htitle').textContent")=="Opérations", "« Virement reçu » : formulaire ouvert, sur Opérations")
+    check("virement reçu" in t.lower() and pg.evaluate("()=>document.querySelector('.htitle').textContent")=="Opérations", "« Virement reçu » : formulaire ouvert, sur Opérations (avec le « + »)")
     ps=page(base, APP+"?edition=store")
     check(tabs(ps)==["Accueil","Opérations","Budget","À venir","Foyer"], "Store : les mêmes 5 onglets")
     # ---------- 3. membres
