@@ -51,7 +51,7 @@ Touche le bouton vert **＋**, puis « Scanner un ticket » ou « Ticket depuis 
 **Partager une dépense** : Options › Partage, « Qui paie ce ticket ? »
 
 - **Seulement** la personne qui a payé : pas partagé (par défaut).
-- **Le commun du foyer** : chacun selon sa part (Foyer › Parts).
+- **Le commun du foyer** : chacun selon sa part (Foyer : touche les personnes en haut).
 - **Certaines personnes** : en parts égales ou ajustées. Exemple : un resto à 3 sur une famille de 5.
 - Pour ne partager qu'une partie du ticket : « partager cet article » sur les articles concernés.
 
@@ -63,7 +63,7 @@ Un appui long sur un ticket, dans n'importe quelle liste, propose Ouvrir ou Supp
 
 L'onglet Budget (ex Dépenses) a trois parties, en boutons sous le titre.
 
-- **Budgets** : un budget par catégorie, pour le foyer ou par personne. L'appli montre où tu en es dans le mois.
+- **Budgets** : un budget par catégorie, pour le foyer ou par personne. En haut, ce que tu as dépensé sur le budget et ce qui reste pour les jours qui restent ; pour chaque catégorie, ce qui reste. « ✎ Modifier les budgets » en bas de la carte. Sans budget à toi, ce sont ceux du foyer.
 - **Analyse** : tes dépenses par mois, par catégorie, les dépenses qui reviennent et qui a payé. « + Frais fixes » ajoute les loyers, abonnements… pour voir tout ce qui sort vraiment.
 - **Produits** : ce que tu achètes et à quel prix. Mes produits, Hausses (ce qui augmente), Magasins (où c'est le moins cher), Familles. Touche un produit pour voir tous ses achats.
 
@@ -79,17 +79,18 @@ Quatre parties, en boutons sous le titre : Opérations, **Tickets** (tous les ti
 
 **Opérations**
 
-- En haut, le solde estimé, puis Entrées, Sorties et Fin de mois.
-- Filtres Tout, Entrées, Sorties, À venir ; la recherche trouve un nom ou un montant, avec le total.
+- En haut, le compte affiché et le mois. Touche le compte pour en choisir un autre, voir tous les comptes ou en ajouter un.
+- Puis le solde estimé, Entrées, Sorties et Fin de mois.
+- Filtres Tout, Entrées, Sorties, À venir ; la loupe ouvre la recherche (un nom ou un montant, avec le total).
 - Le bloc « À venir » liste ce qui n'est pas encore passé. Touche le rond quand c'est fait : l'appli note le jour.
-- « ＋ Ajouter » : un virement reçu ou envoyé, un frais fixe, un ticket.
+- Le « + » de la barre du bas ajoute un ticket, un virement reçu ou envoyé ou un frais fixe sur le compte affiché.
 - Touche un virement pour le modifier, le reprendre le mois suivant (ou chaque mois), ou le passer en frais fixe.
 
 **Épargne** : tes livrets et ce que tu y mets chaque mois.
 
 **Graphiques** : ce mois, dépenses, solde, entrées et sorties, épargne, provisions. Touche une barre pour voir le détail.
 
-**La roue ⚙ du compte** : modifier le compte, le solde reporté, importer un relevé, annuler le dernier import.
+**La roue ⚙ du compte** : modifier le compte, le solde reporté, importer un relevé, annuler le dernier import, l'argent liquide, reprendre les virements du mois d'avant.
 
 **Importer un relevé de banque**
 
@@ -104,10 +105,10 @@ Le plus simple, sur Android : dans l'appli de ta banque, exporte le relevé (OFX
 
 L'onglet À venir montre ce qui va sortir de tes comptes. Il a quatre parties.
 
-- **12 mois** : les mois à venir avec ce qui est prévu, et « À payer bientôt ». « Tes comptes dans 12 mois » ouvre la projection.
+- **12 mois** : d'abord « À payer bientôt » (avec la date), puis les 12 mois à venir avec ce qui est prévu, et l'argent de côté (épargne, provisions). « Tes comptes dans 12 mois » ouvre la projection.
 - **Frais fixes** : loyer, électricité, abonnements… Chaque mois, ou une seule fois. Pour un frais commun, il est payé par un compte en entier, ou chacun paie sa part.
 - **Provisions** : l'argent mis de côté chaque mois pour une grosse dépense (taxe foncière, assurance, vacances). La mise de côté apparaît dans les frais fixes. Le graphique montre ce qui est déjà de côté et ce qui est prévu ; l'appli propose un montant mensuel si une provision ne suffit pas.
-- ✦ **Factures** (Tickets Plus) : importe tes factures, par PDF ou en photos.
+- ✦ **Factures** (Tickets Plus) : importe tes factures, par PDF ou en photos (bouton « Importer une facture »).
 
 **Importer une facture**
 
@@ -122,7 +123,7 @@ L'onglet À venir montre ce qui va sortir de tes comptes. Il a quatre parties.
 
 L'onglet Foyer (ex Commun) montre combien chacun doit payer des frais communs du mois.
 
-- **Les parts** : la part de chacun dans le commun, en %. Un frais peut avoir ses propres parts.
+- **En haut, les personnes** et leur part du commun, en % : touche-les pour régler les parts. Un frais peut avoir ses propres parts. Dessous, ta part du mois ; « Voir le détail » montre le graphique.
 - **Frais communs** : ceux du mois. Pour les modifier, le lien mène à À venir › Frais fixes.
 - **Produits partagés** : les articles marqués « Dépense commune » sur les tickets, et ta part.
 

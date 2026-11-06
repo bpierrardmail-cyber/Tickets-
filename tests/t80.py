@@ -32,9 +32,9 @@ with sync_playwright() as p:
     check(ls("liquideMois")["Benoit"].get("2026-10")==50 and "Liquide 50,00 €" in top(), "montant changé : 50,00 € pour octobre")
     pg.screenshot(path=os.path.join(SP,"t80_on.png"))
     # sans liquide : « ＋ Liquide » ouvre la saisie
-    load(data); t=top(); check("＋ Liquide" in t, "sans liquide : « ＋ Liquide »")
-    pg.locator("#opsLiq").click(); pg.wait_for_timeout(400)
-    check("argent liquide" in pg.locator(".sheet-overlay").last.inner_text().lower(), "… qui ouvre la saisie")
+    load(data); t=top(); check("Liquide" not in t and pg.locator("#opsLiq").count()==0, "sans liquide : pas de bouton en haut (refonte : dans la roue du compte)")
+    pg.locator("#cptGear").click(); pg.wait_for_timeout(400); pg.locator(".sheet-overlay button", has_text="Argent liquide").click(); pg.wait_for_timeout(400)
+    check("argent liquide" in pg.locator(".sheet-overlay").last.inner_text().lower(), "roue › « 💶 Argent liquide » ouvre la saisie")
     pg.locator(".sheet-overlay .ui-cancel").last.click(); pg.wait_for_timeout(300)
     # 360 px
     pg.set_viewport_size({"width":360,"height":740}); load(d)

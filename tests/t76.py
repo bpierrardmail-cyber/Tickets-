@@ -60,7 +60,7 @@ with sync_playwright() as p:
     pg.locator('.ops-sum .hstat[data-f="in"]').click(); pg.wait_for_timeout(300)
     check(pg.locator('.ops-f button.on').get_attribute("data-f")=="tout", "… et le retoucher remet « Tout »")
     # recherche
-    q=pg.locator("#opsQ"); q.click(); q.type("lecl"); pg.wait_for_timeout(300); t=body()
+    (pg.locator("#opsQ").count()==0 and pg.locator("#opsQBtn").click()); pg.wait_for_timeout(200); q=pg.locator("#opsQ"); q.click(); q.type("lecl"); pg.wait_for_timeout(300); t=body()
     check("2 opérations" in t and "−101,15" in t and "Intermarché" not in t, "recherche « lecl » : 2 opérations, −101,15")
     check(pg.evaluate("()=>document.activeElement && document.activeElement.id")=="opsQ", "la recherche garde le clavier pendant la frappe")
     q.fill(""); q.type("43.12"); pg.wait_for_timeout(300); t=body()
@@ -141,7 +141,7 @@ with sync_playwright() as p:
     pg.set_viewport_size({"width":412,"height":900}); load(big)
     t0=time.time(); compte(); dt=time.time()-t0
     n=pg.locator("#opsBody .ops-r.ops-open").count(); check(n==400+8, "400 tickets + 8 lignes : %d lignes" % n)
-    t0=time.time(); q=pg.locator("#opsQ"); q.click(); q.type("magasin 3"); dq=time.time()-t0
+    t0=time.time(); (pg.locator("#opsQ").count()==0 and pg.locator("#opsQBtn").click()); pg.wait_for_timeout(200); q=pg.locator("#opsQ"); q.click(); q.type("magasin 3"); dq=time.time()-t0
     print("  ouverture %.2fs, recherche tapée %.2fs" % (dt, dq))
     check(dq<4, "recherche fluide avec 400 tickets")
     print("errors:", errs); check(not errs, "aucune erreur")

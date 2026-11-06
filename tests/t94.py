@@ -28,10 +28,11 @@ with sync_playwright() as p:
     pg.screenshot(path=os.path.join(SP,"t94_ops.png"))
     # plus d'onglet Virements : « ＋ Ajouter » dans les Opérations
     check(pg.evaluate("()=>[].map.call(document.querySelectorAll('.avtabs .cpsub'), b=>b.textContent)")==["Opérations","Tickets","Épargne","Graphiques"], "4 sous-onglets : Opérations · Tickets · Épargne · Graphiques")
-    pg.locator("#opsAdd").click(); pg.wait_for_timeout(300)
-    ch=[norm(x) for x in pg.locator(".sheet-overlay .ui-stack button").all_inner_texts()]
-    check([x for x in ch if x!="Annuler"]==["⬇️ Virement reçu","⬆️ Virement envoyé","📅 Frais fixe","🧾 Ticket"], "« ＋ Ajouter » : virement reçu, envoyé, frais fixe, ticket %s"%ch)
-    pg.locator(".sheet-overlay button", has_text="Virement envoyé").click(); pg.wait_for_timeout(300)
+    check(pg.locator("#opsAdd").count()==0, "plus de « ＋ Ajouter » : le « + » de la barre suffit")
+    pg.locator("#navplus").click(); pg.wait_for_timeout(300)
+    ks=pg.evaluate("()=>[].map.call(document.querySelectorAll('.sheet-overlay .dr-row[data-k]'), b=>b.getAttribute('data-k'))")
+    check(all(k in ks for k in ["man","vin","vout","frais"]), "« + » : ticket, virement reçu, envoyé, frais fixe %s"%ks)
+    pg.locator('.sheet-overlay .dr-row[data-k="vout"]').click(); pg.wait_for_timeout(300)
     check(norm(pg.locator(".sheet-overlay .sheet-title").last.inner_text()).lower()=="virement envoyé" and pg.locator('.sheet-overlay .ui-seg button.on').last.get_attribute("data-v")=="out", "« Virement envoyé » : le sens est déjà « envoyé »")
     pg.locator(".sheet-overlay .ui-form input").nth(0).fill("Vers le livret"); pg.locator(".sheet-overlay .ui-inp.money input").fill("50")
     pg.locator(".sheet-overlay .ui-actions button[type=submit]").click(); pg.wait_for_timeout(500)

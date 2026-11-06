@@ -32,13 +32,13 @@ with sync_playwright() as p:
     pg.evaluate("d=>{localStorage.clear(); for(const k in d) localStorage.setItem(k, JSON.stringify(d[k]));}", data); pg.reload(); pg.wait_for_timeout(900)
     pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(500)
     def ajouter():
-        pg.locator("#opsAdd").click(); pg.wait_for_timeout(300)
+        pg.locator("#cptGear").click(); pg.wait_for_timeout(300)
     def rows(): return [(norm(r.inner_text()), r.locator("input").is_checked()) for r in pg.locator(".vr-r").all()]
     def row(txt): return pg.locator(".vr-r", has_text=txt).locator("input")
     def mode(v): pg.locator('#vrWhen button[data-v="%s"]'%v).click(); pg.wait_for_timeout(150)
     # ---------- 1. mois suivant
     ajouter()
-    check(pg.locator(".sheet-overlay button", has_text="Reprendre des virements de septembre").count()==1, "« ＋ Ajouter » : « ↻ Reprendre des virements de septembre »")
+    check(pg.locator(".sheet-overlay button", has_text="Reprendre des virements de septembre").count()==1, "roue du compte : « ↻ Reprendre des virements de septembre »")
     pg.locator(".sheet-overlay button", has_text="Reprendre des virements de septembre").click(); pg.wait_for_timeout(400)
     R=rows(); print("  lignes :", R)
     d={t.split("\n")[0]:on for t,on in R}
