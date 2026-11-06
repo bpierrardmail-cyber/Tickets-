@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="06/11 13:32" />
+  <meta name="build" content="06/11 13:51" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -667,6 +667,7 @@
     .cch-note{ font-size:10.5px; color:var(--muted); text-align:center; margin-top:6px; }
     /* Compte : accordéon compact */
     .cacc{ margin-top:14px; padding:4px 14px; }
+    .cmg{ flex:0 0 auto; width:auto; height:32px; padding:0 12px; border-radius:16px; border:1px solid var(--line2); background:var(--card2); color:var(--ink); font:inherit; font-size:12.5px; font-weight:600; cursor:pointer; }
     .prow.cts{ padding-left:22px; }
     .prow.cts .pname{ font-size:13px; color:var(--ink-soft); }
     .prow.ctm{ margin-top:6px; }
@@ -1715,7 +1716,7 @@
     var CAT_MAINS_DEF=["Courses","Sorties","Transport","Maison","Santé","Loisirs","Shopping","Enfants","Animaux","Autre"];
     var CAT_RULES=[["Courses",["aliment","course","boisson","hygi","entretien","épicerie","epicerie","supermarch","drive","boulang","fruit","légum","legum","surgel","conserve","viande","poisson","nourriture"]],
       ["Sorties",["restau","bar","café","cafe","fast","pizz","sortie","traiteur","resto"]],
-      ["Transport",["carbur","essence","gazole","péage","peage","parking","train","taxi","bus","métro","metro","avion","voiture","garage","transport","auto"]],
+      ["Transport",["carbur","essence","gazole","péage","peage","parking","train","taxi","bus","métro","metro","avion","voiture","garage","transport","auto","véhicule","vehicule","moto","entretien voiture"]],
       ["Maison",["brico","meuble","jardin","déco","deco","électroménager","electromenager","maison","travaux","ameublement"]],
       ["Santé",["pharma","médec","medec","dent","opti","mutuelle","santé","sante","kiné","kine","docteur"]],
       ["Loisirs",["ciné","cine","sport","livre","jeu","vacance","voyage","loisir","concert","musée","musee","culture","abonnement"]],
@@ -3219,20 +3220,48 @@
     // sinon une sous-catégorie à leur nom sous la grande catégorie la plus proche ; « Divers » → « Autre ». Les produits gardent leur nom.
     var FAM_FB="Autre";
     function cnm(x){ return String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/&/g," et ").replace(/[^a-z0-9]+/g,""); }
+    // clé d'un nom : sans casse, accents, « et / de / la », séparateurs ni pluriel (« HYGIÈNE- SOINS » = « Hygiène et soins », « BRICOLAGES » = « Bricolage »)
+    function ckey(x){ return String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").split(/[^a-z0-9]+/).filter(function(w){ return w && ["et","de","du","des","la","le","les","l","d"].indexOf(w)<0; }).map(function(w){ return w.length>3 ? w.replace(/s$/,"") : w; }).join(""); }
+    function ckeySeg(x){ return ckey(String(x||"").split(/\s*(?:\s-\s|-\s|\s-|&|\/|,|\bet\b|\bET\b)\s*/)[0]); }   // le premier morceau : « MULTIMÉDIA - HIGH-TECH » → multimedia
+    function catFindLike(f, skip){   // une catégorie existante qui veut dire la même chose ; préfère un nom écrit normalement, puis une grande catégorie
+      var k=ckey(f), ks=ckeySeg(f), best=null, sc=-1;
+      CATS.forEach(function(c){ if(c===f || c===skip) return; var ck=ckey(c), hit=(ck===k) ? 2 : ((ks.length>=4 && ck===ks) ? 1 : 0); if(!hit) return;
+        var v=hit*10+(catUpper(c)?0:4)+(catIsMain(c)?2:0); if(v>sc){ sc=v; best=c; } });
+      return best;
+    }
+    function catUpper(c){ var L=String(c).replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g,""); return L.length>=3 && L===L.toUpperCase(); }
+    function catNice(c){ return catUpper(c) ? c.charAt(0)+c.slice(1).toLowerCase() : c; }   // « BOISSONS ALCOOLISÉ » → « Boissons alcoolisé »
     function famTarget(f){
       if(f==="Divers" || f==="Autre") return "Autre";
       if(f==="Nourriture") f="Alimentation";
-      var i, n=cnm(f); for(i=0;i<CATS.length;i++) if(cnm(CATS[i])===n) return CATS[i];
-      var seg=String(f).split(/\s*(?:&|\bet\b|\/|,)\s*/)[0], ns=cnm(seg);
-      if(ns.length>=4) for(i=0;i<CATS.length;i++) if(cnm(CATS[i])===ns) return CATS[i];
-      var m=catGuessMain(f); if(CATS.indexOf(f)<0){ CATS.push(f); } if(m!==f){ if(!CAT_PARENT) CAT_PARENT={}; CAT_PARENT[f]=m; }
-      return f;
+      var like=catFindLike(f); if(like) return like;
+      if(CATS.indexOf(f)>=0) return f;
+      var nf=catNice(f); if(CATS.indexOf(nf)>=0) return nf;
+      var m=catGuessMain(nf); CATS.push(nf); if(m!==nf){ if(!CAT_PARENT) CAT_PARENT={}; CAT_PARENT[nf]=m; }
+      return nf;
+    }
+    // Réparation (taxoV4) : les familles déjà migrées sous un autre nom (majuscules, « - », pluriel) sont fusionnées avec la catégorie qui veut dire la même chose,
+    // et les noms tout en majuscules sont réécrits normalement. Rien n'est perdu : tickets, articles, produits et budgets suivent. La fenêtre « rangées » se rouvre.
+    function catRepair(){
+      var member=!!(store.read("fyCfg", null) && store.read("fyCfg", null).role!=="owner");
+      if(member || store.read("taxoV4", null)===4) return;
+      var changed=0, guard=0, again=true;
+      while(again && guard++<60){ again=false;
+        for(var i=0;i<CATS.length;i++){ var c=CATS[i]; if(c==="Autre" || (catIsMain(c) && CAT_MAINS_DEF.indexOf(c)>=0)) continue;
+          var t=catFindLike(c); if(!t) continue;
+          if(!catUpper(c) && catUpper(t)) continue;   // on garde le nom écrit normalement : l'autre viendra à lui
+          catMergeRaw(c, t); changed++; again=true; break; } }
+      CATS.forEach(function(c){ if(CAT_PARENT && CAT_PARENT[c]==="Autre"){ var g=catGuessMain(c); if(g!=="Autre" && g!==c){ CAT_PARENT[c]=g; changed++; } } });   // rangées dans Autre faute de règle (Véhicule → Transport)
+      CATS.slice().forEach(function(c){ if(!catUpper(c)) return; var n=catNice(c); if(n===c) return; if(CATS.indexOf(n)>=0){ catMergeRaw(c, n); } else catRenameRaw(c, n); changed++; });
+      store.write("taxoV4", 4);
+      if(changed){ persistCats(); persistCatParent(); persist(); persistBudgets(); persistBudgetsP(); try{ persistAppris(); }catch(err){} famSync(true); store.write("catMigShow", true); }
     }
     function famSync(save){   // les catégories servent aussi à ranger les produits
       FAMILLES=CATS.slice();
       var byN={}; CATS.forEach(function(c){ byN[cnm(c)]=c; }); byN[cnm("Nourriture")]=byN[cnm("Alimentation")]||FAM_FB;
       Object.keys(FAMILLE_DE).forEach(function(k){ var v=FAMILLE_DE[k]; if(CATS.indexOf(v)<0) FAMILLE_DE[k]=byN[cnm(v)]||FAM_FB; });   // ancienne famille restée quelque part
       CATS.forEach(function(c){ FAMILLE_DE[c]=c; if(PRODUITS.indexOf(c)<0) PRODUITS.push(c); });
+      var seen={}; PRODUITS=PRODUITS.filter(function(x){ if(seen[x]) return false; seen[x]=1; return true; });
       if(save){ persistFamilles(); persistFamille(); persistProd(); }
     }
     function famMerge(){
@@ -5020,10 +5049,10 @@
       h += '<label class="f">Catégorie'+(d.categorie?' <span class="cat-sel">· '+esc(catLabel(d.categorie))+'</span>':' <span class="cat-need">· à choisir pour enregistrer</span>')+'</label><div class="chips cattiles cat5" id="chips">';
       catMains().forEach(function(c){ var ic=catIcon(c); h += '<button class="chip'+(cMain===c?" on":"")+'" data-cat="'+esc(c)+'" style="--cc:'+ic.col+'"><span class="ce">'+ic.e+'</span><span>'+esc(c)+'</span></button>'; });
       h += '</div>';
-      if(cMain && (cSubs.length || !state.draftRO)){ var mc=catIcon(cMain).col;
+      if(cMain && (cSubs.length || !(state.draftRO || (fyMember() && !fyTabEd("articles"))))){ var mc=catIcon(cMain).col;
         h += '<div class="catsubs" style="--cc:'+mc+'"><span class="cs-t">Préciser dans '+esc(cMain)+' <i>· facultatif</i></span><div class="cs-l">'+
           cSubs.map(function(c){ return '<button type="button" class="cs'+(d.categorie===c?' on':'')+'" data-sub="'+esc(c)+'">'+esc(c)+'</button>'; }).join("")+
-          (state.draftRO?'':'<button type="button" class="cs add" id="catSubNew">＋ Nouvelle</button>')+'</div></div>'; }
+          ((state.draftRO || (fyMember() && !fyTabEd("articles")))?'':'<button type="button" class="cs add" id="catSubNew">＋ Nouvelle</button>')+'</div></div>'; }
       // Options repliées : compte, groupe, partage
       var gOpen=canUse("groupes") ? groupes.filter(function(g){ return !g.clos; }) : [], gCur=d.groupe ? grpById(d.groupe) : null;
       var shC=shareCands(d), autoA=payAcctOf(payerOf(d)) || (comptes.filter(function(a){ return a.main; })[0]||null);
@@ -8059,6 +8088,9 @@
       var name=(window.prompt("Renommer la catégorie :", old)||"").trim();
       if(!name || name===old) return;
       if(CATS.indexOf(name)>=0){ window.alert("Cette catégorie existe déjà."); return; }
+      catRenameRaw(old, name); render();
+    }
+    function catRenameRaw(old, name){
       var i=CATS.indexOf(old); if(i>=0) CATS[i]=name;
       if(KEYWORDS[old]){ KEYWORDS[name]=KEYWORDS[old]; delete KEYWORDS[old]; }
       if(CAT_PARENT){ catRenameKeys(CAT_PARENT, old, name); Object.keys(CAT_PARENT).forEach(function(k){ if(CAT_PARENT[k]===old) CAT_PARENT[k]=name; }); persistCatParent(); }
@@ -8068,7 +8100,18 @@
       Object.keys(FAMILLE_DE).forEach(function(k){ if(FAMILLE_DE[k]===old) FAMILLE_DE[k]=name; }); delete FAMILLE_DE[old];
       var pi=PRODUITS.indexOf(old); if(pi>=0) PRODUITS[pi]=name;
       Object.keys(APPRIS||{}).forEach(function(k){ if(APPRIS[k]===old) APPRIS[k]=name; }); persistAppris();
-      persistCats(); famSync(true); persist(); render();
+      persistCats(); famSync(true); persist();
+    }
+    // fusionner « src » dans « to » (même chose sous deux noms) : tickets, articles, produits, budgets (gardés s'il n'y en a pas déjà), sous-catégories
+    function catMergeRaw(src, to){
+      var i=CATS.indexOf(src); if(i>=0) CATS.splice(i,1);
+      if(CAT_PARENT){ delete CAT_PARENT[src]; Object.keys(CAT_PARENT).forEach(function(k){ if(CAT_PARENT[k]===src) CAT_PARENT[k]=(catIsMain(to)?to:catMain(to)); }); }
+      function mv(o){ if(!o || !Object.prototype.hasOwnProperty.call(o, src)) return; if(!(o[to]>0)) o[to]=o[src]; delete o[src]; }
+      mv(budgets); Object.keys(budgetsP||{}).forEach(function(p){ mv(budgetsP[p]); });
+      state.entries.forEach(function(e){ if(e.categorie===src) e.categorie=to; (e.articles||[]).forEach(function(a){ if(a.produit===src) a.produit=to; }); });
+      Object.keys(FAMILLE_DE).forEach(function(k){ if(FAMILLE_DE[k]===src) FAMILLE_DE[k]=to; }); delete FAMILLE_DE[src];
+      var pi=PRODUITS.indexOf(src); if(pi>=0) PRODUITS.splice(pi,1);
+      Object.keys(APPRIS||{}).forEach(function(k){ if(APPRIS[k]===src) APPRIS[k]=to; });
     }
     function moveCat(c){   // une sous-catégorie change de grande catégorie, avec tout son passé
       var cur=catMain(c);
@@ -11115,7 +11158,7 @@
       uiToast("Facture ajoutée"+histTxt+(made.length?" · "+made.join(", "):"")+(learnt?" · lecture retenue pour "+p.four:""));
     }
     function backupDump(){
-      var keys=["entries","cats","catParent","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","factAppris","releve","tkAppris","photoKeep","commRemb","groupes","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"];
+      var keys=["entries","cats","catParent","taxoV3","taxoV4","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","factAppris","releve","tkAppris","photoKeep","commRemb","groupes","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"];
       var dump={ _app:"tickets", _version:1, _date:new Date().toISOString(), data:{} };
       keys.forEach(function(k){ var v=store.read(k, null); if(v!==null) dump.data[k]=v; });
       return dump;
@@ -11176,7 +11219,7 @@
       (obj._zip||[]).forEach(function(x){ np[x.id]=1; });
       np=Object.keys(np).length;
       if(!o.quiet && !window.confirm("Restaurer cette sauvegarde ?\n"+n+" ticket(s)"+(np?" et "+np+" photo(s)":"")+" vont REMPLACER les données actuelles.")) return;
-      ["entries","cats","catParent","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","factAppris","releve","tkAppris","photoKeep","commRemb","groupes","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"].forEach(function(k){
+      ["entries","cats","catParent","taxoV3","taxoV4","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","factAppris","releve","tkAppris","photoKeep","commRemb","groupes","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"].forEach(function(k){
         if(k in data) store.write(k, data[k]); else if(o.exact) store.remove(k);
       });
       if(!("comptes" in data)) store.write("comptes", null);
@@ -12485,7 +12528,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
     function catMigSheet(){
       var subs=[]; catMains().forEach(function(m){ catSubs(m).forEach(function(c){ subs.push(c); }); });
       var h='<div class="sheet-title">Tes catégories sont rangées</div><div class="ui-help" style="margin:0 2px 10px">Les catégories ont maintenant deux niveaux : une dizaine de grandes catégories, et dedans tes catégories, devenues des sous-catégories. Chacune garde ses tickets et ses budgets ; rien n\'est supprimé. Vérifie qu\'elles sont au bon endroit.</div><div class="dr-grp">'+
-        subs.map(function(c){ return '<div class="dr-row"><span class="t">'+esc(c)+'<small>'+catIcon(catMain(c)).e+' '+esc(catMain(c))+'</small></span><button type="button" class="btn ghost cmg" data-cat="'+esc(c)+'" style="flex:0 0 auto;padding:0 10px;min-height:34px;font-size:12px">Changer</button></div>'; }).join("")+'</div>'+
+        subs.map(function(c){ return '<div class="dr-row"><span class="t">'+esc(c)+'<small>'+catIcon(catMain(c)).e+' '+esc(catMain(c))+'</small></span><button type="button" class="cmg" data-cat="'+esc(c)+'">Changer</button></div>'; }).join("")+'</div>'+
         '<div class="ui-stack" style="margin-top:12px"><button type="button" class="btn primary ui-no">C\'est bon</button></div>';
       var sh=uiSheet(h); sh.q(".ui-no").onclick=function(){ store.remove("catMigShow"); sh.close(); };
       [].forEach.call(sh.qa(".cmg"), function(b){ b.onclick=function(){ var c=b.getAttribute("data-cat"); sh.close();
@@ -12726,6 +12769,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
     });
     try{ if(ensureBourseEp()) persistEpargne(); }catch(e){}
     try{ famMerge(); }catch(e){ console.warn(e); }   // produits rangés dans l'arbre des catégories (une fois)
+    try{ catRepair(); }catch(e){ console.warn(e); }   // doublons de noms après la migration du 06/11 (une fois)
     fyInit();
     try{ factEstRefresh(); }catch(e){}
     render();
@@ -12848,7 +12892,11 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
     function drvMenuLabel(){
       var S=drvState(), st=drvSt||{};
       if(S.k==="auth") return { t:"Drive · à reconnecter", col:"var(--coral)" };
-      if(S.k==="wait") return { t:"Drive · en attente", col:"var(--coral)" };
+      if(S.k==="wait"){   // juste après un changement, l'envoi attend quelques minutes (réseau, Android) : ce n'est pas une erreur
+        var age=Date.now()-(Number(st.pendingSince)||Date.now());
+        if(st.err && String(st.err).indexOf("fail")===0) return { t:"Drive · envoi refusé, nouvel essai", col:"var(--coral)" };
+        if(age<6*3600000) return { t:"Drive · envoi en cours"+(st.err==="net"?" (réseau)":""), col:"var(--ink-soft)" };
+        return { t:"Drive · en attente depuis "+drvWhen(st.pendingSince), col:"var(--coral)" }; }
       if(S.k==="ok") return { t:"Drive · "+drvWhen(st.lastOk), col:"var(--accent)" };
       return { t:"Drive", col:"var(--accent)" };
     }
