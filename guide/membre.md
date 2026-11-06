@@ -13,13 +13,12 @@ Rejoindre un foyer est gratuit. Si le propriétaire a Tickets Plus, ses fonction
 
 ## Ton accueil
 
-Ton accueil est à toi : il montre toujours tes chiffres, pas ceux du foyer.
+Ton accueil est à toi : il montre toujours tes chiffres, pas ceux des autres. Deux vues au choix, tout en haut :
 
-- **Banque** : le solde de ton compte, si tu le vois.
-- **Ma part du commun** : ce que tu dois payer des frais communs du mois.
-- **Mes tickets** : tes dépenses du mois.
+- **Résumé**, tourné vers le commun : ta part du commun du mois en grand, qui doit combien à qui, les dépenses communes du mois (avec ta part) et ce qui arrive bientôt ; puis ton compte et tes tickets.
+- **Tableau de bord** : les encadrés Banque (le solde de ton compte, si tu le vois), Ma part du commun et Mes tickets.
 
-Le bouton vert **＋** en bas à droite sert à ajouter : scanner ou saisir un ticket, et selon tes droits un virement ou un frais fixe.
+Le bouton vert **＋**, posé sur la barre du bas, sert à ajouter : scanner ou saisir un ticket, et selon tes droits un virement ou un frais fixe.
 
 ## Ajouter un ticket
 

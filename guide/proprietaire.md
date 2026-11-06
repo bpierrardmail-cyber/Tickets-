@@ -10,10 +10,12 @@ Tickets garde tout sur ton téléphone : pas de compte à créer, pas besoin d'i
 
 **L'écran d'accueil**
 
-- En haut, les graphiques que tu choisis : ⚙ Choisir, ou un appui long sur une carte pour la changer, la déplacer ou la masquer.
+- Tout en haut, deux vues au choix (l'appli garde la dernière) :
+  - **Résumé** : ce qu'il te reste jusqu'à la fin du mois, les alertes (budget dépassé, prélèvement dans les 3 jours, découvert prévu), tes dernières opérations et une ligne pour le foyer.
+  - **Tableau de bord** : les graphiques que tu choisis (⚙ Choisir, ou un appui long sur une carte pour la changer, la déplacer ou la masquer).
 - « ✍️ Saisie » note une dépense à la main ; « 🧾 Tickets » ouvre la liste du mois.
 - Le bouton en haut à droite choisit qui tu regardes : toi, une personne, ou tout le foyer.
-- En bas, 5 onglets : Accueil, Opérations, Budget, À venir, Foyer. Le bouton vert **＋** au-dessus ajoute tout : scanner ou saisir un ticket, un virement, un frais fixe, importer un relevé.
+- En bas, 5 onglets : Accueil, Opérations, Budget, À venir, Foyer (et Bourse dans la version Perso). Le bouton vert **＋**, sur l'Accueil et Opérations, ajoute tout : scanner ou saisir un ticket, un virement, un frais fixe, importer un relevé.
 
 Tu peux revoir l'accueil de l'appli dans Menu › Aide. Les fonctions marquées ✦ font partie de Tickets Plus : Menu › ✦ Tickets Plus les présente toutes.
 
