@@ -78,6 +78,7 @@ with sync_playwright() as p:
     check("INSEE sur 12 mois : +1,2" in t or "INSEE sur 12 mois : 1,2" in t, "Store : Analyse avancée compare à l'INSEE")
     # facture PDF : lecteur PDF de l'APK
     pg.locator('#nav .navi[data-view="factures"]').click(); pg.wait_for_timeout(400)
+    pg.locator('.avtabs button[data-av="fact"]').click(); pg.wait_for_timeout(400)   # « Importer une facture » : dans le sous-onglet Factures
     pg.locator("#fctImp").click(); pg.wait_for_timeout(300)
     with pg.expect_file_chooser() as fc: pg.locator(".sheet-overlay button", has_text=re.compile("PDF")).first.click()
     fc.value.set_files([os.path.join(HERE,"donnees","facture_edf_fictive.pdf")])
