@@ -26,7 +26,7 @@ Touche **＋**, puis « Scanner un ticket » ou « Ticket depuis la galerie ». 
 
 - Ticket à plat, bien éclairé, pris en entier ; un ticket très long en plusieurs photos.
 - Vérifie le montant, le magasin et la date. Ce qui est en orange est à regarder.
-- La **catégorie** est obligatoire : touche une tuile (les 5 que tu utilises le plus, ou « Toutes »). L'appli la propose déjà d'après le magasin.
+- La **catégorie** est obligatoire : touche une des 10 grandes catégories (Courses, Sorties, Transport…). Dessous, tu peux préciser une sous-catégorie (Carburant, Bar…) ou en créer une avec « ＋ Nouvelle » ; c'est facultatif. L'appli la propose déjà d'après le magasin.
 - **Aucun article lu** (plein d'essence, ticket sans détail) ? L'appli ajoute tout seule un article du ticket entier : le compte tombe juste.
 - **Retrait au distributeur** (« RETRAIT », « DAB ») : l'appli demande « Mettre dans mon liquide » (l'argent sort du compte et s'ajoute au liquide, ce n'est pas une dépense) ou « Garder comme une dépense ».
 - Pas de ticket ? ＋ › « Saisir une dépense » pour la noter à la main.
@@ -69,7 +69,7 @@ Menu › Réglages › Affichage. **Simple** (par défaut) montre l'essentiel. *
 - Budget : les cases Budgets, Dépassés, Reste ;
 - À venir : tout « À payer bientôt » ;
 - Foyer : le graphique et les produits partagés ouverts ;
-- fiche d'un ticket : toutes les catégories et les options.
+- fiche d'un ticket : les options dépliées.
 
 Le réglage est propre à chaque téléphone.
 

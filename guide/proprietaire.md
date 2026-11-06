@@ -34,11 +34,10 @@ Touche le bouton vert **＋**, puis « Scanner un ticket » ou « Ticket depuis 
 - Le montant, le magasin et la date sont remplis. Regarde le montant en premier.
 - Ce qui est en orange est à vérifier : un article sans prix, un produit vide, un écart entre les articles et le total.
 - Si la carte bancaire ou la TVA du ticket donnent un autre total, l'appli le dit et propose « Prendre … € ».
-- La **catégorie** est obligatoire : touche une tuile (les 5 que tu utilises le plus, ou « Toutes »). L'appli la propose déjà d'après le magasin.
+- La **catégorie** est obligatoire : touche une des 10 grandes catégories (Courses, Sorties, Transport…). Dessous, tu peux préciser une sous-catégorie (Carburant, Bar…) ou en créer une avec « ＋ Nouvelle » ; c'est facultatif. L'appli la propose déjà d'après le magasin.
 - **Aucun article lu** (plein d'essence, ticket sans détail) ? L'appli ajoute tout seule un article du ticket entier : le compte tombe juste.
 - **Retrait au distributeur** (« RETRAIT », « DAB ») : l'appli demande « Mettre dans mon liquide » (l'argent sort du compte et s'ajoute au liquide, ce n'est pas une dépense) ou « Garder comme une dépense ».
 - La photo reste avec le ticket : touche la vignette à côté du montant pour la revoir.
-- Les catégories les plus utilisées sont montrées ; « Autres ▾ » les affiche toutes.
 - « Options » (replié) : le compte (Auto = celui de la personne qui a payé), le groupe, le partage. La ligne résume ce qui est choisi.
 
 **Ce que l'appli apprend**
@@ -63,11 +62,13 @@ Un appui long sur un ticket, dans n'importe quelle liste, propose Ouvrir ou Supp
 
 L'onglet Budget (ex Dépenses) a trois parties, en boutons sous le titre.
 
-- **Budgets** : un budget par catégorie, pour le foyer ou par personne. En haut, ce que tu as dépensé sur le budget et ce qui reste pour les jours qui restent ; pour chaque catégorie, ce qui reste. « ✎ Modifier les budgets » en bas de la carte. Sans budget à toi, ce sont ceux du foyer.
-- **Analyse** : tes dépenses par mois, par catégorie, les dépenses qui reviennent et qui a payé. « + Frais fixes » ajoute les loyers, abonnements… pour voir tout ce qui sort vraiment.
+- **Budgets** : un budget par grande catégorie (tout compris : Transport compte aussi Carburant et Péage) ou par sous-catégorie (seulement elle), pour le foyer ou par personne. En haut, ce que tu as dépensé sur le budget et ce qui reste pour les jours qui restent ; pour chaque catégorie, ce qui reste. « ✎ Modifier les budgets » en bas de la carte. Sans budget à toi, ce sont ceux du foyer.
+- **Analyse** : tes dépenses par mois, par catégorie (grandes catégories, ou le détail par sous-catégorie ; touche une grande catégorie pour voir ses sous-catégories), les dépenses qui reviennent et qui a payé. « + Frais fixes » ajoute les loyers, abonnements… pour voir tout ce qui sort vraiment.
 - **Produits** : ce que tu achètes et à quel prix. Mes produits, Hausses (ce qui augmente), Magasins (où c'est le moins cher), Familles. Touche un produit pour voir tous ses achats.
 
 ✦ **Analyse avancée** (Tickets Plus) : ton inflation personnelle comparée à celle de l'INSEE, cette année contre l'an dernier, les alertes, le reste à vivre, des pistes d'économies.
+
+**Les catégories** (Budget › Produits › ⚙ Produits & catégories) : une dizaine de grandes catégories, et dedans tes sous-catégories. Tu peux ajouter une grande catégorie ou une sous-catégorie (＋), renommer, déplacer une sous-catégorie sous une autre grande catégorie (ses tickets et ses budgets suivent) ou supprimer (ses tickets vont dans la grande catégorie, ou dans Autre).
 
 Le bouton personne, en haut à droite, choisit les dépenses montrées dans Produits et Analyse : les tiennes, celles d'une personne, ou tout le foyer.
 
@@ -170,7 +171,7 @@ Menu › Réglages › Affichage. **Simple** (par défaut) montre l'essentiel. *
 - Budget : les cases Budgets, Dépassés, Reste ;
 - À venir : tout « À payer bientôt » ;
 - Foyer : le graphique et les produits partagés ouverts ;
-- fiche d'un ticket : toutes les catégories et les options.
+- fiche d'un ticket : les options dépliées.
 
 Le réglage est propre à chaque téléphone.
 
