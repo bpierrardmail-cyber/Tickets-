@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="06/11 13:51" />
+  <meta name="build" content="06/11 16:47" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -1723,8 +1723,10 @@
       ["Shopping",["vêtement","vetement","prêt","pret","chaussure","mode","multimédia","multimedia","high","informatique","tech","cadeau","shopping","beauté","beaute","textile"]],
       ["Enfants",["enfant","école","ecole","cantine","crèche","creche","jouet","bébé","bebe","nounou","scolaire"]],
       ["Animaux",["anima","véto","veto","croquette","chien","chat"]]];
-    function catGuessMain(c){ var x=(c||"").toLowerCase(); if(CAT_MAINS_DEF.indexOf(c)>=0) return c;
-      for(var i=0;i<CAT_RULES.length;i++){ var kw=CAT_RULES[i][1]; for(var j=0;j<kw.length;j++){ if(x.indexOf(kw[j])>=0) return CAT_RULES[i][0]; } }
+    var CAT_WORD=["bar","chat","mode","bus","jeu","tech","high","fast","drive"];   // mots courts : seulement en mot entier (« Achats », « Barbier »)
+    function catGuessMain(c){ var x=" "+(c||"").toLowerCase().replace(/[^a-z0-9à-ÿ]+/g," ")+" "; if(CAT_MAINS_DEF.indexOf(c)>=0) return c;
+      function hit(k){ return CAT_WORD.indexOf(k)>=0 ? (x.indexOf(" "+k+" ")>=0 || x.indexOf(" "+k+"s ")>=0) : x.indexOf(k)>=0; }
+      for(var p=0;p<2;p++) for(var i=0;i<CAT_RULES.length;i++){ var kw=CAT_RULES[i][1]; for(var j=0;j<kw.length;j++){ if((kw[j].indexOf(" ")>=0)===(p===0) && hit(kw[j])) return CAT_RULES[i][0]; } }   // expressions (« entretien voiture ») d'abord
       return "Autre"; }
     var CAT_PARENT=store.read("catParent", null), CAT_MIG=null;
     function persistCatParent(){ store.write("catParent", CAT_PARENT); }
@@ -3242,6 +3244,8 @@
     }
     // Réparation (taxoV4) : les familles déjà migrées sous un autre nom (majuscules, « - », pluriel) sont fusionnées avec la catégorie qui veut dire la même chose,
     // et les noms tout en majuscules sont réécrits normalement. Rien n'est perdu : tickets, articles, produits et budgets suivent. La fenêtre « rangées » se rouvre.
+    function catWeight(c){ var n=0; (state.entries||[]).forEach(function(e){ if(e.categorie===c) n+=2; (e.articles||[]).forEach(function(a){ if(a.produit===c) n++; }); });
+      if(KEYWORDS[c] && KEYWORDS[c].length) n+=5; if(budgets && budgets[c]>0) n+=5; return n; }
     function catRepair(){
       var member=!!(store.read("fyCfg", null) && store.read("fyCfg", null).role!=="owner");
       if(member || store.read("taxoV4", null)===4) return;
@@ -3250,6 +3254,7 @@
         for(var i=0;i<CATS.length;i++){ var c=CATS[i]; if(c==="Autre" || (catIsMain(c) && CAT_MAINS_DEF.indexOf(c)>=0)) continue;
           var t=catFindLike(c); if(!t) continue;
           if(!catUpper(c) && catUpper(t)) continue;   // on garde le nom écrit normalement : l'autre viendra à lui
+          if(catUpper(c)===catUpper(t) && !(catIsMain(t) && CAT_MAINS_DEF.indexOf(t)>=0) && catWeight(c)>=catWeight(t)){ catMergeRaw(t, c); changed++; again=true; break; }   // même écriture : on garde celle qui sert (ou la plus ancienne)
           catMergeRaw(c, t); changed++; again=true; break; } }
       CATS.forEach(function(c){ if(CAT_PARENT && CAT_PARENT[c]==="Autre"){ var g=catGuessMain(c); if(g!=="Autre" && g!==c){ CAT_PARENT[c]=g; changed++; } } });   // rangées dans Autre faute de règle (Véhicule → Transport)
       CATS.slice().forEach(function(c){ if(!catUpper(c)) return; var n=catNice(c); if(n===c) return; if(CATS.indexOf(n)>=0){ catMergeRaw(c, n); } else catRenameRaw(c, n); changed++; });
@@ -5133,6 +5138,7 @@
       var csn=document.getElementById("catSubNew"); if(csn) csn.onclick=function(){ readForm(); var m=catMain(state.draft.categorie);
         var nm=(window.prompt("Nouvelle sous-catégorie dans « "+m+" » :")||"").trim(); if(!nm) return;
         if(CATS.indexOf(nm)>=0){ if(catMain(nm)!==m){ window.alert("« "+nm+" » existe déjà dans "+catMain(nm)+"."); return; } }
+        else if(catNameBad(nm)) return;
         else { CATS.push(nm); if(!CAT_PARENT) CAT_PARENT={}; CAT_PARENT[nm]=m; persistCats(); persistCatParent(); famSync(true); }
         state.draft.categorie=nm; render(); };
       var fpy=document.getElementById("f-payer"); if(fpy) fpy.onchange=function(){
@@ -8077,17 +8083,24 @@
     function addCat(parent){
       var name=(window.prompt(parent ? "Nouvelle sous-catégorie dans « "+parent+" » :" : "Nom de la nouvelle grande catégorie :")||"").trim();
       if(!name) return;
-      if(CATS.indexOf(name)>=0){ window.alert("Cette catégorie existe déjà"+(catMain(name)!==name?" (dans "+catMain(name)+")":"")+"."); return; }
+      if(catNameBad(name)) return;
       if(parent){ CATS.push(name); if(!CAT_PARENT) CAT_PARENT={}; CAT_PARENT[name]=parent; persistCatParent(); }
       else { var ai=CATS.indexOf("Autre"); if(ai<0) CATS.push(name); else CATS.splice(ai,0,name); }
       persistCats(); famSync(true); render();
     }
+    function catNameBad(name, keep){   // vrai (et message) si le nom est déjà une catégorie, écrite autrement, ou un produit
+      var k=ckey(name), same=null; CATS.forEach(function(c){ if(c!==keep && (c===name || ckey(c)===k)) same=c; });
+      if(same){ window.alert("« "+same+" » existe déjà"+(catMain(same)!==same?" (dans "+catMain(same)+")":"")+"."); return true; }
+      var w=takenAs(name); if(w==="produit"){ window.alert("« "+name+" » est déjà un produit. Choisis un autre nom."); return true; }
+      return false;
+    }
     function catRenameKeys(o, old, name){ if(o && Object.prototype.hasOwnProperty.call(o, old)){ o[name]=o[old]; delete o[old]; return true; } return false; }
     function renameCat(old){
+      if(fyMember()) return;
       if(old==="Autre"){ window.alert("« Autre » ne peut pas être renommée (catégorie de repli)."); return; }
       var name=(window.prompt("Renommer la catégorie :", old)||"").trim();
       if(!name || name===old) return;
-      if(CATS.indexOf(name)>=0){ window.alert("Cette catégorie existe déjà."); return; }
+      if(catNameBad(name, old)) return;
       catRenameRaw(old, name); render();
     }
     function catRenameRaw(old, name){
@@ -8105,6 +8118,8 @@
     // fusionner « src » dans « to » (même chose sous deux noms) : tickets, articles, produits, budgets (gardés s'il n'y en a pas déjà), sous-catégories
     function catMergeRaw(src, to){
       var i=CATS.indexOf(src); if(i>=0) CATS.splice(i,1);
+      if(KEYWORDS[src]){ KEYWORDS[to]=(KEYWORDS[to]||[]).concat(KEYWORDS[src].filter(function(w){ return (KEYWORDS[to]||[]).indexOf(w)<0; })); delete KEYWORDS[src]; }
+      if(CAT_PARENT && CAT_PARENT[to]===src) delete CAT_PARENT[to];   // « to » était une sous-catégorie de « src » : elle prend sa place
       if(CAT_PARENT){ delete CAT_PARENT[src]; Object.keys(CAT_PARENT).forEach(function(k){ if(CAT_PARENT[k]===src) CAT_PARENT[k]=(catIsMain(to)?to:catMain(to)); }); }
       function mv(o){ if(!o || !Object.prototype.hasOwnProperty.call(o, src)) return; if(!(o[to]>0)) o[to]=o[src]; delete o[src]; }
       mv(budgets); Object.keys(budgetsP||{}).forEach(function(p){ mv(budgetsP[p]); });
@@ -8119,10 +8134,12 @@
         return { l:catIcon(m).e+"  "+m, primary:false, fn:function(){ CAT_PARENT[c]=m; persistCatParent(); render(); uiToast("« "+c+" » est dans "+m); } }; }));
     }
     function deleteCat(name){
+      if(fyMember()) return;
       if(name==="Autre"){ window.alert("« Autre » ne peut pas être supprimée."); return; }
       var main=catIsMain(name), to=main ? "Autre" : catMain(name);
       // rien n'est perdu : tickets, articles et produits vont dans « to » ; son budget aussi s'il n'y en a pas déjà un ; « Annuler » remet tout
-      var snap=JSON.stringify({ cats:CATS, cp:CAT_PARENT, e:state.entries, fd:FAMILLE_DE, pr:PRODUITS, ap:APPRIS, b:budgets, bp:budgetsP, kw:KEYWORDS[name]||null });
+      var touched={}; state.entries.forEach(function(e){ if(e.categorie===name || (e.articles||[]).some(function(a){ return a.produit===name; })) touched[e.id]={ c:e.categorie, p:(e.articles||[]).map(function(a){ return a.produit; }) }; });
+      var snap=JSON.stringify({ cats:CATS, cp:CAT_PARENT, fd:FAMILLE_DE, pr:PRODUITS, ap:APPRIS, b:budgets, bp:budgetsP, kw:KEYWORDS[name]||null });
       function moveBud(o){ if(!o || !Object.prototype.hasOwnProperty.call(o, name)) return false; if(!(o[to]>0)) o[to]=o[name]; delete o[name]; return true; }
       if(moveBud(budgets)) persistBudgets();
       var bpc=false; Object.keys(budgetsP||{}).forEach(function(p){ if(moveBud(budgetsP[p])) bpc=true; }); if(bpc) persistBudgetsP();
@@ -8135,7 +8152,9 @@
       Object.keys(APPRIS||{}).forEach(function(k){ if(APPRIS[k]===name) APPRIS[k]=to; }); persistAppris();
       persistCats(); famSync(true); persist(); render();
       uiUndoToast("« "+name+" » supprimée · ses tickets sont dans "+to, "Annuler", function(){
-        var o=JSON.parse(snap); CATS=o.cats; CAT_PARENT=o.cp; state.entries=o.e; FAMILLE_DE=o.fd; PRODUITS=o.pr; APPRIS=o.ap; budgets=o.b; budgetsP=o.bp; if(o.kw) KEYWORDS[name]=o.kw;
+        var o=JSON.parse(snap); CATS=o.cats; CAT_PARENT=o.cp;
+        state.entries.forEach(function(e){ var t=touched[e.id]; if(!t) return; if(e.categorie===to) e.categorie=t.c; (e.articles||[]).forEach(function(a, ai){ if(a.produit===to && t.p[ai]===name) a.produit=name; }); });   // les tickets arrivés depuis restent tels quels
+        FAMILLE_DE=o.fd; PRODUITS=o.pr; APPRIS=o.ap; budgets=o.b; budgetsP=o.bp; if(o.kw) KEYWORDS[name]=o.kw;
         persistCats(); persistCatParent(); persist(); persistFamille(); persistProd(); persistAppris(); persistBudgets(); persistBudgetsP(); famSync(true); render(); uiToast("« "+name+" » est revenue"); });
     }
     function renderProduits(){
@@ -8145,16 +8164,18 @@
       h+='<input type="range" id="simrange" min="50" max="95" step="5" value="'+SIM_THRESHOLD+'" style="width:100%;accent-color:var(--accent)">';
       h+='<div class="muted" style="font-size:10px;margin:2px 2px 22px">Au scan, un article qui ressemble à au moins ce % à un article déjà classé reprend son produit. Plus bas = plus de reprises automatiques, mais plus de risques d\'erreur.</div>';
       h+='<label class="f">Catégories</label><div class="muted" style="font-size:11.5px;margin:-2px 2px 8px">Grandes catégories et leurs sous-catégories. Un ticket compte dans sa sous-catégorie et dans sa grande catégorie.</div>';
+      var cMem=fyMember();   // renommer ou supprimer touche tous les tickets et les budgets du foyer : sur le téléphone du propriétaire
+      if(cMem) h+='<div class="muted" style="font-size:11px;margin:-4px 2px 8px">Renommer ou supprimer une catégorie se fait sur le téléphone du propriétaire.</div>';
       catMains().forEach(function(m){ var ic=catIcon(m), prot=(m==="Autre");
         h+='<div class="prow ctm"><span class="pname"><span style="margin-right:6px">'+ic.e+'</span><b>'+esc(m)+'</b></span>'+
            '<button class="btn ghost catadd" type="button" data-cat="'+esc(m)+'" aria-label="Ajouter une sous-catégorie à '+esc(m)+'">＋</button>'+
-           '<button class="btn ghost catren" type="button" data-cat="'+esc(m)+'"'+(prot?' disabled style="opacity:.3"':'')+'>✎</button>'+
-           '<button class="btn ghost catdel" type="button"'+(prot?' disabled style="opacity:.3"':'')+' data-cat="'+esc(m)+'">✕</button></div>';
+           (cMem?'':'<button class="btn ghost catren" type="button" data-cat="'+esc(m)+'"'+(prot?' disabled style="opacity:.3"':'')+'>✎</button>'+
+           '<button class="btn ghost catdel" type="button"'+(prot?' disabled style="opacity:.3"':'')+' data-cat="'+esc(m)+'">✕</button>')+'</div>';
         catSubs(m).forEach(function(c){
           h+='<div class="prow cts"><span class="pname">↳ '+esc(c)+'</span>'+
              '<button class="btn ghost catmv" type="button" data-cat="'+esc(c)+'">Déplacer</button>'+
-             '<button class="btn ghost catren" type="button" data-cat="'+esc(c)+'">✎</button>'+
-             '<button class="btn ghost catdel" type="button" data-cat="'+esc(c)+'">✕</button></div>'; });
+             (cMem?'':'<button class="btn ghost catren" type="button" data-cat="'+esc(c)+'">✎</button>'+
+             '<button class="btn ghost catdel" type="button" data-cat="'+esc(c)+'">✕</button>')+'</div>'; });
       });
       h+='<button class="btn ghost" id="addcat" type="button" style="margin-top:10px">+ Nouvelle grande catégorie</button>';
       // plus de familles à part : chaque produit est rangé dans une catégorie de l'arbre ci-dessus
@@ -11226,6 +11247,9 @@
       if(!("communParts" in data)) store.write("communParts", null);   // ancienne sauvegarde : parts égales   // ancienne sauvegarde : le compte est reconstruit au redémarrage
       store.write("askName", false);
       if(data.taxoV2!==2) store.write("taxoV2", null);
+      if(!("catParent" in data)) store.remove("catParent");   // sauvegarde d'avant l'arbre : catSetup, famMerge et catRepair repassent
+      if(data.taxoV3!==3) store.remove("taxoV3");
+      if(data.taxoV4!==4) store.remove("taxoV4");
       if(data.virEpV2!==1) store.write("virEpV2", null);
       var photos=(obj && obj.photos && typeof obj.photos==="object") ? obj.photos : null;
       // sans la question, un court délai laisse le navigateur enregistrer les données avant de recharger

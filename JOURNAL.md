@@ -19,7 +19,8 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `06/11 13:51`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `06/11 16:47
+([^`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -210,6 +211,14 @@ Après chaque modification, dans le même commit :
 
 ### 06/11
 
+- **Relecture indépendante (point 4 de la campagne)** par un agent séparé, sur tout ce qui a changé depuis le début de la refonte. 7 défauts trouvés et vérifiés, tous corrigés (test t140, t138 complété) :
+  - restaurer une sauvegarde d'avant l'arbre gardait l'arbre actuel sans refaire les migrations : les familles de la sauvegarde tombaient dans « Autre ». `restoreApply` retire `catParent`, `taxoV3`, `taxoV4` absents de la sauvegarde ;
+  - un membre qui renommait ou supprimait une catégorie : ses tickets et les budgets ne suivaient pas chez le propriétaire (fausse grande catégorie, budget orphelin). Renommer / supprimer une catégorie = **téléphone du propriétaire seulement** (ajouter et déplacer restent permis) ;
+  - réparation `catRepair` : entre deux noms écrits pareil (« Carburant » / « Carburants »), elle gardait la plus récente ; elle garde maintenant celle qui sert (tickets, mots-clés, budget, `catWeight`), sinon la plus ancienne. `catMergeRaw` garde les mots-clés (`KEYWORDS`) et ne laisse plus de parent fantôme ;
+  - « Annuler » une suppression ne remet que les tickets qu'elle avait touchés (plus d'écrasement de ce qui est arrivé entre-temps) ;
+  - nom de catégorie déjà pris autrement écrit (casse, accents, pluriel) ou nom d'un produit refusé (`catNameBad`) ;
+  - `catGuessMain` : mots courts en mot entier (`CAT_WORD` : « Achats » n'est plus dans Animaux, « Barbier » plus dans Sorties), expressions d'abord (« Entretien voiture » → Transport).
+  - Vérifié sans défaut : ES5, échappement des noms, budgets sans double compte, `homeFit` sans boucle, migrations jamais écrites chez un membre.
 - **Campagne de test (1 à 4, accord de Benoît)** :
   - **Vraies données** (sauvegarde du 06/11, gardée hors du dépôt) : les familles de Benoît étaient écrites autrement (MAJUSCULES, « - », pluriel : « HYGIÈNE- SOINS », « BRICOLAGES - OUTILLAGE », « LOISIR »…) et étaient devenues des doublons. **Réparation** une fois (`catRepair`, `taxoV4`) : fusion avec la catégorie qui veut dire la même chose (`ckey`, `ckeySeg`, `catFindLike`, `catMergeRaw`), noms en majuscules réécrits (`catNice`), sous-catégories d'« Autre » re-rangées (Véhicule → Transport), fenêtre « rangées » rouverte. Vérifié sur ses données : 125 tickets, 4 406,30 €, 561 articles identiques ; seuls des produits d'articles changent de nom ; Opérations, Budget, À venir et Foyer affichent les mêmes montants avant et après. La 1re migration compare aussi les noms ainsi (`famTarget`). `taxoV3` / `taxoV4` ajoutés à la sauvegarde. Test t139.
   - **Fenêtre « Tes catégories sont rangées »** : le bouton « Changer » s'étirait sur toute la ligne (capture de Benoît) : bouton à sa taille (`.cmg`).
