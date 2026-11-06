@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `06/11 10:39`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `06/11 11:37`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -80,7 +80,7 @@ Après chaque modification, dans le même commit :
 
 ## En cours / à reprendre
 - **Refonte de la navigation (05/11)** : direction validée sur maquette (voir Décisions) ; à faire par étapes : 1) barre à 5 onglets + « + », 2) Accueil Résumé / Tableau de bord, 3) Opérations (une liste), 4) Budget, À venir, Foyer, 5) fiche ticket, premier démarrage. Étape 1 faite le 05/11 (barre à 5 onglets + « + ») ; étape 2 faite le 06/11 (Accueil Résumé / Tableau de bord) ; étapes 3 à 5 faites le 06/11, puis Opérations, Budget, À venir et Foyer allégés d'après la maquette (06/11) : à regarder par Benoît ; étapes 3, 4 et 5 faites le 06/11 ; refonte terminée (reste, au besoin : affichage détaillé, système de catégories à repenser plus tard, Tickets Plus).
-- **Idée à garder pour plus tard (05/11, Benoît)** : une « vue avancée » qui reprend l'interface d'avant la refonte. Avis donné : plutôt un réglage « Affichage détaillé » dans les nouveaux écrans (toutes les options dépliées, listes denses, tous les anciens graphiques dans le tableau de bord, colonnes en plus) que garder l'ancienne interface entière (deux interfaces à maintenir et à tester) ; pendant la refonte, l'ancienne reste disponible le temps de la transition. À décider.
+- **Fait le 06/11 (réglage Affichage simple / détaillé)** — idée de départ (05/11, Benoît) : une « vue avancée » qui reprend l'interface d'avant la refonte. Avis donné : plutôt un réglage « Affichage détaillé » dans les nouveaux écrans (toutes les options dépliées, listes denses, tous les anciens graphiques dans le tableau de bord, colonnes en plus) que garder l'ancienne interface entière (deux interfaces à maintenir et à tester) ; pendant la refonte, l'ancienne reste disponible le temps de la transition. À décider.
 - **Étape 3 faite (05/11)** : le Plus du propriétaire couvre le foyer ; groupes selon les droits de Commun. À voir par Benoît avec Sylvette (version Perso : tout est déjà ouvert ; la différence se voit dans la version Store).
 - **Plan détaillé : `PLAN.md`** (5 étapes à partir du 06/11, ce que Benoît doit préparer : identifiants Google Cloud, site bpierrard.fr). Textes légaux à relire : `legal/`.
 - **Sauvegarde Google Drive, étape 2** (04/11) : restaurer intégré et **essayé par Benoît le 05/11** dans l'appli Store (restaurer depuis Drive et annuler la restauration : « fonctionne ») ; la lecture par l'appli Store des sauvegardes faites par l'appli Perso est donc confirmée (même projet Google).
@@ -210,6 +210,7 @@ Après chaque modification, dans le même commit :
 
 ### 06/11
 
+- **Affichage simple / détaillé** (« tu peux faire la partie affichage détaillé ») : Menu › Réglages › Affichage (clé `affichage` sur le téléphone, `affDet()`, classe `det` sur `body`). Détaillé : Opérations avec la recherche ouverte, les filtres Tickets / Frais fixes / Virements (`tk`, `fx`, `vr`), des lignes plus serrées et le bouton Liquide toujours là ; tableau de bord à 4 graphiques par page avec leurs chiffres (pas d'ajustement à l'écran, la page défile) ; Budget avec les cases Budgets / Dépassés / Reste ; tout « À payer bientôt » ; Foyer avec le détail et les produits partagés ouverts ; fiche d'un ticket avec toutes les catégories et les options dépliées. Simple reste l'affichage par défaut. Guide (nouvelle partie), test t135, t115 (12 et 11 parties).
 - **Refonte des autres onglets, d'après la maquette validée** (« tu peux continuer la refonte des autres onglets ») :
   - **Opérations** : la grande carte des comptes est remplacée par une ligne « ● Compte courant ▾ » + le mois (‹ oct. 2026 ›) sous les sous-onglets (`acctRowHTML`) ; toucher le compte ouvre la liste des comptes par personne avec leur solde, « Tous les comptes », Ajouter / Gérer (`acctSheet`). Plus de « ＋ Ajouter » (le « + » de la barre ajoute sur le compte affiché, `plusDo("man")`), recherche repliée derrière une loupe (`#opsQBtn`, `state.cptQOpen`), « 💶 Liquide » seulement s'il y en a ; « Argent liquide » et « Reprendre des virements » passent dans la roue du compte.
   - **Budget › Budgets** : « Dépensé en octobre · X € sur Y € de budget · Encore Z € pour N jours » (ou « Dépassé de »), ce qui reste par catégorie, « ✎ Modifier les budgets » en bas de la carte ; plus de cases Budgets / Dépassés / Reste ni de puce « Budgets ✎ » ; sans budget à soi, ceux du foyer (`budgetsChart`, `fyFb`).

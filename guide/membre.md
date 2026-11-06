@@ -60,6 +60,19 @@ En plus du foyer, tu as un espace à toi : Menu › Mes comptes.
   - Ou dans un fichier (ZIP ou JSON) que tu gardes où tu veux.
 - Si le propriétaire a Tickets Plus, la sauvegarde sur Drive est comprise pour toi aussi.
 
+## Affichage simple ou détaillé
+
+Menu › Réglages › Affichage. **Simple** (par défaut) montre l'essentiel. **Détaillé** déplie tout :
+
+- Opérations : la recherche ouverte, des filtres en plus (Tickets, Frais fixes, Virements), des lignes plus serrées, le bouton Liquide toujours là ;
+- Tableau de bord : 4 graphiques par page avec leurs chiffres (la page défile) ;
+- Budget : les cases Budgets, Dépassés, Reste ;
+- À venir : tout « À payer bientôt » ;
+- Foyer : le graphique et les produits partagés ouverts ;
+- fiche d'un ticket : toutes les catégories et les options.
+
+Le réglage est propre à chaque téléphone.
+
 ## Rappels
 
 Menu › Réglages › Rappels (appli Android) : tes prélèvements de la veille, tes virements à faire, tes budgets à 80 %. Ils arrivent même appli fermée et sans internet ; rien ne s'affiche sur l'écran verrouillé.

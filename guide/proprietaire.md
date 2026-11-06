@@ -161,6 +161,19 @@ Compte comme payé pour le commun : les frais communs (selon le compte qui les p
 
 Retirer un membre coupe son accès tout de suite. Ses tickets déjà arrivés chez toi restent ; ce qu'il a ajouté depuis sa dernière mise à jour serait perdu : vérifie qu'il est « à jour » avant (l'appli te prévient). Pour juste le reconnecter, « Nouveau téléphone : nouveau QR code » suffit.
 
+## Affichage simple ou détaillé
+
+Menu › Réglages › Affichage. **Simple** (par défaut) montre l'essentiel. **Détaillé** déplie tout :
+
+- Opérations : la recherche ouverte, des filtres en plus (Tickets, Frais fixes, Virements), des lignes plus serrées, le bouton Liquide toujours là ;
+- Tableau de bord : 4 graphiques par page avec leurs chiffres (la page défile) ;
+- Budget : les cases Budgets, Dépassés, Reste ;
+- À venir : tout « À payer bientôt » ;
+- Foyer : le graphique et les produits partagés ouverts ;
+- fiche d'un ticket : toutes les catégories et les options.
+
+Le réglage est propre à chaque téléphone.
+
 ## Rappels
 
 Menu › Réglages › Rappels (appli Android) : des notifications sur ton téléphone, même appli fermée et sans internet.
