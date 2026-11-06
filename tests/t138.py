@@ -58,8 +58,9 @@ with sync_playwright() as p:
     check(any(e["marchand"]=="Autoroute" and e["categorie"]=="Péage Fictif" for e in E), "propriétaire : le ticket « Péage Fictif » arrive")
     check(ls(O,"catParent").get("Péage Fictif")=="Transport" and "Péage Fictif" in ls(O,"cats"), "propriétaire : la sous-catégorie créée par Marie arrive, rangée dans Transport")
     O.locator('#nav .navi[data-view="depenses"]').click(); O.wait_for_timeout(700)
-    t=O.locator("#app").inner_text().replace(" "," ")
-    check("reste 146,80" in t, "budget Transport (200 €) : 50 + 3,20 → reste 146,80 €")
+    t=O.locator("#app").inner_text().replace("\u202f"," ").replace("\xa0"," ")
+    i=t.find("Transport"); print("  budgets :", t[max(0,i-60):i+90].replace("\n"," | "))
+    check("3,20 € sur 200,00 €" in t, "budget Transport (200 €) du mois : compte le ticket de Marie dans sa sous-catégorie Péage (3,20 €)")
     # Léa : pas de « ＋ Nouvelle » (Produits pas en modification)
     if L.locator("#navplus").is_visible():
         L.locator("#navplus").click(); L.wait_for_timeout(300)

@@ -134,7 +134,7 @@ with sync_playwright() as p:
         for aff in ["simple","detail"]:
             for role in roles:
                 for w in [412, 360]:
-                    if FAST and (w==360 and role!="owner"): continue
+                    if FAST and not ((role=="owner" and w==412) or (role=="owner" and ed=="perso" and aff=="simple") or (w==412 and ed=="perso" and aff=="simple")): continue
                     combos.append((ed, aff, role, w))
     for cb in combos:
         try: run(*cb)
