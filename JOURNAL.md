@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `06/11 11:37`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `06/11 12:03`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -210,6 +210,7 @@ Après chaque modification, dans le même commit :
 
 ### 06/11
 
+- **Captures de la vitrine refaites** (`python3 tests/vitrine.py`) avec la nouvelle interface : accueil (tableau de bord, recadré sur la carte du haut), fiche d'un ticket (ouverte depuis Opérations › Tickets), analyse, qui doit quoi, factures, À venir (À payer bientôt avec les dates), relevé, foyer. Données inventées.
 - **Affichage simple / détaillé** (« tu peux faire la partie affichage détaillé ») : Menu › Réglages › Affichage (clé `affichage` sur le téléphone, `affDet()`, classe `det` sur `body`). Détaillé : Opérations avec la recherche ouverte, les filtres Tickets / Frais fixes / Virements (`tk`, `fx`, `vr`), des lignes plus serrées et le bouton Liquide toujours là ; tableau de bord à 4 graphiques par page avec leurs chiffres (pas d'ajustement à l'écran, la page défile) ; Budget avec les cases Budgets / Dépassés / Reste ; tout « À payer bientôt » ; Foyer avec le détail et les produits partagés ouverts ; fiche d'un ticket avec toutes les catégories et les options dépliées. Simple reste l'affichage par défaut. Guide (nouvelle partie), test t135, t115 (12 et 11 parties).
 - **Refonte des autres onglets, d'après la maquette validée** (« tu peux continuer la refonte des autres onglets ») :
   - **Opérations** : la grande carte des comptes est remplacée par une ligne « ● Compte courant ▾ » + le mois (‹ oct. 2026 ›) sous les sous-onglets (`acctRowHTML`) ; toucher le compte ouvre la liste des comptes par personne avec leur solde, « Tous les comptes », Ajouter / Gérer (`acctSheet`). Plus de « ＋ Ajouter » (le « + » de la barre ajoute sur le compte affiché, `plusDo("man")`), recherche repliée derrière une loupe (`#opsQBtn`, `state.cptQOpen`), « 💶 Liquide » seulement s'il y en a ; « Argent liquide » et « Reprendre des virements » passent dans la roue du compte.
