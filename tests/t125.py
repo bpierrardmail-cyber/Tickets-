@@ -5,7 +5,7 @@
 #    une sauvegarde chiffrée (g1.) est préparée puis envoyée ; elle s'ouvre avec le code affiché (AES-GCM + gzip) ;
 #    écran « Première sauvegarde… » puis « À jour » ; ligne du menu « Drive · aujourd'hui HH:MM ».
 # 2. En quittant l'appli : rien n'est préparé si rien n'a changé ; un ticket de plus → nouvelle sauvegarde préparée.
-# 3. Envoi en attente depuis plus d'1 heure : bandeau sur l'accueil (fermable), ligne rouge du menu, « Envoyer maintenant ».
+# 3. Envoi en attente : bandeau sur l'accueil après 1 h (fermable) ; ligne du menu grise « envoi en cours » les 6 premières heures, rouge ensuite, « Envoyer maintenant ».
 # 4. Compte à reconnecter : bandeau « Sauvegarde Drive arrêtée ».
 # 5. Wi-Fi seulement, durées de conservation, Vérifier, Désactiver.
 # 6. Un autre téléphone, compte qui a déjà des sauvegardes : le code est demandé et vérifié.
@@ -145,10 +145,10 @@ with sync_playwright() as p:
     check(len(G)==n0+1 and G[-1]["n"]==3, "un ticket de plus puis quitter : nouvelle sauvegarde préparée (3 tickets)")
     show(pg); pg.wait_for_timeout(1500)
     # ---------- 3. en attente depuis plus d'1 heure
-    pg.evaluate("()=>{ __dv.autoSend=false; __dv.staged=__dv.lastData; __dv.pendingSince=Date.now()-2*3600000; __dv.err='net'; __dvSave(); }")
+    pg.evaluate("()=>{ __dv.autoSend=false; __dv.staged=__dv.lastData; __dv.pendingSince=Date.now()-7*3600000; __dv.err='net'; __dvSave(); }")
     hide(pg); show(pg); pg.wait_for_timeout(500)
     t=norm(pg.locator("#app").inner_text())
-    check("Pas encore sur Drive" in t and pg.locator("#drvBanX").count()==1, "en attente depuis 2 h : bandeau « Pas encore sur Drive » sur l'accueil")
+    check("Pas encore sur Drive" in t and pg.locator("#drvBanX").count()==1, "en attente depuis 7 h : bandeau « Pas encore sur Drive » sur l'accueil")
     r,col=menu_row(pg); check("Drive · en attente" in r and "coral" in col, "menu : « Drive · en attente » en rouge")
     pg.locator("#drvBanX").click(); pg.wait_for_timeout(400)
     check(pg.locator("#drvBanX").count()==0, "bandeau fermé")
@@ -163,7 +163,7 @@ with sync_playwright() as p:
     check("send" in pg.evaluate("()=>__dv.calls") and "À jour" in norm(pg.locator("#app").inner_text()), "« Envoyer maintenant » : envoyée, « À jour »")
     # le réseau revient pendant que l'appli est ouverte : envoi relancé, l'état est relu sans quitter l'appli
     pg.evaluate("()=>{ __dv.autoSend=false; __dv.staged=__dv.lastData; __dv.pendingSince=Date.now()-5*60000; __dvSave(); }"); show(pg)
-    r,col=menu_row(pg); check("en attente" in r, "envoi en attente : ligne rouge")
+    r,col=menu_row(pg); check("envoi en cours" in r and "coral" not in col, "envoi en attente depuis 5 min : « envoi en cours » en gris, pas en rouge (%s)"%r)
     n0=len([c for c in pg.evaluate("()=>__dv.calls") if c=="send"])
     pg.evaluate("()=>{ __dv.autoSend=true; __dvSave(); window.dispatchEvent(new Event('online')); }"); pg.wait_for_timeout(25000)
     r,col=menu_row(pg)
