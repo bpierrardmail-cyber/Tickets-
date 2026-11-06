@@ -26,7 +26,10 @@ Touche **＋**, puis « Scanner un ticket » ou « Ticket depuis la galerie ». 
 
 - Ticket à plat, bien éclairé, pris en entier ; un ticket très long en plusieurs photos.
 - Vérifie le montant, le magasin et la date. Ce qui est en orange est à regarder.
-- Pas de ticket ? « ✍️ Saisie » pour noter une dépense à la main.
+- La **catégorie** est obligatoire : touche une tuile (les 5 que tu utilises le plus, ou « Toutes »). L'appli la propose déjà d'après le magasin.
+- **Aucun article lu** (plein d'essence, ticket sans détail) ? L'appli ajoute tout seule un article du ticket entier : le compte tombe juste.
+- **Retrait au distributeur** (« RETRAIT », « DAB ») : l'appli demande « Mettre dans mon liquide » (l'argent sort du compte et s'ajoute au liquide, ce n'est pas une dépense) ou « Garder comme une dépense ».
+- Pas de ticket ? ＋ › « Saisir une dépense » pour la noter à la main.
 - Une dépense à partager : Options › Partage (« Qui paie ce ticket ? ») : seulement toi, le commun du foyer, ou certaines personnes.
 - Supprimé par erreur ? Opérations › Tickets › Corbeille › « Remettre » (30 jours).
 

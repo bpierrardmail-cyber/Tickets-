@@ -34,6 +34,9 @@ Touche le bouton vert **＋**, puis « Scanner un ticket » ou « Ticket depuis 
 - Le montant, le magasin et la date sont remplis. Regarde le montant en premier.
 - Ce qui est en orange est à vérifier : un article sans prix, un produit vide, un écart entre les articles et le total.
 - Si la carte bancaire ou la TVA du ticket donnent un autre total, l'appli le dit et propose « Prendre … € ».
+- La **catégorie** est obligatoire : touche une tuile (les 5 que tu utilises le plus, ou « Toutes »). L'appli la propose déjà d'après le magasin.
+- **Aucun article lu** (plein d'essence, ticket sans détail) ? L'appli ajoute tout seule un article du ticket entier : le compte tombe juste.
+- **Retrait au distributeur** (« RETRAIT », « DAB ») : l'appli demande « Mettre dans mon liquide » (l'argent sort du compte et s'ajoute au liquide, ce n'est pas une dépense) ou « Garder comme une dépense ».
 - La photo reste avec le ticket : touche la vignette à côté du montant pour la revoir.
 - Les catégories les plus utilisées sont montrées ; « Autres ▾ » les affiche toutes.
 - « Options » (replié) : le compte (Auto = celui de la personne qui a payé), le groupe, le partage. La ligne résume ce qui est choisi.
