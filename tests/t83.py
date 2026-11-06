@@ -18,7 +18,7 @@ with sync_playwright() as p:
         pg.evaluate("d=>{localStorage.clear(); for(const k in d) localStorage.setItem(k, JSON.stringify(d[k]));}", data); pg.reload(); pg.wait_for_timeout(900)
     def ls(k): return pg.evaluate("k=>JSON.parse(localStorage.getItem(k))", k)
     def form(montant, arts):
-        pg.locator("#manual2").click(); pg.wait_for_timeout(400)
+        (pg.locator("#navplus").click(), pg.wait_for_timeout(300), pg.locator('.dr-row[data-k="man"]').click(), pg.wait_for_timeout(400), pg.locator('.cattiles .chip:not(.more)').first.click()); pg.wait_for_timeout(400)
         pg.locator("#f-montant").fill(montant)
         for lab, pr in arts:
             pg.locator("#addart").click(); pg.wait_for_timeout(250)

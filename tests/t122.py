@@ -98,6 +98,7 @@ with sync_playwright() as p:
     check("Scanner un ticket" in ch and "Saisir un ticket" in ch and "Un ticket déjà enregistré" in ch and "Dépense sans ticket" in ch, "＋ Dépense : scanner, saisir, ticket déjà enregistré, sans ticket")
     pg.locator(".sheet-overlay button", has_text="Saisir un ticket").click(); pg.wait_for_timeout(500)
     check("groupe « Sortie ciné »" in norm(pg.locator("#fopt").inner_text()), "fiche du nouveau ticket : groupe « Sortie ciné » déjà choisi")
+    pg.locator('.cattiles .chip:not(.more)').first.click(); pg.wait_for_timeout(200)
     pg.locator("#f-montant").fill("24"); pg.locator("#f-marchand").fill("Cinéma"); pg.locator("#save").click(); pg.wait_for_timeout(600)
     if pg.locator("#cksave").count(): pg.locator("#cksave").click(); pg.wait_for_timeout(500)
     t=app(); ents=pg.evaluate("()=>JSON.parse(localStorage.getItem('entries'))")

@@ -67,7 +67,7 @@ with sync_playwright() as p:
     e=[x for x in E() if x["id"]==20][0]; check("share" not in e, "« Tout le foyer » : plus de partage particulier")
     # ---------- 4. tout le ticket en commun
     pg.locator('#nav .navi[data-view="list"]').click(); pg.wait_for_timeout(300)
-    pg.locator("#manual2").first.click(); pg.wait_for_timeout(400)
+    (pg.locator("#navplus").click(), pg.wait_for_timeout(300), pg.locator('.dr-row[data-k="man"]').click(), pg.wait_for_timeout(400), pg.locator('.cattiles .chip:not(.more)').first.click()); pg.wait_for_timeout(400)
     pg.locator("#f-montant").fill("30"); pg.locator("#f-marchand").fill("Boulangerie fictive")
     pg.locator("#fopt").click(); pg.wait_for_timeout(300)
     pg.locator("#fshare").click(); pg.wait_for_timeout(300); pg.locator('#shMode button[data-m="all"]').click(); pg.locator("#shOk").click(); pg.wait_for_timeout(300)

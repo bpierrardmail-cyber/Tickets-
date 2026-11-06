@@ -29,7 +29,7 @@ with sync_playwright() as p:
         if pg.locator("#cancel").count(): pg.locator("#cancel").click(); pg.wait_for_timeout(300)
         if not pg.locator('#nav .navi[data-view="list"]').is_visible(): pg.reload(); pg.wait_for_timeout(900)
         pg.locator('#nav .navi[data-view="list"]').click(); pg.wait_for_timeout(300)
-        pg.locator("#manual2").first.click(); pg.wait_for_timeout(500)
+        (pg.locator("#navplus").click(), pg.wait_for_timeout(300), pg.locator('.dr-row[data-k="man"]').click(), pg.wait_for_timeout(400), pg.locator('.cattiles .chip:not(.more)').first.click()); pg.wait_for_timeout(500)
         pg.locator("#f-montant").fill(amt); pg.locator("#f-montant").dispatch_event("change")
         pg.locator("#f-marchand").fill(mag); pg.locator("#f-marchand").dispatch_event("change")
         pg.locator("#f-date").fill(date); pg.locator("#f-date").dispatch_event("change"); pg.wait_for_timeout(300)

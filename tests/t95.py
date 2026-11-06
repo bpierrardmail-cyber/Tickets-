@@ -59,8 +59,8 @@ with sync_playwright() as p:
     check(dpon(pg)=="Analyse", "Dépenses se rouvre sur le dernier sous-onglet")
     # Accueil › Tickets
     pg.locator('#nav .navi[data-view="list"]').click(); pg.wait_for_timeout(400)
-    if pg.locator("#pvCap").count(): pg.locator("#pvCap").click(); pg.wait_for_timeout(400)
-    check(pg.evaluate("()=>{ var b=document.querySelector('.avtabs .cpsub.on'); return b?b.textContent:null; }")=="Tickets" and navon(pg)=="compte", "Accueil › Tickets : Opérations › Tickets")
+    (pg.locator('#nav .navi[data-view="compte"]').click(), pg.wait_for_timeout(400), pg.locator('.cpsub[data-cp="tk"]').click() if pg.locator('.cpsub[data-cp="tk"]').count() else None); pg.wait_for_timeout(400)
+    check(pg.evaluate("()=>{ var b=document.querySelector('.avtabs .cpsub.on'); return b?b.textContent:null; }")=="Tickets" and navon(pg)=="compte", "Opérations › Tickets")
     # À venir : la projection
     pg.locator('#nav .navi[data-view="factures"]').click(); pg.wait_for_timeout(400)
     pg.locator('.avtabs button[data-av="mois"]').click(); pg.wait_for_timeout(400)

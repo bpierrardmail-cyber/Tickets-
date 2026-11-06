@@ -61,7 +61,7 @@ with sync_playwright() as p:
     def manual(mag, amt, date, ph):
         if pg.locator("#cancel").count(): pg.locator("#cancel").click(); pg.wait_for_timeout(300)
         pg.locator('#nav .navi[data-view="list"]').click(); pg.wait_for_timeout(300)
-        pg.locator("#manual2").first.click(); pg.wait_for_timeout(400)
+        (pg.locator("#navplus").click(), pg.wait_for_timeout(300), pg.locator('.dr-row[data-k="man"]').click(), pg.wait_for_timeout(400), pg.locator('.cattiles .chip:not(.more)').first.click()); pg.wait_for_timeout(400)
         pg.locator("#f-montant").fill(amt); pg.locator("#f-marchand").fill(mag); pg.locator("#f-date").fill(date)
         with pg.expect_file_chooser() as fc: pg.locator("#photoadd").click()
         fc.value.set_files(ph); pg.wait_for_timeout(800)

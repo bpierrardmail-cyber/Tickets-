@@ -18,7 +18,7 @@ with sync_playwright() as p:
     pg.route("**/*", lambda r: r.continue_() if r.request.url.startswith("file:") else r.abort())
     pg.goto(APP); pg.wait_for_timeout(300)
     pg.evaluate("d=>{localStorage.clear(); for(const k in d) localStorage.setItem(k, JSON.stringify(d[k]));}", data); pg.reload(); pg.wait_for_timeout(900)
-    pg.locator("#manual2").click(); pg.wait_for_timeout(400)
+    (pg.locator("#navplus").click(), pg.wait_for_timeout(300), pg.locator('.dr-row[data-k="man"]').click(), pg.wait_for_timeout(400), pg.locator('.cattiles .chip:not(.more)').first.click()); pg.wait_for_timeout(400)
     pg.locator("#f-montant").fill("48,69"); pg.locator("#addart").click(); pg.wait_for_timeout(250)
     a=pg.locator("#arts .art").last; a.locator(".art-name").fill("GAZOLE"); a.locator(".art-prix").fill("48,69"); pg.wait_for_timeout(200)
     prod=lambda: pg.locator("#arts .art .art-prod").first.input_value()
@@ -48,7 +48,7 @@ with sync_playwright() as p:
     # enregistré : le produit choisi est appris pour Sylvette
     pg.locator("#arts .art .art-prod").nth(1).fill("Pain de mie"); pg.locator("#f-montant").fill("50,54"); pg.wait_for_timeout(200)
     pg.locator("#save").click(); pg.wait_for_timeout(500)
-    pg.locator("#manual2").click(); pg.wait_for_timeout(400); pg.locator('#f-payer').select_option("Sylvette"); pg.wait_for_timeout(300)
+    (pg.locator("#navplus").click(), pg.wait_for_timeout(300), pg.locator('.dr-row[data-k="man"]').click(), pg.wait_for_timeout(400), pg.locator('.cattiles .chip:not(.more)').first.click()); pg.wait_for_timeout(400); pg.locator('#f-payer').select_option("Sylvette"); pg.wait_for_timeout(300)
     pg.locator("#addart").click(); pg.wait_for_timeout(250); a=pg.locator("#arts .art").last; a.locator(".art-name").fill("PAIN DE MIE"); a.locator(".art-prix").fill("1,85")
     pg.locator('#f-payer').select_option("Benoit"); pg.wait_for_timeout(400); pg.locator('#f-payer').select_option("Sylvette"); pg.wait_for_timeout(400)
     check(pg.locator("#arts .art .art-prod").first.input_value()=="Pain de mie", "après l'enregistrement, Sylvette : PAIN DE MIE → Pain de mie")

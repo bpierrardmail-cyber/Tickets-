@@ -17,7 +17,7 @@ data={"askName":False,"devise":"EUR","comptes":[{"key":"Alex","nom":"Compte cour
   "homeCharts":["bourse","epargne","provisions","compte:ep","compte:prov","compte:mois","compte:dep","compte:solde","compte:es","analyse:mois","analyse:rep","analyse:rec","analyse:pay","communes:rep","communes:postes","communes:6m"],
   "entries":[{"id":1,"date":"2026-10-03","marchand":"Supermarché","montant":3.3,"categorie":"Courses","payePar":"Alex","articles":[]}]}
 # [compteur affiché, page vraiment visible, nombre de pages]
-def state(pg): return pg.evaluate("()=>{ var p=document.querySelector('.pgr[data-pgr=home]'); if(!p) return null; var b=p.querySelector('.pg-count b'), tr=p.querySelector('.pg-track'); return [b?+b.textContent:null, Math.round(tr.scrollLeft/(tr.clientWidth||1))+1, p.querySelectorAll('.pg-page').length]; }")
+def state(pg): return pg.evaluate("()=>{ var p=document.querySelector('.pgr[data-pgr=home]'); if(!p) return null; var b=p.querySelector('.pg-count b'), dd=[].slice.call(p.querySelectorAll('.pg-dot')), di=dd.findIndex(x=>x.classList.contains('on')), tr=p.querySelector('.pg-track'); return [b?+b.textContent:(di>=0?di+1:null), Math.round(tr.scrollLeft/(tr.clientWidth||1))+1, p.querySelectorAll('.pg-page').length]; }")
 def saved(pg): return pg.evaluate("()=>(JSON.parse(localStorage.getItem('pgPos')||'{}')).home")
 with sync_playwright() as p:
     b=p.chromium.launch(); c=b.new_context(viewport={'width':412,'height':900}, is_mobile=True, has_touch=True)
@@ -25,9 +25,9 @@ with sync_playwright() as p:
     pg.route("**/*", lambda r: r.continue_() if r.request.url.startswith("file:") else r.abort())
     pg.goto(APP); pg.wait_for_timeout(300)
     pg.evaluate("d=>{localStorage.clear(); for(const k in d) localStorage.setItem(k, JSON.stringify(d[k]));}", data); pg.reload(); pg.wait_for_timeout(1200)
-    s0=state(pg); check(s0 and s0[2]>=7 and s0[:2]==[1,1], "Accueil : petits graphiques en pages, la 1re d'abord %s"%s0)
-    pg.locator('.pgr[data-pgr=home] .pg-next').click(); pg.wait_for_timeout(500)
-    pg.locator('.pgr[data-pgr=home] .pg-next').click(); pg.wait_for_timeout(800)
+    s0=state(pg); check(s0 and s0[2]>=6 and s0[:2]==[1,1], "Accueil : petits graphiques en pages, la 1re d'abord %s"%s0)
+    pg.evaluate("()=>document.querySelector('.pgr[data-pgr=home] .pg-next').click()"); pg.wait_for_timeout(500)
+    pg.evaluate("()=>document.querySelector('.pgr[data-pgr=home] .pg-next').click()"); pg.wait_for_timeout(800)
     check(state(pg)[:2]==[3,3] and saved(pg)==2, "flèche › deux fois : page 3, gardée %s"%state(pg))
     # défilement sans geste (la mise en page bouge) : on reste sur la page 3, rien n'est effacé
     pg.evaluate("()=>{ document.querySelector('.pgr[data-pgr=home] .pg-track').scrollLeft=0; }"); pg.wait_for_timeout(500)

@@ -56,7 +56,7 @@ with sync_playwright() as p:
     pg.locator(".dr-x").click(); pg.wait_for_timeout(300)
     # ---------- 2. ticket perso, rien d'envoyé
     pg.locator('#nav .navi[data-view="list"]').click(); pg.wait_for_timeout(300)
-    pg.locator("#manual2").first.click(); pg.wait_for_timeout(400)
+    (pg.locator("#navplus").click(), pg.wait_for_timeout(300), pg.locator('.dr-row[data-k="man"]').click(), pg.wait_for_timeout(400), pg.locator('.cattiles .chip:not(.more)').first.click()); pg.wait_for_timeout(400)
     pg.locator("#f-montant").fill("25"); pg.locator("#f-marchand").fill("Cadeau perso"); pg.locator("#save").click(); pg.wait_for_timeout(600)
     if pg.locator("#cksave").count(): pg.locator("#cksave").click(); pg.wait_for_timeout(500)
     pend=pg.evaluate("()=>localStorage.getItem('fyPend')")
@@ -74,7 +74,7 @@ with sync_playwright() as p:
     t=tickets(); check("Cadeau perso" in t and "Librairie perso" in t, "de retour dans « Mes comptes » : les tickets perso sont toujours là")
     # ---------- 5. envoyer aussi au foyer
     pg.locator('#nav .navi[data-view="list"]').click(); pg.wait_for_timeout(300)
-    pg.locator("#manual2").first.click(); pg.wait_for_timeout(400)
+    (pg.locator("#navplus").click(), pg.wait_for_timeout(300), pg.locator('.dr-row[data-k="man"]').click(), pg.wait_for_timeout(400), pg.locator('.cattiles .chip:not(.more)').first.click()); pg.wait_for_timeout(400)
     check(pg.locator("#f-tofy").count()==1 and not pg.locator("#f-tofy").is_checked() and "Envoyer aussi au foyer de Alex" in norm(pg.locator("#app").inner_text()), "fiche : « Envoyer aussi au foyer de Alex », décoché")
     pg.locator("#f-montant").fill("42"); pg.locator("#f-marchand").fill("Courses communes"); pg.locator("#f-tofy").check()
     pg.locator("#save").click(); pg.wait_for_timeout(600)

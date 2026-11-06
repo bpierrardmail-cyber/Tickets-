@@ -12,8 +12,8 @@ Tickets garde tout sur ton téléphone : pas de compte à créer, pas besoin d'i
 
 - Tout en haut, deux vues au choix (l'appli garde la dernière) :
   - **Résumé** : ce qu'il te reste jusqu'à la fin du mois, les alertes (budget dépassé, prélèvement dans les 3 jours, découvert prévu), tes dernières opérations et une ligne pour le foyer.
-  - **Tableau de bord** : les graphiques que tu choisis (⚙ Choisir, ou un appui long sur une carte pour la changer, la déplacer ou la masquer).
-- « ✍️ Saisie » note une dépense à la main ; « 🧾 Tickets » ouvre la liste du mois.
+  - **Tableau de bord** : les graphiques que tu choisis (⚙ sous les petites cartes, ou un appui long sur une carte pour la changer, la déplacer ou la masquer). Tout tient sur l'écran, sans défiler.
+- « + » › Saisir note une dépense à la main ; la liste des tickets du mois est dans Opérations › Tickets.
 - Le bouton en haut à droite choisit qui tu regardes : toi, une personne, ou tout le foyer.
 - En bas, 5 onglets : Accueil, Opérations, Budget, À venir, Foyer (et Bourse dans la version Perso). Le bouton vert **＋**, sur l'Accueil et Opérations, ajoute tout : scanner ou saisir un ticket, un virement, un frais fixe, importer un relevé.
 
@@ -46,7 +46,7 @@ Touche le bouton vert **＋**, puis « Scanner un ticket » ou « Ticket depuis 
 - Le 1er ticket d'un magasin demande parfois une correction du total : l'appli retient où il était et lit les suivants au même endroit.
 - Chaque article reçoit le produit que tu lui as donné la dernière fois (lait, pain…). Chaque personne a les siens.
 
-**Sans ticket** : « ✍️ Saisie » sur l'accueil pour noter une dépense à la main.
+**Sans ticket** : « + » › Saisir pour noter une dépense à la main.
 
 **Partager une dépense** : Options › Partage, « Qui paie ce ticket ? »
 

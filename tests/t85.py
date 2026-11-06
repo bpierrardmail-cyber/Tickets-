@@ -27,7 +27,7 @@ with sync_playwright() as p:
           el.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true})); }""", [sel, x, y])
         pg.wait_for_timeout(400)
     # page Tickets de l'Accueil
-    pg.locator("#pvCap").first.click() if pg.locator("#pvCap").count() else None; pg.wait_for_timeout(500)
+    (pg.locator('#nav .navi[data-view="compte"]').click(), pg.wait_for_timeout(400), pg.locator('.cpsub[data-cp="tk"]').click() if pg.locator('.cpsub[data-cp="tk"]').count() else None); pg.wait_for_timeout(500)
     n=pg.locator('#app .entry[data-id]').count(); print("  tickets listés :", n)
     longpress('#app .entry[data-id="2"]')
     sh=pg.locator(".sheet-overlay").last.inner_text() if pg.locator(".sheet-overlay").count() else ""

@@ -40,6 +40,17 @@ with sync_playwright() as p:
     pg=page(base)
     on=pg.evaluate("()=>document.querySelector('.hmode button.on') && document.querySelector('.hmode button.on').textContent")
     check(on=="Tableau de bord" and pg.locator(".rs-hero").count()==0, "par défaut : Tableau de bord, sélecteur en haut")
+    # Tableau de bord : plus de puces au-dessus de la carte, ⚙ sous les graphiques, tout tient sans défiler
+    check(pg.locator("#manual2").count()==0 and pg.locator("#pvCap").count()==0, "tableau de bord : plus de puces Saisie / tickets")
+    check(pg.locator('.pgr[data-pgr=home] .pg-tools #hcPick').count()==1, "tableau de bord : ⚙ à droite des points, sous les graphiques")
+    for hh in (900, 760):
+        pg.set_viewport_size({'width':412,'height':hh}); pg.wait_for_timeout(500)
+        sh=pg.evaluate("()=>[document.documentElement.scrollHeight, innerHeight]")
+        check(sh[0]<=sh[1]+1, "tableau de bord : pas de défilement à %d px de haut %s"%(hh, sh))
+    pg.set_viewport_size({'width':412,'height':900}); pg.wait_for_timeout(400)
+    pg.locator("#hcPick").click(); pg.wait_for_timeout(400)
+    check(pg.locator(".sheet-overlay").count()>0, "⚙ ouvre le choix des graphiques")
+    pg.reload(); pg.wait_for_timeout(1300)
     pg.locator('.hmode button[data-hm="resume"]').click(); pg.wait_for_timeout(600)
     t=app(pg)
     check("Il te reste" in t and "31 octobre" in t and pg.locator(".rs-hero").count()==1, "Résumé : « Il te reste … jusqu'au 31 octobre »")

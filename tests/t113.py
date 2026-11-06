@@ -22,7 +22,7 @@ with sync_playwright() as p:
     pg.evaluate("d=>{localStorage.clear(); for(const k in d) localStorage.setItem(k, JSON.stringify(d[k]));}", data); pg.reload(); pg.wait_for_timeout(900)
     def add(mag, amt):
         pg.locator('#nav .navi[data-view="list"]').click(); pg.wait_for_timeout(300)
-        pg.locator("#manual2").first.click(); pg.wait_for_timeout(400)
+        (pg.locator("#navplus").click(), pg.wait_for_timeout(300), pg.locator('.dr-row[data-k="man"]').click(), pg.wait_for_timeout(400), pg.locator('.cattiles .chip:not(.more)').first.click()); pg.wait_for_timeout(400)
         pg.locator("#f-montant").fill(amt); pg.locator("#f-marchand").fill(mag); pg.locator("#f-date").fill("2026-10-20")
         pg.locator("#save").click(); pg.wait_for_timeout(500)
     def tickets():
