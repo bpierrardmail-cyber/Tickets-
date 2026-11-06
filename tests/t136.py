@@ -3,6 +3,7 @@
 # 2. Fiche d'un ticket : 10 grandes tuiles, les sous-catégories de celle choisie ; enregistré dans la sous-catégorie.
 # 3. Budgets : une grande catégorie compte ses sous-catégories ; une sous-catégorie seulement elle.
 # 4. Gérer : ajouter une sous-catégorie, la déplacer, renommer (le budget suit).
+# 5. Familles de produits réunies avec l'arbre : Hygiène & soins → Hygiène et soins, Bricolage & outillage → Bricolage, Fruits & légumes → nouvelle sous-catégorie, Nourriture → Alimentation, Divers → Autre.
 import sys, os, json
 HERE=os.path.dirname(os.path.abspath(__file__)); ROOT=os.path.dirname(HERE)
 from playwright.sync_api import sync_playwright
@@ -13,13 +14,17 @@ def check(c, m):
     if not c: fails.append(m)
 def norm(t): return t.replace(" "," ").replace("\xa0"," ")
 data={"askName":False,"devise":"EUR","welcomeSeen":True,
-  "cats":["Alimentation","Restaurant","Carburant","Maison","Santé","Transport","Loisirs","Bar","Multimédia","prêt à porter","Pharmacie","Autre"],
+  "cats":["Alimentation","Restaurant","Carburant","Maison","Santé","Transport","Loisirs","Bar","Multimédia","prêt à porter","Pharmacie","Hygiène et soins","Bricolage","Autre"],
+  "taxoV2":2, "familles":["Nourriture","Hygiène & soins","Bricolage & outillage","Fruits & légumes","Divers"],
+  "familleDe":{"Lait":"Nourriture","Savon":"Hygiène & soins","Vis":"Bricolage & outillage","Pommes":"Fruits & légumes","Éponge":"Divers"},
+  "produits":["Nourriture","Hygiène & soins","Bricolage & outillage","Fruits & légumes","Divers","Lait","Savon","Vis","Pommes","Éponge","Remise"],
   "comptes":[{"key":"Alex","nom":"Compte courant","payer":"Alex","main":True}],
   "budgets":{"Transport":200,"Bar":30},
   "entries":[{"id":1,"date":"2026-10-03","marchand":"Station Fictive","montant":120,"categorie":"Carburant","payePar":"Alex","articles":[]},
              {"id":2,"date":"2026-10-05","marchand":"Parking du Port","montant":30,"categorie":"Transport","payePar":"Alex","articles":[]},
              {"id":3,"date":"2026-10-07","marchand":"Le Comptoir","montant":36,"categorie":"Bar","payePar":"Alex","articles":[]},
-             {"id":4,"date":"2026-10-09","marchand":"Pizzeria","montant":40,"categorie":"Restaurant","payePar":"Alex","articles":[]}]}
+             {"id":4,"date":"2026-10-09","marchand":"Pizzeria","montant":40,"categorie":"Restaurant","payePar":"Alex","articles":[]},
+             {"id":5,"date":"2026-10-11","marchand":"Marché","montant":0,"categorie":"Alimentation","payePar":"Alex","articles":[{"label":"Divers légumes","prix":0,"produit":"Nourriture"}]}]}
 with sync_playwright() as p:
     b=p.chromium.launch(); c=b.new_context(viewport={'width':412,'height':900}); errs=[]
     c.add_init_script("window.__catMigTest=true")
@@ -31,7 +36,12 @@ with sync_playwright() as p:
     P=ls("catParent") or {}
     check(P.get("Bar")=="Sorties" and P.get("Carburant")=="Transport" and P.get("prêt à porter")=="Shopping" and P.get("Alimentation")=="Courses" and P.get("Pharmacie")=="Santé" and "Transport" not in P, "anciennes catégories rangées %s"%P)
     cats=ls("cats"); check(all(x in cats for x in ["Courses","Sorties","Shopping","Enfants","Animaux","Bar","Multimédia"]), "grandes catégories ajoutées, anciennes gardées")
-    check([e["categorie"] for e in ls("entries")]==["Carburant","Transport","Bar","Restaurant"], "tickets inchangés")
+    check([e["categorie"] for e in ls("entries")]==["Carburant","Transport","Bar","Restaurant","Alimentation"], "tickets inchangés")
+    FD=ls("familleDe"); F=ls("familles"); P2=ls("catParent")
+    check(FD.get("Lait")=="Alimentation" and FD.get("Savon")=="Hygiène et soins" and FD.get("Vis")=="Bricolage" and FD.get("Pommes")=="Fruits & légumes" and FD.get("Éponge")=="Autre", "produits rangés dans l'arbre %s"%FD)
+    check(P2.get("Fruits & légumes")=="Courses", "nouvelle sous-catégorie pour une famille sans équivalent %s"%P2.get("Fruits & légumes"))
+    check(set(F)==set(ls("cats")) and "Nourriture" not in F and "Divers" not in F, "plus de familles à part : la liste = les catégories")
+    check(ls("entries")[4]["articles"][0]["produit"]=="Alimentation", "article rangé « Nourriture » → Alimentation")
     pg.wait_for_timeout(1200); sh=norm(pg.locator(".sheet-overlay").last.inner_text()) if pg.locator(".sheet-overlay").count() else ""; print("  fenêtre :", sh[:120].replace("\n"," | "))
     check("tes catégories sont rangées" in sh.lower() and "Multimédia" in sh, "fenêtre « Tes catégories sont rangées »")
     pg.locator(".sheet-overlay .ui-no").last.click(); pg.wait_for_timeout(400)

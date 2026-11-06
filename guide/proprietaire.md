@@ -64,7 +64,7 @@ L'onglet Budget (ex Dépenses) a trois parties, en boutons sous le titre.
 
 - **Budgets** : un budget par grande catégorie (tout compris : Transport compte aussi Carburant et Péage) ou par sous-catégorie (seulement elle), pour le foyer ou par personne. En haut, ce que tu as dépensé sur le budget et ce qui reste pour les jours qui restent ; pour chaque catégorie, ce qui reste. « ✎ Modifier les budgets » en bas de la carte. Sans budget à toi, ce sont ceux du foyer.
 - **Analyse** : tes dépenses par mois, par catégorie (grandes catégories, ou le détail par sous-catégorie ; touche une grande catégorie pour voir ses sous-catégories), les dépenses qui reviennent et qui a payé. « + Frais fixes » ajoute les loyers, abonnements… pour voir tout ce qui sort vraiment.
-- **Produits** : ce que tu achètes et à quel prix. Mes produits, Hausses (ce qui augmente), Magasins (où c'est le moins cher), Familles. Touche un produit pour voir tous ses achats.
+- **Produits** : ce que tu achètes et à quel prix. Mes produits, Hausses (ce qui augmente), Magasins (où c'est le moins cher), Catégories (tes articles rangés par catégorie). Touche un produit pour voir tous ses achats. Chaque produit est rangé dans une catégorie de l'arbre (Lait → Courses › Alimentation) : tu le changes dans ⚙ Produits & catégories.
 
 ✦ **Analyse avancée** (Tickets Plus) : ton inflation personnelle comparée à celle de l'INSEE, cette année contre l'an dernier, les alertes, le reste à vivre, des pistes d'économies.
 
