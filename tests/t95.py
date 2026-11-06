@@ -30,7 +30,7 @@ with sync_playwright() as p:
     rows=pg.evaluate("()=>[].map.call(document.querySelectorAll('.dr-row'), r=>r.dataset.k)"); pg.locator(".dr-x").click(); pg.wait_for_timeout(300)
     check(rows==["foyer","persons","backup","stockage","pdf","aide","settings"], "menu allégé : Foyer, Personnes, Sauvegarder, Stockage, PDF, Aide, Réglages %s"%rows)
     pg.locator('#nav .navi[data-view="depenses"]').click(); pg.wait_for_timeout(500)
-    check(dp(pg)==["Tickets","Produits","Budgets","Analyse"] and dpon(pg)=="Tickets" and pg.locator(".htitle").inner_text()=="Budget", "Dépenses : 4 sous-onglets, Tickets d'abord %s"%dp(pg))
+    check(dp(pg)==["Budgets","Analyse","Produits"] and dpon(pg)=="Budgets" and pg.locator(".htitle").inner_text()=="Budget", "Budget : 3 sous-onglets, Budgets d'abord (Tickets dans Opérations depuis la refonte) %s"%dp(pg))
     t=norm(pg.locator("#app").inner_text())
     check("Supermarché" in t and pg.locator("#gogallery").count()==1 and pg.locator("#hback").count()==0, "Tickets : la liste du mois, les photos, pas de retour")
     check("noscan" not in pg.evaluate("()=>document.getElementById('nav').className"), "Tickets : le bouton Scan est là")

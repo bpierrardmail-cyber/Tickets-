@@ -52,18 +52,17 @@ Touche le bouton vert **＋**, puis « Scanner un ticket » ou « Ticket depuis 
 - **Certaines personnes** : en parts égales ou ajustées. Exemple : un resto à 3 sur une famille de 5.
 - Pour ne partager qu'une partie du ticket : « partager cet article » sur les articles concernés.
 
-**Supprimer un ticket** : ⋯ en haut de la fiche › Supprimer, ou un appui long sur le ticket dans une liste. Il part dans la **corbeille** (Budget › Tickets, en bas) : « Annuler » tout de suite, ou « Remettre » pendant 30 jours, avec sa photo. Après 30 jours, il est supprimé pour de bon.
+**Supprimer un ticket** : ⋯ en haut de la fiche › Supprimer, ou un appui long sur le ticket dans une liste. Il part dans la **corbeille** (Opérations › Tickets, en bas) : « Annuler » tout de suite, ou « Remettre » pendant 30 jours, avec sa photo. Après 30 jours, il est supprimé pour de bon.
 
 Un appui long sur un ticket, dans n'importe quelle liste, propose Ouvrir ou Supprimer.
 
 ## Budget
 
-L'onglet Budget (ex Dépenses) a quatre parties, en boutons sous le titre.
+L'onglet Budget (ex Dépenses) a trois parties, en boutons sous le titre.
 
-- **Tickets** : les tickets du mois, avec la recherche et le calendrier. En bas, « Photos des tickets » ouvre la galerie, rangée par mois.
-- **Produits** : ce que tu achètes et à quel prix. Mes produits, Hausses (ce qui augmente), Magasins (où c'est le moins cher), Familles. Touche un produit pour voir tous ses achats.
 - **Budgets** : un budget par catégorie, pour le foyer ou par personne. L'appli montre où tu en es dans le mois.
 - **Analyse** : tes dépenses par mois, par catégorie, les dépenses qui reviennent et qui a payé. « + Frais fixes » ajoute les loyers, abonnements… pour voir tout ce qui sort vraiment.
+- **Produits** : ce que tu achètes et à quel prix. Mes produits, Hausses (ce qui augmente), Magasins (où c'est le moins cher), Familles. Touche un produit pour voir tous ses achats.
 
 ✦ **Analyse avancée** (Tickets Plus) : ton inflation personnelle comparée à celle de l'INSEE, cette année contre l'an dernier, les alertes, le reste à vivre, des pistes d'économies.
 
@@ -72,6 +71,8 @@ Le bouton personne, en haut à droite, choisit les dépenses montrées dans Prod
 ## Opérations
 
 L'onglet Opérations (ex Compte) montre ton compte en banque comme un relevé : tickets, frais fixes et virements du mois, jour par jour, avec le solde du soir.
+
+Quatre parties, en boutons sous le titre : Opérations, **Tickets** (tous les tickets du mois, avec la recherche, le calendrier, « Photos des tickets » et la corbeille en bas), Épargne, Graphiques.
 
 **Opérations**
 
@@ -210,7 +211,7 @@ Pour essayer l'appli ou la montrer sans tes chiffres : Menu › Réglages › Mo
 
 **Mon solde ne correspond pas à la banque.** Vérifie le solde reporté (roue ⚙ du compte) et ce qui est coché « fait ». Le plus sûr : importer le relevé du mois.
 
-**J'ai supprimé un ticket par erreur.** Touche « Annuler » tout de suite, ou retrouve-le dans Budget › Tickets › Corbeille (30 jours) et touche « Remettre ».
+**J'ai supprimé un ticket par erreur.** Touche « Annuler » tout de suite, ou retrouve-le dans Opérations › Tickets › Corbeille (30 jours) et touche « Remettre ».
 
 **Je change de téléphone.** Avec la sauvegarde Drive : au premier démarrage du nouveau, « Restaurer depuis Google Drive » et ton code de secours. Pour les photos aussi : une sauvegarde complète (ZIP), puis Menu › Réglages › Restaurer. Avec un foyer partagé : « Récupérer mon foyer » avec ton code de récupération.
 

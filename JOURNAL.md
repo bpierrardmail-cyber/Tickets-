@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `06/11 07:00
+- β web : `beta/index.html`, étiquette `06/11 08:30
 ([^`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
@@ -80,7 +80,7 @@ Après chaque modification, dans le même commit :
 **Version Store** : `PLUS_FEATURES = widgets, foyer, avancee, factures` (« factures » = importer et suivre ses factures ; le reste d'À venir est gratuit). L'achat de Plus n'est pas encore branché. L'import de relevé est gratuit pour l'instant.
 
 ## En cours / à reprendre
-- **Refonte de la navigation (05/11)** : direction validée sur maquette (voir Décisions) ; à faire par étapes : 1) barre à 5 onglets + « + », 2) Accueil Résumé / Tableau de bord, 3) Opérations (une liste), 4) Budget, À venir, Foyer, 5) fiche ticket, premier démarrage. Étape 1 faite le 05/11 (barre à 5 onglets + « + ») ; étape 2 faite le 06/11 (Accueil Résumé / Tableau de bord) ; suite : étape 3, une seule liste d'Opérations.
+- **Refonte de la navigation (05/11)** : direction validée sur maquette (voir Décisions) ; à faire par étapes : 1) barre à 5 onglets + « + », 2) Accueil Résumé / Tableau de bord, 3) Opérations (une liste), 4) Budget, À venir, Foyer, 5) fiche ticket, premier démarrage. Étape 1 faite le 05/11 (barre à 5 onglets + « + ») ; étape 2 faite le 06/11 (Accueil Résumé / Tableau de bord) ; étape 3 faite le 06/11 (Tickets dans Opérations, Budget = Budgets · Analyse · Produits) ; suite : étape 4 (Budget, À venir, Foyer plus simples).
 - **Idée à garder pour plus tard (05/11, Benoît)** : une « vue avancée » qui reprend l'interface d'avant la refonte. Avis donné : plutôt un réglage « Affichage détaillé » dans les nouveaux écrans (toutes les options dépliées, listes denses, tous les anciens graphiques dans le tableau de bord, colonnes en plus) que garder l'ancienne interface entière (deux interfaces à maintenir et à tester) ; pendant la refonte, l'ancienne reste disponible le temps de la transition. À décider.
 - **Étape 3 faite (05/11)** : le Plus du propriétaire couvre le foyer ; groupes selon les droits de Commun. À voir par Benoît avec Sylvette (version Perso : tout est déjà ouvert ; la différence se voit dans la version Store).
 - **Plan détaillé : `PLAN.md`** (5 étapes à partir du 06/11, ce que Benoît doit préparer : identifiants Google Cloud, site bpierrard.fr). Textes légaux à relire : `legal/`.
@@ -210,6 +210,7 @@ Après chaque modification, dans le même commit :
 
 ### 06/11
 
+- **Refonte, étape 3 : les Tickets passent dans Opérations** (« ok pour 3 ») : Opérations a 4 sous-onglets Opérations · Tickets · Épargne · Graphiques (`cptSubsHTML`, `cptSubGo`) ; la page Tickets (liste du mois, recherche, calendrier, photos, corbeille) y est ; Budget n'a plus que Budgets · Analyse · Produits (Budgets d'abord). Membre sans l'onglet Compte : Opérations ouvre directement ses Tickets ; Budget caché s'il n'a ni Articles ni Analyse. Lignes « Écart avec Articles » de la page Tickets de nouveau mises en forme (le style ne valait plus hors de l'Accueil). Guides mis à jour. t95 adapté.
 - **Refonte, étape 2 : Accueil à deux vues** (« on peut continuer ») : sélecteur **Résumé / Tableau de bord** en haut de l'Accueil (choix gardé sur le téléphone, `homeMode` ; par défaut le Tableau de bord = l'Accueil à graphiques d'avant). **Résumé** du propriétaire : « Il te reste … jusqu'au [fin du mois] » sur son compte (fin de mois prévue, après les prélèvements à venir, barre dépensé / reçu ; « Il te manquera » en rouge si négatif), jusqu'à 3 alertes (découvert prévu, budget dépassé ou à 80 %, prélèvement dans les 3 jours), les 5 dernières opérations (toucher = le ticket, « Tout voir » = Opérations), ligne Foyer (qui doit quoi ✦, sa part du commun). **Résumé d'un membre** tourné vers le commun : sa part du commun en grand, qui doit quoi, alertes de ses budgets et des frais communs proches, dépenses communes du mois avec sa part, puis tuiles Mon compte et Mes tickets. Guides mis à jour. Test t132.
 - **Onglet Bourse remis dans la barre (version Perso)** (« dans la version perso il faut l'onglet bourse ») : 6e onglet avec icône, plus de ligne Bourse dans le menu ; la Store garde 5 onglets. Tests t72, t81, t92, t95, t131 adaptés.
 - **Bouton « + » déplacé** (« il masque une partie de chaque onglet, pas besoin sur tous les onglets ») : rond, posé au milieu sur le haut de la barre (il ne cache plus rien), seulement sur l'Accueil et Opérations. t131 adapté.

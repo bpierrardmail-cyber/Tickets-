@@ -28,7 +28,7 @@ Touche **＋**, puis « Scanner un ticket » ou « Ticket depuis la galerie ». 
 - Vérifie le montant, le magasin et la date. Ce qui est en orange est à regarder.
 - Pas de ticket ? « ✍️ Saisie » pour noter une dépense à la main.
 - Une dépense à partager : Options › Partage (« Qui paie ce ticket ? ») : seulement toi, le commun du foyer, ou certaines personnes.
-- Supprimé par erreur ? Budget › Tickets › Corbeille › « Remettre » (30 jours).
+- Supprimé par erreur ? Opérations › Tickets › Corbeille › « Remettre » (30 jours).
 
 Ton ticket part chez le propriétaire du foyer dès que ton téléphone est connecté.
 
