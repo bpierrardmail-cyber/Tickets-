@@ -23,7 +23,7 @@ with sync_playwright() as p:
         sh=pg.evaluate("()=>{ const d=document.querySelector('.drawer'); return [d.scrollHeight, d.clientHeight]; }")
         rows=pg.evaluate("()=>[...document.querySelectorAll('.drawer .dr-row')].map(r=>r.getAttribute('data-k')+' | '+r.textContent)"); print(W, sh, rows)
         check(sh[0]<=sh[1]+1, "%d×%d : le menu tient sans défiler (%d ≤ %d)" % (W,H,sh[0],sh[1]))
-        check([r.split(" | ")[0] for r in rows]==["foyer","persons","backup","stockage","bourse","pdf","aide","settings"], "%d : ordre Foyer, Personnes, Sauvegarder, Stockage, Bourse (Perso, depuis la refonte), PDF, Aide, Réglages" % W)
+        check([r.split(" | ")[0] for r in rows]==["foyer","persons","backup","stockage","pdf","aide","settings"], "%d : ordre Foyer, Personnes, Sauvegarder, Stockage, PDF, Aide, Réglages" % W)
         check(any("Sauvegarder" in r and "hier" in r for r in rows), "%d : sauvegarde d'hier soir → « hier » (pas « aujourd'hui »)" % W)
         check(pg.locator(".drawer .dr-sec").count()==0, "%d : plus de titres de rubrique" % W)
         if W==412:

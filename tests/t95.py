@@ -25,10 +25,10 @@ with sync_playwright() as p:
         pg.evaluate("d=>{localStorage.clear(); for(const k in d) localStorage.setItem(k, JSON.stringify(d[k]));}", d); pg.reload(); pg.wait_for_timeout(900)
         return c, pg, errs
     c, pg, errs = ctx(APP)
-    check(tabs(pg)==["Accueil","Opérations","Budget","À venir","Foyer"], "barre : Accueil · Dépenses · Compte · À venir · Commun · Bourse %s"%tabs(pg))
+    check(tabs(pg)==["Accueil","Opérations","Budget","À venir","Foyer","Bourse"], "barre : Accueil · Opérations · Budget · À venir · Foyer · Bourse %s"%tabs(pg))
     pg.locator("#hmenu").click(); pg.wait_for_timeout(300)
     rows=pg.evaluate("()=>[].map.call(document.querySelectorAll('.dr-row'), r=>r.dataset.k)"); pg.locator(".dr-x").click(); pg.wait_for_timeout(300)
-    check(rows==["foyer","persons","backup","stockage","bourse","pdf","aide","settings"], "menu allégé : Foyer, Personnes, Sauvegarder, Stockage, PDF, Aide, Réglages %s"%rows)
+    check(rows==["foyer","persons","backup","stockage","pdf","aide","settings"], "menu allégé : Foyer, Personnes, Sauvegarder, Stockage, PDF, Aide, Réglages %s"%rows)
     pg.locator('#nav .navi[data-view="depenses"]').click(); pg.wait_for_timeout(500)
     check(dp(pg)==["Tickets","Produits","Budgets","Analyse"] and dpon(pg)=="Tickets" and pg.locator(".htitle").inner_text()=="Budget", "Dépenses : 4 sous-onglets, Tickets d'abord %s"%dp(pg))
     t=norm(pg.locator("#app").inner_text())

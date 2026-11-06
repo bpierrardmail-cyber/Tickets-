@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="06/11 06:51" />
+  <meta name="build" content="06/11 06:53" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -1436,7 +1436,7 @@
                fyFull ? row("persons","👥","Personnes",plist.length+" personne"+(plist.length>1?"s":"")) : "",
                !fyM ? (drvOn() ? row("backup","💾","Sauvegarder · restaurer",drvMenuLabel().t,drvMenuLabel().col) : row("backup","💾","Sauvegarder · restaurer",bk.label,(bk.days===null || bk.days>=7)?"var(--coral)":"var(--accent)")) : row("backup","💾","Sauvegarder · restaurer",drvCfg().on ? "Mes comptes · Drive" : "Mes comptes"),
                row("stockage","🗂️","Stockage",fmtBytes(photosBytes()+dataBytes())) ]);
-      h+=grp([ (FEAT.bourse && (!fyM || fyTabOn(fyCfg,"bourse"))) ? row("bourse","📈","Bourse","portefeuille") : "", row("pdf","📄","Exporter","PDF ou tableur") ]);
+      h+=grp([ row("pdf","📄","Exporter","PDF ou tableur") ]);
       h+=grp([ row("aide","❓","Aide","accueil, guide"), row("settings","⚙️","Réglages",[fyFull?"devise":"", "rappels", "code", !fyM?"restaurer":""].filter(function(x){ return x; }).join(", "),"",true) ]);
       h+='<div class="dr-foot"><span class="beta-tag">Version β · '+esc((document.querySelector('meta[name=build]')||{}).content||'')+(capNative()?(EDITION==="store"?' · appli Store':' · appli Perso'):' · navigateur'+(EDITION==="store"?' (Store)':''))+'</span></div>';
       h+='</div>';
@@ -1446,7 +1446,7 @@
       function closeAnim(){ ov.classList.remove("open"); setTimeout(closeMenu, 200); }
       ov.onclick=function(e){ if(e.target===ov) closeAnim(); };
       ov.querySelector(".dr-x").onclick=closeAnim;
-      var acts={ bourse:function(){ state.bSub=null; state.view="bourse"; render(); window.scrollTo(0,0); }, settings:openSettings, import:function(){ impStart(null); }, gallery:function(){ state.view="gallery"; render(); window.scrollTo(0,0); }, stockage:function(){ state.view="stockage"; render(); window.scrollTo(0,0); }, aide:openAide, plus:function(){ plusShow(null); }, perso:espaceAsk, foyer:persoOn() ? espaceFoyer : function(){ state.view="foyer"; render(); window.scrollTo(0,0); }, backup:backupData, restore:function(){ restorein.click(); }, lockSetup:lockSetup, lockBio:lockEnableBio, lockOff:lockDisable, devise:chooseCurrency, pdf:exportChoose, persons:managePersons };
+      var acts={ settings:openSettings, import:function(){ impStart(null); }, gallery:function(){ state.view="gallery"; render(); window.scrollTo(0,0); }, stockage:function(){ state.view="stockage"; render(); window.scrollTo(0,0); }, aide:openAide, plus:function(){ plusShow(null); }, perso:espaceAsk, foyer:persoOn() ? espaceFoyer : function(){ state.view="foyer"; render(); window.scrollTo(0,0); }, backup:backupData, restore:function(){ restorein.click(); }, lockSetup:lockSetup, lockBio:lockEnableBio, lockOff:lockDisable, devise:chooseCurrency, pdf:exportChoose, persons:managePersons };
       [].forEach.call(ov.querySelectorAll(".dr-row"), function(b){ b.onclick=function(){ var fn=acts[b.getAttribute("data-k")]; closeMenu(); if(fn) fn(); }; });
     }
     // Âge de la dernière sauvegarde, en jours de calendrier (une sauvegarde de la veille au soir = « hier »)
@@ -3605,14 +3605,15 @@
     var restorein = document.getElementById("restorein");
 
     var navEl=document.createElement("nav"); navEl.className="nav hidden"; navEl.id="nav";
-    // Barre du bas (refonte du 05/11) : 5 onglets Accueil · Opérations · Budget · À venir · Foyer et un seul « + » ; la Bourse (Perso) est dans le menu.
+    // Barre du bas (refonte du 05/11) : 5 onglets Accueil · Opérations · Budget · À venir · Foyer (+ Bourse dans la version Perso) et un seul « + ».
     var NAV_IC={ list:"M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z", compte:"M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01",
       depenses:"M12 3a9 9 0 1 0 9 9h-9zM15 3.5A9 9 0 0 1 20.5 9H15z", factures:"M4 5h16v16H4zM4 10h16M9 3v4M15 3v4",
-      communes:"M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M17 3.5a4 4 0 0 1 0 7.5M22 21a7 7 0 0 0-4-6.3" };
+      communes:"M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M17 3.5a4 4 0 0 1 0 7.5M22 21a7 7 0 0 0-4-6.3",
+      bourse:"M3 17l6-6 4 4 8-8M15 7h6v6" };
     function navBtn(v, l){ return '<button class="navi" type="button" data-view="'+v+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+NAV_IC[v]+'"/></svg><span>'+l+'</span></button>'; }
     navEl.innerHTML=
       '<div class="navplusrow"><button id="navplus" class="navplus" type="button" aria-label="Ajouter"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>'+
-      '<div class="navtabs">'+navBtn("list","Accueil")+navBtn("compte","Opérations")+navBtn("depenses","Budget")+navBtn("factures","À venir")+navBtn("communes","Foyer")+'</div>';
+      '<div class="navtabs">'+navBtn("list","Accueil")+navBtn("compte","Opérations")+navBtn("depenses","Budget")+navBtn("factures","À venir")+navBtn("communes","Foyer")+(FEAT.bourse ? navBtn("bourse","Bourse") : "")+'</div>';
     document.body.appendChild(navEl);
     [].forEach.call(navEl.querySelectorAll(".navi"), function(b){
       b.onclick=function(){ var v=b.getAttribute("data-view"); if(v==="depenses") v=depView(); if(v==="list"){ state.listSub=null; state.catFilter=null; } if(v==="analyse") state.histMonth=null; state.artFrom=null; if(v==="articles"){ state.artSel=null; state.artSub=null; } if(v==="analyse") state.anSub=null; if(v==="communes") state.comSub=null; if(v==="bourse") state.bSub=null; state.view=v; render(); window.scrollTo(0,0); };

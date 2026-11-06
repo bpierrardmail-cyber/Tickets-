@@ -38,7 +38,7 @@ with sync_playwright() as p:
     check(pg.locator(".thero svg polyline[style*='dasharray']").count()==1, "graphique : la Bourse en pointillés")
     pg.screenshot(path=os.path.join(SP,"t81_ep.png"), full_page=True)
     pg.locator(".epbourse").click(); pg.wait_for_timeout(600)
-    check(pg.evaluate("()=>document.querySelector('.htitle') && document.querySelector('.htitle').textContent")=="Bourse", "toucher la ligne Bourse ouvre la Bourse (dans le menu depuis la refonte)")
+    check(pg.evaluate("()=>document.querySelector('#nav .navi.on') && document.querySelector('#nav .navi.on').getAttribute('data-view')")=="bourse", "toucher la ligne Bourse ouvre l'onglet Bourse")
     # B. pas liée : la ligne est créée toute seule
     d=copy.deepcopy(base); d["epargne"]=[d["epargne"][0]]
     load(d); E=ls("epargne"); print("  épargne :", [(c["nom"], c.get("bourseLink"), c["vals"]) for c in E])

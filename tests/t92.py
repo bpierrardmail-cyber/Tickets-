@@ -31,7 +31,7 @@ with sync_playwright() as p:
         return c, pg, errs
     # ---------- Perso ----------
     c, pg, errs = ctx_for(APP)
-    check(tabs(pg)==["Accueil","Opérations","Budget","À venir","Foyer"], "barre : « À venir » à la place de « Factures » %s"%tabs(pg))
+    check(tabs(pg)==["Accueil","Opérations","Budget","À venir","Foyer","Bourse"], "barre : « À venir » à la place de « Factures » %s"%tabs(pg))
     pg.locator('#nav .navi[data-view="factures"]').click(); pg.wait_for_timeout(500)
     t=norm(pg.locator("#app").inner_text())
     check(avtabs(pg)==["12 mois","Frais fixes","Provisions","Factures"] and avon(pg)=="12 mois", "À venir : 4 sous-onglets, 12 mois d'abord %s"%avtabs(pg))

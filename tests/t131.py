@@ -1,5 +1,5 @@
 # Refonte, étape 1 : barre à 5 onglets (Accueil · Opérations · Budget · À venir · Foyer) et un seul « + » (Accueil et Opérations). Données inventées.
-# 1. Propriétaire : les 5 onglets, pas de Bourse dans la barre (dans le menu en Perso), titres Opérations / Budget / Foyer.
+# 1. Propriétaire : les 5 onglets (+ Bourse en Perso, 06/11), titres Opérations / Budget / Foyer.
 # 2. « + » : scanner, galerie, saisir, virement reçu / envoyé, frais fixe, importer un relevé ; « Virement reçu » ouvre le formulaire.
 # 3. Membre en consultation : pas de « + ». Membre avec seulement l'Accueil en modification : « + » limité aux tickets.
 import sys, os, json
@@ -38,12 +38,9 @@ with sync_playwright() as p:
         return ks
     # ---------- 1. propriétaire (Perso : la Bourse passe dans le menu)
     pg=page(base)
-    check(tabs(pg)==["Accueil","Opérations","Budget","À venir","Foyer"], "5 onglets : %s" % tabs(pg))
-    check(pg.locator('#nav .navi[data-view="bourse"]').count()==0, "pas de Bourse dans la barre")
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(300)
-    check(pg.locator('.dr-row[data-k="bourse"]').count()==1, "Bourse dans le menu (édition Perso)")
-    pg.locator('.dr-row[data-k="bourse"]').click(); pg.wait_for_timeout(600)
-    check(pg.evaluate("()=>document.querySelector('.htitle') && document.querySelector('.htitle').textContent")=="Bourse", "menu › Bourse ouvre la Bourse")
+    check(tabs(pg)==["Accueil","Opérations","Budget","À venir","Foyer","Bourse"], "Perso : 5 onglets + Bourse : %s" % tabs(pg))
+    pg.locator('#nav .navi[data-view="bourse"]').click(); pg.wait_for_timeout(600)
+    check(pg.evaluate("()=>document.querySelector('.htitle') && document.querySelector('.htitle').textContent")=="Bourse", "onglet Bourse ouvre la Bourse")
     for v,t in [("compte","Opérations"),("depenses","Budget"),("communes","Foyer")]:
         pg.locator('#nav .navi[data-view="%s"]' % v).click(); pg.wait_for_timeout(600)
         check(norm(pg.locator(".htitle").first.inner_text())==t, "titre de l'onglet : %s" % t)
