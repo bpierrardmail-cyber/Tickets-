@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="06/11 09:40" />
+  <meta name="build" content="06/11 10:00" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -417,9 +417,9 @@
     .hfit .hpgr .hmini > *{ flex-shrink:0; }
     .hfit .hpgr .hmini > .hm-ch{ flex:1 1 auto; min-height:0; }
     .hfit.hfit-ns .hpgr .hm-st{ display:none; }
-    .hfit .bk-banner{ padding:7px 10px; gap:10px; }   /* tableau de bord : bandeau de sauvegarde sur une ligne */
-    .hfit .bk-banner br, .hfit .bk-banner div > span{ display:none; }
-    .hfit .bk-banner .btn{ padding:7px 12px; min-height:0; }
+    .hfit .bk-plain{ padding:7px 10px; gap:10px; }   /* tableau de bord : rappel de sauvegarde sur une ligne (les bandeaux Drive gardent leur texte) */
+    .hfit .bk-plain br, .hfit .bk-plain div > span{ display:none; }
+    .hfit .bk-plain .btn{ padding:7px 12px; min-height:0; }
     .hfit .dash-hero .dash-big{ margin-top:10px; }
     .hfit .dash-track{ margin-top:12px; }
     .hmode{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:4px; margin:0 0 12px; }
@@ -4435,7 +4435,7 @@
       var m=monthKey(todayISO()), me=mePerson(), h=header(), drvB=drvBannerHTML(), bkAge=backupAgeDays();
       if(drvB) h+=drvB;
       else if(!fyMember() && !drvOn() && (bkAge===null || bkAge>=7))
-        h+='<div class="bk-banner"><span style="font-size:20px">💾</span><div>'+(bkAge===null?'<b>Aucune sauvegarde</b> de tes données pour l\'instant.':'<b>Dernière sauvegarde il y a '+bkAge+' jours.</b>')+'</div><button type="button" class="btn" id="bkNow">Sauvegarder</button></div>';
+        h+='<div class="bk-banner bk-plain"><span style="font-size:20px">💾</span><div>'+(bkAge===null?'<b>Aucune sauvegarde</b> de tes données pour l\'instant.':'<b>Dernière sauvegarde il y a '+bkAge+' jours.</b>')+'</div><button type="button" class="btn" id="bkNow">Sauvegarder</button></div>';
       h+=homeModeHTML()+(fyMember() ? rsMemberHTML(m, me) : rsOwnerHTML(m, me));
       app.innerHTML=h; setNav("list", true);   // la barre du bas (sinon cachée au démarrage sur le Résumé)
       drvBannerWire(); var bkn=document.getElementById("bkNow"); if(bkn) bkn.onclick=backupData;
@@ -4507,7 +4507,7 @@
         var bkAge=backupAgeDays(), drvB=drvBannerHTML();
         if(drvB) h += drvB;
         else if(!fyMember() && !drvOn() && (bkAge===null || bkAge>=7)){
-          h += '<div class="bk-banner"><span style="font-size:20px">💾</span><div>'+(bkAge===null?'<b>Aucune sauvegarde</b> de tes données pour l\'instant.':'<b>Dernière sauvegarde il y a '+bkAge+' jours.</b>')+'<br><span style="color:var(--ink-soft);font-size:11px">'+(capNative()?"Si l\'appli est désinstallée, tout serait perdu.":"Si le navigateur se vide, tout serait perdu.")+'</span></div><button class="btn primary" id="bkNow" type="button">Sauvegarder</button></div>';
+          h += '<div class="bk-banner bk-plain"><span style="font-size:20px">💾</span><div>'+(bkAge===null?'<b>Aucune sauvegarde</b> de tes données pour l\'instant.':'<b>Dernière sauvegarde il y a '+bkAge+' jours.</b>')+'<br><span style="color:var(--ink-soft);font-size:11px">'+(capNative()?"Si l\'appli est désinstallée, tout serait perdu.":"Si le navigateur se vide, tout serait perdu.")+'</span></div><button class="btn primary" id="bkNow" type="button">Sauvegarder</button></div>';
         }
 
         // --- Bloc principal : le bilan du mois, ou le graphique choisi (⇄)
