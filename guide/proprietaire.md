@@ -84,6 +84,7 @@ Quatre parties, en boutons sous le titre : Opérations, **Tickets** (tous les ti
 - Puis le solde estimé, Entrées, Sorties et Fin de mois.
 - Filtres Tout, Entrées, Sorties, À venir ; la loupe ouvre la recherche (un nom ou un montant, avec le total).
 - Le bloc « À venir » liste ce qui n'est pas encore passé. Touche le rond quand c'est fait : l'appli note le jour.
+- « Pas cochés les mois passés » : des frais ou virements d'un mois passé jamais cochés. Ils comptent dans la fin de mois. Touche la ligne et dis pour chacun : **Payé**, **N'a pas eu lieu** ou **À payer** (il reste compté).
 - Le « + » de la barre du bas ajoute un ticket, un virement reçu ou envoyé ou un frais fixe sur le compte affiché.
 - Touche un virement pour le modifier, le reprendre le mois suivant (ou chaque mois), ou le passer en frais fixe.
 

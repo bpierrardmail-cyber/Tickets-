@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `07/11 10:58`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `07/11 11:05`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -216,7 +216,7 @@ Après chaque modification, dans le même commit :
   - **personne supprimée** : plus de part du commun après son dernier mois (`communModel`), les autres parts sont recalculées ;
   - **compte neuf sans opération** : son mois de départ compte (`compteMonths`), les frais fixes se cumulent ;
   - sauvegarde : `commBalFrom`, `comProd`, `cptLiq`, `anFrais` ; plus de « -0,00 € » (`fmt`).
-  - À décider avec Benoît : « Fin de mois » compte les frais des mois passés pas cochés, que l'écran ne montre pas.
+  - **« Pas cochés les mois passés »** (choix 1 de Benoît, avec acquittement) : ligne dans Opérations (`#opsPast`, `pastOpen`) quand des frais fixes ou virements d'un mois passé ne sont pas cochés (ils comptent dans « Fin de mois », pas dans la banque) ; `pastSheet` : pour chacun Payé (coché ce mois-là), N'a pas eu lieu (`skipMonths`, aussi pour un frais d'une fois ; virement retiré), À payer (`f.pastOk[mois]` / `v.pastOk` : reste compté, plus de ⚠) ; « Tout est payé » ; annulable. Test t143.
 - **Affichage sur toutes les tailles d'écran** (demande de Benoît après la fenêtre coupée ; relecture indépendante de l'affichage + nouveau parcours t141, en cours) :
   - écran du code en paysage : il défile, pavé plus compact (« 0 » et ⌫ étaient hors de l'écran) ;
   - accueil en diapos / carrousel Plus et menu en paysage : ils défilent au lieu d'écraser leur contenu (même défaut que la fenêtre des catégories) ;
