@@ -87,6 +87,7 @@ Quatre parties, en boutons sous le titre : Opérations, **Tickets** (tous les ti
 - « Pas cochés les mois passés » : des frais ou virements d'un mois passé jamais cochés. Ils comptent dans la fin de mois. Touche la ligne et dis pour chacun : **Payé**, **N'a pas eu lieu** ou **À payer** (il reste compté).
 - Le « + » de la barre du bas ajoute un ticket, un virement reçu ou envoyé ou un frais fixe sur le compte affiché.
 - Touche un virement pour le modifier, le reprendre le mois suivant (ou chaque mois), ou le passer en frais fixe.
+- **Virement entre tes comptes** : dans « Vers » (ou « Depuis »), choisis un de tes comptes, un livret ou un compte de la Bourse. La ligne d'en face est créée toute seule, avec un seul rond « fait » pour les deux ; la modifier ou la supprimer change les deux. Vers un livret ou la Bourse, leur valeur suit quand c'est coché. Un virement déjà noté : touche-le › « Relier à un compte » (une opération déjà là en face est reprise, pas doublée). À l'import d'un relevé, un virement qui nomme un de tes comptes y est relié.
 
 **Épargne** : tes livrets et ce que tu y mets chaque mois.
 

@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `07/11 14:08`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `07/11 14:22`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -210,6 +210,13 @@ Après chaque modification, dans le même commit :
 
 ### 07/11
 
+- **Mouvements internes reliés** (demande de Benoît : « un lien si un mouvement interne est fait entre comptes, épargne, bourse, provisions, factures… ») :
+  - **Virement relié** (section `// ---------- Virements reliés`) : champ « Vers / Depuis » (`virLinkOpts`) dans le virement reçu / envoyé et sa modification : un autre compte (`v.vers = "cpt:<clé>"`), un livret (`epargneId`, comme avant) ou un compte de la Bourse en Perso (`bourseId` : reste à investir et capital, `applyBourse`, `bApplied`). Compte → compte : `virLinkSync` (téléphone du propriétaire, dans `renderView`) crée la ligne d'en face (`pairOf`), montant opposé, même mois, même « fait » (`toggleVirementDone` passe par l'original, `virSrcOf`), modifier / supprimer agit sur les deux ; une opération déjà là en face (même mois, montant opposé, non reliée) est reprise (`pairAdopt`, elle reste si on délie). Séries « chaque mois » et « Reprendre » gardent le lien (les lignes d'en face ne sont pas reprises). Toucher un virement : « 🔗 Relier à un compte » et « 🗑 Supprimer » (il n'y avait plus de moyen de supprimer un virement simple depuis Opérations).
+  - Import d'un relevé : « vers / depuis » sur chaque virement (comptes et livrets), proposé tout seul quand le libellé nomme un autre compte (`impAcctGuess`) → `v.vers`.
+  - Facture payée par une provision dont l'argent est sur un **autre compte bancaire** : case « Virement <compte de la provision> → <compte qui paie> » (virement relié) dans `factPayFlow`.
+  - Retrait d'espèces : supprimer le retrait retire aussi l'argent du liquide (`v.liqAdd`).
+  - Provision avec plusieurs frais reliés (ancienne erreur) : fusionnés dans `provFraisSync` (« fait », jours, épargne versée gardés).
+- **Cohérence des chiffres** (demande de Benoît après le bug de la grande carte) : nouveau test **t146** sur le grand foyer avec mouvements internes, 14 comptes × 3 mois : grande carte = report + opérations faites = solde du dernier jour = liste des comptes ; fin de mois = banque + à venir + pas cochés + liquide ; « Tous les comptes » = somme ; Accueil « Banque » = Opérations. Il a trouvé : Accueil « Banque » montrait la fin de mois sans le liquide (maintenant la banque d'Opérations, `heroFig.banqueNow`) ; un compte pas encore suivi ce mois-là avait un solde dans la liste des comptes (`acctFigures`, `provInSum` respectent `acctStart`). Test t145 (virements reliés).
 - **Bug (capture de Benoît)** : cocher la mise de côté reçue sur le compte de la provision ne changeait pas la grande carte « Solde estimé à la banque » d'Opérations (calcul à part, `soldeBanque` dans `renderCompte`) ni le graphique Entrées-sorties (`inOut`) ; les deux comptent maintenant `provInSum`. t144 vérifie la grande carte.
 - **Solde d'une provision : seulement au « fait »** (décision de Benoît) : suivie dans les frais fixes, un mois passé ou en cours ne compte que quand sa mise de côté est cochée (`provState` : `accrues`) ; les mois à venir restent prévus (`planCur` pour la suite des graphiques, `provProj`). Carte de la provision : « de Compte courant → Compte commun · ✓ fait ce mois-ci » ou « pas encore fait ce mois-ci : compté quand c'est coché ». Tests t144, t101, t102.
 - **Provision : la mise de côté va d'un compte à l'autre** (Benoît : « la sortie d'un compte doit être ajoutée au compte qui a les provisions » ; maquette validée) :

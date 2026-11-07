@@ -51,11 +51,11 @@ with sync_playwright() as p:
     pg.locator('#opsBody .ops-ck[data-k="v"][data-id="%s"]' % mir[0]["id"]).click(); pg.wait_for_timeout(500)
     s2=[v for v in V() if v["id"]==src[0]["id"]][0]; m2=[v for v in V() if v["id"]==mir[0]["id"]][0]
     check(s2.get("done") and m2.get("done"), "cocher en face coche les deux")
-    t=norm(pg.locator("#app").inner_text()); check("250,00" in t, "compte commun : 100 + 50 + 100 = 250 € à la banque")
+    t=norm(pg.locator("#app").inner_text()); check("256,00" in t, "compte commun : 100 + 50 reçus + 6 (provision Amazon faite) + 100 = 256 € à la banque")
     # montant modifié depuis la ligne d'en face → l'original
     pg.locator('#opsBody .ops-open[data-k="v"][data-id="%s"]' % mir[0]["id"]).first.click(); pg.wait_for_timeout(300)
     pg.locator(".sheet-overlay button", has_text="Modifier").first.click(); pg.wait_for_timeout(300)
-    check("Modifier le virement" in norm(pg.locator(".sheet-overlay").last.inner_text()), "modifier la ligne d'en face ouvre le virement d'origine")
+    check("modifier le virement" in norm(pg.locator(".sheet-overlay").last.inner_text()).lower(), "modifier la ligne d'en face ouvre le virement d'origine")
     pg.locator(".ui-field", has_text="Montant").locator("input").fill("120"); pg.locator('.sheet-overlay button[type="submit"]').click(); pg.wait_for_timeout(500)
     s2=[v for v in V() if v["id"]==src[0]["id"]][0]; m2=[v for v in V() if v.get("pairOf")==src[0]["id"]][0]
     check(s2["montant"]==-120 and m2["montant"]==120, "montant changé : −120 € / +120 €")
