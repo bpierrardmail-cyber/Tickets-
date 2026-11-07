@@ -1,6 +1,11 @@
 // Réglages propres à Tickets β, ajoutés au projet Android généré par Capacitor.
 def runNum = (System.getenv("GITHUB_RUN_NUMBER") ?: "1") as Integer
-def ks = file("../../beta-test.keystore")
+// Clé de signature (07/11) : la vraie est dans les secrets GitHub (TK_KEYSTORE_B64, TK_KEYSTORE_PASS), écrite par le workflow
+// dans TK_KS_FILE ; sans eux, l'ancienne clé de test (publique, à retirer dès que les secrets sont en place).
+def ksEnv = System.getenv("TK_KS_FILE")
+def ks = ksEnv ? file(ksEnv) : file("../../beta-test.keystore")
+def ksPass = ksEnv ? System.getenv("TK_KS_PASS") : "tickets-beta-test"
+def ksAlias = ksEnv ? (System.getenv("TK_KS_ALIAS") ?: "tickets") : "tickets-beta"
 
 android {
     defaultConfig {
@@ -13,9 +18,9 @@ android {
         signingConfigs {
             betatest {
                 storeFile ks
-                storePassword "tickets-beta-test"
-                keyAlias "tickets-beta"
-                keyPassword "tickets-beta-test"
+                storePassword ksPass
+                keyAlias ksAlias
+                keyPassword ksPass
             }
         }
         buildTypes {

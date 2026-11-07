@@ -86,20 +86,38 @@ jobs:
             fs.writeFileSync("capacitor.config.json", JSON.stringify(c,null,2));
             console.log(JSON.stringify(c,null,2));'
 
+      - name: Clé de signature
+        env:
+          KS_B64: ${{ secrets.TK_KEYSTORE_B64 }}
+          KS_PASS: ${{ secrets.TK_KEYSTORE_PASS }}
+        run: |
+          if [ -n "$KS_B64" ] && [ -n "$KS_PASS" ]; then
+            echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/tickets.keystore"
+            echo "TK_KS_FILE=$RUNNER_TEMP/tickets.keystore" >> "$GITHUB_ENV"
+            echo "TK_KS_PASS=$KS_PASS" >> "$GITHUB_ENV"
+            echo "::add-mask::$KS_PASS"
+            echo "Clé de signature : celle des secrets GitHub"
+          else
+            echo "::warning::Secrets TK_KEYSTORE_B64 / TK_KEYSTORE_PASS absents : APK signés avec l'ancienne clé de test (publique)"
+          fi
+
       - name: Dépendances Capacitor
-        run: npm install --no-audit --no-fund
+        run: if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi   # versions figées par package-lock.json
 
       - name: Appli dans l'APK (Store)
         if: matrix.edition == 'store'
         run: |
           rm -rf www && mkdir -p www/pdfjs
           cp -r ../beta/. www/
-          # lecteur de PDF des factures, même version que dans la β
-          V=$(grep -oP 'PDFJS_V="\K[0-9.]+' www/index.html)
-          npm pack "pdfjs-dist@$V" --silent
-          tar xzf "pdfjs-dist-$V.tgz"
-          cp package/legacy/build/pdf.min.mjs package/legacy/build/pdf.worker.min.mjs www/pdfjs/
-          rm -rf package "pdfjs-dist-$V.tgz"
+          rm -rf www/lib/tesseract   # lecture des tickets dans un navigateur seulement : l'appli utilise ML Kit
+          # lecteur de PDF des factures : celui de la β (beta/pdfjs, copié par le workflow deps), sinon pris à la même version
+          if [ ! -f www/pdfjs/pdf.min.mjs ]; then
+            V=$(grep -oP 'PDFJS_V="\K[0-9.]+' www/index.html)
+            npm pack "pdfjs-dist@$V" --silent
+            tar xzf "pdfjs-dist-$V.tgz"
+            cp package/legacy/build/pdf.min.mjs package/legacy/build/pdf.worker.min.mjs www/pdfjs/
+            rm -rf package "pdfjs-dist-$V.tgz"
+          fi
           # inflation INSEE du moment (Analyse avancée), prise au relais à la compilation
           API=$(grep -oP 'COURS_API *= *"\K[^"]+' www/index.html | head -1)
           curl -fsS --max-time 20 "$API/inflation" -o www/insee.json || echo '{}' > www/insee.json
@@ -127,7 +145,7 @@ jobs:
 
       - name: Icône et écran de démarrage
         continue-on-error: true
-        run: npx --yes @capacitor/assets@3 generate --android --assetPath assets
+        run: if [ -f node_modules/.bin/capacitor-assets ]; then npx capacitor-assets generate --android --assetPath assets; else npx --yes @capacitor/assets@3 generate --android --assetPath assets; fi
 
       - name: Compilation
         working-directory: app-android/android

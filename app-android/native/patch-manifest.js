@@ -75,5 +75,10 @@ if (!x.includes("android.permission.ACCESS_NETWORK_STATE")) {
 if (!x.includes("android.permission.POST_NOTIFICATIONS")) {
   x = x.replace("<application", '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <application');
 }
+// Pas de sauvegarde Android automatique des données de l'appli (07/11, décision de Benoît) : elle copiait les données
+// en clair dans la sauvegarde Google du téléphone ; un seul système de sauvegarde, celui de l'appli (Drive chiffré ou fichier).
+x = x.replace(/android:allowBackup="true"/, 'android:allowBackup="false"');
+if (!/android:allowBackup=/.test(x)) x = x.replace("<application", '<application android:allowBackup="false"');
+x = x.replace(/\s*android:fullBackupContent="[^"]*"/, "").replace(/\s*android:dataExtractionRules="[^"]*"/, "");
 fs.writeFileSync(file, x);
 console.log("widgets ajoutés au manifeste");

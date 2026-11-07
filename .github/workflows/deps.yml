@@ -1,0 +1,79 @@
+name: Librairies figées
+
+# Sécurité (07/11) : les librairies de lecture sont copiées dans l'appli, à une version fixe, au lieu d'être chargées
+# depuis un site extérieur à chaque fois (une version modifiée là-bas ne peut plus entrer dans l'appli) ;
+# et les versions des outils de compilation des APK sont figées (package-lock.json, utilisé par « npm ci »).
+#   beta/lib/tesseract/       Tesseract.js (lecture des tickets dans un navigateur) + son moteur + le français et l'anglais
+#   beta/pdfjs/               pdf.js (factures en PDF), même version que PDFJS_V dans beta/index.html
+#   app-android/package-lock.json
+# Relancer ce workflow (onglet Actions, « Run workflow ») pour changer de version ; il enregistre le résultat dans le dépôt.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/deps.yml'
+      - 'app-android/package.json'
+
+permissions:
+  contents: write
+
+jobs:
+  deps:
+    runs-on: ubuntu-latest
+    env:
+      TESS: tesseract.js@5.1.1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Librairies de lecture
+        run: |
+          set -e
+          W=$(mktemp -d)
+          PDFV=$(grep -oP 'PDFJS_V="\K[0-9.]+' beta/index.html)
+          ( cd "$W"
+            npm pack "$TESS" --silent
+            mkdir t && tar xzf tesseract.js-*.tgz -C t
+            CORE=$(node -p 'require("./t/package/package.json").dependencies["tesseract.js-core"]')
+            npm pack "tesseract.js-core@$CORE" --silent
+            mkdir c && tar xzf tesseract.js-core-*.tgz -C c
+            for L in fra eng; do npm pack "@tesseract.js-data/$L" --silent; mkdir "d$L" && tar xzf tesseract.js-data-$L-*.tgz -C "d$L"; done
+            npm pack "pdfjs-dist@$PDFV" --silent
+            mkdir p && tar xzf pdfjs-dist-*.tgz -C p )
+          rm -rf beta/lib/tesseract beta/pdfjs
+          mkdir -p beta/lib/tesseract/core beta/lib/tesseract/lang beta/pdfjs
+          cp "$W"/t/package/dist/tesseract.min.js "$W"/t/package/dist/worker.min.js beta/lib/tesseract/
+          cp "$W"/c/package/*.wasm.js beta/lib/tesseract/core/
+          cp "$W"/c/package/*.wasm beta/lib/tesseract/core/ 2>/dev/null || true
+          for L in fra eng; do cp "$W"/d$L/package/4.0.0_best_int/$L.traineddata.gz beta/lib/tesseract/lang/; done
+          cp "$W"/p/package/legacy/build/pdf.min.mjs "$W"/p/package/legacy/build/pdf.worker.min.mjs beta/pdfjs/
+          {
+            echo "Copié par .github/workflows/deps.yml le $(date -u +%Y-%m-%d) :"
+            echo "tesseract.js $(node -p "require('$W/t/package/package.json').version")"
+            echo "tesseract.js-core $(node -p "require('$W/c/package/package.json').version")"
+            for L in fra eng; do echo "@tesseract.js-data/$L $(node -p "require('$W/d$L/package/package.json').version") (4.0.0_best_int)"; done
+            echo "pdfjs-dist $PDFV (legacy)"
+            echo
+            echo "Empreintes SHA-256 :"
+            ( cd beta && find lib pdfjs -type f ! -name VERSIONS.txt | sort | xargs sha256sum )
+          } > beta/lib/VERSIONS.txt
+          cat beta/lib/VERSIONS.txt
+          du -sh beta/lib beta/pdfjs
+
+      - name: Versions des outils de compilation
+        working-directory: app-android
+        run: npm install --package-lock-only --no-audit --no-fund
+
+      - name: Enregistrer dans le dépôt
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add beta/lib beta/pdfjs app-android/package-lock.json
+          if git diff --cached --quiet; then echo "rien de nouveau"; exit 0; fi
+          git commit -m "Librairies figées : Tesseract, pdf.js, versions npm (workflow deps)"
+          git pull --rebase origin main
+          git push origin HEAD:main
