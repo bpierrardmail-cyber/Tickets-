@@ -57,6 +57,15 @@ with sync_playwright() as p:
     pg.locator(".sheet-overlay button", has_text="Pas encore passé").first.click(); pg.wait_for_timeout(500)
     ep=ls("epargne")[0]; v=ep["vals"][max(ep["vals"])]
     check(abs(v-1000)<0.01 and not ls("fraisCommuns")[1]["doneMonths"].get("2026-10"), "livret : décocher → Livret A revient à 1 000 € (%s)"%v)
+    # 2 bis. le solde de la provision ne grandit qu'au « fait » (décision du 07/11) : mois de départ (juillet) = montant de départ ; août, septembre, octobre
+    pg2=pg
+    pg2.locator('#nav .navi[data-view="factures"]').click(); pg2.wait_for_timeout(500)
+    pg2.locator('.avtabs button', has_text="Provisions").click(); pg2.wait_for_timeout(600)
+    card=norm(pg2.locator(".pcard", has=pg2.locator(".pname", has_text="Amazon")).inner_text())
+    print("  provision :", card.replace("\n"," | ")[:200])
+    check("18,00" in card and "fait ce mois-ci" in card, "provision Amazon cochée en octobre (sur le compte commun) : 3 × 6 = 18 € de côté, « ✓ fait ce mois-ci »")
+    card=norm(pg2.locator(".pcard", has=pg2.locator(".pname", has_text="Eau")).inner_text())
+    check("40,00" in card and "pas encore fait" in card, "provision Eau décochée en octobre : 40 € (août, septembre), octobre pas compté, « pas encore fait ce mois-ci »")
     c.close()
     # 3. le réglage d'une provision
     c=b.new_context(viewport={'width':412,'height':900}); pg=c.new_page(); pg.on('pageerror', lambda e: errs.append(str(e)))

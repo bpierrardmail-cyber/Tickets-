@@ -112,6 +112,7 @@ L'onglet À venir montre ce qui va sortir de tes comptes. Il a quatre parties.
 - **Provisions** : l'argent mis de côté chaque mois pour une grosse dépense (taxe foncière, assurance, vacances). La mise de côté apparaît dans les frais fixes. Le graphique montre ce qui est déjà de côté et ce qui est prévu ; l'appli propose un montant mensuel si une provision ne suffit pas.
   - Dans son réglage, partie « Chaque mois » : **Qui paie ?** (le foyer, selon les parts, ou une personne), **Prélevé sur** (le compte d'où sort l'argent, ou « Chacun sur son compte »), **Mis de côté sur** (le compte ou le livret qui le reçoit) et **Suivre dans les frais fixes**. Un petit schéma montre le trajet de l'argent.
   - La mise de côté sort du compte qui paie et **entre sur le compte de la provision** : un seul rond « fait » pour les deux comptes. Sur un livret, cocher la mise de côté augmente sa valeur.
+  - Quand la provision est suivie dans les frais fixes, son solde ne grandit que quand la mise de côté du mois est cochée « fait » (« pas encore fait ce mois-ci » sinon). Les mois à venir restent prévus dans les graphiques.
 - ✦ **Factures** (Tickets Plus) : importe tes factures, par PDF ou en photos (bouton « Importer une facture »).
 
 **Importer une facture**

@@ -74,7 +74,7 @@ with sync_playwright() as p:
     # la provision signale la facture déjà dans les comptes mais pas retirée
     av("prov")
     card=pg.locator(".pcard", has_text="Eau").first
-    check("1 facture pas encore retirée" in norm(card.inner_text()) and "frais fixe Commun" in norm(card.inner_text()), "provision « Eau » : « 1 facture pas encore retirée », remplie par le Commun")
+    check("1 facture pas encore retirée" in norm(card.inner_text()) and "de Compte courant →" in norm(card.inner_text()), "provision « Eau » : « 1 facture pas encore retirée », mise de côté depuis le compte courant")
     card.locator(".pvret").click(); pg.wait_for_timeout(400)
     sh=norm(pg.locator(".sheet-overlay").last.inner_text())
     check("Déjà dans tes comptes" in sh and pg.locator('.sheet-overlay input[data-k="prov"]').is_checked() and pg.locator('.sheet-overlay input[data-k="acc"]').count()==0 and pg.locator('.sheet-overlay input[data-k="vir"]').count()==1,
