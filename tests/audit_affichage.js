@@ -25,7 +25,7 @@ window.__audit = function(phase){
     if(!vis(el)) continue;
     var s = getComputedStyle(el), r = el.getBoundingClientRect();
     // contenu coupé en hauteur
-    if(/(hidden|clip)/.test(s.overflowY) && el.clientHeight > 0 && el.scrollHeight > el.clientHeight + 3 && !ellipsisInside(el)){
+    if(/(hidden|clip)/.test(s.overflowY) && el.clientHeight > 0 && !el.matches(".hm-ch")   /* .hm-ch : petite carte de l'Accueil, coupée exprès pour tenir dans l'écran (homeFit) ; elle s'ouvre en entier */ && el.scrollHeight > el.clientHeight + 3 && !ellipsisInside(el)){
       var cut = [].some.call(el.querySelectorAll("*"), function(ch){ if(!(ch.innerText || "").trim() && ch.tagName !== "BUTTON" && ch.tagName !== "INPUT") return false; var cr = ch.getBoundingClientRect(); return cr.height > 2 && cr.top < r.bottom - 2 && cr.bottom > r.bottom + 3 && vis(ch) && ch.children.length === 0; });
       if(cut) add("coupe-h", el, el.scrollHeight + " px dans " + el.clientHeight + " px");
     }

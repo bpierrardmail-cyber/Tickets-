@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="07/11 11:28" />
+  <meta name="build" content="07/11 11:36" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -1375,6 +1375,7 @@
     .dr-row .st{ white-space:normal; text-align:right; line-height:1.25; }   /* l'état à droite du menu passe à la ligne plutôt que d'être coupé */
     .fxrow .n small, .dgb .ecomp .n small, .cacc .ecomp .n small{ white-space:normal; }   /* « chaque mois · ta part 8,3 % (100,00 €) » : jamais coupé */
     @media (max-width:359px){ .head.haspv .htitle.htitle{ padding:0 92px; } .head.hasback:not(.haspv) .htitle.htitle{ padding:0 54px; } .head.hasback .hleft .hmenu{ display:none; }   /* page avec retour sur un écran étroit : le retour seul à gauche, le titre a la place */ .avtabs:has(> button:nth-child(4)){ flex-wrap:wrap; } .avtabs:has(> button:nth-child(4)) > button{ flex:1 1 calc(50% - 6px); } }
+    @media (max-width:359px){ .chips.cattiles.cat5{ grid-template-columns:repeat(4,minmax(0,1fr)); } .f-two input[type=date].f{ font-size:13.5px; padding-left:8px; padding-right:4px; } }   /* tuiles de catégories : 4 par ligne, noms entiers */
     @media (max-width:359px){ .acrow{ flex-wrap:wrap; row-gap:8px; } .acrow > .acsel{ flex:1 1 100%; } .acrow > .hmn{ flex:1 1 100%; } }   /* fenêtre plus haute que l'écran : elle défile au lieu d'écraser (et couper) sa liste */
     .ui-intro{ font-size:13px; color:var(--ink-soft); line-height:1.45; text-align:center; margin:2px 0 4px; }
     .ui-msg{ font-size:15px; color:var(--ink); line-height:1.45; text-align:center; margin:6px 0 4px; }

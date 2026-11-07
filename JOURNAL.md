@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `07/11 11:28`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `07/11 11:36`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -226,6 +226,7 @@ Après chaque modification, dans le même commit :
   - rotation pendant qu'une fenêtre est ouverte : la carte du haut est refaite à la fermeture.
   - `homeFit` : les petites cartes rapetissent tant que leur graphique garde 50 px (760 px de haut : tout tient, t132) ; en dessous, elles gardent leur hauteur et la page défile.
   - Tests : `run.sh` compte un test coupé par le délai (400 s) comme un échec (avant : « ok » !) ; t141 court par défaut (3 combinaisons), `--all` (15), `--full`.
+  - 4e passage (2 défauts) : < 360 px, tuiles de catégories 4 par ligne (noms entiers), date de la fiche plus compacte ; le graphique d'une petite carte de l'Accueil coupé par `homeFit` n'est pas un défaut (audit).
   - 3e passage (3 défauts) : libellés des cases sur deux lignes plutôt que coupés ; page avec retour sur écran étroit : le retour seul à gauche (menu caché), titre plus large ; textes mesurés à la police (`fitOver`, canvas).
   - 2e passage (649 écrans, 9 défauts) : tableau de bord d'un petit écran — les cartes gardent leur hauteur et la page défile plutôt qu'un graphique écrasé à 37 px ; ⇄ à côté du mois ; textes mesurés marges comprises (`fitOver`) ; sous-titres des frais fixes et état du menu passent à la ligne.
 
