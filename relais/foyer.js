@@ -33,7 +33,8 @@
 //   DELETE /foyer                                propriétaire  arrête le partage (tout est effacé)
 //
 // Contre les abus (07/11) : création de foyer limitée par adresse IP et par jour (classe Garde) ;
-// un foyer que personne n'a rejoint et que personne n'a touché depuis 30 jours est effacé, tout foyer inactif depuis 1 an aussi (alarme).
+// un foyer que personne n'a rejoint et que personne n'a touché depuis 15 jours est effacé, tout foyer inactif depuis 3 mois aussi (alarme) ;
+// il en reste seulement « purged » = { why: "empty" | "idle", at } pour que les téléphones disent pourquoi (410).
 
 const FCORS = {
   "Access-Control-Allow-Origin": "*",
@@ -55,9 +56,9 @@ const INVITE_MAX = 30 * 60 * 1000;   // une invitation dure 30 min au plus
 const MAX_DELTA = 2 * 1024 * 1024;   // une différence
 const MAX_DELTAS = 60;               // différences gardées par membre (ensuite le propriétaire renvoie la copie complète)
 const DAY = 86400000;
-const PURGE_EMPTY = 30 * DAY;        // foyer que personne n'a rejoint, sans activité
-const PURGE_IDLE = 365 * DAY;        // foyer sans aucune activité
-const CREATE_PER_IP = 5;             // créations de foyer par adresse IP et par jour
+const PURGE_EMPTY = 15 * DAY;        // foyer que personne n'a rejoint, sans activité
+const PURGE_IDLE = 90 * DAY;         // foyer sans aucune activité (3 mois, décidé par Benoît le 07/11)
+const CREATE_PER_IP = 3;             // créations de foyer par adresse IP et par jour
 const CREATE_ALL = 3000;             // créations de foyer par jour, en tout
 
 function fjson(obj, status) {
@@ -162,6 +163,7 @@ export class Foyer {
       this.sql.exec("DELETE FROM deltas WHERE mid = ?", id);
     });
   }
+  purged() { try { return JSON.parse(this.meta("purged") || "null"); } catch (e) { return null; } }
   /** Activité (au plus une écriture par jour) et prochaine vérification d'effacement. */
   touch(now) {
     const a = Number(this.meta("act") || 0);
@@ -172,18 +174,20 @@ export class Foyer {
   plan(now) {
     try { if (this.ctx.storage.setAlarm) this.ctx.storage.setAlarm(now + PURGE_EMPTY + DAY); } catch (e) { /* pas d'alarme ici */ }
   }
-  wipe() {
+  wipe(why) {
     this.ctx.storage.transactionSync(() => {
       ["inbox", "blobs", "members", "meta", "deltas"].forEach(t => this.sql.exec("DELETE FROM " + t));
+      if (why) this.setMeta("purged", JSON.stringify({ why, at: Date.now() }));
     });
     try { if (this.ctx.storage.deleteAlarm) this.ctx.storage.deleteAlarm(); } catch (e) { /* rien */ }
   }
-  /** Alarme : efface un foyer abandonné (personne ne l'a rejoint et rien depuis 30 jours, ou rien depuis 1 an). */
+  /** Alarme : efface un foyer abandonné (personne ne l'a rejoint et rien depuis 15 jours, ou rien depuis 3 mois). */
   async alarm() {
     if (!this.meta("otok")) return;
     const now = Date.now(), act = Number(this.meta("act") || this.meta("created") || 0);
     const joined = this.sql.exec("SELECT COUNT(*) AS n FROM members WHERE joined IS NOT NULL").one().n;
-    if ((!joined && now - act > PURGE_EMPTY) || now - act > PURGE_IDLE) { this.wipe(); return; }
+    if (!joined && now - act > PURGE_EMPTY) { this.wipe("empty"); return; }
+    if (now - act > PURGE_IDLE) { this.wipe("idle"); return; }
     try { this.ctx.storage.setAlarm(act + (joined ? PURGE_IDLE : PURGE_EMPTY) + DAY); } catch (e) { /* rien */ }
   }
 
@@ -222,12 +226,12 @@ export class Foyer {
       if (!RE_HASH.test(body.otok || "")) return fjson({ error: "jeton" }, 400);
       const cur = this.meta("otok");
       if (cur && cur !== body.otok) return fjson({ error: "existe" }, 409);
-      if (!cur) { this.setMeta("otok", body.otok); this.setMeta("created", now); this.setMeta("act", now); this.plan(now); }
+      if (!cur) { this.sql.exec("DELETE FROM meta WHERE k = 'purged'"); this.setMeta("otok", body.otok); this.setMeta("created", now); this.setMeta("act", now); this.plan(now); }
       return fjson({ ok: true, now });
     }
     if (method === "POST" && path === "join") {
       if (!RE_MID.test(body.mid || "") || !RE_TOK.test(body.inv || "") || !RE_HASH.test(body.tok || "")) return fjson({ error: "invitation" }, 400);
-      if (!this.meta("otok")) return fjson({ error: "gone" }, 410);
+      if (!this.meta("otok")) return fjson({ error: "gone", purged: this.purged() }, 410);
       const m = this.member(body.mid);
       if (!m || m.tok || !m.inv || m.exp < now || m.inv !== await sha(body.inv)) return fjson({ error: "invitation" }, 403);
       this.sql.exec("UPDATE members SET tok = ?, inv = NULL, exp = NULL, joined = ?, seen = ? WHERE id = ?", body.tok, now, now, m.id);
@@ -235,7 +239,7 @@ export class Foyer {
     }
 
     const w = await this.who(request);
-    if (w === "gone") return fjson({ error: "gone" }, 410);
+    if (w === "gone") return fjson({ error: "gone", purged: this.purged() }, 410);
     if (!w) return fjson({ error: "auth" }, 401);
 
     if (method === "GET" && path === "me") return fjson(w.owner ? { role: "owner", now } : { role: w.member.role, id: w.member.id, now });

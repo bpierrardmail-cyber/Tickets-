@@ -28,7 +28,8 @@ Lors de ces échanges, le relais voit forcément l'adresse IP du téléphone et 
 ## Combien de temps
 
 - Sur le téléphone : tant que vous gardez l'appli. Un ticket supprimé reste 30 jours dans la corbeille.
-- Sur le relais : la copie chiffrée du foyer, tant que le foyer existe. Supprimer le foyer ou retirer un membre efface sa copie.
+- Sur le relais : la copie chiffrée du foyer, tant que le foyer existe. Supprimer le foyer ou retirer un membre efface sa copie. Un foyer que personne n'a rejoint en 15 jours, ou qu'aucun téléphone n'a utilisé depuis 3 mois, est effacé automatiquement.
+- Pour limiter les abus, le relais compte les créations de foyer de la journée par empreinte d'adresse IP (l'adresse elle-même n'est pas gardée) ; ce compte est effacé chaque jour.
 - Sur Google Drive : selon les durées choisies dans l'appli.
 
 ## Permissions demandées

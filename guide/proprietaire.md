@@ -165,6 +165,10 @@ Compte comme payé pour le commun : les frais communs (selon le compte qui les p
 
 **Code et empreinte** : obligatoires sur tous les téléphones du foyer. Garde bien ton code de récupération (26 caractères) : il permet de retrouver ton foyer sur un nouveau téléphone.
 
+**Les mises à jour** : une modification part chez les membres environ une minute et demie après (avec toutes celles faites entre-temps), ou tout de suite quand tu quittes l'appli ou avec « Mettre à jour maintenant ». Appli fermée, rien ne part.
+
+**Foyer inutilisé** : un foyer que personne n'a rejoint en 15 jours, ou qu'aucun téléphone n'a utilisé depuis 3 mois, est effacé. Tes données restent sur ton téléphone : l'appli te le dit, « Recréer le foyer » le refait d'un geste, puis invite à nouveau tes membres.
+
 Retirer un membre coupe son accès tout de suite. Ses tickets déjà arrivés chez toi restent ; ce qu'il a ajouté depuis sa dernière mise à jour serait perdu : vérifie qu'il est « à jour » avant (l'appli te prévient). Pour juste le reconnecter, « Nouveau téléphone : nouveau QR code » suffit.
 
 ## Affichage simple ou détaillé

@@ -33,7 +33,9 @@ Touche **＋**, puis « Scanner un ticket » ou « Ticket depuis la galerie ». 
 - Une dépense à partager : Options › Partage (« Qui paie ce ticket ? ») : seulement toi, le commun du foyer, ou certaines personnes.
 - Supprimé par erreur ? Opérations › Tickets › Corbeille › « Remettre » (30 jours).
 
-Ton ticket part chez le propriétaire du foyer dès que ton téléphone est connecté.
+Ton ticket part chez le propriétaire du foyer environ une minute et demie après (avec ceux saisis entre-temps), ou tout de suite quand tu quittes l'appli, dès que ton téléphone est connecté.
+
+Si le foyer n'a été utilisé par aucun téléphone pendant 3 mois, il est effacé : l'appli te le dit et retire ses données de ton téléphone (tes comptes perso restent). Demande alors un nouveau QR code au propriétaire.
 
 ## Ce que tu peux modifier
 
