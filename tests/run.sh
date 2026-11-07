@@ -10,8 +10,10 @@ if ! curl -s -m 2 http://localhost:8787/ >/dev/null 2>&1; then
 fi
 TOTAL=0
 for t in $LISTE; do
-  r=$(timeout 400 python3 "$t.py" 2>&1)
+  r=$(timeout 400 python3 "$t.py" 2>&1); rc=$?
   n=$(printf '%s\n' "$r" | grep -c '^FAIL'); tb=$(printf '%s\n' "$r" | grep -c Traceback)
+  if [ "$rc" = 124 ]; then echo "$t  délai dépassé (400 s)"; TOTAL=$((TOTAL+1)); continue; fi   # un test coupé n'est pas un succès
+  if [ "$rc" != 0 ] && [ "$n" = 0 ]; then n=1; fi
   if [ "$n" = 0 ] && [ "$tb" = 0 ]; then echo "$t  ok"; else
     echo "$t  $n échec(s)$( [ "$tb" != 0 ] && echo ', erreur Python')"; printf '%s\n' "$r" | grep -E '^FAIL|Error' | head -5 | sed 's/^/    /'; TOTAL=$((TOTAL+1)); fi
 done

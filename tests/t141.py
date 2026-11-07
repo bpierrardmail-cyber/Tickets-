@@ -2,13 +2,14 @@
 # (320×568, 360×640, 412×915, paysage 915×412, tablette 800×1280), sur une grande famille inventée (celle de t137, plus 40 catégories
 # aux noms longs et un ticket de 25 articles). À chaque écran, en haut puis en bas de page, audit_affichage.js cherche :
 # contenu coupé sans défilement, texte qui sort de son bouton, élément hors de l'écran, fenêtre qui ne défile pas, bouton caché.
-# « python3 t141.py » : parcours court ; « --full » : toutes les tailles et tous les rôles ; « --shots DOSSIER » : une capture par défaut.
+# « python3 t141.py » : parcours court (3 combinaisons) ; « --all » : 15 ; « --full » : toutes les tailles et tous les rôles ; « --shots DOSSIER » : une capture par défaut.
 import sys, os, json
 HERE=os.path.dirname(os.path.abspath(__file__)); ROOT=os.path.dirname(HERE)
 sys.argv_keep=list(sys.argv)
 src=open(os.path.join(HERE,'t137.py'),encoding='utf-8').read()
 sys.argv=[sys.argv[0]]; exec(src.split("BAD=")[0]); sys.argv=sys.argv_keep
 FULL='--full' in sys.argv
+QUICK=not FULL and '--all' not in sys.argv   # par défaut (run.sh, 400 s) : 3 combinaisons ; « --all » : 15 ; « --full » : toutes
 SHOTS=sys.argv[sys.argv.index('--shots')+1] if '--shots' in sys.argv else None
 AUDIT=open(os.path.join(HERE,'audit_affichage.js'),encoding='utf-8').read()
 fails=[]
@@ -154,9 +155,12 @@ with sync_playwright() as p:
         c.close()
     sizes=[(320,568),(360,640),(412,915),(915,412),(800,1280)]
     combos=[]
+    if QUICK: sizes=[(320,568),(915,412)]
     for (w,h) in sizes: combos.append(("perso","simple","owner",w,h))
-    for (w,h) in [(320,568),(412,915)]: combos+= [("perso","detail","owner",w,h),("store","simple","owner",w,h),("perso","simple","membre",w,h)]
-    combos+=[("perso","simple","lecture",360,640),("perso","simple","enfant",360,640),("perso","simple","membre",915,412),("store","simple","owner",915,412)]
+    if QUICK: combos.append(("perso","simple","membre",360,640))
+    else:
+        for (w,h) in [(320,568),(412,915)]: combos+= [("perso","detail","owner",w,h),("store","simple","owner",w,h),("perso","simple","membre",w,h)]
+        combos+=[("perso","simple","lecture",360,640),("perso","simple","enfant",360,640),("perso","simple","membre",915,412),("store","simple","owner",915,412)]
     if FULL:
         for (w,h) in sizes:
             for ed in ["perso","store"]:
