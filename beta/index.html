@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <!-- Connexions permises (07/11, sécurité) : même si un défaut laissait passer du code, il ne pourrait rien envoyer ailleurs.
-       Le relais et les cours (Perso) ; les librairies (Tesseract, pdf.js) sont dans l'appli ; localhost:8787 = relais local des tests.
+       Le relais et les cours (Perso) ; les librairies (Tesseract, pdf.js) sont dans l'appli ; localhost = relais imité des tests (rien ne sort du téléphone).
        Toute nouvelle connexion doit être ajoutée ici (et justifiée, voir CLAUDE.md). -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:8787; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="07/11 22:14" />
+  <meta name="build" content="07/11 22:51" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -9230,7 +9230,7 @@
     function tessOpts(o){ var b=new URL("./lib/tesseract/", location.href).href; o.workerPath=b+"worker.min.js"; o.corePath=b+"core"; o.langPath=b+"lang"; return o; }
     function loadTesseract(){
       if(typeof Tesseract!=="undefined") return Promise.resolve(true);
-      if(appLocal()) return Promise.resolve(false);
+      if(appLocal() || location.protocol==="file:") return Promise.resolve(false);   // un worker ne se charge pas depuis un fichier local
       if(tessP) return tessP;
       tessP=new Promise(function(res){
         var sc=document.createElement("script"), done=false, to=setTimeout(function(){ fin(false); }, 30000);
