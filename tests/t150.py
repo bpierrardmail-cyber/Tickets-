@@ -47,7 +47,7 @@ with sync_playwright() as p:
     O.locator("#hmenu").click(); O.wait_for_timeout(400)
     O.locator('.dr-row[data-k="backup"]').click(); O.wait_for_timeout(400)
     with O.expect_download(timeout=15000) as dl: O.locator(".sheet-overlay button, .sheet-overlay .dr-row", has_text="Données seules").first.click()
-    path=os.path.join(SP, "t150_sauvegarde.json"); dl.value.save_as(path); bk=json.load(open(path, encoding="utf-8"))
+    import tempfile; path=os.path.join(tempfile.mkdtemp(), "t150_sauvegarde.json"); dl.value.save_as(path); bk=json.load(open(path, encoding="utf-8"))
     fb=bk["data"].get("fyBk") or {}
     check(fb.get("fid")==ls(O,"fyCfg")["fid"] and fb.get("v","").startswith("g1."), "la sauvegarde contient le foyer chiffré (fyBk)")
     raw=json.dumps(fb); km=[m["km"] for m in ls(O,"fyCfg")["members"].values()][0]
