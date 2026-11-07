@@ -7,7 +7,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 - **Lire `JOURNAL.md` en début de session** (état actuel, en cours, décisions) au lieu de relire les conversations. **Le tenir à jour à chaque modification, dans le même commit** : une entrée datée en haut de l'Historique, plus les sections Décisions, État actuel et En cours si elles changent.
 - Répondre **en français**, court et concret.
 - « Ne fais rien », « comment tu vois ça », « montre-moi » → donner un avis ou une maquette, **ne pas modifier l'appli**. Par défaut, montrer la proposition avant de modifier ; il dit « tu peux intégrer directement » quand il veut qu'on le fasse.
-- On travaille dans `beta/index.html`. Le `index.html` à la racine est l'ancienne version stable : ne pas y toucher sans demande.
+- On travaille dans `beta/index.html`. Le `index.html` à la racine renvoie vers la β (ancienne version retirée le 07/11).
 - Avant chaque commit, mettre à jour l'étiquette de version (heure de Paris) :
   `sed -i "s#<meta name=\"build\" content=\"[^\"]*\" />#<meta name=\"build\" content=\"$(TZ=Europe/Paris date +'%d/%m %H:%M')\" />#" beta/index.html`
 - Commits en français, préfixés « β » quand ils touchent la β, poussés directement sur `main`.
@@ -18,7 +18,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 | Chemin | Rôle |
 |---|---|
 | `beta/index.html` | **L'appli** (≈ 9 700 lignes) : HTML + CSS + JS dans un seul fichier. Servie par GitHub Pages (`/Tickets-/beta/`). |
-| `index.html`, `sw.js`, `manifest.webmanifest` | Ancienne version stable à la racine + service worker (réseau d'abord), qui sert aussi la β dans un navigateur. |
+| `index.html`, `sw.js`, `manifest.webmanifest` | Racine : renvoi vers la β (l'ancienne version stable est retirée depuis le 07/11) + service worker (réseau d'abord), qui sert la β dans un navigateur. |
 | `relais/cours-worker.js` | Worker Cloudflare : cours Yahoo / CoinGecko (`/search`, `/quote`, `/chart`, `/crypto/*`), inflation INSEE (`/inflation`) et routage `/foyer`. |
 | `relais/foyer.js` | Foyer partagé : un Durable Object SQLite par foyer (classe `Foyer`). |
 | `wrangler.jsonc` | Config du Worker ; déployé par Workers Builds à chaque push sur `main`. |
@@ -148,6 +148,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 - Invitation par QR code `TK1.<fid>.<mid>.<inv>.<km>`, sans dépendance externe (`qrMatrix`).
 - Code à 6 chiffres + empreinte obligatoires sur tous les téléphones du foyer. Code de récupération du propriétaire : 26 caractères.
 - **Espace perso d'un membre** (« Mes comptes », gratuit) : Menu › Mes comptes (`espaceAsk` → `espacePerso`) met le foyer de côté tel quel dans `fyPerso` (`{cfg, data, me}`), remet les données d'avant le foyer (`fyAvant`), retire `fyCfg` et recharge : l'appli est alors celle du membre, privée, rien n'est envoyé (pastille `#persoPill` « 🔒 Mes comptes · privé », `persoOn()`). Revenir (`espaceFoyer`, pastille ou ligne « Foyer de … ») range les données perso dans `fyAvant` et remet le foyer et `fyCfg` tels quels (`fyBase` inchangé : pas de faux changements). Une clé absente reste absente (`persoPut`). Le foyer n'est pas synchronisé pendant ce temps. Sauvegarde d'un membre : Menu › Sauvegarder · restaurer → `drvMemberSheet` (le foyer est sauvegardé par le propriétaire) → Mes comptes, où la sauvegarde Drive est celle d'un non-membre (son `driveSec`, ses données perso seules) ; le Plus du propriétaire la couvre (`plusFoyer` lit `fyPerso.cfg.plus`) ; `espaceFoyer` prépare d'abord la sauvegarde (`drvPrep`). Test t129. Case « Envoyer aussi au foyer » sur un ticket perso (`#f-tofy`, `persoSendOk` : Accueil en modification) : `persoSendTicket` copie le ticket dans `fyPerso.data.entries` (payé par le membre, `e.foyerId` = id de la copie) ; il part au retour comme un changement du membre ; décocher retire la copie.
+- **Connexions au relais** (07/11) : envoi groupé 90 s après un changement (`FY_PUSH`, tout de suite en arrière-plan), vérifications 1, 2, 5, 10 min appli ouverte (`FY_LADDER`), rien appli fermée. **Copies différentielles** : `fyPubH`, `fyDeltaOf`, `fyDeltaOn`, `PUT /snap/:id {v, base}`, membre `dv` ; copie complète au besoin. Relais : `Garde` (créations par IP et par jour), alarme d'effacement des foyers abandonnés. Tests t147, t148.
 - Retirer un membre ou changer une clé coupe son accès. Un enfant est en consultation seulement.
 
 ## Appli Android (`app-android/native`)
@@ -186,7 +187,4 @@ Le réseau étant souvent restreint dans les environnements de Claude, bloquer t
 - Avant la sortie Store :
   - QR code lisible par l'appareil photo (lien Play Store + install referrer) ;
   - offre Workers Paid ;
-  - WebSocket à la place de l'interrogation régulière ;
-  - protection contre les abus à la création de foyer ;
-  - copies différentielles ;
   - domaine propre en juridiction UE.

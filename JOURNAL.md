@@ -109,11 +109,12 @@ Après chaque modification, dans le même commit :
 - Reportés à la sortie Store :
   - paquet signé (AAB) pour la Play Console, envoyé à la main puis automatiquement depuis GitHub ;
   - QR code lisible par l'appareil photo ;
-  - Workers Paid ;
-  - WebSocket ;
-  - protection contre les abus à la création de foyer ;
-  - copies différentielles ;
-  - domaine UE.
+  - Workers Paid : seulement quand Plus rapportera (décidé le 07/11 : rester sur l'offre gratuite grâce aux envois groupés) ;
+  - ~~WebSocket~~ : abandonné le 07/11 (plus utile avec les envois groupés) ;
+  - ~~protection contre les abus à la création de foyer~~ et ~~copies différentielles~~ : faites le 07/11 ;
+  - domaine propre et foyers stockés en Europe : à faire une seule fois, vers les adresses définitives (nom Copek), au moment de la sortie Store ; l'adresse actuelle du relais (`bpierrard-mail.workers.dev`) et le nom GitHub laissent deviner l'adresse mail perso.
+- **Comptes du projet** (07/11) : nouveau compte Google dédié créé par Benoît (l'ancien, celui du projet Google Cloud `app-budget-sbpi`, est perdu : le projet Drive sera à refaire sur le nouveau compte avant la sortie Store ; les sauvegardes `drive.file` de l'ancien projet ne seront plus visibles, en refaire une) ; il change l'adresse mail de GitHub et de Cloudflare ; validation en deux étapes à activer partout (Google la refuse pour l'instant sur le compte récent).
+- **Sécurité** (07/11, demande de Benoît) : faire la carte complète de l'appli (chaque composant : rôle, données vues, qui le contrôle, risque s'il est piraté, protections) puis une liste de mesures ; risque principal repéré : le compte GitHub (la Perso charge l'appli en ligne).
 - À décider par Benoît : répartition gratuit / Plus et prix, nom de l'appli, type de compte Google Play, lien avec la banque.
 - **Lecture des tickets** : sur le vrai ticket Intermarché, ML Kit perdait encore 4 ou 5 articles (sur 31) que le texte idéal donne bien ; il faut le texte lu par le téléphone pour trouver pourquoi. « Copier la lecture » est en place (28/10) et a servi pour le ticket Intermarché (corrigé). Pour tout ticket mal lu : photo + lecture copiée.
 - **Lecture des tickets par une IA** : mise de côté le 28/10 par Benoît. Pistes étudiées : Gemini Nano dans le téléphone (API Prompt de ML Kit, photo + texte, encore en essai et seulement sur quelques téléphones récents) ; modèle libre embarqué (Gemma, 1 à 3 Go, lent) ; IA en ligne (environ 0,3 centime par ticket avec Gemini Flash-Lite, mais la photo sort du téléphone et il faut une clé payante, via le relais ou par utilisateur). Si on la reprend : option Plus « Relire avec l'IA » seulement quand le ticket ne tombe pas juste, avec accord la première fois. Gain principal attendu : les produits rangés tout seuls et des noms propres, plus que les montants.
@@ -209,6 +210,14 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 07/11
+
+- **Relais : moins de connexions, copies différentielles, protection contre les abus** (« go » de Benoît pour les points 1, 3, 4 ; but : garder l'offre gratuite de Cloudflare) :
+  - **envoi groupé** : un changement part 90 s après (`FY_PUSH`), avec tous ceux faits entre-temps, et tout de suite quand l'appli passe en arrière-plan ou avec « Mettre à jour » ;
+  - **vérifications espacées** : appli ouverte, 1 min puis 2, 5 et 10 min tant que rien n'arrive (`FY_LADDER`, `fyIdle`, `fyPlanNext`), de nouveau 1 min dès que quelque chose bouge ; plus rien appli fermée (fini l'interrogation toutes les 30 s) ; la liste des membres n'est redemandée que sur l'écran du foyer, pendant une invitation ou toutes les 15 min ;
+  - **copies différentielles** : à un membre dont l'appli sait les lire (`GET /snap?d=1` → `dv` dans `/members`), le propriétaire n'envoie que les fiches changées (`fyPubH` = empreinte de chaque fiche envoyée, `fyDeltaOf`, ordre des listes `ord`, `PUT /snap/:id {v, base}`) ; copie complète la 1re fois, après 40 différences, si la différence pèse plus de 40 % de la copie, ou si le relais répond 409 ; côté membre `fyDeltaOn` ; une fiche envoyée par le membre repart chez lui telle que retenue (`m.force`). Ancienne appli (APK Store déjà installé) : toujours des copies complètes ;
+  - **relais** (`relais/foyer.js`) : table `deltas` (60 au plus par membre, effacées par une copie complète), classe `Garde` (nouveau Durable Object, migration `v2`) qui limite la création de foyer à 5 par adresse IP (bloc /64 en IPv6, seulement une empreinte du jour) et 3 000 en tout par jour ; alarme qui efface un foyer que personne n'a rejoint après 30 jours sans activité, et tout foyer sans activité depuis 1 an ;
+  - racine : l'ancienne version stable est remplacée par un renvoi vers la β (elle partageait les mêmes données) ; `manifest.webmanifest` démarre sur `beta/` ;
+  - tests t147 (relais seul) et t148 (3 téléphones : différences, ancienne appli, envoi groupé, aucune requête en 50 s appli ouverte sans rien faire) ; dans les tests, `horloge.py` met le délai d'envoi à 1,5 s (`window.__fyPush`).
 
 - **Mouvements internes reliés** (demande de Benoît : « un lien si un mouvement interne est fait entre comptes, épargne, bourse, provisions, factures… ») :
   - **Virement relié** (section `// ---------- Virements reliés`) : champ « Vers / Depuis » (`virLinkOpts`) dans le virement reçu / envoyé et sa modification : un autre compte (`v.vers = "cpt:<clé>"`), un livret (`epargneId`, comme avant) ou un compte de la Bourse en Perso (`bourseId` : reste à investir et capital, `applyBourse`, `bApplied`). Compte → compte : `virLinkSync` (téléphone du propriétaire, dans `renderView`) crée la ligne d'en face (`pairOf`), montant opposé, même mois, même « fait » (`toggleVirementDone` passe par l'original, `virSrcOf`), modifier / supprimer agit sur les deux ; une opération déjà là en face (même mois, montant opposé, non reliée) est reprise (`pairAdopt`, elle reste si on délie). Séries « chaque mois » et « Reprendre » gardent le lien (les lignes d'en face ne sont pas reprises). Toucher un virement : « 🔗 Relier à un compte » et « 🗑 Supprimer » (il n'y avait plus de moyen de supprimer un virement simple depuis Opérations).

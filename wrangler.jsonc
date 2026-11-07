@@ -7,7 +7,8 @@
   "workers_dev": true,
   // Foyer partagé : un Durable Object par foyer, stockage SQLite (offre gratuite)
   "durable_objects": {
-    "bindings": [{ "name": "FOYER", "class_name": "Foyer" }]
+    "bindings": [{ "name": "FOYER", "class_name": "Foyer" }, { "name": "GARDE", "class_name": "Garde" }]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Foyer"] }]
+  // v2 (07/11) : Garde compte les créations de foyer par jour (contre les abus)
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Foyer"] }, { "tag": "v2", "new_sqlite_classes": ["Garde"] }]
 }

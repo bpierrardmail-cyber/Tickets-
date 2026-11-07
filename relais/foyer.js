@@ -19,8 +19,11 @@
 //   PUT    /foyer/member/:id      { role, inv, exp } propriétaire  nouvelle invitation (à usage unique, limitée dans le temps)
 //   PATCH  /foyer/member/:id      { role }       propriétaire  change les droits
 //   DELETE /foyer/member/:id                     propriétaire  retire le membre (accès, copie et envois effacés)
-//   PUT    /foyer/snap/:id        { v }          propriétaire  copie chiffrée du membre
+//   PUT    /foyer/snap/:id        { v }          propriétaire  copie chiffrée complète du membre (efface ses différences)
+//   PUT    /foyer/snap/:id        { v, base }    propriétaire  différence depuis la copie ou la différence « base » (409 si ce n'est pas la dernière)
 //   GET    /foyer/snap?since=t                   membre        sa copie (204 si rien de neuf)
+//   GET    /foyer/snap?since=t&d=1               membre        ses différences après t, ou la copie complète + ses différences
+//                                                              (d=1 dit au propriétaire que ce téléphone sait les lire : « dv » dans /members)
 //   POST   /foyer/inbox           { v }          membre « modification » : envoie des changements
 //   GET    /foyer/inbox                          propriétaire  changements reçus
 //   POST   /foyer/inbox/ack       { upto }       propriétaire  changements traités
@@ -28,6 +31,9 @@
 //   GET    /foyer/blob/full                      propriétaire
 //   POST   /foyer/leave                          membre        quitte le foyer
 //   DELETE /foyer                                propriétaire  arrête le partage (tout est effacé)
+//
+// Contre les abus (07/11) : création de foyer limitée par adresse IP et par jour (classe Garde) ;
+// un foyer que personne n'a rejoint et que personne n'a touché depuis 30 jours est effacé, tout foyer inactif depuis 1 an aussi (alarme).
 
 const FCORS = {
   "Access-Control-Allow-Origin": "*",
@@ -46,6 +52,13 @@ const MAX_TOTAL = 40 * 1024 * 1024;  // tout le foyer
 const MAX_MEMBERS = 20;
 const MAX_INBOX = 400;               // envois en attente par membre
 const INVITE_MAX = 30 * 60 * 1000;   // une invitation dure 30 min au plus
+const MAX_DELTA = 2 * 1024 * 1024;   // une différence
+const MAX_DELTAS = 60;               // différences gardées par membre (ensuite le propriétaire renvoie la copie complète)
+const DAY = 86400000;
+const PURGE_EMPTY = 30 * DAY;        // foyer que personne n'a rejoint, sans activité
+const PURGE_IDLE = 365 * DAY;        // foyer sans aucune activité
+const CREATE_PER_IP = 5;             // créations de foyer par adresse IP et par jour
+const CREATE_ALL = 3000;             // créations de foyer par jour, en tout
 
 function fjson(obj, status) {
   return new Response(JSON.stringify(obj), {
@@ -80,6 +93,17 @@ export async function handleFoyer(request, env) {
     if (!fid && body && typeof body.fid === "string") fid = body.fid;
   }
   if (!RE_FID.test(fid)) return fjson({ error: "foyer" }, 400);
+  if (request.method === "POST" && url.pathname.replace(/\/+$/, "") === "/foyer/create" && env.GARDE) {
+    // l'adresse IP n'est pas gardée : seulement son empreinte du jour (pour IPv6, le bloc /64 d'une box)
+    let ip = request.headers.get("CF-Connecting-IP") || "";   // toujours là chez Cloudflare ; absent seulement sur le banc d'essai local
+    if (ip.includes(":")) ip = ip.split(":").slice(0, 4).join(":");
+    const day = new Date().toISOString().slice(0, 10);
+    if (ip) {
+    const g = env.GARDE.get(env.GARDE.idFromName("creations"));
+    const r = await g.fetch("https://garde/hit", { method: "POST", body: JSON.stringify({ k: await sha(day + "|" + ip), day }) });
+    if (r.status === 429) return fjson({ error: "limite" }, 429);
+    }
+  }
   const stub = env.FOYER.get(env.FOYER.idFromName(fid));
   return stub.fetch("https://foyer/" + url.pathname.replace(/^\/foyer\/?/, "") + url.search, {
     method: request.method,
@@ -96,6 +120,8 @@ export class Foyer {
     this.sql.exec(`CREATE TABLE IF NOT EXISTS members (id TEXT PRIMARY KEY, role TEXT, tok TEXT, inv TEXT, exp INTEGER, joined INTEGER, seen INTEGER, created INTEGER)`);
     this.sql.exec(`CREATE TABLE IF NOT EXISTS blobs (name TEXT, part INTEGER, v TEXT, t INTEGER, PRIMARY KEY (name, part))`);
     this.sql.exec(`CREATE TABLE IF NOT EXISTS inbox (seq INTEGER PRIMARY KEY AUTOINCREMENT, mid TEXT, v TEXT, t INTEGER)`);
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS deltas (mid TEXT, t INTEGER, v TEXT, PRIMARY KEY (mid, t))`);
+    try { this.sql.exec(`ALTER TABLE members ADD COLUMN dv INTEGER`); } catch (e) { /* déjà là */ }
   }
 
   meta(k) { const r = this.sql.exec("SELECT v FROM meta WHERE k = ?", k).toArray(); return r.length ? r[0].v : null; }
@@ -107,12 +133,22 @@ export class Foyer {
     if (!rows.length) return null;
     return { v: rows.map(r => r.v).join(""), t: rows[0].t };
   }
+  used(name) {
+    return this.sql.exec("SELECT COALESCE(SUM(LENGTH(v)), 0) AS n FROM blobs WHERE name != ?", name).one().n +
+      this.sql.exec("SELECT COALESCE(SUM(LENGTH(v)), 0) AS n FROM deltas WHERE ? NOT LIKE 'snap:' || mid", name).one().n;
+  }
+  lastT(mid) {
+    const d = this.sql.exec("SELECT MAX(t) AS t FROM deltas WHERE mid = ?", mid).one().t;
+    if (d) return d;
+    const f = this.sql.exec("SELECT t FROM blobs WHERE name = ? AND part = 0", "snap:" + mid).toArray();
+    return f.length ? f[0].t : null;
+  }
   putBlob(name, v) {
     if (typeof v !== "string" || !v || v.length > MAX_BLOB) return "taille";
-    const used = this.sql.exec("SELECT COALESCE(SUM(LENGTH(v)), 0) AS n FROM blobs WHERE name != ?", name).one().n;
-    if (used + v.length > MAX_TOTAL) return "plein";
+    if (this.used(name) + v.length > MAX_TOTAL) return "plein";
     const t = Date.now();
     this.ctx.storage.transactionSync(() => {
+      if (name.startsWith("snap:")) this.sql.exec("DELETE FROM deltas WHERE mid = ?", name.slice(5));   // copie complète : les différences ne servent plus
       this.sql.exec("DELETE FROM blobs WHERE name = ?", name);
       for (let i = 0, p = 0; i < v.length; i += CHUNK, p++) this.sql.exec("INSERT INTO blobs (name, part, v, t) VALUES (?, ?, ?, ?)", name, p, v.slice(i, i + CHUNK), t);
     });
@@ -123,7 +159,32 @@ export class Foyer {
       this.sql.exec("DELETE FROM members WHERE id = ?", id);
       this.sql.exec("DELETE FROM blobs WHERE name = ?", "snap:" + id);
       this.sql.exec("DELETE FROM inbox WHERE mid = ?", id);
+      this.sql.exec("DELETE FROM deltas WHERE mid = ?", id);
     });
+  }
+  /** Activité (au plus une écriture par jour) et prochaine vérification d'effacement. */
+  touch(now) {
+    const a = Number(this.meta("act") || 0);
+    if (now - a < DAY) return;
+    this.setMeta("act", now);
+    this.plan(now);
+  }
+  plan(now) {
+    try { if (this.ctx.storage.setAlarm) this.ctx.storage.setAlarm(now + PURGE_EMPTY + DAY); } catch (e) { /* pas d'alarme ici */ }
+  }
+  wipe() {
+    this.ctx.storage.transactionSync(() => {
+      ["inbox", "blobs", "members", "meta", "deltas"].forEach(t => this.sql.exec("DELETE FROM " + t));
+    });
+    try { if (this.ctx.storage.deleteAlarm) this.ctx.storage.deleteAlarm(); } catch (e) { /* rien */ }
+  }
+  /** Alarme : efface un foyer abandonné (personne ne l'a rejoint et rien depuis 30 jours, ou rien depuis 1 an). */
+  async alarm() {
+    if (!this.meta("otok")) return;
+    const now = Date.now(), act = Number(this.meta("act") || this.meta("created") || 0);
+    const joined = this.sql.exec("SELECT COUNT(*) AS n FROM members WHERE joined IS NOT NULL").one().n;
+    if ((!joined && now - act > PURGE_EMPTY) || now - act > PURGE_IDLE) { this.wipe(); return; }
+    try { this.ctx.storage.setAlarm(act + (joined ? PURGE_IDLE : PURGE_EMPTY) + DAY); } catch (e) { /* rien */ }
   }
 
   /** Qui appelle ? { owner:true } ou { member } ; null si le jeton ne va pas ; "gone" si le foyer ou le membre n'existe plus. */
@@ -133,11 +194,12 @@ export class Foyer {
     const otok = this.meta("otok");
     if (!otok) return "gone";
     const h = await sha(a[3]);
-    if (a[2] === "o") return h === otok ? { owner: true } : null;
+    const now = Date.now();
+    if (a[2] === "o") { if (h !== otok) return null; this.touch(now); return { owner: true }; }
     const m = this.member(a[2]);
     if (!m || !m.tok) return "gone";
     if (m.tok !== h) return null;
-    const now = Date.now();
+    this.touch(now);
     if (!m.seen || now - m.seen > 60000) this.sql.exec("UPDATE members SET seen = ? WHERE id = ?", now, m.id);
     return { member: m };
   }
@@ -160,7 +222,7 @@ export class Foyer {
       if (!RE_HASH.test(body.otok || "")) return fjson({ error: "jeton" }, 400);
       const cur = this.meta("otok");
       if (cur && cur !== body.otok) return fjson({ error: "existe" }, 409);
-      if (!cur) { this.setMeta("otok", body.otok); this.setMeta("created", now); }
+      if (!cur) { this.setMeta("otok", body.otok); this.setMeta("created", now); this.setMeta("act", now); this.plan(now); }
       return fjson({ ok: true, now });
     }
     if (method === "POST" && path === "join") {
@@ -182,12 +244,17 @@ export class Foyer {
     if (w.member) {
       const m = w.member;
       if (method === "GET" && path === "snap") {
-        const since = Number(url.searchParams.get("since") || 0);
+        const since = Number(url.searchParams.get("since") || 0), dv = url.searchParams.get("d") === "1";
+        if (dv && !m.dv) this.sql.exec("UPDATE members SET dv = 1 WHERE id = ?", m.id);
         const t = this.sql.exec("SELECT t FROM blobs WHERE name = ? AND part = 0", "snap:" + m.id).toArray();
         if (!t.length) return fjson({ none: true, now });
-        if (since && t[0].t === since) return new Response(null, { status: 204, headers: { ...FCORS, "Cache-Control": "no-store" } });
+        const full = t[0].t, last = this.lastT(m.id);
+        if (since && since === (dv ? last : full)) return new Response(null, { status: 204, headers: { ...FCORS, "Cache-Control": "no-store" } });
+        const ds = dv ? this.sql.exec("SELECT t, v FROM deltas WHERE mid = ? ORDER BY t", m.id).toArray() : [];
+        // le téléphone a déjà la copie complète ou une des différences : seulement la suite
+        if (dv && since && (since === full || ds.some(d => d.t === since))) return fjson({ deltas: ds.filter(d => d.t > since), t: last, now });
         const b = this.getBlob("snap:" + m.id);
-        return fjson({ v: b.v, t: b.t, now });
+        return fjson({ v: b.v, t: b.t, deltas: dv ? ds : undefined, last: dv ? last : undefined, now });
       }
       if (method === "POST" && path === "inbox") {
         if (m.role !== "edit") return fjson({ error: "consultation" }, 403);
@@ -203,11 +270,9 @@ export class Foyer {
 
     // ----- propriétaire -----
     if (method === "GET" && path === "members") {
-      const rows = this.sql.exec("SELECT id, role, tok IS NOT NULL AS joined_ok, exp, joined, seen, created FROM members ORDER BY created").toArray();
-      const snaps = {};
-      this.sql.exec("SELECT name, t FROM blobs WHERE part = 0 AND name LIKE 'snap:%'").toArray().forEach(r => { snaps[r.name.slice(5)] = r.t; });
+      const rows = this.sql.exec("SELECT id, role, tok IS NOT NULL AS joined_ok, exp, joined, seen, created, dv FROM members ORDER BY created").toArray();
       return fjson({
-        members: rows.map(r => ({ id: r.id, role: r.role, joined: r.joined_ok ? r.joined : null, pending: !r.joined_ok, exp: r.exp, seen: r.seen, snapT: snaps[r.id] || null })),
+        members: rows.map(r => ({ id: r.id, role: r.role, joined: r.joined_ok ? r.joined : null, pending: !r.joined_ok, exp: r.exp, seen: r.seen, snapT: this.lastT(r.id), dv: r.dv ? 1 : 0 })),
         now,
       });
     }
@@ -237,8 +302,21 @@ export class Foyer {
       if (method === "DELETE") { this.dropMember(id); return fjson({ ok: true, now }); }
     }
     if (parts[0] === "snap" && RE_MID.test(parts[1] || "") && method === "PUT") {
-      if (!this.member(parts[1])) return fjson({ error: "inconnu" }, 404);
-      const t = this.putBlob("snap:" + parts[1], body.v);
+      const mid = parts[1];
+      if (!this.member(mid)) return fjson({ error: "inconnu" }, 404);
+      if (body.base != null) {
+        // une différence : elle suit forcément la dernière chose envoyée à ce membre
+        const last = this.lastT(mid);
+        if (!last || Number(body.base) !== last) return fjson({ error: "base", last }, 409);
+        if (typeof body.v !== "string" || !body.v || body.v.length > MAX_DELTA) return fjson({ error: "taille" }, 413);
+        const n = this.sql.exec("SELECT COUNT(*) AS n FROM deltas WHERE mid = ?", mid).one().n;
+        if (n >= MAX_DELTAS) return fjson({ error: "trop" }, 409);
+        if (this.used("") + body.v.length > MAX_TOTAL) return fjson({ error: "plein" }, 413);
+        const t = Math.max(now, last + 1);
+        this.sql.exec("INSERT INTO deltas (mid, t, v) VALUES (?, ?, ?)", mid, t, body.v);
+        return fjson({ ok: true, t, now });
+      }
+      const t = this.putBlob("snap:" + mid, body.v);
       if (typeof t === "string") return fjson({ error: t }, 413);
       return fjson({ ok: true, t, now });
     }
@@ -263,11 +341,27 @@ export class Foyer {
       }
     }
     if (method === "DELETE" && path === "") {
-      this.ctx.storage.transactionSync(() => {
-        ["inbox", "blobs", "members", "meta"].forEach(t => this.sql.exec("DELETE FROM " + t));
-      });
+      this.wipe();
       return fjson({ ok: true, now });
     }
     return fjson({ error: "inconnu" }, 404);
+  }
+}
+
+/** Garde : compte les créations de foyer du jour (par empreinte d'adresse IP, et en tout). Une seule instance, peu sollicitée. */
+export class Garde {
+  constructor(ctx, env) {
+    this.ctx = ctx;
+    this.sql = ctx.storage.sql;
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS hits (k TEXT PRIMARY KEY, day TEXT, n INTEGER)`);
+  }
+  async fetch(request) {
+    const b = await request.json().catch(() => ({}));
+    const day = String(b.day || ""), k = String(b.k || "");
+    this.sql.exec("DELETE FROM hits WHERE day != ?", day);   // seulement le jour en cours
+    const get = key => { const r = this.sql.exec("SELECT n FROM hits WHERE k = ?", key).toArray(); return r.length ? r[0].n : 0; };
+    if (get(k) >= CREATE_PER_IP || get("*") >= CREATE_ALL) return new Response("limite", { status: 429 });
+    [k, "*"].forEach(key => this.sql.exec("INSERT INTO hits (k, day, n) VALUES (?, ?, 1) ON CONFLICT(k) DO UPDATE SET n = n + 1", key, day));
+    return new Response("ok");
   }
 }

@@ -12,8 +12,8 @@
 //
 // /foyer/* : foyer partagé (voir foyer.js) — copies chiffrées sur les téléphones, illisibles ici.
 
-import { Foyer, handleFoyer } from "./foyer.js";
-export { Foyer };
+import { Foyer, Garde, handleFoyer } from "./foyer.js";
+export { Foyer, Garde };
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",

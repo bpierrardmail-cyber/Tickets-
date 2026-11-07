@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="07/11 14:22" />
+  <meta name="build" content="07/11 18:58" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -12019,7 +12019,10 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       }
       fyRawWrite(k, v);
     };
-    function fyFlush(){ var ks=Object.keys(fyDirty); fyDirty={}; if(ks.length && fyDetect(ks)) fySyncSoon(1500); }
+    // Envoi groupé (07/11, pour ménager le relais) : un changement part 90 s après, avec tous ceux faits entre-temps,
+    // et tout de suite quand l'appli passe en arrière-plan ou avec « Mettre à jour ».
+    var FY_PUSH=(window.__fyPush>0) ? window.__fyPush : 90000, fyDirtyAt=0;   // __fyPush : délai plus court dans les tests (horloge.py)
+    function fyFlush(){ var ks=Object.keys(fyDirty); fyDirty={}; if(ks.length && fyDetect(ks)){ if(!fyDirtyAt) fyDirtyAt=Date.now(); fyIdle=0; fySyncSoon(FY_PUSH, true); } }
     // Relit les données en mémoire après une mise à jour reçue du foyer
     function fyReloadVars(){
       state.entries=store.read("entries", []);
@@ -12118,6 +12121,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       (recs||[]).forEach(function(r){
         if(!r || typeof r.p!=="string") return;
         var k=r.p.split(FY_SEP)[0]; if(!FY_KEYS.hasOwnProperty(k)) return;
+        m.force=m.force||{}; m.force[r.p]=1;   // copie différentielle : la valeur retenue repart chez lui, même si son changement est refusé
         var t=Number(r.t)||0; if(t>now+5*60000) t=now;   // horloge du membre très en avance : ramenée à maintenant
         if(t<=(fyMt[r.p]||0)) return;                      // modifié plus récemment ici : on garde
         (byKey[k]=byKey[k]||{})[r.p]={ x:r.d?null:r.x, d:!!r.d, t:t };
@@ -12145,7 +12149,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       return fyCall("GET","/inbox").then(function(r){
         if(r.status===410) throw fyGone("foyer");
         if(r.status!==200) throw new Error("relais "+r.status);
-        var items=r.j.items||[]; if(!items.length || fyBusyUI()) return;
+        var items=r.j.items||[]; if(items.length) fyNew=true; if(!items.length || fyBusyUI()) return;
         var maxSeq=0, chain=Promise.resolve();
         items.forEach(function(it){ chain=chain.then(function(){
           maxSeq=Math.max(maxSeq, it.seq);
@@ -12156,9 +12160,14 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
         return chain.then(function(){ fySave(); return fyCall("POST","/inbox/ack",{ upto:maxSeq }); });
       }).then(function(){
         if(applied){ fyReloadVars(); render(); }
+        // la liste des membres : seulement sur l'écran du foyer, pendant une invitation, ou toutes les 15 min (moins de requêtes)
+        var pend=Object.keys(C.members||{}).some(function(id){ return !C.members[id].joinedOnce; });
+        var nodv=Object.keys(C.members||{}).some(function(id){ return !(C.srv && C.srv[id] && C.srv[id].dv); });   // pas encore dit s'il lit les différences : revu toutes les 3 min
+        if(fyMembersSeen && state.view!=="foyer" && !pend && C.srvAt && Date.now()-C.srvAt<(nodv ? 180000 : 900000)) return null;   // toujours une fois à l'ouverture
+        fyMembersSeen=true;
         return fyCall("GET","/members");
       }).then(function(r){
-        if(r && r.status===200){ var srv={}; (r.j.members||[]).forEach(function(x){ srv[x.id]=x; }); C.srv=srv;
+        if(r && r.status===200){ C.srvAt=Date.now(); var srv={}; (r.j.members||[]).forEach(function(x){ srv[x.id]=x; }); C.srv=srv;
           // un membre a quitté le foyer de lui-même : on l'oublie ici aussi
           Object.keys(C.members||{}).forEach(function(id){ if(!srv[id] && C.members[id].joinedOnce){ delete C.members[id]; } else if(srv[id] && !srv[id].pending) C.members[id].joinedOnce=1; });
         }
@@ -12166,17 +12175,53 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       }).then(function(){ return fyBackupFull(); });
     }
     function fySnapPayload(m){ return { v:1, plus:plusOwn(), owner:mePerson(), me:m.name, role:m.role, tabs:m.tabs||null, ed:fyEdTabs(m), accts:m.accts==null?null:m.accts, tk:m.tk||"own", ack:m.ack||0, keys:fyFilter(m) }; }
+    // Copies différentielles (07/11) : à un membre dont l'appli sait les lire (« dv », dit par le relais), seulement les fiches changées
+    // depuis la dernière copie ({ d:1, recs, ord }) ; copie complète la première fois, après 40 différences, si la différence pèse plus
+    // de la moitié de la copie, ou si le relais ne suit plus (409). fyPubH (sur ce téléphone) : { membre: { h: {chemin: empreinte}, t, n, fs } }.
+    var fyPubH=store.read("fyPubH", {}) || {};
+    var FY_META=["v","plus","owner","me","role","tabs","ed","accts","tk","ack"];
+    function fyFlatAll(keys){ var out={}; Object.keys(FY_KEYS).forEach(function(k){ var f=fyFlat(k, (keys && keys.hasOwnProperty(k)) ? keys[k] : fyDefault(k)); for(var p in f) out[p]=f[p]; }); return out; }
+    function fyDeltaOf(P, flat, H, force){
+      var recs=[], ord=[];
+      Object.keys(H).forEach(function(p){ if(P.h[p]!==H[p] || (force && force[p])) recs.push({ p:p, x:flat[p] }); });
+      Object.keys(P.h).forEach(function(p){ if(!(p in H)) recs.push({ p:p, d:1 }); });
+      Object.keys(force||{}).forEach(function(p){ if(!(p in H) && !(p in P.h)) recs.push({ p:p, d:1 }); });
+      // listes : l'ordre attendu chez le membre (anciennes fiches gardées, nouvelles à la fin) ; s'il diffère, on envoie l'ordre
+      Object.keys(FY_KEYS).forEach(function(k){ if(typeof FY_KEYS[k]!=="string") return;
+        var pre=k+FY_SEP, now=Object.keys(H).filter(function(p){ return p.indexOf(pre)===0; }), seen={};
+        var exp=Object.keys(P.h).filter(function(p){ if(p.indexOf(pre)===0 && (p in H)){ seen[p]=1; return true; } return false; });
+        now.forEach(function(p){ if(!seen[p]) exp.push(p); });
+        if(exp.join("\n")!==now.join("\n")) ord.push({ k:k, o:now });
+      });
+      return { recs:recs, ord:ord };
+    }
     function fyPublishAll(force){
       var C=fyCfg, chain=Promise.resolve();
+      Object.keys(fyPubH).forEach(function(id){ if(!(C.members||{})[id]) delete fyPubH[id]; });
       Object.keys(C.members||{}).forEach(function(id){ chain=chain.then(function(){
         var m=C.members[id]; if(!m || !m.km || (!force && fyPubVer[id]===fyVer && m.pl===plusOwn())) return;
         var payload=fySnapPayload(m), h=fyHash(JSON.stringify(payload)), ver=fyVer;
-        if(h===m.sh && !force){ fyPubVer[id]=ver; return; }
-        payload.t=fyNow();
-        return fySeal(m.km, payload).then(function(v){ return fyCall("PUT","/snap/"+id,{ v:v }); }).then(function(r){
-          if(r.status===200){ m.sh=h; m.snapT=r.j.t; m.pl=payload.plus; fyPubVer[id]=ver; fySave(); }
-          else console.warn("foyer : copie de "+m.name+" non envoyée ("+r.status+")");
-        });
+        if(h===m.sh && !force && !m.force){ fyPubVer[id]=ver; return; }
+        var flat=fyFlatAll(payload.keys), H={}; Object.keys(flat).forEach(function(p){ H[p]=fyHash(JSON.stringify(flat[p])); });
+        function done(r, P){ m.sh=h; m.snapT=r.j.t; m.pl=payload.plus; delete m.force; fyPubVer[id]=ver; fyPubH[id]=P; fyRawWrite("fyPubH", fyPubH); fySave(); }
+        function full(){
+          payload.t=fyNow();
+          return fySeal(m.km, payload).then(function(v){ return fyCall("PUT","/snap/"+id,{ v:v }).then(function(r){
+            if(r.status===200) done(r, { h:H, t:r.j.t, n:0, fs:v.length });
+            else console.warn("foyer : copie de "+m.name+" non envoyée ("+r.status+")");
+          }); });
+        }
+        var P=fyPubH[id], srv=C.srv && C.srv[id];
+        if(force || !P || !P.t || !P.h || !srv || !srv.dv || (P.n||0)>=40) return full();
+        var D=fyDeltaOf(P, flat, H, m.force), dp={ d:1, recs:D.recs, ord:D.ord, t:fyNow() };
+        FY_META.forEach(function(f){ dp[f]=payload[f]; });
+        var size=JSON.stringify(dp).length;
+        if(P.fs && size>P.fs*0.4) return full();
+        return fySeal(m.km, dp).then(function(v){ return fyCall("PUT","/snap/"+id,{ v:v, base:P.t }).then(function(r){
+          if(r.status===200) done(r, { h:H, t:r.j.t, n:(P.n||0)+1, fs:P.fs });
+          else if(r.status===409) return full();   // le relais ne suit plus (copie effacée, trop de différences) : copie complète
+          else console.warn("foyer : différence pour "+m.name+" non envoyée ("+r.status+")");
+        }); });
       }); });
       return chain;
     }
@@ -12194,12 +12239,17 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
     function fyMemberSync(){
       var C=fyCfg;
       if(fyHeldSnap && !fyBusyUI()){ var s0=fyHeldSnap; fyHeldSnap=null; fyApplySnap(s0); }
-      return fyPushPending().then(function(){ return fyCall("GET","/snap"+(C.snapT?"?since="+C.snapT:"")); }).then(function(r){
+      return fyPushPending().then(function(){ return fyCall("GET","/snap?d=1"+(C.snapT?"&since="+C.snapT:"")); }).then(function(r){
         if(r.status===410) throw fyGone("removed");
         if(r.status===401) throw fyGone("auth");
         if(r.status===204 || r.j.none) return;
         if(r.status!==200) throw new Error("relais "+r.status);
-        return fyOpen(C.km, r.j.v).then(function(s){ s.t=r.j.t; fyApplySnap(s); });
+        fyNew=true;
+        var ds=r.j.deltas||[], opened=[], chain=Promise.resolve();
+        ds.forEach(function(d){ chain=chain.then(function(){ return fyOpen(C.km, d.v).then(function(x){ opened.push(x); }); }); });
+        chain=chain.catch(function(e){ C.snapT=null; fySave(); throw e; });   // une différence illisible : on redemandera tout
+        if(!r.j.v) return chain.then(function(){ fyApplySnap({ delta:opened, t:r.j.t }); });
+        return fyOpen(C.km, r.j.v).then(function(s){ return chain.then(function(){ opened.forEach(function(d){ fyDeltaOn(s, d); }); s.t=r.j.last||r.j.t; fyApplySnap(s); }); });
       });
     }
     function fyPushPending(){
@@ -12222,9 +12272,28 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       }); });
       return chain;
     }
+    // Une différence reçue, appliquée sur une copie { keys, meta } : fiches remplacées ou retirées, puis l'ordre des listes
+    function fyDeltaOn(s, d){
+      s.keys=s.keys||{};
+      var by={}; (d.recs||[]).forEach(function(r){ var k=r.p.split(FY_SEP)[0]; if(!FY_KEYS.hasOwnProperty(k)) return; (by[k]=by[k]||{})[r.p]={ x:r.d?null:r.x, d:!!r.d }; });
+      Object.keys(by).forEach(function(k){ s.keys[k]=fyPatch(k, s.keys.hasOwnProperty(k) ? s.keys[k] : fyDefault(k), by[k]); });
+      (d.ord||[]).forEach(function(o){ if(typeof FY_KEYS[o.k]!=="string") return;
+        var arr=Array.isArray(s.keys[o.k]) ? s.keys[o.k] : [], at={}, used={}, out=[];
+        arr.forEach(function(x){ at[o.k+FY_SEP+fyIdOf(o.k, x)]=x; });
+        (o.o||[]).forEach(function(p){ if(p in at && !used[p]){ used[p]=1; out.push(at[p]); } });
+        arr.forEach(function(x){ var p=o.k+FY_SEP+fyIdOf(o.k, x); if(!used[p]){ used[p]=1; out.push(x); } });
+        s.keys[o.k]=out; });
+      FY_META.forEach(function(f){ if(d.hasOwnProperty(f)) s[f]=d[f]; });
+    }
     function fyApplySnap(snap){
       if(fyBusyUI()){ fyHeldSnap=snap; return; }   // une fenêtre est ouverte : on attend qu'elle soit fermée
       var C=fyCfg; if(!C) return;
+      if(snap.delta){   // seulement des différences : elles s'appliquent sur ce qu'il y a déjà sur ce téléphone
+        var s2={ keys:{}, t:snap.t, plus:C.plus, owner:C.owner, me:C.me, role:C.role, tabs:C.tabs, ed:C.ed, accts:C.accts, tk:C.tk, ack:0 };
+        Object.keys(FY_KEYS).forEach(function(k){ s2.keys[k]=store.read(k, fyDefault(k)); });
+        snap.delta.forEach(function(d){ fyDeltaOn(s2, d); });
+        snap=s2;
+      }
       Object.keys(fyPend).forEach(function(p){ var e=fyPend[p]; if(e.s && e.s<=(snap.ack||0)) delete fyPend[p]; });   // traité par le propriétaire
       if(snap.role!=="edit") fyPend={};
       var byKey={}; Object.keys(fyPend).forEach(function(p){ var k=p.split(FY_SEP)[0]; (byKey[k]=byKey[k]||{})[p]=fyPend[p]; });
@@ -12319,15 +12388,20 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       if(reload!==false) location.reload();
     }
     // ----- synchronisation -----
-    var fySyncT=null, fySyncing=false, fyAgain=false, fyLastErr=null;
+    // Vérifications espacées (07/11) : appli ouverte, 1 min, puis 2, 5 et 10 min tant que rien n'arrive (de nouveau 1 min dès que quelque chose bouge) ;
+    // rien quand l'appli est fermée ou en arrière-plan. fySyncSoon garde le rendez-vous le plus proche.
+    var FY_LADDER=[60000, 120000, 300000, 600000], fyIdle=0, fyNew=false, fyLastAt=0, fyMembersSeen=false;
+    var fySyncT=null, fySyncDue=0, fySyncing=false, fyAgain=false, fyLastErr=null;
     function fySave(){ if(fyCfg) fyRawWrite("fyCfg", fyCfg); }
-    function fySyncSoon(ms){ clearTimeout(fySyncT); fySyncT=setTimeout(fySync, ms||0); }
+    function fySyncSoon(ms, keep){ ms=ms||0; var due=Date.now()+ms; if(fySyncT && keep!==false && fySyncDue && fySyncDue<=due) return; clearTimeout(fySyncT); fySyncDue=due; fySyncT=setTimeout(function(){ fySyncT=null; fySyncDue=0; if(!document.hidden) fySync(); }, ms); }
+    function fyPlanNext(){ if(!fyCfg || document.hidden) return; if(fyDirtyAt) return; clearTimeout(fySyncT); fySyncT=null; fySyncSoon(FY_LADDER[Math.min(fyIdle, FY_LADDER.length-1)]); }
     function fySync(){
       if(DEMO){ if(fyCfg){ fyCfg.lastOk=Date.now(); fyLastErr=null; } return Promise.resolve(); }
       if(!fyCfg || !fyCfg.tok) return Promise.resolve();
       if(fySyncing){ fyAgain=true; return Promise.resolve(); }
-      fySyncing=true;
+      fySyncing=true; fyNew=false; fyLastAt=Date.now();
       if(Object.keys(fyDirty).length){ clearTimeout(fyDetT); fyFlush(); }
+      fyDirtyAt=0; clearTimeout(fySyncT); fySyncT=null; fySyncDue=0;
       var p=(fyCfg.role==="owner") ? fyOwnerSync() : fyMemberSync();
       return p.then(function(){ if(fyCfg){ fyCfg.lastOk=Date.now(); fyCfg.err=null; } fyLastErr=null; }).catch(function(e){
         if(e && e.fyGone) return fyHandleGone(e.fyGone);
@@ -12335,7 +12409,8 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       }).then(function(){
         fySyncing=false; fySave();
         if(state.view==="foyer" && !fyBusyUI()) render();
-        if(fyAgain){ fyAgain=false; fySyncSoon(1000); }
+        fyIdle=fyNew ? 0 : fyIdle+1;
+        if(fyAgain){ fyAgain=false; fySyncSoon(1000); } else fyPlanNext();
       });
     }
     function fyAgo(t){ if(!t) return "jamais"; var s=Math.round((Date.now()-t)/1000); if(s<60) return "à l'instant"; if(s<3600) return "il y a "+Math.round(s/60)+" min"; if(s<86400) return "il y a "+Math.round(s/3600)+" h"; return "le "+new Date(t).toLocaleDateString("fr-FR"); }
@@ -12485,6 +12560,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
         var ds=store.read("driveSec", null), sec=ds ? fyUnb64u(ds) : randBytes(16);   // même code que la sauvegarde Drive
         fyFromSecret(sec).then(function(o){
           return fySha(o.tok).then(function(hh){ return fyCall("POST","/create",{ fid:o.fid, otok:hh }, true); }).then(function(r){
+            if(r.status===429) throw new Error("trop de foyers créés aujourd'hui depuis ce réseau, réessaie demain");
             if(r.status!==200) throw new Error(r.j.error||("relais "+r.status));
             fyCfg={ role:"owner", fid:o.fid, tok:o.tok, key:o.key, sec:fyB64u(sec), members:{}, created:Date.now(), lastOk:Date.now() };
             fySave(); fyMt={}; fyRawWrite("fyMt", fyMt); fyResetBase();
@@ -12634,7 +12710,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       uiConfirm("Arrêter le partage ?<br>Le foyer est effacé du relais ; les membres perdent l'accès et les données du foyer disparaissent de leurs téléphones. Tes données restent sur ton téléphone.", function(){
         fyCall("DELETE","").then(function(r){
           if(r.status!==200 && r.status!==410) throw new Error();
-          ["fyCfg","fyBase","fyMt","fyPend"].forEach(function(k){ try{ store.remove(k); }catch(e){} });
+          ["fyCfg","fyBase","fyMt","fyPend","fyPubH"].forEach(function(k){ try{ store.remove(k); }catch(e){} }); fyPubH={};
           fyCfg=null; fyBase={}; fyMt={}; fyPend={}; fyApplyMode(); render(); uiToast("Partage arrêté");
         }).catch(function(){ uiToast("Pas de connexion au relais : réessaie."); });
       }, { ok:"Arrêter le partage", danger:true });
@@ -13078,11 +13154,10 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       render();
       fySyncSoon(1200);
     }
-    setInterval(function(){ if(fyCfg && !document.hidden) fySync(); }, 30000);
     document.addEventListener("visibilitychange", function(){
       if(!fyCfg) return;
-      if(document.hidden){ if(Object.keys(fyDirty).length){ clearTimeout(fyDetT); fyFlush(); } fySync(); }
-      else fySyncSoon(600);
+      if(document.hidden){ if(Object.keys(fyDirty).length){ clearTimeout(fyDetT); fyFlush(); } clearTimeout(fySyncT); fySyncT=null; fySyncDue=0; fySync(); }   // envoyé avant de partir, puis plus rien
+      else { fyIdle=0; if(Date.now()-fyLastAt<20000) fyPlanNext(); else fySyncSoon(600, false); }
     });
     try{ if(ensureBourseEp()) persistEpargne(); }catch(e){}
     try{ famMerge(); }catch(e){ console.warn(e); }   // produits rangés dans l'arbre des catégories (une fois)
