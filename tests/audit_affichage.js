@@ -36,7 +36,8 @@ window.__audit = function(phase){
     }
     // texte tronqué par « … » : jamais pour un montant, un titre, un onglet, un mois ou un bouton court (un nom de magasin dans une liste, oui)
     if(ellipsisInside(el) && el.scrollWidth > el.clientWidth + 2 && el.clientWidth > 0){
-      var tt = (el.textContent || "").trim();
+      var own = [].filter.call(el.childNodes, function(n){ return n.nodeType === 3; }).map(function(n){ return n.textContent; }).join("").trim();
+      var tt = (el.children.length ? own : (el.textContent || "")).trim();   // le texte de l'élément lui-même (pas celui d'un sous-titre qui passe à la ligne)
       var money = /\d/.test(tt) && /(€|\$|£|%|\d[,.]\d\d)/.test(tt);
       var shortLbl = tt.length <= 22 && (/(BUTTON|H1|H2|H3)/.test(el.tagName) || el.closest(".avtabs, .htitle, .hmn, .acsel, .chip, .hstat, .head, .dash-split"));   // un nom dans une ligne de liste peut finir par « … »
       if(money || shortLbl) add("tronque", el, "« " + tt.slice(0, 30) + " » : " + el.scrollWidth + " px dans " + el.clientWidth);

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="07/11 11:05" />
+  <meta name="build" content="07/11 11:18" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -1374,7 +1374,7 @@
     @media (max-width:380px){ .dash-top{ flex-wrap:wrap; row-gap:8px; } .dash-top > .hmn{ flex:1 1 150px; } }
     .dr-row .st{ white-space:normal; text-align:right; line-height:1.25; }   /* l'état à droite du menu passe à la ligne plutôt que d'être coupé */
     .fxrow .n small, .dgb .ecomp .n small, .cacc .ecomp .n small{ white-space:normal; }   /* « chaque mois · ta part 8,3 % (100,00 €) » : jamais coupé */
-    @media (max-width:359px){ .head.haspv .htitle.htitle{ padding:0 92px; } .avtabs:has(> button:nth-child(4)){ flex-wrap:wrap; } .avtabs:has(> button:nth-child(4)) > button{ flex:1 1 calc(50% - 6px); } }
+    @media (max-width:359px){ .head.haspv .htitle.htitle{ padding:0 92px; } .head.hasback:not(.haspv) .htitle.htitle{ padding:0 54px; } .head.hasback .hleft .hmenu{ display:none; }   /* page avec retour sur un écran étroit : le retour seul à gauche, le titre a la place */ .avtabs:has(> button:nth-child(4)){ flex-wrap:wrap; } .avtabs:has(> button:nth-child(4)) > button{ flex:1 1 calc(50% - 6px); } }
     @media (max-width:359px){ .acrow{ flex-wrap:wrap; row-gap:8px; } .acrow > .acsel{ flex:1 1 100%; } .acrow > .hmn{ flex:1 1 100%; } }   /* fenêtre plus haute que l'écran : elle défile au lieu d'écraser (et couper) sa liste */
     .ui-intro{ font-size:13px; color:var(--ink-soft); line-height:1.45; text-align:center; margin:2px 0 4px; }
     .ui-msg{ font-size:15px; color:var(--ink); line-height:1.45; text-align:center; margin:6px 0 4px; }
@@ -4566,16 +4566,21 @@
     // Textes qui doivent rester entiers (montants, titres, onglets, mois, tuiles) : la police rapetisse jusqu'à tenir ; un montant passe à la ligne plutôt que d'être coupé
     var FIT_SEL=".hstat b, .hstat span, .hstat small, .dash-split.h3 span b, .head .htitle, .avtabs button, .hmn b, .chips.cattiles.cat5 .chip span:last-child, .acsel span, .hm-s, .ep-cases span, .epc span";
     function fitOver(el){   // le texte dépasse-t-il sa place (marges intérieures comprises) ?
-      var cs=getComputedStyle(el), av=el.clientWidth-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0), r=document.createRange(); r.selectNodeContents(el);
-      return r.getBoundingClientRect().width>av+0.5 || el.scrollWidth>el.clientWidth;
+      var cs=getComputedStyle(el), av=el.clientWidth-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0);
+      if(el.scrollWidth>el.clientWidth) return true;
+      if(el.children.length) return false;   // texte seul : mesuré à la police (un texte terminé par « … » ne dit pas sa vraie largeur)
+      var cv=fitOver.cv||(fitOver.cv=document.createElement("canvas")), cx=cv.getContext("2d");
+      cx.font=cs.fontStyle+" "+cs.fontWeight+" "+cs.fontSize+" "+cs.fontFamily;
+      var ls=parseFloat(cs.letterSpacing)||0, t=el.textContent||"";
+      return cx.measureText(t).width+ls*t.length>av-1;   // un peu de marge : mieux vaut un demi-point plus petit qu’un « … »
     }
     function fitTexts(){
       [].forEach.call(document.querySelectorAll(FIT_SEL), function(el){
-        el.style.fontSize=""; el.style.whiteSpace="";
+        el.style.fontSize=""; el.style.whiteSpace=""; el.style.textOverflow="";
         if(!(el.clientWidth>0) || !fitOver(el)) return;
         var fs=parseFloat(getComputedStyle(el).fontSize)||14, min=Math.max(9.5, fs*0.7), g=0;
         while(fitOver(el) && fs>min && g++<20){ fs-=0.5; el.style.fontSize=fs+"px"; }
-        if(fitOver(el) && el.matches(".hstat b, .dash-split.h3 span b, .hm-s")) el.style.whiteSpace="normal";
+        if(fitOver(el) && el.matches(".hstat b, .hstat span, .hstat small, .dash-split.h3 span b, .hm-s")){ el.style.whiteSpace="normal"; el.style.textOverflow="clip"; }   // libellé ou montant : sur deux lignes plutôt que coupé
       });
     }
     function homeFit(){
