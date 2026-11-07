@@ -44,6 +44,7 @@ Touche le bouton vert **＋**, puis « Scanner un ticket » ou « Ticket depuis 
 
 - Le 1er ticket d'un magasin demande parfois une correction du total : l'appli retient où il était et lit les suivants au même endroit.
 - Chaque article reçoit le produit que tu lui as donné la dernière fois (lait, pain…). Chaque personne a les siens.
+- Un nouveau produit (un nom que l'appli ne connaît pas) : sa catégorie s'affiche sous l'article, devinée d'après le nom, sinon celle du ticket ; touche-la pour la changer. Le produit est créé à l'enregistrement.
 
 **Sans ticket** : « + » › Saisir pour noter une dépense à la main.
 
@@ -68,7 +69,7 @@ L'onglet Budget (ex Dépenses) a trois parties, en boutons sous le titre.
 
 ✦ **Analyse avancée** (Tickets Plus) : ton inflation personnelle comparée à celle de l'INSEE, cette année contre l'an dernier, les alertes, le reste à vivre, des pistes d'économies.
 
-**Les catégories** (Budget › Produits › ⚙ Produits & catégories) : une dizaine de grandes catégories, et dedans tes sous-catégories. Tu peux ajouter une grande catégorie ou une sous-catégorie (＋), renommer, déplacer une sous-catégorie sous une autre grande catégorie (ses tickets et ses budgets suivent) ou supprimer : rien n'est perdu, ses tickets, ses produits et son budget vont dans la grande catégorie (ou dans Autre), et « Annuler » remet tout.
+**Les catégories** (Budget › Produits › ⚙ Produits & catégories) : une dizaine de grandes catégories, et dedans tes sous-catégories. Tu peux ajouter une grande catégorie ou une sous-catégorie (＋), renommer, déplacer une sous-catégorie sous une autre grande catégorie (ses tickets et ses budgets suivent) ou supprimer : rien n'est perdu, ses tickets, ses produits et son budget vont dans la grande catégorie (ou dans Autre), et « Annuler » remet tout. Les grandes catégories sont repliées : touche-en une pour voir ses sous-catégories. Les produits sont rangés par lettre ; la barre A–Z en haut de la liste mène à une lettre.
 
 Le bouton personne, en haut à droite, choisit les dépenses montrées dans Produits et Analyse : les tiennes, celles d'une personne, ou tout le foyer.
 

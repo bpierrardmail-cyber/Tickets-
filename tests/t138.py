@@ -73,6 +73,7 @@ with sync_playwright() as p:
     # propriétaire : renomme Bar → Bistrot ; Marie le reçoit
     O.locator('.dpsub', has_text="Produits").click(); O.wait_for_timeout(500); O.locator("#artprod").click(); O.wait_for_timeout(600)
     O.once("dialog", lambda d: d.accept("Bistrot"))
+    O.evaluate("()=>{ var b=document.querySelector('.cttog[data-cat=\"Sorties\"]'); if(b && b.getAttribute('aria-expanded')==='false') b.click(); }"); O.wait_for_timeout(400)   # grandes catégories repliées (07/11)
     O.evaluate("()=>{ var b=document.querySelector('.catren[data-cat=\"Bar\"]'); b.style.display=''; b.click(); }"); O.wait_for_timeout(2500)
     sync(M)
     check((ls(M,"catParent") or {}).get("Bistrot")=="Sorties" and any(e["marchand"]=="Bar Fictif" and e["categorie"]=="Bistrot" for e in ls(M,"entries")), "Marie reçoit le renommage (Bar → Bistrot, son ticket suit)")

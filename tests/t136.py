@@ -74,6 +74,7 @@ with sync_playwright() as p:
     pg.locator(".sheet-overlay button", has_text="Loisirs").click(); pg.wait_for_timeout(400)
     check(ls("catParent").get("Péage")=="Loisirs", "Déplacer : Péage dans Loisirs")
     pg.once("dialog", lambda d: d.accept("Bistrot"))
+    pg.evaluate("()=>{ var b=document.querySelector('.cttog[data-cat=\"Sorties\"]'); if(b && b.getAttribute('aria-expanded')==='false') b.click(); }"); pg.wait_for_timeout(400)   # grandes catégories repliées (07/11)
     pg.evaluate("()=>{ var b=document.querySelector('.catren[data-cat=\"Bar\"]'); b.style.display=''; b.click(); }"); pg.wait_for_timeout(500)
     check(ls("budgets").get("Bistrot")==30 and "Bar" not in ls("budgets") and ls("catParent").get("Bistrot")=="Sorties" and any(e["categorie"]=="Bistrot" for e in ls("entries")), "renommer Bar : budget, rangement et tickets suivent")
     # supprimer : rien n'est perdu, et « Annuler » remet tout
