@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `07/11 09:56`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `07/11 10:39`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -209,6 +209,14 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 07/11
+
+- **Affichage sur toutes les tailles d'écran** (demande de Benoît après la fenêtre coupée ; relecture indépendante de l'affichage + nouveau parcours t141, en cours) :
+  - écran du code en paysage : il défile, pavé plus compact (« 0 » et ⌫ étaient hors de l'écran) ;
+  - accueil en diapos / carrousel Plus et menu en paysage : ils défilent au lieu d'écraser leur contenu (même défaut que la fenêtre des catégories) ;
+  - textes qui doivent rester entiers (`fitTexts`, après `render` et au redimensionnement) : montants des cartes, titres, sous-onglets, mois, tuiles de catégories ; la police rapetisse, un montant passe à la ligne plutôt que d'être coupé ;
+  - écran étroit (< 400 px) : mois court (« oct. 2026 ») ; < 380 px : le mois du tableau de bord sur sa ligne ; < 360 px : compte et mois sur deux lignes dans Opérations, 4 sous-onglets en 2 × 2, titre plus large ;
+  - « Réglages » ne déborde plus dans le menu ; sous-titres des tickets coupés proprement ; le message du bas ne cache plus le « + » ;
+  - rotation pendant qu'une fenêtre est ouverte : la carte du haut est refaite à la fermeture.
 
 - **Fenêtres trop longues coupées** (capture de Benoît, « Tes catégories sont rangées ») : une fenêtre plus haute que l'écran écrasait sa liste au lieu de défiler (enfant de `.ui-sheet` rétréci par le flex). `.ui-sheet > *{flex-shrink:0}` : toutes les fenêtres défilent (catégories, comptes, choix…). Test t140.
 - Liste de contrôle sur le téléphone (point 5) publiée pour Benoît.

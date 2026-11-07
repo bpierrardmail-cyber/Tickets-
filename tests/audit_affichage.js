@@ -57,8 +57,11 @@ window.__audit = function(phase){
     if(sh.scrollHeight > sh.clientHeight + 3 && !/(auto|scroll)/.test(s.overflowY)) add("fenetre", sh, "plus haute que sa place, ne défile pas");
   });
   // boutons et champs cachés par un autre élément
+  function canScrollUp(e){ for(var a = e.parentElement; a; a = a.parentElement){ if(a === document.body || a === document.documentElement) return scrollY > 4; var as = getComputedStyle(a); if(/(auto|scroll)/.test(as.overflowY) && a.scrollHeight > a.clientHeight + 2) return a.scrollTop > 4; } return false; }
+  function pinned(e){ for(; e && e !== document.documentElement; e = e.parentElement){ var p = getComputedStyle(e).position; if(p === "fixed" || p === "sticky") return e; } return null; }
+  function canScrollDown(e){ for(var a = e.parentElement; a; a = a.parentElement){ if(a === document.body || a === document.documentElement) return document.documentElement.scrollHeight - (scrollY + H) > 4; var as = getComputedStyle(a); if(/(auto|scroll)/.test(as.overflowY) && a.scrollHeight > a.clientHeight + 2) return a.scrollHeight - a.clientHeight - a.scrollTop > 4; } return false; }
   [].forEach.call(top.querySelectorAll("button, a[href], input:not([type=hidden]), select, textarea, [data-k], .chip, .entry"), function(el){
-    if(!vis(el)) return; var r = el.getBoundingClientRect();
+    if(el.closest("svg") || !vis(el)) return; var r = el.getBoundingClientRect();
     var cx = Math.min(Math.max(r.left + r.width / 2, 1), W - 2), cy = r.top + Math.min(r.height / 2, 14);
     if(cy < 2 || cy > H - 2 || r.left + r.width / 2 < 0 || r.left + r.width / 2 > W) return;   // pas dans l'écran (on défile pour le voir)
     for(var a = el.parentElement; a && a !== document.body; a = a.parentElement){ var as = getComputedStyle(a); if(/(auto|scroll|hidden|clip)/.test(as.overflowY + as.overflowX)){ var ar = a.getBoundingClientRect(); if(cy < ar.top || cy > ar.bottom || cx < ar.left || cx > ar.right) return; } }   // défilé hors de sa boîte : pas caché
@@ -69,8 +72,9 @@ window.__audit = function(phase){
     var hs = getComputedStyle(hit), cover = hit.closest("#nav, #navplus, .navplus, [id$=Pill], .pill, .ui-toast, header, .hdr, .sticky, .thead") || hit;
     var cs = getComputedStyle(cover);
     if((cs.position === "sticky" || cs.position === "fixed") && r.top < cover.getBoundingClientRect().bottom && cover.getBoundingClientRect().top < 60) return;   // en-tête collé en haut : on peut défiler
-    var more = document.documentElement.scrollHeight - (scrollY + H) > 4;
-    if(cs.position === "fixed" && cover.getBoundingClientRect().top > H / 2 && more) return;   // barre du bas : on peut encore défiler pour le montrer (vérifié une fois en bas de page)
+    var pin = pinned(hit);
+    if(pin && pin.getBoundingClientRect().top > Math.min(H / 2, r.top - 1) && canScrollDown(el)) return;   // barre du bas, « + », boutons collés en bas d'une fenêtre : on peut encore défiler pour le montrer (vérifié une fois en bas)
+    if(pin && pin.getBoundingClientRect().bottom < 90 && canScrollUp(el)) return;   // barre du bas : on peut encore défiler pour le montrer (vérifié une fois en bas de page)
     add("masque", el, "sous " + sig(cover) + (txt(cover) ? " «" + txt(cover).slice(0, 20) + "»" : ""));
   });
   return out;

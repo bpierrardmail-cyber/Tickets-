@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="07/11 09:56" />
+  <meta name="build" content="07/11 10:39" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -1354,7 +1354,16 @@
     }
     /* Formulaires intégrés */
     .ui-sheet{ max-width:560px; margin:0 auto; max-height:90vh; overflow:auto; gap:0; }
-    .ui-sheet > *{ flex-shrink:0; }   /* fenêtre plus haute que l'écran : elle défile au lieu d'écraser (et couper) sa liste */
+    .ui-sheet > *{ flex-shrink:0; }
+    /* ---------- Petits et grands écrans (relecture et parcours d'affichage du 07/11) ---------- */
+    .drawer > *, .wlc-card > *{ flex-shrink:0; }   /* menu en paysage, accueil en diapos : ils défilent au lieu d'écraser leur contenu */
+    .dr-row .t{ min-width:min-content; }   /* « Réglages » ne sort plus de sa place : c'est l'état à droite qui se coupe */
+    .ecomp .n small, .entry small{ overflow:hidden; text-overflow:ellipsis; }
+    #lockscreen{ overflow-y:auto; align-items:safe center; }
+    @media (max-height:480px){ .lk-ic{ display:none; } .lk-dots{ margin:8px 0 4px; } .lk-pad{ gap:8px; margin-top:6px; } .lk-pad button{ height:46px; font-size:20px; } }
+    @media (max-width:380px){ .dash-top{ flex-wrap:wrap; row-gap:8px; } .dash-top > .hmn{ flex:1 1 100%; } }
+    @media (max-width:359px){ .head.haspv .htitle.htitle{ padding:0 92px; } .avtabs:has(> button:nth-child(4)){ flex-wrap:wrap; } .avtabs:has(> button:nth-child(4)) > button{ flex:1 1 calc(50% - 6px); } }
+    @media (max-width:359px){ .acrow{ flex-wrap:wrap; row-gap:8px; } .acrow > .acsel{ flex:1 1 100%; } .acrow > .hmn{ flex:1 1 100%; } }   /* fenêtre plus haute que l'écran : elle défile au lieu d'écraser (et couper) sa liste */
     .ui-intro{ font-size:13px; color:var(--ink-soft); line-height:1.45; text-align:center; margin:2px 0 4px; }
     .ui-msg{ font-size:15px; color:var(--ink); line-height:1.45; text-align:center; margin:6px 0 4px; }
     .ui-l{ display:block; font-size:12px; color:var(--ink-soft); margin:14px 0 6px; }
@@ -1378,7 +1387,7 @@
     .ui-actions .btn{ flex:1; }
     .ui-stack{ display:flex; flex-direction:column; gap:10px; margin-top:16px; }
     .btn.danger{ background:var(--coral); color:#1d0c09; border-color:var(--coral); font-weight:700; }
-    .ui-toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:calc(104px + env(safe-area-inset-bottom)); z-index:130;
+    .ui-toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:calc(126px + env(safe-area-inset-bottom)); z-index:130;
       background:#2b303b; color:var(--ink); border:1px solid var(--line2); padding:10px 16px; border-radius:12px; font-size:13px; box-shadow:0 10px 26px rgba(0,0,0,.4); max-width:86vw; text-align:center; }
     .ui-toast.undo{ display:flex; align-items:center; gap:14px; padding:8px 8px 8px 16px; text-align:left; }
     .ui-toast.undo button{ min-height:40px; padding:0 14px; border-radius:10px; border:0; background:var(--accent-dim); color:var(--accent); font:inherit; font-size:14px; font-weight:700; cursor:pointer; }
@@ -4019,11 +4028,11 @@
       window.addEventListener("resize", function(){ clearTimeout(t); t=setTimeout(function(){
         var w=window.innerWidth, h=window.innerHeight, a=document.activeElement, typing=a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
         if(w===w0 && Math.abs(h-h0)<4) return; if(typing && w===w0) return; w0=w; h0=h;
-        if(fitView() && !document.querySelector(".sheet-overlay")){ fitMemo={}; render(); } }, 200); });
+        (function redo(){ if(!fitView()) return; if(document.querySelector(".sheet-overlay")){ t=setTimeout(redo, 400); return; } fitMemo={}; render(); })(); }, 200); });
     })();
     function v0key(){ var on=document.querySelector(".thero .cch-tabs button.on"); return state.view+"|"+(on?on.getAttribute("data-m"):""); }
     document.addEventListener("click", function(ev){ var t=ev.target; if(t && t.id==="persoPill"){ ev.preventDefault(); espaceAsk(); } if(t && t.id==="demoPill"){ ev.preventDefault(); demoMenu(); } });
-    function render(){ try{ document.body.classList.toggle("det", affDet()); }catch(err){} pvMemo=null; fsMemo={}; pvWanted=false; avMemo=null; setTimeout(function(){ try{ wireTicketLongPress(); }catch(err){} }, 0); pvLockMe=false; if(!fitting) CHB=fitView()?(fitMemo[state.view+"|"+(state.view==="communes"?(state.comChart||store.read("comChartDef","rep")):state.view==="articles"?(state.artChart||store.read("artChartDef","prod")):state.view==="analyse"?(state.anChart||store.read("anChartDef","mois")):(state.view==="compte"||state.view==="comptedet")?(function(){ var c=state.cptChart||store.read("cptChartDef","mois"); return c==="6m"?"es":c; })():"")]||0):0; fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); wirePV(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); try{ fitHero(); }catch(err){ console.warn(err); } try{ homeFit(); }catch(err){ console.warn(err); } }
+    function render(){ try{ document.body.classList.toggle("det", affDet()); }catch(err){} pvMemo=null; fsMemo={}; pvWanted=false; avMemo=null; setTimeout(function(){ try{ wireTicketLongPress(); }catch(err){} }, 0); pvLockMe=false; if(!fitting) CHB=fitView()?(fitMemo[state.view+"|"+(state.view==="communes"?(state.comChart||store.read("comChartDef","rep")):state.view==="articles"?(state.artChart||store.read("artChartDef","prod")):state.view==="analyse"?(state.anChart||store.read("anChartDef","mois")):(state.view==="compte"||state.view==="comptedet")?(function(){ var c=state.cptChart||store.read("cptChartDef","mois"); return c==="6m"?"es":c; })():"")]||0):0; fyRendering=true; try{ renderView(); }finally{ fyRendering=false; } try{ compactRowActions(); fyRoStrip(); wirePV(); }catch(err){ console.warn(err); } try{ wirePagers(app); }catch(err){ console.warn(err); } pushWidgets(); try{ fitHero(); }catch(err){ console.warn(err); } try{ homeFit(); }catch(err){ console.warn(err); } try{ fitTexts(); }catch(err){ console.warn(err); } }
     function renderView(){
       armBack();
       fyViewGuard();
@@ -4524,11 +4533,23 @@
     }
     // Mois dans la ligne du haut de la carte (‹ Octobre 2026 ›) ; ↩ pour revenir au mois en cours
     function homeMonthNav(month, curM, label){
+      if(window.innerWidth<400 && /^\d{4}-\d{2}$/.test(month||"")){ var mp=month.split("-"); label=new Date(+mp[0], +mp[1]-1, 1).toLocaleDateString("fr-FR",{month:"short", year:"numeric"}); }   // « oct. 2026 » : le mois entier ne tient pas
       return '<div class="hmn"><button type="button" id="mn-prev" class="hmn-a" aria-label="Mois précédent">‹</button><b>'+esc(capFirst(label))+'</b><button type="button" id="mn-next" class="hmn-a" aria-label="Mois suivant">›</button>'+
         (month!==curM?'<button type="button" id="mn-today" class="hmn-a hmn-t" aria-label="Revenir au mois en cours">↩</button>':'')+'</div>';
     }
     // Tableau de bord : tout tient dans l'écran, sans défilement. Les petites cartes prennent la place qui reste au-dessus du « + » ;
     // si elle manque, leurs chiffres du bas sont retirés puis le graphique est coupé (jamais sous 130 px : un très petit écran défile).
+    // Textes qui doivent rester entiers (montants, titres, onglets, mois, tuiles) : la police rapetisse jusqu'à tenir ; un montant passe à la ligne plutôt que d'être coupé
+    var FIT_SEL=".hstat b, .dash-split.h3 span b, .head .htitle, .avtabs button, .hmn b, .chips.cattiles.cat5 .chip span:last-child, .acsel span";
+    function fitTexts(){
+      [].forEach.call(document.querySelectorAll(FIT_SEL), function(el){
+        el.style.fontSize=""; el.style.whiteSpace="";
+        if(!(el.clientWidth>0) || el.scrollWidth<=el.clientWidth) return;
+        var fs=parseFloat(getComputedStyle(el).fontSize)||14, min=Math.max(9.5, fs*0.7), g=0;
+        while(el.scrollWidth>el.clientWidth && fs>min && g++<20){ fs-=0.5; el.style.fontSize=fs+"px"; }
+        if(el.scrollWidth>el.clientWidth && el.matches(".hstat b, .dash-split.h3 span b")) el.style.whiteSpace="normal";
+      });
+    }
     function homeFit(){
       var on=state.view==="list" && homeMode()==="dash" && !affDet() && !!app.querySelector(".hpgr .hgrid");   // détaillé : la page peut défiler
       app.classList.toggle("hfit", on); app.classList.remove("hfit-ns"); app.style.removeProperty("--hmH"); app.style.paddingBottom="";
@@ -4542,7 +4563,7 @@
       if(natH()>avail){ app.classList.add("hfit-ns"); app.style.setProperty("--hmH", Math.max(130, avail)+"px"); }
       app.style.paddingBottom=Math.max(0, innerHeight-lim)+"px";
     }
-    window.addEventListener("resize", function(){ try{ homeFit(); }catch(err){} });
+    window.addEventListener("resize", function(){ try{ homeFit(); }catch(err){} try{ fitTexts(); }catch(err){} });
     function homeCarouselHTML(x){
       var cards=homeChartCards(); x=x||{}; cards.forEach(function(k){ if(k.tab==='analyse' && k.mode==='mois' && x.an) k.c.sub=x.an; });
       if(!cards.length && !hcAvail().length) return "";

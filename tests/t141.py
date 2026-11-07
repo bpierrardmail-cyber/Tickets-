@@ -78,6 +78,7 @@ with sync_playwright() as p:
             pg.wait_for_timeout(wait); return True
         def nav(v): closeAll(); return click('#nav .navi[data-view="%s"]'%v, 500)
         if cfg:
+            inspect("écran du code")
             for k in "123456": pg.locator('#lockscreen button[data-k="%s"]' % k).click(); pg.wait_for_timeout(50)
             pg.wait_for_timeout(1000)
         else:
@@ -140,10 +141,14 @@ with sync_playwright() as p:
                             if s2 in ("demo","restore","lock"): continue
                             closeAll(); nav("list"); click("#hmenu", 400); click('.drawer .dr-row[data-k="settings"]', 500)
                             if click('.sheet-overlay .dr-row[data-k="%s"]'%s2, 500): inspect("réglages › "+s2)
+                    if k=="plus":
+                        for _ in range(6):
+                            if not click("#wlcNext", 400): break
+                            inspect("Tickets Plus (suite)")
                     if k=="aide" and click("#aideWlc", 600):
                         inspect("accueil en diapos")
                         for _ in range(5):
-                            if not click(".wlc .wlc-next, .wlc [data-next], .wlc .next", 400): break
+                            if not click("#wlcNext", 400): break
                             inspect("accueil en diapos (suite)")
         check(not errs, "%s : erreurs %s"%(tag, errs[:3]))
         c.close()
@@ -151,7 +156,7 @@ with sync_playwright() as p:
     combos=[]
     for (w,h) in sizes: combos.append(("perso","simple","owner",w,h))
     for (w,h) in [(320,568),(412,915)]: combos+= [("perso","detail","owner",w,h),("store","simple","owner",w,h),("perso","simple","membre",w,h)]
-    combos+=[("perso","simple","lecture",360,640),("perso","simple","enfant",360,640)]
+    combos+=[("perso","simple","lecture",360,640),("perso","simple","enfant",360,640),("perso","simple","membre",915,412),("store","simple","owner",915,412)]
     if FULL:
         for (w,h) in sizes:
             for ed in ["perso","store"]:
