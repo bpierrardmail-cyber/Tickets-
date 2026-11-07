@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="07/11 10:39" />
+  <meta name="build" content="07/11 10:53" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -1663,13 +1663,25 @@
         if(old && nm===old) return;
         if(uniquePersons(true).concat([mePerson()]).some(function(x){ return x.toLowerCase()===nm.toLowerCase() && x!==old; })) return "Ce prénom existe déjà.";
         if(!old){ personnes.push({ nom:nm }); persistPersonnes(); uiToast(nm+" ajouté(e)"); render(); return; }
-        state.entries.forEach(function(e){ if((e.payePar||"").trim()===old) e.payePar=nm; }); persist();
-        fraisCommuns.forEach(function(f){ if((f.personne||"").trim()===old) f.personne=nm; }); persistFrais();
-        comptes.forEach(function(a){ if(a.payer===old) a.payer=nm; }); persistComptes();
-        if(budgetsP[old]){ budgetsP[nm]=budgetsP[old]; delete budgetsP[old]; persistBudgetsP(); }
-        var rec=personRec(old); if(rec) rec.nom=nm; else personnes.push({ nom:nm }); persistPersonnes();
+        if(fyCfg && fyCfg.members && Object.keys(fyCfg.members).some(function(k){ return fyCfg.members[k].name===old; })) return "« "+old+" » est membre du foyer partagé : retire-le du foyer avant de changer son prénom.";
+        personRenameAll(old, nm);
         uiToast("« "+old+" » s'appelle maintenant « "+nm+" »"); render();
       });
+    }
+    // Renommer une personne partout : tickets (payé par, partage), frais (personne, parts), comptes, budgets, parts du commun, épargne, provisions, remboursements, groupes
+    function personRenameAll(old, nm){
+      function key(o){ if(o && typeof o==="object" && Object.prototype.hasOwnProperty.call(o, old)){ o[nm]=(o[nm]!=null && typeof o[nm]==="number") ? o[nm]+(Number(o[old])||0) : o[old]; delete o[old]; return true; } return false; }
+      state.entries.forEach(function(e){ if((e.payePar||"").trim()===old) e.payePar=nm; key(e.share); }); persist();
+      fraisCommuns.forEach(function(f){ if((f.personne||"").trim()===old) f.personne=nm; if(f.parts) Object.keys(f.parts).forEach(function(m){ key(f.parts[m]); }); key(f.split && typeof f.split==="object" ? f.split : null); }); persistFrais();
+      comptes.forEach(function(a){ if(a.payer===old) a.payer=nm; }); persistComptes();
+      if(budgetsP[old]){ budgetsP[nm]=budgetsP[old]; delete budgetsP[old]; persistBudgetsP(); }
+      if(key(communParts)) persistParts();
+      epargne.forEach(function(x){ if((x.owner||"").trim()===old) x.owner=nm; }); persistEpargne();
+      provisions.forEach(function(x){ if((x.owner||"").trim()===old) x.owner=nm; }); persistProvisions();
+      function rb(r){ if(r.from===old) r.from=nm; if(r.to===old) r.to=nm; }
+      commRemb.forEach(rb); persistRemb();
+      groupes.forEach(function(g){ g.membres=(g.membres||[]).map(function(p){ return p===old ? nm : p; }); (g.dep||[]).forEach(function(d){ if(d.payePar===old) d.payePar=nm; if(d.pour) d.pour=d.pour.map(function(p){ return p===old ? nm : p; }); }); (g.rembs||[]).forEach(rb); }); persistGroupes();
+      var rec=personRec(old); if(rec) rec.nom=nm; else personnes.push({ nom:nm }); persistPersonnes();
     }
     function archivePerson(n){
       var curM=monthKey(todayISO());
@@ -1896,7 +1908,7 @@
     function mainAcct(){ return comptes.filter(function(c){ return c.main; })[0] || comptes[0]; }
     function curAcctKey(){ var k=state.compteSel||store.read("compteSel", null), a=k&&acctByKey(k); return (a||mainAcct()).key; }
     // Ticket : compte choisi sur le ticket, sinon selon « payé par »
-    function ticketInAcct(e, key){ if(e.compte && acctByKey(e.compte)) return e.compte===key; var a=acctByKey(key); return !!(a && a.payer && (e.payePar||"").trim()===a.payer); }
+    function ticketInAcct(e, key){ if(e.compte && acctByKey(e.compte)) return e.compte===key; var a=acctByKey(key); return !!(a && a.payer && payerOf(e)===a.payer); }   // sans « payé par » : le titulaire (payerOf)
     // Frais fixe : compte choisi sur le frais, sinon frais perso du titulaire et frais « Commun » sur le compte principal
     function fraisKind(f, key){
       var a=acctByKey(key); if(!a || a.key==="__tickets") return null;
@@ -2302,7 +2314,7 @@
       if(soldeInit[person]) Object.keys(soldeInit[person]).forEach(function(m){ if(m<=upto) set[m]=true; });
       set[upto]=true;
       var ac=acctByKey(person);
-      var st=acctStart(person);
+      var st=acctStart(person); if(st && st<=upto) set[st]=true;   // compte neuf sans opération : ses frais fixes se cumulent depuis son début
       var ks=Object.keys(set).filter(function(m){ return !st || m>=st || m===upto; }).sort();
       // tous les mois entre le premier et le mois affiché : un mois sans ticket compte quand même ses frais fixes
       if(ks.length>1){ var all=[], m=ks[0], g=0; while(m<=upto && g<600){ all.push(m); m=nextMonthKey(m); g++; } return all; }
@@ -3450,7 +3462,7 @@
 
 
     function todayISO(){ var d=new Date(), m=d.getMonth()+1, j=d.getDate(); return d.getFullYear()+"-"+(m<10?"0":"")+m+"-"+(j<10?"0":"")+j; }
-    function fmt(n){ return (Number(n)||0).toFixed(2).replace(".",",")+" "+curSym(); }
+    function fmt(n){ n=Math.round((Number(n)||0)*100)/100; if(n===0) n=0; return n.toFixed(2).replace(".",",")+" "+curSym(); }
     function monthKey(iso){ return (iso||todayISO()).slice(0,7); }
     function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
     // montant tapé : espaces (le clavier en ajoute après la virgule), symbole, virgule ou point, « 1 234,56 », « 1.234,56 »
@@ -5866,6 +5878,7 @@
       function persoOf(who){ return D.byP[who]?D.byP[who].total:0; }
       // Parts du commun : celles réglées (en %), sinon parts égales entre les personnes du commun
       var CP=(communParts && typeof communParts==="object") ? communParts : null;
+      if(CP){ var CPa={}; Object.keys(CP).forEach(function(n){ var r=personRec(n); if(r && r.archived && month>r.archived) return; CPa[n]=CP[n]; }); CP=CPa; }   // supprimée : plus de part après son dernier mois
       if(CP) Object.keys(CP).forEach(function(n){ if((Number(CP[n])||0)>0 && ppl.indexOf(n)<0) ppl.push(n); });
       (D.byP.Commun?D.byP.Commun.items:[]).forEach(function(f){ var P=fraisPartsAt(f, month); if(P) Object.keys(P).forEach(function(n){ if((Number(P[n])||0)>0 && ppl.indexOf(n)<0) ppl.push(n); }); });
       D.rows.forEach(function(r){ if(r.sh) Object.keys(r.sh).forEach(function(n){ if((Number(r.sh[n])||0)>0 && ppl.indexOf(n)<0) ppl.push(n); }); });
@@ -11201,7 +11214,7 @@
       uiToast("Facture ajoutée"+histTxt+(made.length?" · "+made.join(", "):"")+(learnt?" · lecture retenue pour "+p.four:""));
     }
     function backupDump(){
-      var keys=["entries","cats","catParent","taxoV3","taxoV4","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","factAppris","releve","tkAppris","photoKeep","commRemb","groupes","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"];
+      var keys=["entries","cats","catParent","taxoV3","taxoV4","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","factAppris","releve","tkAppris","photoKeep","commRemb","groupes","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP","commBalFrom","comProd","cptLiq","anFrais"];
       var dump={ _app:"tickets", _version:1, _date:new Date().toISOString(), data:{} };
       keys.forEach(function(k){ var v=store.read(k, null); if(v!==null) dump.data[k]=v; });
       return dump;
@@ -11262,7 +11275,7 @@
       (obj._zip||[]).forEach(function(x){ np[x.id]=1; });
       np=Object.keys(np).length;
       if(!o.quiet && !window.confirm("Restaurer cette sauvegarde ?\n"+n+" ticket(s)"+(np?" et "+np+" photo(s)":"")+" vont REMPLACER les données actuelles.")) return;
-      ["entries","cats","catParent","taxoV3","taxoV4","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","factAppris","releve","tkAppris","photoKeep","commRemb","groupes","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP"].forEach(function(k){
+      ["entries","cats","catParent","taxoV3","taxoV4","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","factAppris","releve","tkAppris","photoKeep","commRemb","groupes","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP","commBalFrom","comProd","cptLiq","anFrais"].forEach(function(k){
         if(k in data) store.write(k, data[k]); else if(o.exact) store.remove(k);
       });
       if(!("comptes" in data)) store.write("comptes", null);

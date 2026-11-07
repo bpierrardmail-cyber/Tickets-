@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `07/11 10:39`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `07/11 10:53`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -210,6 +210,13 @@ Après chaque modification, dans le même commit :
 
 ### 07/11
 
+- **Campagne de cas limites (calculs)** par un agent séparé (appli vide, 30 personnes, montants extrêmes, changements d'année, annulations, sauvegarde). Corrigé (test t142) :
+  - **ticket du titulaire sans « payé par »** (tout ticket saisi sur une installation neuve) : ne sortait d'aucun compte. `ticketInAcct` passe par `payerOf` (vide = le titulaire). Sur les données de Benoît : 1 ticket sur 125 concerné, il compte maintenant dans son compte principal ;
+  - **renommer une personne** : `personRenameAll` (parts du commun, partage des tickets, parts des frais, épargne, provisions, remboursements, groupes) ; refusé pour un membre du foyer partagé ;
+  - **personne supprimée** : plus de part du commun après son dernier mois (`communModel`), les autres parts sont recalculées ;
+  - **compte neuf sans opération** : son mois de départ compte (`compteMonths`), les frais fixes se cumulent ;
+  - sauvegarde : `commBalFrom`, `comProd`, `cptLiq`, `anFrais` ; plus de « -0,00 € » (`fmt`).
+  - À décider avec Benoît : « Fin de mois » compte les frais des mois passés pas cochés, que l'écran ne montre pas.
 - **Affichage sur toutes les tailles d'écran** (demande de Benoît après la fenêtre coupée ; relecture indépendante de l'affichage + nouveau parcours t141, en cours) :
   - écran du code en paysage : il défile, pavé plus compact (« 0 » et ⌫ étaient hors de l'écran) ;
   - accueil en diapos / carrousel Plus et menu en paysage : ils défilent au lieu d'écraser leur contenu (même défaut que la fenêtre des catégories) ;
