@@ -1832,15 +1832,79 @@
       store.write("virEpV2", 1);
     }
     function persistVirements(){ store.write("virements", virements); }
+    // ---------- Virements reliés (mouvements internes) ----------
+    // Un virement peut aller vers / venir de : un autre compte de l'appli (v.vers = "cpt:<clé>"), un livret (v.epargneId, comme avant)
+    // ou un compte de la Bourse (v.bourseId, Perso). Compte → compte : la ligne d'en face est créée par virLinkSync (téléphone du propriétaire),
+    // v.pairOf = id du virement d'origine ; montant opposé, même mois, même rond « fait » ; modifier ou supprimer l'une change l'autre.
+    // Un virement déjà là sur le compte d'en face (même mois, montant opposé, pas relié) est repris plutôt que doublé (pairAdopt).
+    function virById(id){ return virements.filter(function(x){ return String(x.id)===String(id); })[0]||null; }
+    function virSrcOf(v){ return (v && v.pairOf!=null) ? (virById(v.pairOf)||v) : v; }
+    function virLinkVal(v){ if(!v) return ""; if(v.vers) return v.vers; if(v.epargneId!=null) return "ep:"+v.epargneId; if(v.bourseId!=null) return "bourse:"+v.bourseId; return ""; }
+    function virLinkName(val){ val=String(val||""); if(val.indexOf("cpt:")===0){ var a=acctByKey(val.slice(4)); return a ? a.nom : "un compte"; } if(val.indexOf("ep:")===0) return epNameOf(val.slice(3))||"épargne";
+      if(val.indexOf("bourse:")===0){ var b=bourse.filter(function(x){ return String(x.id)===val.slice(7); })[0]; return b ? b.nom+" (Bourse)" : "Bourse"; } return ""; }
+    function virLinkOpts(cur){
+      var o=[{ v:"", l:"Extérieur (rien à relier)" }];
+      comptes.forEach(function(a){ if(a.key==="__tickets" || a.key===cur) return; var ow=acctOwner(a); o.push({ v:"cpt:"+a.key, l:a.nom+(ow ? " · "+ow : "") }); });
+      epargne.filter(function(c){ return !c.bourseLink; }).forEach(function(c){ o.push({ v:"ep:"+c.id, l:c.nom+" (épargne)" }); });
+      if(FEAT.bourse) bourse.filter(function(b){ return !b.closed; }).forEach(function(b){ o.push({ v:"bourse:"+b.id, l:b.nom+" (Bourse)" }); });
+      return o;
+    }
+    // Bourse : un virement « fait » vers un compte-titres ajoute au reste à investir et au capital (et l'inverse pour un retrait)
+    function applyBourse(id, delta){
+      var b=bourse.filter(function(x){ return String(x.id)===String(id); })[0]; if(!b || !(Math.abs(delta)>0.004)) return;
+      var m=monthKey(todayISO()), src=bAt(b, m)||{ capital:0, valeur:0 }; if(!b.vals) b.vals={};
+      var o=b.vals[m] || JSON.parse(JSON.stringify(src)); b.vals[m]=o;
+      o.capital=Math.round(((Number(o.capital)||0)+delta)*100)/100;
+      if(!o.cashCur || o.cashCur===BASE){ o.cash=Math.round((bCash(o)+delta)*100)/100; delete o.cashOrig; delete o.cashCur; if(o.cash<=0.004) delete o.cash; }
+      persistBourse();
+    }
+    // les effets d'un virement « fait » sur un livret ou la Bourse, remis à jour (appelé après chaque changement)
+    function virLinkApply(v){
+      if(v.epargneId!=null){ var want=v.done ? -(Number(v.montant)||0) : 0, have=v.epApplied||0; if(Math.abs(want-have)>0.004){ applyEp(v.epargneId, want-have); v.epApplied=want; } }
+      if(v.bourseId!=null){ var wb=v.done ? -(Number(v.montant)||0) : 0, hb=v.bApplied||0; if(Math.abs(wb-hb)>0.004){ applyBourse(v.bourseId, wb-hb); v.bApplied=wb; } }
+    }
+    function virLinkSet(v, val){
+      val=String(val||""); if(virLinkVal(v)===val) return;
+      if(v.epargneId!=null && v.epApplied) applyEp(v.epargneId, -v.epApplied);
+      if(v.bourseId!=null && v.bApplied) applyBourse(v.bourseId, -v.bApplied);
+      delete v.epargneId; delete v.epApplied; delete v.bourseId; delete v.bApplied; delete v.vers;
+      if(val.indexOf("ep:")===0){ var ep=epargneById(val.slice(3)); if(ep){ v.epargneId=ep.id; v.epApplied=0; } }
+      else if(val.indexOf("bourse:")===0){ v.bourseId=val.slice(7); v.bApplied=0; }
+      else if(val.indexOf("cpt:")===0 && acctByKey(val.slice(4)) && val.slice(4)!==v.person) v.vers=val;
+      virLinkApply(v);
+    }
+    function virLinkSync(){
+      if(fyMember()) return false;
+      var ch=false, byPair={}, src={};
+      virements.forEach(function(x){ if(x.pairOf!=null) byPair[String(x.pairOf)]=x; if(x.vers) src[String(x.id)]=x; });
+      virements.slice().forEach(function(v){
+        if(!v.vers || v.pairOf!=null) return;
+        var tk=v.vers.slice(4); if(!acctByKey(tk) || tk===v.person) return;
+        var a=Number(v.montant)||0, m=byPair[String(v.id)];
+        if(!m){
+          m=virements.filter(function(x){ return x!==v && x.person===tk && x.month===v.month && x.pairOf==null && !x.vers && x.epargneId==null && x.bourseId==null && !byPair["a"+x.id] && Math.abs((Number(x.montant)||0)+a)<0.006; })[0];
+          if(m){ m.pairOf=v.id; m.pairAdopt=1; if(m.done && !v.done){ v.done=true; } }
+          else { m={ id:virNewId(), person:tk, month:v.month, label:v.label||"Virement", montant:-a, pairOf:v.id }; virements.push(m); }
+          byPair[String(v.id)]=m; ch=true;
+        }
+        var sa=acctByKey(v.person), want={ month:v.month, montant:-a, done:!!v.done };
+        if(!m.pairAdopt){ want.label=v.label||"Virement"; want.note=(a<0 ? "depuis " : "vers ")+((sa && sa.nom)||"un compte"); }
+        for(var k in want){ if(m[k]!==want[k]){ m[k]=want[k]; ch=true; } }
+        var d=virDay(v); if(d && m.day!==d){ m.day=d; ch=true; }
+      });
+      virements=virements.filter(function(x){
+        if(x.pairOf==null) return true; var s0=src[String(x.pairOf)];
+        if(s0 && s0.vers==="cpt:"+x.person) return true;
+        ch=true; if(x.pairAdopt){ delete x.pairOf; delete x.pairAdopt; return true; } return false; });
+      if(ch) persistVirements();
+      return ch;
+    }
     function toggleVirementDone(id){
-      var v=virements.filter(function(x){ return String(x.id)===String(id); })[0]; if(!v) return;
+      var v=virSrcOf(virById(id)); if(!v) return; id=v.id;
       v.done=!v.done;
       if(v.done){ var td=todayDay(v.month), vd=dayFix(v.day, v.month); if(td && (!vd || vd>td)){ v.day=td; v.dayAuto=1; } }   // le jour où c'est passé (relevé du compte) : aujourd'hui, sauf jour déjà noté avant
       else if(v.dayAuto){ delete v.day; delete v.dayAuto; }   // décoché : on oublie le jour mis en cochant
-      if(v.epargneId){
-        if(v.done){ var delta=-(Number(v.montant)||0); applyEp(v.epargneId, delta); v.epApplied=delta; }
-        else { applyEp(v.epargneId, -(v.epApplied||0)); v.epApplied=0; }
-      }
+      virLinkApply(v); virLinkSync();
       persistVirements(); render();
     }
     var soldeInit = store.read("soldeInit", {});
@@ -2095,42 +2159,43 @@
         {key:"note", label:"Description (optionnel)"},
         {key:"montant", label:"Montant", type:"money", required:true},
         {key:"sens", label:"Sens", type:"seg", value:(sens==="out"?"out":"in"), options:SENS_OPTS},
-        {key:"ep", label:"Compte épargne lié", type:"select", value:"", options:epargneOptions(), hidden:!hasEp, help:"Le montant y est retiré (entrée) ou versé (sortie) automatiquement."},
+        {key:"lien", label:(sens==="in" ? "Depuis" : "Vers"), type:"select", value:"", options:virLinkOpts(curAcctKey()), help:"Un de tes comptes, un livret ou la Bourse : l'argent y arrive (ou en part) aussi, avec un seul rond « fait ». Extérieur : rien à relier."},
         dayField(null, "Jour (facultatif)", "Range le virement dans la liste du compte. Vide : le jour où tu le coches « fait ».")
       ]}, function(r){
         var jd=dayRead(r); if(jd.err) return jd.err;
         var m=Math.abs(r.montant);
         var v={ id:Date.now(), person:curAcctKey(), month:((state.months&&state.months.compte)||monthKey(todayISO())), label:r.label||"Virement", note:r.note||"", montant:(r.sens==="out"?-m:m) };
         if(jd.v) v.day=jd.v;
-        var ep=r.ep?epargneById(r.ep):null;
-        if(ep){ v.epargneId=ep.id; v.epApplied=0; }
-        virements.push(v); persistVirements(); render();
+        virLinkSet(v, r.lien);
+        virements.push(v); virLinkSync(); persistVirements(); render();
       });
     }
     function editVirement(id){
-      var v=virements.filter(function(x){ return String(x.id)===String(id); })[0]; if(!v) return;
+      var v=virSrcOf(virById(id)); if(!v) return; id=v.id;   // la ligne d'en face se modifie par son virement d'origine
       uiForm({ title:"Modifier le virement", fields:[
         {key:"label", label:"Libellé", value:v.label, required:true},
         {key:"note", label:"Description (optionnel)", value:v.note||""},
         {key:"montant", label:"Montant", type:"money", value:Math.abs(Number(v.montant)||0), required:true},
         {key:"sens", label:"Sens", type:"seg", value:(Number(v.montant)<0?"out":"in"), options:SENS_OPTS},
-        dayField(virDay(v)||"", "Jour (facultatif)", "Range le virement dans la liste du compte.")
+        dayField(virDay(v)||"", "Jour (facultatif)", "Range le virement dans la liste du compte."),
+        {key:"lien", label:"Vers / depuis", type:"select", value:virLinkVal(v), options:virLinkOpts(v.person), help:"Un de tes comptes, un livret ou la Bourse : l'argent y arrive (ou en part) aussi. Extérieur : rien à relier."}
       ]}, function(r){
         var jd=dayRead(r); if(jd.err) return jd.err;
         v.label=r.label||v.label; v.note=r.note||"";
         if(jd.v) v.day=jd.v; else delete v.day; delete v.dayAuto;
         var newM=(r.sens==="out"?-1:1)*Math.abs(r.montant);
-        if(v.epargneId && v.done){ var delta=-(newM - v.montant); applyEp(v.epargneId, delta); v.epApplied=(v.epApplied||0)+delta; }
-        v.montant=newM;
-        persistVirements(); render();
+        v.montant=newM; virLinkApply(v); virLinkSet(v, r.lien);
+        virLinkSync(); persistVirements(); render();
       });
     }
     function delVirement(id){
-      var v=virements.filter(function(x){ return String(x.id)===String(id); })[0]; if(!v) return;
-      uiConfirm("Supprimer le virement « "+esc(v.label)+" » ?", function(){
+      var v=virSrcOf(virById(id)); if(!v) return; id=v.id;
+      uiConfirm("Supprimer le virement « "+esc(v.label)+" » ?"+(v.vers ? "<br><small>Sa ligne sur « "+esc(virLinkName(v.vers))+" » part aussi.</small>" : ""), function(){
         if(v.epargneId && v.done){ applyEp(v.epargneId, -(v.epApplied||0)); }
+        if(v.bourseId!=null && v.bApplied) applyBourse(v.bourseId, -v.bApplied);
+        if(v.liqAdd && v.liqAdd.k){ var lq=liquideMois[v.liqAdd.k]; if(lq && lq[v.liqAdd.m]!=null){ lq[v.liqAdd.m]=Math.round(((Number(lq[v.liqAdd.m])||0)-v.liqAdd.a)*100)/100; persistLiquide(); } }   // retrait d'espèces : l'argent sort aussi du liquide
         virements=virements.filter(function(x){ return String(x.id)!==String(id); });
-        persistVirements(); render();
+        virLinkSync(); persistVirements(); render();
       }, {ok:"Supprimer", danger:true});
     }
     // ---------- Virements repris et récurrents ----------
@@ -2147,6 +2212,7 @@
       var c={ id:virNewId(), person:v.person, month:m, label:v.label||"Virement", note:(v.imp ? "" : (v.note||"")), montant:Number(v.montant)||0 };
       var d=virDay(v); if(d) c.day=d;
       if(v.epargneId){ c.epargneId=v.epargneId; c.epApplied=0; }
+      if(v.vers) c.vers=v.vers; if(v.bourseId!=null){ c.bourseId=v.bourseId; c.bApplied=0; }
       return c;
     }
     // le même virement (même nom, même montant) est déjà dans ce mois
@@ -2163,7 +2229,7 @@
           r.made[m]=1; ch=true;
           if(virements.some(function(x){ return String(x.rec)===String(r.id) && x.month===m; })) continue;
           var c={ id:virNewId(), person:r.person, month:m, label:r.label, note:r.note||"", montant:virRecAmt(r, m), rec:r.id };
-          if(r.day) c.day=r.day; if(r.epargneId){ c.epargneId=r.epargneId; c.epApplied=0; }
+          if(r.day) c.day=r.day; if(r.epargneId){ c.epargneId=r.epargneId; c.epApplied=0; } if(r.vers) c.vers=r.vers; if(r.bourseId!=null){ c.bourseId=r.bourseId; c.bApplied=0; }
           virements.push(c);
         }
       });
@@ -2172,7 +2238,7 @@
     // Reprendre des virements : ceux du mois d'avant le mois affiché (ou un seul, depuis sa fiche)
     function virReprendre(person, month, one){
       var src=one ? one.month : prevMonthKey(month), nx=nextMonthKey(src), p2=prevMonthKey(src);
-      var L=one ? [one] : virementsOf(person, src).filter(function(v){ return Math.abs(Number(v.montant)||0)>=0.005; });
+      var L=one ? [one] : virementsOf(person, src).filter(function(v){ return Math.abs(Number(v.montant)||0)>=0.005 && v.pairOf==null; });   // une ligne d'en face suit son virement : on reprend l'original
       if(!L.length){ uiToast("Aucun virement "+impDeMois(src)); return; }
       L=L.slice().sort(function(a,b){ return (virDay(a)||32)-(virDay(b)||32); });
       function seen(v){ var n=norm(v.label||""); return virements.some(function(x){ return x.person===person && x.month===p2 && norm(x.label||"")===n; }); }
@@ -2217,7 +2283,7 @@
         if(mode==="rec"){
           var f=val("vrRF"), to=val("vrRT"); if(!okM.test(f)){ err("Choisis le premier mois."); return; } if(to && !okM.test(to)) to=""; if(to && to<f){ err("Le dernier mois est avant le premier."); return; }
           P.forEach(function(v){ var r={ id:virNewId(), person:person, label:v.label||"Virement", note:(v.imp?"":(v.note||"")), montant:Number(v.montant)||0, from:f, made:{} };
-            var d=virDay(v); if(d) r.day=d; if(to) r.to=to; if(v.epargneId) r.epargneId=v.epargneId;
+            var d=virDay(v); if(d) r.day=d; if(to) r.to=to; if(v.epargneId) r.epargneId=v.epargneId; if(v.vers) r.vers=v.vers; if(v.bourseId!=null) r.bourseId=v.bourseId;
             // un mois où il est déjà : pas de 2e virement
             var hz=monthKey(todayISO()), i; for(i=0;i<11;i++) hz=nextMonthKey(hz);
             for(var m=f, g=0; m<=(to && to<hz ? to : hz) && g<240; m=nextMonthKey(m), g++){ if(virHas(person, m, v)){ r.made[m]=1; skip++; } }
@@ -4090,6 +4156,7 @@
       syncBourseEpargne();
       try{ provFraisSync(); }catch(err){}
       try{ virRecSync(); }catch(err){}
+      try{ virLinkSync(); }catch(err){}
       try{ rapSync(false); }catch(err){}
       if(state.view==="foyer") return renderFoyer();
       if(state.view==="form") return renderForm();
@@ -5470,7 +5537,7 @@
       uiChoice("Retrait d'espèces ?", esc("Un retrait n'est pas une dépense : l'argent passe de ton compte à ton porte-monnaie."), [
         { l:"Mettre dans mon liquide", fn:function(){
           var dt=d.date||todayISO(), m=dt.slice(0, 7), k=a ? a.key : null; if(!k){ d.retAsked=true; saveDraft(); return; }
-          virements.push({ id:Date.now(), person:k, month:m, label:"Retrait d'espèces", note:"", montant:-montant, day:+dt.slice(8, 10)||0, done:true }); persistVirements();
+          virements.push({ id:Date.now(), person:k, month:m, label:"Retrait d'espèces", note:"", montant:-montant, day:+dt.slice(8, 10)||0, done:true, liqAdd:{ k:k, m:m, a:montant } }); persistVirements();
           var q=liquideAt(k, m), cur=q ? Number(q.val)||0 : 0; if(!liquideMois[k]) liquideMois[k]={}; liquideMois[k][m]=Math.round((cur+montant)*100)/100; persistLiquide();
           persist(); state.view=formBackView(); state.draft=null; render(); uiToast(fmtS(montant)+" sortis de "+(a.nom||"ton compte")+" et ajoutés à ton liquide"); } },
         { l:"Garder comme une dépense", primary:false, fn:function(){ d.retAsked=true; saveDraft(); } } ]);
@@ -6790,7 +6857,7 @@
         (fraisDone(f, month) ? R.done : R.todo).push({ k:"f", id:f.id, d:fraisDay(f, month), n:f.label||"Provision", s:"Provision · "+provInFrom(f), a:a }); });
       virementsOf(person, month).forEach(function(v){ var a=Number(v.montant)||0; if(Math.abs(a)<0.005) return;
         var note=String(v.note||""); if(/relevé$/.test(note)) note="";
-        var it={ k:"v", id:v.id, d:virDay(v), n:v.label||"Virement", s:(a>0?"Virement reçu":"Virement envoyé")+(v.rec!=null && virRecById(v.rec)?" · ↻ chaque mois":"")+(v.epargneId?" · "+(a<0?"vers ":"depuis ")+epNameOf(v.epargneId):"")+(note?" · "+note:""), a:a };
+        var it={ k:"v", id:v.id, d:virDay(v), n:v.label||"Virement", s:(a>0?"Virement reçu":"Virement envoyé")+(v.rec!=null && virRecById(v.rec)?" · ↻ chaque mois":"")+(v.epargneId?" · "+(a<0?"vers ":"depuis ")+epNameOf(v.epargneId):"")+((v.vers || v.bourseId!=null)?" · "+(a<0?"vers ":"depuis ")+virLinkName(virLinkVal(v)):"")+(note?" · "+note:""), a:a };
         (v.done ? R.done : R.todo).push(it); });
       return R;
     }
@@ -6907,7 +6974,12 @@
           Lv.push({ l:"✎ Modifier", fn:edit });
           Lv.push({ l:"↻ Reprendre ce virement", fn:function(){ virReprendre(v.person, nextMonthKey(v.month), v); } });
         }
-        if(a<0 && !v.epargneId) Lv.push({ l:"📅 Passer en frais fixe", fn:function(){ virToFrais(v); } });   // une dépense (pas un virement vers l'épargne)
+        if(a<0 && !v.epargneId && !v.vers && v.bourseId==null && v.pairOf==null) Lv.push({ l:"📅 Passer en frais fixe", fn:function(){ virToFrais(v); } });   // une dépense (pas un virement vers l'épargne)
+        var vs=virSrcOf(v);
+        if(!virLinkVal(vs) && v.pairOf==null) Lv.push({ l:"🔗 Relier à un compte", fn:function(){
+          uiChoice((a<0 ? "Vers" : "Depuis")+" quel compte ?", "L'argent y arrive (ou en part) aussi, avec un seul rond « fait ». S'il y a déjà la même opération en face, elle est reprise.",
+            virLinkOpts(v.person).filter(function(o){ return o.v; }).map(function(o){ return { l:o.l, primary:false, fn:function(){ virLinkSet(v, o.v); virLinkSync(); persistVirements(); render(); uiToast("Relié à « "+virLinkName(o.v)+" »"); } }; })); } });
+        if(!r) Lv.push({ l:"🗑 Supprimer", danger:true, fn:function(){ delVirement(id); } });
         uiChoice((v.label||"Virement")+" · "+opsAmt(a), esc(r ? "Chaque mois depuis "+monthLabelOf(r.from)+(r.to?" jusqu'à "+monthLabelOf(r.to):"") : (done ? (d?"passé le "+(d===1?"1er":d)+" "+ml:"passé à la banque") : "à venir"+(d?" · le "+(d===1?"1er":d)+" "+ml:""))),
           Lv.map(function(c){ if(c.primary==null) c.primary=false; return c; }));
         return;
@@ -8684,6 +8756,13 @@
           var fa=fraisAcctAmt(f, target, L.m), exact=Math.abs(fa-amt)<0.006, near=Math.abs(fa-amt)<=Math.max(0.5, amt*0.05), same=sameName(f.label, L.name);
           var sc=exact&&same?3:(exact?2:(near&&same?1:0)); if(sc>bs){ bs=sc; best=f; } });
         return best ? { f:best, sure:bs!==2 } : null; }
+      function impAcctGuess(txt, tgt){   // « VIR VERS CPTE COMMUN » : un autre compte de l'appli nommé dans le libellé
+        var t=" "+norm(txt)+" ", best="", bs=0, gen=["compte","courant","banque","caisse","epargne","credit","agricole","societe","generale","postale","livret","joint","perso","principal"];
+        comptes.forEach(function(a){ if(a.key===tgt || a.key==="__tickets") return; var sc=0;
+          norm(a.nom||"").split(/\s+/).forEach(function(w){ if(w.length>=4 && gen.indexOf(w)<0 && t.indexOf(" "+w+" ")>=0) sc++; });
+          var ow=acctOwner(a); if(ow && !a.main && t.indexOf(" "+norm(ow)+" ")>=0) sc++;
+          if(sc>bs){ bs=sc; best="cpt:"+a.key; } });
+        return best; }
       function provInHit(L){   // mise(s) de côté qui arrivent sur ce compte ce mois-là, pas encore faites : une seule au bon montant, sinon toutes ensemble
         var c=fraisCommuns.filter(function(f){ return f.prov!=null && !used["f"+f.id+"|"+L.m] && !fraisDone(f, L.m) && provInAmt(f, target, L.m)>0; }), one=null, tot=0;
         c.forEach(function(f){ var a=provInAmt(f, target, L.m); tot+=a; if(!one && Math.abs(a-L.amt)<0.006) one=f; });
@@ -8739,7 +8818,7 @@
         if(kind==="out" && auto!=="cash" && !L.dup && !/[ée]pargne|livret|\bpel\b|assurance.vie/i.test(name+" "+(o.label||"")+" "+(o.memo||""))){ var pv=provHit(L); if(pv){ L.name=pv.name; L.note=pv.note; } }
         if(kind==="card"){ var c=impCatFor(o, name); L.cat=(S.cat[k]||c.c); L.catSrc=S.cat[k]?"choisie":c.src; cards.push(L); }
         else if(kind==="prlv") prlv.push(L);
-        else { L.ep=S.ep[k]||""; vir.push(L); }
+        else { L.ep=(k in S.ep) ? S.ep[k] : (L.vref || L.refs ? "" : impAcctGuess(name+" "+(o.label||"")+" "+(o.memo||""), target)); vir.push(L); }
       });
       // prélèvements : un frais par abonnement (même nom, montant proche, au plus une fois par mois)
       prlv.sort(function(x, y){ return x.d<y.d?-1:1; }).forEach(function(L){
@@ -8913,10 +8992,10 @@
         return '<div class="imp-l'+(g.on?'':' off')+'">'+ck(g.on, g.k, "sel")+'<div class="m"><div class="r1"><span class="d">'+info+'</span></div><div class="r1"><span class="n">'+esc(g.name)+'</span></div><div class="r2">'+tyPill(g.k, "Frais fixe")+'</div>'+
           '<div class="imp-seg" role="group" aria-label="Fréquence"><button type="button" data-imp="freq" data-k="'+g.k+'" data-v="m" class="'+(g.freq==="m"?'on':'')+'" aria-pressed="'+(g.freq==="m")+'">Chaque mois</button><button type="button" data-imp="freq" data-k="'+g.k+'" data-v="o" class="'+(g.freq==="o"?'on':'')+'" aria-pressed="'+(g.freq==="o")+'">Une fois</button></div>'+
           (g.dup?'<div class="dup">'+esc(g.dup)+'</div>':'')+'</div><b>'+impMoney(g.amt)+'</b></div>'; });
-      var vin=M.vir.filter(function(L){ return L.amt>0; }), vout=M.vir.filter(function(L){ return L.amt<0; }), epL=epargne.filter(function(c){ return !c.bourseLink; });
+      var vin=M.vir.filter(function(L){ return L.amt>0; }), vout=M.vir.filter(function(L){ return L.amt<0; }), epL=epargne.filter(function(c){ return !c.bourseLink; }), lnkA=comptes.filter(function(a){ return a.key!=="__tickets" && a.key!==S.target; });
       function vline(L){
         return '<div class="imp-l'+(L.on?'':' off')+'">'+ck(L.on, L.k, "sel")+'<div class="m"><div class="r1"><span class="d">'+impDM(L.d)+'</span><span class="n">'+esc(L.name)+'</span></div>'+
-          (L.amt<0 ? '<div class="r2">'+tyPill(L.k, "Virement")+(L.kind!=="cash" && epL.length ? '<span>vers l\'épargne</span><button type="button" class="imp-pill sm" data-imp="ep" data-k="'+L.k+'">'+esc(L.ep?(epNameOf(L.ep)||"?"):"Aucune")+' ▾</button>' : '')+'</div>' : '')+
+          ((L.amt<0 || lnkA.length) ? '<div class="r2">'+(L.amt<0 ? tyPill(L.k, "Virement") : '')+(L.kind!=="cash" && (epL.length || lnkA.length) ? '<span>'+(L.amt<0 ? 'vers' : 'depuis')+'</span><button type="button" class="imp-pill sm" data-imp="ep" data-k="'+L.k+'">'+esc(L.ep ? (String(L.ep).indexOf("cpt:")===0 ? virLinkName(L.ep) : (epNameOf(L.ep)||"?")) : "Extérieur")+' ▾</button>' : '')+'</div>' : '')+
           (L.note?'<div class="note">'+esc(L.note)+'</div>':'')+(L.dup?'<div class="dup">'+esc(L.dup)+'</div>':'')+'</div><b class="'+(L.amt>0?'pos':'')+'">'+impMoney(L.amt, true)+'</b></div>'; }
       h+=grp("in", "Argent reçu → Virements", "Entrées du compte, déjà faites.", vin, vline);
       h+=grp("out", "Virements envoyés et retraits → Virements", "Sorties du compte, déjà faites."+(epL.length?" Un virement vers l'épargne peut remplir ton livret (son solde augmente d'autant).":""), vout, vline);
@@ -8952,7 +9031,10 @@
           function setK(v){ keys.forEach(function(x){ S.kind[x]=v; delete S.sel[x]; }); again(); }
           uiChoice("C'est…", "", [{ l:"Un ticket (dépense)", primary:false, fn:function(){ setK("card"); } }, { l:"Un frais fixe", primary:false, fn:function(){ setK("prlv"); } }, { l:"Un virement", primary:false, fn:function(){ setK("out"); } }]); }
         else if(a==="cat"){ uiChoice("Catégorie", "", CATS.map(function(c){ return { l:c, primary:false, fn:function(){ S.cat[k]=c; again(); } }; })); }
-        else if(a==="ep"){ uiChoice("Vers l'épargne", "Le montant s'ajoute au solde du livret choisi.", [{ l:"Aucune", primary:false, fn:function(){ S.ep[k]=""; again(); } }].concat(epargne.filter(function(c){ return !c.bourseLink; }).map(function(c){ return { l:c.nom, primary:false, fn:function(){ S.ep[k]=String(c.id); again(); } }; }))); }
+        else if(a==="ep"){ var LL=null; (M.vir||[]).forEach(function(x){ if(String(x.k)===String(k)) LL=x; }); var out=!LL || LL.amt<0;
+          uiChoice(out ? "Vers" : "Depuis", "Un de tes comptes (la ligne d'en face est créée, un seul rond « fait ») ou un livret (son solde change d'autant).", [{ l:"Extérieur (rien à relier)", primary:false, fn:function(){ S.ep[k]=""; again(); } }]
+            .concat(comptes.filter(function(x){ return x.key!=="__tickets" && x.key!==S.target; }).map(function(x){ return { l:x.nom, primary:false, fn:function(){ S.ep[k]="cpt:"+x.key; again(); } }; }))
+            .concat(out ? epargne.filter(function(c){ return !c.bourseLink; }).map(function(c){ return { l:c.nom+" (épargne)", primary:false, fn:function(){ S.ep[k]=String(c.id); again(); } }; }) : [])); }
         else if(a==="acct"){ uiChoice("Dans quel compte ?", "", comptes.filter(function(x){ return x.key!=="__tickets"; }).map(function(x){ return { l:x.nom+(x.key===S.target?" ✓":""), primary:x.key===S.target, fn:function(){ S.target=x.key; S.sel={}; S.setOpen=!(soldeInit[x.key] && Object.keys(soldeInit[x.key]).length); again(); } }; })); }
         else if(a==="from"){ uiChoice("Importer depuis", "", msK.slice().reverse().map(function(m){ return { l:capFirst(monthLabelOf(m)), primary:m===(S.from||msK[0]), fn:function(){ S.from=(m===msK[0]?null:m); S.sel={}; again(); } }; })); }
         else if(a==="map") impMapCols();
@@ -9016,7 +9098,8 @@
       });
       M.vir.forEach(function(L){ if(!L.on) return;
         var v={ id:nid(), person:S.target, month:L.m, day:+L.d.slice(8, 10), label:L.name, note:impDM(L.d)+" · relevé", montant:L.amt, done:true, imp:id, impKey:L.key };
-        if(L.ep && L.amt<0){ var ep=epargneById(L.ep); if(ep && !ep.bourseLink){ v.epargneId=ep.id; var delta=-v.montant; applyEp(ep.id, delta); v.epApplied=delta; } }
+        if(L.ep && String(L.ep).indexOf("cpt:")===0){ if(acctByKey(String(L.ep).slice(4))) v.vers=String(L.ep); }   // virement relié : la ligne d'en face est créée par virLinkSync
+        else if(L.ep && L.amt<0){ var ep=epargneById(L.ep); if(ep && !ep.bourseLink){ v.epargneId=ep.id; var delta=-v.montant; applyEp(ep.id, delta); v.epApplied=delta; } }
         virements.push(v); made.v++; });
       var paid=[], dayed=[];
       M.cards.concat(M.vir).forEach(function(L){ if(!L.on){ markPaid(L); dayVir(L); } }); M.prlv.forEach(function(g){ if(!g.on) g.occ.forEach(markPaid); });   // laissé de côté = c'est ce frais-là
@@ -9709,6 +9792,16 @@
       if(fyMember()) return;
       if(!provisions.length && !fraisCommuns.some(function(f){ return f.prov!=null; })) return;
       var cur=monthKey(todayISO()), ch=false, chP=false;
+      // une provision ne doit avoir qu'un frais relié : s'il y en a plusieurs (ancienne erreur), le plus ancien garde tout (« fait », jours, épargne versée)
+      var byP={}; fraisCommuns.forEach(function(f){ if(f.prov==null) return; var k=String(f.prov); (byP[k]=byP[k]||[]).push(f); });
+      Object.keys(byP).forEach(function(k){ var L=byP[k]; if(L.length<2) return;
+        L.sort(function(a, b){ return String(a.provFrom||"")<String(b.provFrom||"") ? -1 : String(a.provFrom||"")>String(b.provFrom||"") ? 1 : (Number(a.id)||0)-(Number(b.id)||0); });
+        var keep=L[0];
+        L.slice(1).forEach(function(x){
+          ["doneMonths", "doneDays", "epDone", "pastOk"].forEach(function(fld){ if(!x[fld]) return; if(!keep[fld]) keep[fld]={}; for(var m in x[fld]){ if(x[fld][m] && !keep[fld][m]) keep[fld][m]=x[fld][m]; } });
+          if(x.impKeys){ keep.impKeys=(keep.impKeys||[]).concat(x.impKeys); }
+          fraisCommuns=fraisCommuns.filter(function(y){ return y!==x; }); });
+        ch=true; });
       provisions.forEach(function(p){
         if(p.noFrais) return;
         var f=provFraisOf(p);
@@ -9881,6 +9974,8 @@
       var payM=fr ? (fr.month||factPayMonth(f)) : (f.prelev ? f.prelev.slice(0,7) : factPayMonth(f));
       var accDef=!fr && factCanAdd(f), an=(fr && fr.compte && acctByKey(fr.compte) || A.acct || {nom:"ton compte"}).nom;
       var w=provWhere(p), ep=(w.indexOf("ep:")===0) ? epargneById(w.slice(3)) : null; if(ep && ep.bourseLink) ep=null;
+      var payA=(fr && fr.compte && acctByKey(fr.compte)) || A.acct || mainAcct(), provA=(w==="cpt") ? mainAcct() : (w.indexOf("cpt:")===0 ? acctByKey(w.slice(4)) : null);
+      if(provA && payA && provA.key===payA.key) provA=null;   // l'argent de la provision est déjà sur le compte qui paie
       var bal=provState(p, payM).bal, jr=f.prelev ? ' le '+ddmm(f.prelev) : (f.aPayer ? ' (à payer)' : '');
       var h='<div class="fold"><div class="fo-h"><b>Facture du '+esc(ddmmyy(f.date))+' · '+esc(fmtK(mt))+'</b><span class="fpill">'+esc(f.four||factType(f.type).l)+'</span></div>';
       h+='<div class="fnote" style="margin-top:4px">Payée avec la provision « '+esc(p.nom)+' »</div>';
@@ -9888,6 +9983,7 @@
       else h+='<label class="fct-eff"><input type="checkbox" data-k="acc"'+(accDef?' checked':'')+'><span><b>'+esc(an)+' : −'+esc(fmtK(mt))+esc(jr)+'</b><small>'+(accDef?'Le prélèvement, comme sur ton relevé (« À venir » de '+esc(monthLabelOf(factPayMonth(f)))+', puis Opérations).':'Sans doute déjà passée dans ton compte : coche seulement si elle n\'y est pas.')+'</small></span></label>';
       if(pv0) h+='<div class="fnote">✓ Déjà retirée de « '+esc(pv0.nom)+' ».</div>';
       else h+='<label class="fct-eff"><input type="checkbox" data-k="prov" checked><span><b>Provision « '+esc(p.nom)+' » : −'+esc(fmtK(mt))+'</b><small>'+esc(fmtK(bal))+' → '+esc(fmtK(Math.max(0, bal-mt)))+' de côté'+(mt>bal+0.004?' · il manque '+esc(fmtK(mt-bal))+', pris sur le total des provisions':'')+'.</small></span></label>';
+      if(provA && !pv0) h+='<label class="fct-eff"><input type="checkbox" data-k="virc"><span><b>Virement '+esc(provA.nom)+' → '+esc(payA.nom)+' · '+esc(fmtK(mt))+'</b><small>L\'argent de la provision passe sur le compte qui paie la facture : les deux comptes suivent, un seul rond « fait ».</small></span></label>';
       if(ep && !pv0) h+='<label class="fct-eff"><input type="checkbox" data-k="vir"><span><b>Virement '+esc(ep.nom)+' → '+esc(an)+' · '+esc(fmtK(mt))+'</b><small>Si tu remets l\'argent de la provision sur le compte. À cocher « fait » quand il est passé.</small></span></label>';
       h+='<div class="fnote">Elle sort du compte, mais ne compte pas une 2ᵉ fois dans les parts du Commun ni dans l\'Analyse : c\'est la mise de côté de « '+esc(p.nom)+' » qui y compte. La mise de côté du mois continue.</div>';
       h+='<div class="ui-actions"><button type="button" class="btn ghost ui-cancel">Annuler</button><button type="button" class="btn primary" id="fpfOk">Valider</button></div></div>';
@@ -9895,13 +9991,15 @@
       s.q(".ui-cancel").onclick=s.close;
       s.q("#fpfOk").onclick=function(){
         function on(k){ var c=s.q('input[data-k="'+k+'"]'); return !!(c && c.checked); }
-        var doAcc=on("acc"), doProv=on("prov"), doVir=on("vir"), made=[], x=fr;
-        if(!doAcc && !doProv && !doVir){ s.close(); return; }
+        var doAcc=on("acc"), doProv=on("prov"), doVir=on("vir"), doVirC=on("virc"), made=[], x=fr;
+        if(!doAcc && !doProv && !doVir && !doVirC){ s.close(); return; }
         if(doAcc){ x=factAddToAccounts(f, false, { pp:p.id }); made.push("dans tes comptes"); }
         if(doProv){ provPrelevBill(p, f, x ? (x.month||payM) : payM); made.push("retirée de « "+p.nom+" »"); }
         if(x){ var pb=provOfBill(f); if(pb) x.pp=pb.id; else delete x.pp; }
         if(doVir && ep){ var va=(x && x.compte && acctByKey(x.compte)) || A.acct || mainAcct(), v={ id:Date.now()+7, person:va.key, month:x ? (x.month||payM) : payM, label:"Provision « "+p.nom+" » · "+(f.four||"facture"), note:ep.nom+" → compte", montant:mt, epargneId:ep.id, epApplied:0 };
           if(x && x.jour) v.day=x.jour; virements.push(v); persistVirements(); made.push("virement depuis "+ep.nom); }
+        if(doVirC && provA){ var vc={ id:virNewId(), person:payA.key, month:x ? (x.month||payM) : payM, label:"Provision « "+p.nom+" » · "+(f.four||"facture"), note:"", montant:mt, vers:"cpt:"+provA.key };
+          if(x && x.jour) vc.day=x.jour; virements.push(vc); virLinkSync(); persistVirements(); made.push("virement depuis "+provA.nom); }
         persistProvisions(); persistFrais(); persistFactures();
         s.close(); render(); uiToast("Facture du "+ddmm(f.date)+" · "+made.join(" · "));
       };
