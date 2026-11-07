@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="07/11 13:56" />
+  <meta name="build" content="07/11 14:08" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -6956,7 +6956,7 @@
       var liqV=liqOn?liqAll:0, liqHas=!!liq || liquideMois && liquideMois[person] && Object.keys(liquideMois[person]).length>0;
       function liqAt(m){ if(!liqOn) return 0; var l=liquideAt(person,m); return l?l.val:0; }
       var soldeFin=fl.closing + liqV;
-      var virDone=virs.reduce(function(t,v){ return t+(v.done?(Number(v.montant)||0):0); },0);
+      var virDone=virs.reduce(function(t,v){ return t+(v.done?(Number(v.montant)||0):0); },0)+provInSum(person, month, true);   // + les mises de côté reçues (provisions sur ce compte)
       var fraisDoneFull=0;
       fraisThis.forEach(function(f){ if(fraisDone(f, month)) fraisDoneFull+=fraisAcctAmt(f, person, month); });
       var reporteReel=soldeFlowDone(person, month).opening;
@@ -7003,7 +7003,7 @@
       function cRangeSeg(){ cRangeUsed=true; return ''; }
       function cRangeBtn(){ var nx={ "6":"12", "12":"all", "all":"6" }[crange], lb={ "6":"6 mois", "12":"12 mois", "all":"Tout" }[crange];
         return '<button type="button" class="anfx anfx-corner crange-c" data-r="'+nx+'" aria-label="Période : '+lb+' (toucher pour changer)">'+lb+' ⇄</button>'; }
-      function inOut(m){ var inn=0, out=computeDepensesMonth(person,m); virementsOf(person,m).forEach(function(v){ var x=Number(v.montant)||0; if(x>=0) inn+=x; else out+=-x; }); return { inn:inn, out:out }; }
+      function inOut(m){ var inn=provInSum(person, m, false), out=computeDepensesMonth(person,m); virementsOf(person,m).forEach(function(v){ var x=Number(v.montant)||0; if(x>=0) inn+=x; else out+=-x; }); return { inn:inn, out:out }; }
       var chart=chartTabsHTML(CMODES, cmode, "cptChartDef", "mois")+'<div class="cch">';
 
       var pvCpt=provSumWhere(month, function(w, p){ return (acct.main && w==="cpt") || w==="cpt:"+acct.key; });

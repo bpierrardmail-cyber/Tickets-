@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `07/11 13:56`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `07/11 14:08`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -210,6 +210,7 @@ Après chaque modification, dans le même commit :
 
 ### 07/11
 
+- **Bug (capture de Benoît)** : cocher la mise de côté reçue sur le compte de la provision ne changeait pas la grande carte « Solde estimé à la banque » d'Opérations (calcul à part, `soldeBanque` dans `renderCompte`) ni le graphique Entrées-sorties (`inOut`) ; les deux comptent maintenant `provInSum`. t144 vérifie la grande carte.
 - **Solde d'une provision : seulement au « fait »** (décision de Benoît) : suivie dans les frais fixes, un mois passé ou en cours ne compte que quand sa mise de côté est cochée (`provState` : `accrues`) ; les mois à venir restent prévus (`planCur` pour la suite des graphiques, `provProj`). Carte de la provision : « de Compte courant → Compte commun · ✓ fait ce mois-ci » ou « pas encore fait ce mois-ci : compté quand c'est coché ». Tests t144, t101, t102.
 - **Provision : la mise de côté va d'un compte à l'autre** (Benoît : « la sortie d'un compte doit être ajoutée au compte qui a les provisions » ; maquette validée) :
   - `provInAmt(f, compte, mois)` : la mise de côté (frais relié) **entre** sur le compte de la provision (`provOnAcct`) quand elle est payée depuis un autre compte (montant − ce que ce compte aurait payé lui-même) ; comptée dans `virementsSum` / `virementsSumDone` (soldes, banque, fin de mois), ligne dans Opérations (`cptOps` : « Provision · depuis Compte courant », même rond « fait » que la sortie), « Pas cochés les mois passés », import d'un relevé (`provInHit` : une entrée égale à une mise de côté, ou à la somme de celles du mois, est « Déjà en provision » et la coche). Vérifié sur les données de Benoît : frais reliés depuis novembre, aucun virement reçu sur le compte commun depuis septembre → pas de double compte.
