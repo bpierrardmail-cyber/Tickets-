@@ -203,7 +203,7 @@ Tes données sont seulement sur ton téléphone : si tu le perds, seule une sauv
 - **Ce qui est sauvegardé** : tes tickets, comptes, frais fixes, épargne, provisions, factures, catégories et réglages ; avec un foyer partagé, **le foyer aussi** (tes membres, leurs droits et leurs clés). Les photos seulement dans la sauvegarde complète (ZIP).
 - **Où** : sur ton Google Drive (automatique, gratuit) et/ou dans un fichier que tu ranges où tu veux.
 - **La clé** : ton **code de secours** (26 caractères). La sauvegarde Drive et la partie foyer d'un fichier sont chiffrées avec lui, sur ton téléphone : sans lui, personne ne peut les ouvrir, ni Google, ni nous. Note-le sur papier.
-- **Restaurer** sur un nouveau téléphone : la sauvegarde + le code rendent tes données et ton foyer ; tes membres gardent leur accès, sans nouveau QR code. N'utilise plus le foyer sur l'ancien téléphone.
+- **Restaurer** sur un nouveau téléphone : la sauvegarde + le code rendent tes données et ton foyer ; tes membres gardent leur accès, sans nouveau QR code. Si tu as restauré sur un nouveau téléphone, n'utilise plus l'application sur l'ancien pour éviter les erreurs de synchronisation.
 - **Sans sauvegarde** : un téléphone perdu, ce sont tes données perdues ; il faut recréer le foyer et réinviter tout le monde.
 
 **Sauvegarder** (Menu › Sauvegarder · restaurer)

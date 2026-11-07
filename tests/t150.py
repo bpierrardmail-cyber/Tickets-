@@ -67,7 +67,7 @@ with sync_playwright() as p:
     c=ls(N,"fyCfg") or {}
     check(c.get("role")=="owner" and c.get("fid")==fb["fid"] and len(c.get("members") or {})==1 and len(ls(N,"entries"))==4, "nouveau téléphone : propriétaire du même foyer, Marie dans les membres, 4 tickets")
     t=N.locator(".sheet-overlay").last.inner_text() if N.locator(".sheet-overlay").count() else ""
-    check("Ton foyer est revenu" in t and "ancien téléphone" in t, "message : foyer revenu, ne plus utiliser l'ancien téléphone")
+    check("Ton foyer est revenu" in t and "nouveau téléphone, n'utilise plus l'application sur l'ancien" in t, "message : foyer revenu, ne plus utiliser l'ancien téléphone")
     if N.locator(".sheet-overlay .ui-yes").count(): N.locator(".sheet-overlay .ui-yes").last.click()
     N.evaluate("()=>{ var e=JSON.parse(localStorage.getItem('entries')); e.push({id:900,date:'2026-10-29',marchand:'Boulangerie Fictive',montant:4.2,categorie:'Alimentation',payePar:'Benoit',articles:[]}); localStorage.setItem('entries', JSON.stringify(e)); }")
     reload(N, 4000); reload(M, 3500)

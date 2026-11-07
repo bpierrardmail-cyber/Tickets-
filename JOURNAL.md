@@ -219,6 +219,7 @@ Après chaque modification, dans le même commit :
   - **sauvegarde Google Drive gratuite** (plus dans `PLUS_FEATURES`, carte retirée du carrousel Plus) ; Benoît : « il faudra revoir les fonctionnalités de Plus » ;
   - guide : « Comment ça marche, en bref » (ce qui est sauvegardé, où, la clé, restaurer, sans sauvegarde) ; à proposer : une diapo et un écran d'explication dans l'appli ;
   - tests t150 (nouveau), t118 et t125 adaptés (Drive gratuit).
+  - message après restauration, formulation de Benoît : « Si tu as restauré sur un nouveau téléphone, n'utilise plus l'application sur l'ancien pour éviter les erreurs de synchronisation » (la restauration peut se faire sur le même téléphone).
 
 - **Relais : moins de connexions, copies différentielles, protection contre les abus** (« go » de Benoît pour les points 1, 3, 4 ; but : garder l'offre gratuite de Cloudflare) :
   - **envoi groupé** : un changement part 90 s après (`FY_PUSH`), avec tous ceux faits entre-temps, et tout de suite quand l'appli passe en arrière-plan ou avec « Mettre à jour » ;
