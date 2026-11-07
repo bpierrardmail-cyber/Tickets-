@@ -34,6 +34,11 @@ data={"askName":False,"devise":"EUR","personnes":[{"nom":"Sam"}],"communParts":{
 def ls(pg, k): return pg.evaluate("k=>JSON.parse(localStorage.getItem(k))", k)
 def fr(pg, **kw): return [x for x in ls(pg,"fraisCommuns") if all(x.get(k)==v for k,v in kw.items())]
 def prov(pg, i): return [x for x in ls(pg,"provisions") if x["id"]==i][0]
+def who(pg, v):   # « Qui paie ? » d'une provision : boutons (3 choix au plus) ou liste
+    f=pg.locator(".ui-field", has_text="Qui paie")
+    if f.locator(".ui-seg").count(): f.locator('.ui-seg button[data-v="%s"]' % v).click()
+    else: f.locator("select").select_option(v)
+    pg.wait_for_timeout(200)
 def menu(pg, nom, act):   # le ⋯ d'une provision → Modifier / Supprimer
     pg.locator(".pcard", has=pg.locator(".pname", has_text=nom)).locator(".btn.more").click(); pg.wait_for_timeout(250)
     pg.locator(".sheet-overlay button", has_text=act).first.click(); pg.wait_for_timeout(300)
@@ -118,9 +123,9 @@ with sync_playwright() as p:
     check((prov(pg, 11).get("mensuelChanges") or {}).get("2026-10")==25 and fr(pg, prov=11)[0]["amounts"].get("2026-10")==25, "montant changé sur le frais (25 €) : la provision suit")
     av("prov")
     menu(pg, "Taxe", "Modifier")
-    pg.locator(".ui-field", has_text="Remplie par").locator("select").select_option("Sam")
+    who(pg, "Sam")
     pg.locator(".sheet-overlay .ui-actions button[type=submit]").click(); pg.wait_for_timeout(400)
-    check(fr(pg, prov=12)[0]["personne"]=="Sam", "« Remplie par » Sam : la mise de côté de « Taxe » devient un frais de Sam")
+    check(fr(pg, prov=12)[0]["personne"]=="Sam", "« Qui paie ? » Sam : la mise de côté de « Taxe » devient un frais de Sam")
     # « Ne plus la compter dans les frais fixes » (depuis le frais)
     av("frais")
     pg.locator(".fxrow", has_text="Provision · Eau").locator(".fxmore").click(); pg.wait_for_timeout(200)
@@ -132,8 +137,9 @@ with sync_playwright() as p:
     check(prov(pg, 11).get("noFrais") and old.get("prov") is None and old.get("endMonth")=="2026-09" and not fr(pg, prov=11), "« Ne plus la compter » : l'ancien frais garde son passé et s'arrête, la provision continue")
     av("prov")
     menu(pg, "Eau", "Modifier")
-    check(pg.locator(".ui-field", has_text="Remplie par").locator("select").input_value()=="__none", "la provision : « Remplie par » = « Pas dans les frais fixes »")
-    pg.locator(".ui-field", has_text="Remplie par").locator("select").select_option("Commun")
+    check(pg.locator(".ui-field", has_text="Suivre dans les frais fixes").locator(".ui-seg button.on").get_attribute("data-v")=="non", "la provision : « Suivre dans les frais fixes » = Non")
+    pg.locator(".ui-field", has_text="Suivre dans les frais fixes").locator('.ui-seg button[data-v="oui"]').click(); pg.wait_for_timeout(200)
+    who(pg, "Commun")
     pg.locator(".sheet-overlay .ui-actions button[type=submit]").click(); pg.wait_for_timeout(400)
     nf=fr(pg, prov=11)
     check(len(nf)==1 and nf[0]["id"]!=2 and nf[0]["startMonth"]=="2026-10" and nf[0]["montant"]==25, "remise dans les frais fixes : un nouveau frais à partir du mois en cours (25 €)")
