@@ -10,7 +10,7 @@
 # 5. Wi-Fi seulement, durées de conservation, Vérifier, Désactiver.
 # 6. Un autre téléphone, compte qui a déjà des sauvegardes : le code est demandé et vérifié.
 # 7. Rappels : le rappel « 7 jours » n'est plus programmé quand Drive est actif ; Android est prévenu (remind).
-# 8. Version Store sans Plus : présentation et « Découvrir Tickets Plus ». 9. Navigateur : pas de Drive. Données inventées.
+# 8. Version Store sans Plus : Drive gratuit (07/11). 9. Navigateur : pas de Drive. Données inventées.
 import sys, os
 HERE=os.path.dirname(os.path.abspath(__file__)); ROOT=os.path.dirname(HERE)
 from playwright.sync_api import sync_playwright
@@ -215,9 +215,9 @@ with sync_playwright() as p:
     # ---------- 8. version Store sans Plus
     p3=page(APP+"?edition=store")
     p3.locator("#hmenu").click(); p3.wait_for_timeout(400); p3.locator('.dr-row[data-k="backup"]').click(); p3.wait_for_timeout(400)
-    t=norm(p3.locator(".sheet-overlay").last.inner_text()); check("Plus" in t, "Store sans Plus : Drive marqué Plus")
+    t=norm(p3.locator(".sheet-overlay").last.inner_text()); check("Google Drive" in t and "✦" not in t, "Store sans Plus : Drive proposé, gratuit (décision du 07/11)")
     p3.locator('.sheet-overlay .dr-row[data-k="drive"]').click(); p3.wait_for_timeout(400)
-    check("Découvrir Tickets Plus" in norm(p3.locator(".sheet-overlay").last.inner_text()), "Store sans Plus : la présentation et « Découvrir Tickets Plus »")
+    t=norm(p3.locator(".sheet-overlay").last.inner_text()); check("Découvrir Tickets Plus" not in t and p3.locator("#drvGo").count()==1, "Store sans Plus : la présentation de Drive, sans demander Plus")
     # ---------- 9. navigateur
     p4=page(mock=False)
     p4.locator("#hmenu").click(); p4.wait_for_timeout(400); p4.locator('.dr-row[data-k="backup"]').click(); p4.wait_for_timeout(400)

@@ -27,8 +27,8 @@
 //   POST   /foyer/inbox           { v }          membre « modification » : envoie des changements
 //   GET    /foyer/inbox                          propriétaire  changements reçus
 //   POST   /foyer/inbox/ack       { upto }       propriétaire  changements traités
-//   PUT    /foyer/blob/full       { v }          propriétaire  copie de secours (récupérable avec le code de secours)
-//   GET    /foyer/blob/full                      propriétaire
+//   PUT    /foyer/blob/full                      (retiré le 07/11 : accepté sans rien garder, pour les anciennes applis)
+//   GET    /foyer/blob/full                      (retiré : { none: true })
 //   POST   /foyer/leave                          membre        quitte le foyer
 //   DELETE /foyer                                propriétaire  arrête le partage (tout est effacé)
 //
@@ -169,6 +169,7 @@ export class Foyer {
     const a = Number(this.meta("act") || 0);
     if (now - a < DAY) return;
     this.setMeta("act", now);
+    this.sql.exec("DELETE FROM blobs WHERE name = 'full'");   // ancienne copie de secours (retirée le 07/11)
     this.plan(now);
   }
   plan(now) {
@@ -334,15 +335,10 @@ export class Foyer {
       return fjson({ ok: true, now });
     }
     if (path === "blob/full") {
-      if (method === "PUT") {
-        const t = this.putBlob("full", body.v);
-        if (typeof t === "string") return fjson({ error: t }, 413);
-        return fjson({ ok: true, t, now });
-      }
-      if (method === "GET") {
-        const b = this.getBlob("full");
-        return b ? fjson({ v: b.v, t: b.t, now }) : fjson({ none: true, now });
-      }
+      // copie de secours retirée le 07/11 (le foyer est dans la sauvegarde Drive ou fichier) : plus rien n'est gardé ici
+      this.sql.exec("DELETE FROM blobs WHERE name = 'full'");
+      if (method === "PUT") return fjson({ ok: true, t: now, now });   // anciennes applis : acceptée, pas gardée
+      return fjson({ none: true, now });
     }
     if (method === "DELETE" && path === "") {
       this.wipe();

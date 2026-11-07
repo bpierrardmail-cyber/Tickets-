@@ -163,7 +163,7 @@ Compte comme payé pour le commun : les frais communs (selon le compte qui les p
 
 **Les droits, onglet par onglet** : Masqué, Lecture ou Modif. Tu choisis aussi les comptes qu'il voit, et s'il voit tous les tickets du foyer ou seulement les siens. Un enfant est en lecture seule.
 
-**Code et empreinte** : obligatoires sur tous les téléphones du foyer. Garde bien ton code de récupération (26 caractères) : il permet de retrouver ton foyer sur un nouveau téléphone.
+**Code et empreinte** : obligatoires sur tous les téléphones du foyer. Garde bien ton code de secours (26 caractères) : avec ta sauvegarde (Drive ou fichier), il te rend ton foyer sur un nouveau téléphone. Fais une sauvegarde : l'écran du foyer te dit à quand remonte la dernière.
 
 **Les mises à jour** : une modification part chez les membres environ une minute et demie après (avec toutes celles faites entre-temps), ou tout de suite quand tu quittes l'appli ou avec « Mettre à jour maintenant ». Appli fermée, rien ne part.
 
@@ -198,9 +198,17 @@ Menu › Réglages › Rappels (appli Android) : des notifications sur ton tél�
 
 Tes données sont seulement sur ton téléphone : si tu le perds, seule une sauvegarde les fait revenir.
 
+**Comment ça marche, en bref**
+
+- **Ce qui est sauvegardé** : tes tickets, comptes, frais fixes, épargne, provisions, factures, catégories et réglages ; avec un foyer partagé, **le foyer aussi** (tes membres, leurs droits et leurs clés). Les photos seulement dans la sauvegarde complète (ZIP).
+- **Où** : sur ton Google Drive (automatique, gratuit) et/ou dans un fichier que tu ranges où tu veux.
+- **La clé** : ton **code de secours** (26 caractères). La sauvegarde Drive et la partie foyer d'un fichier sont chiffrées avec lui, sur ton téléphone : sans lui, personne ne peut les ouvrir, ni Google, ni nous. Note-le sur papier.
+- **Restaurer** sur un nouveau téléphone : la sauvegarde + le code rendent tes données et ton foyer ; tes membres gardent leur accès, sans nouveau QR code. N'utilise plus le foyer sur l'ancien téléphone.
+- **Sans sauvegarde** : un téléphone perdu, ce sont tes données perdues ; il faut recréer le foyer et réinviter tout le monde.
+
 **Sauvegarder** (Menu › Sauvegarder · restaurer)
 
-- ✦ **Sauvegarde sur Google Drive** (appli Android) : activée une fois, elle part toute seule quand tu quittes l'appli, dès qu'il y a du réseau. Chiffrée sur ton téléphone, sans photos ; l'appli ne voit que son dossier « Tickets – sauvegardes ». Garde bien le **code de secours** montré à l'activation (le même que celui du foyer si tu en as un) : sans lui, une sauvegarde ne peut pas être ouverte.
+- **Sauvegarde sur Google Drive** (appli Android, gratuite) : activée une fois, elle part toute seule quand tu quittes l'appli, dès qu'il y a du réseau. Chiffrée sur ton téléphone, sans photos ; l'appli ne voit que son dossier « Tickets – sauvegardes ». Garde bien le **code de secours** montré à l'activation (le même que celui du foyer si tu en as un) : sans lui, une sauvegarde ne peut pas être ouverte.
 - Si un envoi n'est pas parti, la ligne du menu passe en rouge, et un bandeau s'affiche sur l'accueil au bout d'une heure. « Vérifier » ouvre la dernière sauvegarde sans rien changer ; « Wi-Fi seulement » et les durées de conservation se règlent dans le même écran.
 - **Sauvegarde complète** : données et photos des tickets, dans un fichier ZIP. À faire de temps en temps.
 - **Données seules** : un petit fichier, sans photos. Pour tous les jours.
@@ -210,7 +218,7 @@ Tes données sont seulement sur ton téléphone : si tu le perds, seule une sauv
 
 - Depuis Drive : Menu › Sauvegarder › Google Drive › Restaurer, puis choisis la date. Avant, l'état actuel part aussi sur Drive et reste gardé 30 jours sur le téléphone : « Annuler la restauration » le remet (bandeau de l'accueil, ou l'écran de la sauvegarde).
 - Les photos des tickets, ton code, ton empreinte et tes réglages ne changent pas.
-- Nouveau téléphone : au premier démarrage, « Restaurer depuis Google Drive », ton compte Google, puis ton code de secours. Les photos ne reviennent qu'avec une sauvegarde complète (ZIP).
+- Nouveau téléphone : au premier démarrage, « Restaurer depuis Google Drive », ton compte Google, puis ton code de secours ; ou « Restaurer une sauvegarde » avec un fichier, et ton code de secours si tu as un foyer partagé. Les photos ne reviennent qu'avec une sauvegarde complète (ZIP).
 - Si un autre téléphone envoie des sauvegardes dans ton dossier, l'appli te prévient. N'utilise pas deux téléphones avec les mêmes sauvegardes.
 
 **Les photos des tickets**
@@ -240,7 +248,7 @@ Pour essayer l'appli ou la montrer sans tes chiffres : Menu › Réglages › Mo
 
 **J'ai supprimé un ticket par erreur.** Touche « Annuler » tout de suite, ou retrouve-le dans Opérations › Tickets › Corbeille (30 jours) et touche « Remettre ».
 
-**Je change de téléphone.** Avec la sauvegarde Drive : au premier démarrage du nouveau, « Restaurer depuis Google Drive » et ton code de secours. Pour les photos aussi : une sauvegarde complète (ZIP), puis Menu › Réglages › Restaurer. Avec un foyer partagé : « Récupérer mon foyer » avec ton code de récupération.
+**Je change de téléphone.** Avec la sauvegarde Drive : au premier démarrage du nouveau, « Restaurer depuis Google Drive » et ton code de secours. Pour les photos aussi : une sauvegarde complète (ZIP), puis Menu › Réglages › Restaurer. Avec un foyer partagé, il revient avec la sauvegarde (Drive ou fichier) et ton code de secours : tes membres n'ont rien à refaire.
 
 **Mon code de secours.** Ne le donne à personne, même pas à un membre du foyer : il ouvre ton foyer et tes sauvegardes. Les membres n'en ont pas besoin, ils ont leur propre accès.
 
