@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="07/11 10:53" />
+  <meta name="build" content="07/11 10:58" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -1361,7 +1361,9 @@
     .ecomp .n small, .entry small{ overflow:hidden; text-overflow:ellipsis; }
     #lockscreen{ overflow-y:auto; align-items:safe center; }
     @media (max-height:480px){ .lk-ic{ display:none; } .lk-dots{ margin:8px 0 4px; } .lk-pad{ gap:8px; margin-top:6px; } .lk-pad button{ height:46px; font-size:20px; } }
-    @media (max-width:380px){ .dash-top{ flex-wrap:wrap; row-gap:8px; } .dash-top > .hmn{ flex:1 1 100%; } }
+    @media (max-width:380px){ .dash-top{ flex-wrap:wrap; row-gap:8px; } .dash-top > .hmn{ flex:1 1 150px; } }
+    .dr-row .st{ white-space:normal; text-align:right; line-height:1.25; }   /* l'état à droite du menu passe à la ligne plutôt que d'être coupé */
+    .fxrow .n small, .dgb .ecomp .n small, .cacc .ecomp .n small{ white-space:normal; }   /* « chaque mois · ta part 8,3 % (100,00 €) » : jamais coupé */
     @media (max-width:359px){ .head.haspv .htitle.htitle{ padding:0 92px; } .avtabs:has(> button:nth-child(4)){ flex-wrap:wrap; } .avtabs:has(> button:nth-child(4)) > button{ flex:1 1 calc(50% - 6px); } }
     @media (max-width:359px){ .acrow{ flex-wrap:wrap; row-gap:8px; } .acrow > .acsel{ flex:1 1 100%; } .acrow > .hmn{ flex:1 1 100%; } }   /* fenêtre plus haute que l'écran : elle défile au lieu d'écraser (et couper) sa liste */
     .ui-intro{ font-size:13px; color:var(--ink-soft); line-height:1.45; text-align:center; margin:2px 0 4px; }
@@ -4552,14 +4554,18 @@
     // Tableau de bord : tout tient dans l'écran, sans défilement. Les petites cartes prennent la place qui reste au-dessus du « + » ;
     // si elle manque, leurs chiffres du bas sont retirés puis le graphique est coupé (jamais sous 130 px : un très petit écran défile).
     // Textes qui doivent rester entiers (montants, titres, onglets, mois, tuiles) : la police rapetisse jusqu'à tenir ; un montant passe à la ligne plutôt que d'être coupé
-    var FIT_SEL=".hstat b, .dash-split.h3 span b, .head .htitle, .avtabs button, .hmn b, .chips.cattiles.cat5 .chip span:last-child, .acsel span";
+    var FIT_SEL=".hstat b, .hstat span, .hstat small, .dash-split.h3 span b, .head .htitle, .avtabs button, .hmn b, .chips.cattiles.cat5 .chip span:last-child, .acsel span, .hm-s, .ep-cases span, .epc span";
+    function fitOver(el){   // le texte dépasse-t-il sa place (marges intérieures comprises) ?
+      var cs=getComputedStyle(el), av=el.clientWidth-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0), r=document.createRange(); r.selectNodeContents(el);
+      return r.getBoundingClientRect().width>av+0.5 || el.scrollWidth>el.clientWidth;
+    }
     function fitTexts(){
       [].forEach.call(document.querySelectorAll(FIT_SEL), function(el){
         el.style.fontSize=""; el.style.whiteSpace="";
-        if(!(el.clientWidth>0) || el.scrollWidth<=el.clientWidth) return;
+        if(!(el.clientWidth>0) || !fitOver(el)) return;
         var fs=parseFloat(getComputedStyle(el).fontSize)||14, min=Math.max(9.5, fs*0.7), g=0;
-        while(el.scrollWidth>el.clientWidth && fs>min && g++<20){ fs-=0.5; el.style.fontSize=fs+"px"; }
-        if(el.scrollWidth>el.clientWidth && el.matches(".hstat b, .dash-split.h3 span b")) el.style.whiteSpace="normal";
+        while(fitOver(el) && fs>min && g++<20){ fs-=0.5; el.style.fontSize=fs+"px"; }
+        if(fitOver(el) && el.matches(".hstat b, .dash-split.h3 span b, .hm-s")) el.style.whiteSpace="normal";
       });
     }
     function homeFit(){
@@ -4572,7 +4578,7 @@
       var top=g.getBoundingClientRect().top+sy, below=pg.getBoundingClientRect().bottom-g.getBoundingClientRect().bottom;
       var avail=Math.floor(lim-top-below);   // la page tient en haut, sans défiler
       function natH(){ var n=0; [].forEach.call(app.querySelectorAll(".hpgr .hmini"), function(c){ n=Math.max(n, c.offsetHeight); }); return n; }
-      if(natH()>avail){ app.classList.add("hfit-ns"); app.style.setProperty("--hmH", Math.max(130, avail)+"px"); }
+      var nh=natH(); if(nh>avail && avail>=Math.max(130, nh*0.75)){ app.classList.add("hfit-ns"); app.style.setProperty("--hmH", avail+"px"); }   // trop peu de place (petit écran) : les cartes gardent leur hauteur et la page défile, plutôt qu'un graphique écrasé
       app.style.paddingBottom=Math.max(0, innerHeight-lim)+"px";
     }
     window.addEventListener("resize", function(){ try{ homeFit(); }catch(err){} try{ fitTexts(); }catch(err){} });

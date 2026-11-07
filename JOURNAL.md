@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `07/11 10:53`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `07/11 10:58`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -224,6 +224,7 @@ Après chaque modification, dans le même commit :
   - écran étroit (< 400 px) : mois court (« oct. 2026 ») ; < 380 px : le mois du tableau de bord sur sa ligne ; < 360 px : compte et mois sur deux lignes dans Opérations, 4 sous-onglets en 2 × 2, titre plus large ;
   - « Réglages » ne déborde plus dans le menu ; sous-titres des tickets coupés proprement ; le message du bas ne cache plus le « + » ;
   - rotation pendant qu'une fenêtre est ouverte : la carte du haut est refaite à la fermeture.
+  - 2e passage (649 écrans, 9 défauts) : tableau de bord d'un petit écran — les cartes gardent leur hauteur et la page défile plutôt qu'un graphique écrasé à 37 px ; ⇄ à côté du mois ; textes mesurés marges comprises (`fitOver`) ; sous-titres des frais fixes et état du menu passent à la ligne.
 
 - **Fenêtres trop longues coupées** (capture de Benoît, « Tes catégories sont rangées ») : une fenêtre plus haute que l'écran écrasait sa liste au lieu de défiler (enfant de `.ui-sheet` rétréci par le flex). `.ui-sheet > *{flex-shrink:0}` : toutes les fenêtres défilent (catégories, comptes, choix…). Test t140.
 - Liste de contrôle sur le téléphone (point 5) publiée pour Benoît.

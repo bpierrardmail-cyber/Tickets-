@@ -38,7 +38,7 @@ window.__audit = function(phase){
     if(ellipsisInside(el) && el.scrollWidth > el.clientWidth + 2 && el.clientWidth > 0){
       var tt = (el.textContent || "").trim();
       var money = /\d/.test(tt) && /(€|\$|£|%|\d[,.]\d\d)/.test(tt);
-      var shortLbl = tt.length <= 22 && (/(BUTTON|H1|H2|H3|B|STRONG)/.test(el.tagName) || el.closest("button, .avtabs, .htitle, .hmn, .acsel, .chip, .hstat, .head"));
+      var shortLbl = tt.length <= 22 && (/(BUTTON|H1|H2|H3)/.test(el.tagName) || el.closest(".avtabs, .htitle, .hmn, .acsel, .chip, .hstat, .head, .dash-split"));   // un nom dans une ligne de liste peut finir par « … »
       if(money || shortLbl) add("tronque", el, "« " + tt.slice(0, 30) + " » : " + el.scrollWidth + " px dans " + el.clientWidth);
     }
     // texte qui sort de son bouton ou de sa case
