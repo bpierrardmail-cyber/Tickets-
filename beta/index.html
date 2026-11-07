@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <!-- Connexions permises (07/11, sécurité) : même si un défaut laissait passer du code, il ne pourrait rien envoyer ailleurs.
-       Le relais, les cours (Perso), les librairies de lecture (navigateur seulement) ; localhost:8787 = relais local des tests.
+       Le relais et les cours (Perso) ; les librairies (Tesseract, pdf.js) sont dans l'appli ; localhost:8787 = relais local des tests.
        Toute nouvelle connexion doit être ajoutée ici (et justifiée, voir CLAUDE.md). -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net; worker-src 'self' blob: https://cdn.jsdelivr.net; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com https://cdn.jsdelivr.net https://tessdata.projectnaptha.com http://localhost:8787; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:8787; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="07/11 22:10" />
+  <meta name="build" content="07/11 22:14" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -9226,6 +9226,8 @@
     function appLocal(){ return location.protocol==="https:" && location.hostname==="localhost" && capNative(); }
     // Lecteur de tickets du navigateur (Tesseract) : chargé seulement s'il sert (dans l'appli, ML Kit lit sur le téléphone)
     var tessP=null;
+    // Moteur, données de langue et worker pris dans l'appli (lib/tesseract), jamais sur un autre site
+    function tessOpts(o){ var b=new URL("./lib/tesseract/", location.href).href; o.workerPath=b+"worker.min.js"; o.corePath=b+"core"; o.langPath=b+"lang"; return o; }
     function loadTesseract(){
       if(typeof Tesseract!=="undefined") return Promise.resolve(true);
       if(appLocal()) return Promise.resolve(false);
@@ -9234,7 +9236,7 @@
         var sc=document.createElement("script"), done=false, to=setTimeout(function(){ fin(false); }, 30000);
         function fin(ok){ if(done) return; done=true; clearTimeout(to); ok=ok && typeof Tesseract!=="undefined"; if(!ok) tessP=null; res(ok); }
         sc.onload=function(){ fin(true); }; sc.onerror=function(){ fin(false); };
-        sc.src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"; document.head.appendChild(sc);   // version figée (07/11)
+        sc.src="./lib/tesseract/tesseract.min.js"; document.head.appendChild(sc);   // dans l'appli, version figée (07/11, workflow deps : lib/VERSIONS.txt)
       });
       return tessP;
     }
@@ -9304,9 +9306,9 @@
       grpDraftHook(); state.view="form"; render();
       state.draft.photoFiles=files.slice(0, 6);   // photo d'origine (toutes les pages), gardée à l'enregistrement
       if(files[0]) fileToThumb(files[0], function(t){ if(t && state.draft && state.view==="form"){ state.draft.photo=t; render(); } });
-      function tessText(src){ return Tesseract.recognize(src, "fra+eng", { logger:function(m){
+      function tessText(src){ return Tesseract.recognize(src, "fra+eng", tessOpts({ logger:function(m){
           if(m.status==="recognizing text"){ state.prog=Math.round(m.progress*100); var bar=document.getElementById("bar"); if(bar) bar.style.width=state.prog+"%"; }
-        }}).then(function(r){ return (r.data&&r.data.text)||""; }); }
+        }})).then(function(r){ return (r.data&&r.data.text)||""; }); }
       var diag=[];
       function localOne(src){ return loadTesseract().then(function(ok){ if(!ok){ diag.push("local:absent"); return ""; } return tessText(src).then(function(t){ diag.push("local:"+(t||"").length); return t; }); }); }
       var lastRes=null, raws=[];   // ce que ML Kit a rendu (morceaux et positions), pour « Copier la lecture »
@@ -11052,7 +11054,7 @@
       if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
       if(pdfjsP) return pdfjsP;
       pdfjsP=new Promise(function(res, rej){
-        var base=appLocal() ? "./pdfjs/" : "https://cdn.jsdelivr.net/npm/pdfjs-dist@"+PDFJS_V+"/legacy/build/", done=false;
+        var base="./pdfjs/", done=false;   // dans l'appli (Store : copié à la compilation ; navigateur : beta/pdfjs, workflow deps)
         function fin(){ if(done) return; done=true; window.removeEventListener("tk-pdfjs", fin); clearTimeout(to); if(window.pdfjsLib) res(window.pdfjsLib); else { pdfjsP=null; rej(new Error("lecteur de PDF indisponible (connexion ?)")); } }
         var to=setTimeout(fin, 25000);
         window.addEventListener("tk-pdfjs", fin);
@@ -11115,7 +11117,7 @@
     }
     function ocrBillPage(file){
       var plug=capPlugin("TicketOcr");
-      if(!plug) return loadTesseract().then(function(ok){ if(!ok) return { t:"", res:null }; return Tesseract.recognize(file, "fra+eng").then(function(r){ return { t:(r.data&&r.data.text)||"", res:null }; }); });
+      if(!plug) return loadTesseract().then(function(ok){ if(!ok) return { t:"", res:null }; return Tesseract.recognize(file, "fra+eng", tessOpts({})).then(function(r){ return { t:(r.data&&r.data.text)||"", res:null }; }); });
       function once(rot){ return nativeImageRot(file, rot).then(function(b64){ return plug.recognize({ image:b64 }); }).then(function(res){ return { t:mlkitRows(res||{}), res:res||null }; }); }
       function len(x){ return (x.t||"").replace(/\s/g,"").length; }
       return once(0).then(function(a){

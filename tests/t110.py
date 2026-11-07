@@ -18,9 +18,9 @@ def norm(t): return t.replace("\u202f"," ").replace("\xa0"," ")
 PJ=os.environ.get('PDFJS_DIR','/opt/npm-tools/node_modules/pdfjs-dist/legacy/build/').rstrip('/')+'/'
 def route(r):
     u=r.request.url
-    if u.startswith("file:"): return r.continue_()
-    m=re.search(r"pdfjs-dist@[^/]+/legacy/build/(pdf(?:\.worker)?\.min\.mjs)$", u)
+    m=re.search(r"(?:pdfjs-dist@[^/]+/legacy/build|/pdfjs)/(pdf(?:\.worker)?\.min\.mjs)$", u)   # beta/pdfjs (dans l'appli depuis le 07/11) ou l'ancien lien
     if m and os.path.exists(PJ+m.group(1)): return r.fulfill(status=200, body=open(PJ+m.group(1),'rb').read(), headers={"Content-Type":"text/javascript","Access-Control-Allow-Origin":"*"})
+    if u.startswith("file:"): return r.continue_()
     return r.abort()
 D=os.path.join(HERE,"donnees")
 BASE={"askName":False,"devise":"EUR","plusUnlocked":True,"comptes":[{"key":"Alex","nom":"Compte courant","payer":"Alex","main":True}],"entries":[]}
