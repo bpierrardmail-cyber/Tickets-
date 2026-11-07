@@ -27,11 +27,11 @@ with sync_playwright() as p:
     # ---------- accueil : le lien sur chaque carte
     c, pg = open_app({}, True)
     n=0
-    for k in range(4):
+    for k in range(5):
         if pg.locator(".wlc:not(.plus) #wlcPlus").count(): n+=1
-        if k<3: pg.locator("#wlcNext").click(); pg.wait_for_timeout(150)
-    check(n==4, "« ✦ Découvrir Tickets Plus » sur les 4 cartes de l'accueil (%d)" % n)
-    pg.locator("#wlcPrev").click(); pg.wait_for_timeout(150)   # 3e carte
+        if k<4: pg.locator("#wlcNext").click(); pg.wait_for_timeout(150)
+    check(n==5, "« ✦ Découvrir Tickets Plus » sur les 5 cartes de l'accueil (%d)" % n)
+    pg.locator("#wlcPrev").click(); pg.wait_for_timeout(150)   # 4e carte
     pg.locator("#wlcPlus").click(); pg.wait_for_timeout(300)
     t=W(pg, ".wlc.plus")
     check("Foyer partagé" in t and "✦ Plus" in t and pg.locator(".wlc.plus .wlc-dots i").count()==6 and pg.locator(".wlc.plus .wlc-shot img").count()==1, "carrousel Plus : 6 cartes (Drive gratuit depuis le 07/11), la 1re « Foyer partagé » avec sa capture")
@@ -45,7 +45,7 @@ with sync_playwright() as p:
     pg.locator("#plBuy").click(); pg.wait_for_timeout(300)
     check("arrive bientôt" in norm(pg.locator("body").inner_text()), "« Prendre » : l'achat arrive bientôt")
     pg.locator("#plLater").click(); pg.wait_for_timeout(300)
-    check(pg.locator(".wlc.plus").count()==0 and "Importe ton relevé" in W(pg), "« Plus tard » : retour à la carte de l'accueil où l'on était")
+    check(pg.locator(".wlc.plus").count()==0 and "Ne perds jamais tes comptes" in W(pg), "« Plus tard » : retour à la carte de l'accueil où l'on était")
     pg.locator("#wlcNext").click(); pg.wait_for_timeout(150); pg.locator("#wlcNext").click(); pg.wait_for_timeout(400)
     check(pg.locator(".wlc").count()==0, "« Commencer » ferme l'accueil")
     # images toutes chargées

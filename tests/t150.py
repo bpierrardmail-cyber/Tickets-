@@ -53,6 +53,10 @@ with sync_playwright() as p:
     raw=json.dumps(fb); km=[m["km"] for m in ls(O,"fyCfg")["members"].values()][0]
     check("Marie" not in raw and km not in raw, "rien de lisible dans fyBk (ni prénom de membre, ni clé)")
     open_foyer(O); check("Dernière sauvegarde : aujourd'hui" in txt(O), "écran du foyer : « Dernière sauvegarde : aujourd'hui »")
+    O.locator("#fyBk").click(); O.wait_for_timeout(400); O.locator('.sheet-overlay .dr-row[data-k="how"]').click(); O.wait_for_timeout(500)
+    t=txt(O); check("Tes sauvegardes" in t and "Chiffré avec ton code de secours" in t and "Oui, avec le code" in t and "Sans sauvegarde" in t and "nouveau téléphone, n'utilise plus l'application sur l'ancien" in t,
+        "foyer › Sauvegarde › « Comment ça marche ? » : le schéma, le tableau Drive / Fichier, l'avertissement")
+    O.locator("#hback").click(); O.wait_for_timeout(400); check("Effacé s'il ne sert plus" in txt(O), "retour : l'écran du foyer")
     # 3. nouveau téléphone
     N=fresh(b, errs, "N"); N.evaluate("()=>{localStorage.clear(); localStorage.setItem('foyerApi', JSON.stringify('%s'));}" % API); N.reload(); N.wait_for_timeout(1200)
     t=txt(N); check("Restaurer une sauvegarde" in t and "Récupérer mon foyer (code de secours)" not in t, "premier démarrage : « Restaurer une sauvegarde », plus de « code de secours » seul")

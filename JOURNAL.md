@@ -219,6 +219,7 @@ Après chaque modification, dans le même commit :
   - **sauvegarde Google Drive gratuite** (plus dans `PLUS_FEATURES`, carte retirée du carrousel Plus) ; Benoît : « il faudra revoir les fonctionnalités de Plus » ;
   - guide : « Comment ça marche, en bref » (ce qui est sauvegardé, où, la clé, restaurer, sans sauvegarde) ; à proposer : une diapo et un écran d'explication dans l'appli ;
   - tests t150 (nouveau), t118 et t125 adaptés (Drive gratuit).
+  - **explication des sauvegardes** (maquette validée : « tu peux intégrer ») : diapo « Ne perds jamais tes comptes » au premier démarrage du propriétaire (4e sur 5, dessin `WLC_ART`) ; écran « Tes sauvegardes » (vue `sauvaide`, `renderSauvAide` : schéma téléphone → code de secours → Drive / fichier → nouveau téléphone, tableau de ce que contient chaque sauvegarde, « Sans sauvegarde… », bouton « Sauvegarder maintenant ») ouvert par « Comment ça marche ? » en haut de Menu › Sauvegarder (et donc depuis la ligne Sauvegarde du foyer) ; la carte « Vois ce qui arrive » ne parle plus de Drive ✦ ; tests t115, t118, t150 ;
   - message après restauration, formulation de Benoît : « Si tu as restauré sur un nouveau téléphone, n'utilise plus l'application sur l'ancien pour éviter les erreurs de synchronisation » (la restauration peut se faire sur le même téléphone).
 
 - **Relais : moins de connexions, copies différentielles, protection contre les abus** (« go » de Benoît pour les points 1, 3, 4 ; but : garder l'offre gratuite de Cloudflare) :

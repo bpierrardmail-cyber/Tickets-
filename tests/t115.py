@@ -1,5 +1,5 @@
 # Accueil (diapos) :
-# 1. premier démarrage : 4 cartes illustrées par des captures (Bienvenue, Scanne, Importe ton relevé OFX/QIF/CSV, Vois ce qui arrive), puis le choix « Je commence / Rejoindre un foyer » ;
+# 1. premier démarrage : 5 cartes (Bienvenue, Scanne, Importe ton relevé OFX/QIF/CSV, Ne perds jamais tes comptes, Vois ce qui arrive), puis le choix « Je commence / Rejoindre un foyer » ;
 # 2. téléphone déjà utilisé : l'accueil s'ouvre une fois (Passer), plus après un redémarrage ;
 # 3. Menu › Aide : le guide (parties à déplier, recherche) et « Revoir l'accueil » ;
 # 4. membre d'un foyer : 2 diapos à lui (« Tu as rejoint le foyer de Alex », « Ajouter tes tickets »), après le code.
@@ -24,7 +24,7 @@ with sync_playwright() as p:
     W=lambda pg: norm(pg.locator(".wlc").inner_text()) if pg.locator(".wlc").count() else ""
     # ---------- 1. premier démarrage
     c, pg = page(); pg.reload(); pg.wait_for_timeout(1200)
-    t=W(pg); check("Bienvenue dans Tickets" in t and "Gère tes achats, comptes, frais fixes et le commun" in t and "pas même nous" in t and "*Sauf première connexion, transfert des tickets du foyer et sauvegarde sur Drive" in t and pg.locator(".wlc-dots i").count()==4 and pg.locator(".wlc-shot img").count()==1, "1er démarrage : « Bienvenue dans Tickets », 4 cartes, avec sa capture")
+    t=W(pg); check("Bienvenue dans Tickets" in t and "Gère tes achats, comptes, frais fixes et le commun" in t and "pas même nous" in t and "*Sauf première connexion, transfert des tickets du foyer et sauvegarde sur Drive" in t and pg.locator(".wlc-dots i").count()==5 and pg.locator(".wlc-shot img").count()==1, "1er démarrage : « Bienvenue dans Tickets », 5 cartes, avec sa capture")
     check(pg.evaluate("()=>{ const i=document.querySelector('.wlc-shot img'); return i && i.complete && i.naturalWidth===544; }"), "la capture vitrine/accueil.jpg est chargée")
     check(pg.locator("#wlcPlus").count()==0, "version Perso : pas de lien Tickets Plus")
     pg.locator("#wlcNext").click(); pg.wait_for_timeout(200); t=W(pg)
@@ -32,8 +32,10 @@ with sync_playwright() as p:
     pg.locator("#wlcNext").click(); pg.wait_for_timeout(200); t=W(pg)
     check("Importe ton relevé" in t and "OFX" in t and "QIF" in t and "CSV" in t, "3e carte : « Importe ton relevé » · OFX, QIF, CSV")
     pg.locator("#wlcNext").click(); pg.wait_for_timeout(200); t=W(pg)
-    check("Vois ce qui arrive" in t and "ZIP" in t and "Menu › Aide" in t and pg.locator("#wlcNext").inner_text()=="Commencer", "4e carte : « Vois ce qui arrive », ZIP / JSON, bouton « Commencer »")
-    pg.locator("#wlcPrev").click(); pg.wait_for_timeout(200); check("Importe ton relevé" in W(pg), "« ‹ Retour » : carte précédente")
+    check("Ne perds jamais tes comptes" in t and "gratuite" in t and "code de secours" in t and "ZIP" in t and pg.locator(".wlc-art svg").count()==1, "4e carte : « Ne perds jamais tes comptes » (Drive gratuit, code de secours, ZIP / JSON), avec son dessin")
+    pg.locator("#wlcNext").click(); pg.wait_for_timeout(200); t=W(pg)
+    check("Vois ce qui arrive" in t and "Menu › Aide" in t and pg.locator("#wlcNext").inner_text()=="Commencer", "5e carte : « Vois ce qui arrive », bouton « Commencer »")
+    pg.locator("#wlcPrev").click(); pg.wait_for_timeout(200); check("Ne perds jamais tes comptes" in W(pg), "« ‹ Retour » : carte précédente")
     pg.locator("#wlcNext").click(); pg.wait_for_timeout(200); pg.locator("#wlcNext").click(); pg.wait_for_timeout(500)
     s=norm(pg.locator(".sheet-overlay").last.inner_text()) if pg.locator(".sheet-overlay").count() else ""
     check(pg.locator(".wlc").count()==0 and "Je commence" in s and "Rejoindre un foyer" in s, "« Commencer » : le choix « Je commence / Rejoindre un foyer »")

@@ -206,7 +206,7 @@ Tes données sont seulement sur ton téléphone : si tu le perds, seule une sauv
 - **Restaurer** sur un nouveau téléphone : la sauvegarde + le code rendent tes données et ton foyer ; tes membres gardent leur accès, sans nouveau QR code. Si tu as restauré sur un nouveau téléphone, n'utilise plus l'application sur l'ancien pour éviter les erreurs de synchronisation.
 - **Sans sauvegarde** : un téléphone perdu, ce sont tes données perdues ; il faut recréer le foyer et réinviter tout le monde.
 
-**Sauvegarder** (Menu › Sauvegarder · restaurer)
+**Sauvegarder** (Menu › Sauvegarder · restaurer ; « Comment ça marche ? » en haut montre le schéma)
 
 - **Sauvegarde sur Google Drive** (appli Android, gratuite) : activée une fois, elle part toute seule quand tu quittes l'appli, dès qu'il y a du réseau. Chiffrée sur ton téléphone, sans photos ; l'appli ne voit que son dossier « Tickets – sauvegardes ». Garde bien le **code de secours** montré à l'activation (le même que celui du foyer si tu en as un) : sans lui, une sauvegarde ne peut pas être ouverte.
 - Si un envoi n'est pas parti, la ligne du menu passe en rouge, et un bandeau s'affiche sur l'accueil au bout d'une heure. « Vérifier » ouvre la dernière sauvegarde sans rien changer ; « Wi-Fi seulement » et les durées de conservation se règlent dans le même écran.
