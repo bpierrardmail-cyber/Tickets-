@@ -110,6 +110,8 @@ L'onglet À venir montre ce qui va sortir de tes comptes. Il a quatre parties.
 - **12 mois** : d'abord « À payer bientôt » (avec la date), puis les 12 mois à venir avec ce qui est prévu, et l'argent de côté (épargne, provisions). « Tes comptes dans 12 mois » ouvre la projection.
 - **Frais fixes** : loyer, électricité, abonnements… Chaque mois, ou une seule fois. Pour un frais commun, il est payé par un compte en entier, ou chacun paie sa part.
 - **Provisions** : l'argent mis de côté chaque mois pour une grosse dépense (taxe foncière, assurance, vacances). La mise de côté apparaît dans les frais fixes. Le graphique montre ce qui est déjà de côté et ce qui est prévu ; l'appli propose un montant mensuel si une provision ne suffit pas.
+  - Dans son réglage, partie « Chaque mois » : **Qui paie ?** (le foyer, selon les parts, ou une personne), **Prélevé sur** (le compte d'où sort l'argent, ou « Chacun sur son compte »), **Mis de côté sur** (le compte ou le livret qui le reçoit) et **Suivre dans les frais fixes**. Un petit schéma montre le trajet de l'argent.
+  - La mise de côté sort du compte qui paie et **entre sur le compte de la provision** : un seul rond « fait » pour les deux comptes. Sur un livret, cocher la mise de côté augmente sa valeur.
 - ✦ **Factures** (Tickets Plus) : importe tes factures, par PDF ou en photos (bouton « Importer une facture »).
 
 **Importer une facture**

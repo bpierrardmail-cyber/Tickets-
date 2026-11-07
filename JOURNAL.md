@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `07/11 11:36`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `07/11 13:15`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -210,6 +210,10 @@ Après chaque modification, dans le même commit :
 
 ### 07/11
 
+- **Provision : la mise de côté va d'un compte à l'autre** (Benoît : « la sortie d'un compte doit être ajoutée au compte qui a les provisions » ; maquette validée) :
+  - `provInAmt(f, compte, mois)` : la mise de côté (frais relié) **entre** sur le compte de la provision (`provOnAcct`) quand elle est payée depuis un autre compte (montant − ce que ce compte aurait payé lui-même) ; comptée dans `virementsSum` / `virementsSumDone` (soldes, banque, fin de mois), ligne dans Opérations (`cptOps` : « Provision · depuis Compte courant », même rond « fait » que la sortie), « Pas cochés les mois passés », import d'un relevé (`provInHit` : une entrée égale à une mise de côté, ou à la somme de celles du mois, est « Déjà en provision » et la coche). Vérifié sur les données de Benoît : frais reliés depuis novembre, aucun virement reçu sur le compte commun depuis septembre → pas de double compte.
+  - Provision sur un **livret** : cocher la mise de côté ajoute le montant au livret, décocher le retire (`provEpSync`, `f.epDone[mois]`), dans `toggleFraisDone`, « Pas cochés », l'import et son annulation.
+  - Réglage d'une provision (création et modification) : partie « Chaque mois » = **Qui paie ?** (Le foyer / une personne) · **Prélevé sur** (comptes, « Chacun sur son compte ») · **Mis de côté sur** (ex « Où est l'argent ? ») · **Suivre dans les frais fixes** (ex « Pas dans les frais fixes ») ; trajet de l'argent affiché en direct (`provFlowFields`, `provFlowText`, `provFlowPaint`, `provFlowApply` ; `uiForm` : `api.opts`, `api.help`). « Remplie par » retiré. Test t144.
 - **Campagne de cas limites (calculs)** par un agent séparé (appli vide, 30 personnes, montants extrêmes, changements d'année, annulations, sauvegarde). Corrigé (test t142) :
   - **ticket du titulaire sans « payé par »** (tout ticket saisi sur une installation neuve) : ne sortait d'aucun compte. `ticketInAcct` passe par `payerOf` (vide = le titulaire). Sur les données de Benoît : 1 ticket sur 125 concerné, il compte maintenant dans son compte principal ;
   - **renommer une personne** : `personRenameAll` (parts du commun, partage des tickets, parts des frais, épargne, provisions, remboursements, groupes) ; refusé pour un membre du foyer partagé ;
