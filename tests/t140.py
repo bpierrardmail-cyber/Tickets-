@@ -66,6 +66,21 @@ with sync_playwright() as p:
     pg.wait_for_timeout(500)
     check(ls(pg,"entries")[0]["categorie"]=="Carburant" and "Carburant" in ls(pg,"cats"), "annuler : la catégorie et son ticket reviennent")
     c.close()
+    # fenêtre « Tes catégories sont rangées » plus haute que l'écran : elle défile jusqu'au bout (capture de Benoît du 07/11)
+    subs=["Sous fictive %d"%i for i in range(24)]
+    d=dict(NEW); d.update({"taxoV2":2,"taxoV3":3,"taxoV4":4,"catMigShow":True,"cats":["Courses","Sorties","Transport","Maison","Santé","Loisirs","Shopping","Enfants","Animaux","Autre"]+subs,
+      "catParent":{x:"Courses" for x in subs}})
+    c=b.new_context(viewport={'width':412,'height':760}); c.add_init_script("window.__catMigTest=true")
+    pg=c.new_page(); pg.on('pageerror', lambda e: allerr.append(str(e)))
+    pg.route("**/*", lambda r: r.continue_() if r.request.url.startswith("file:") else r.abort())
+    pg.goto(APP); pg.wait_for_timeout(300)
+    pg.evaluate("d=>{localStorage.clear(); for(const k in d) localStorage.setItem(k, JSON.stringify(d[k]));}", d); pg.reload(); pg.wait_for_timeout(1500)
+    m=pg.evaluate("""()=>{ var sh=document.querySelector('.sheet-overlay .ui-sheet'); if(!sh) return null; var g=sh.querySelector('.dr-grp');
+      var full=g.scrollHeight<=g.clientHeight+1; sh.scrollTop=sh.scrollHeight; var last=g.lastElementChild.getBoundingClientRect(), btn=sh.querySelector('.ui-no').getBoundingClientRect();
+      return {full:full, scrolls:sh.scrollHeight>sh.clientHeight, lastIn:last.bottom<=innerHeight, btnIn:btn.bottom<=innerHeight}; }""")
+    print("  fenêtre longue :", m)
+    check(m and m["full"] and m["scrolls"] and m["lastIn"] and m["btnIn"], "fenêtre longue : la liste n'est pas coupée, elle défile jusqu'à la dernière catégorie et « C'est bon »")
+    c.close()
     errs2=[e for e in allerr if "Failed to load resource" not in e]
     check(not errs2, "pas d'erreur %s"%errs2[:3])
     b.close()

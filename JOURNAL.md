@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `06/11 16:47
+- β web : `beta/index.html`, étiquette `07/11 09:56
 ([^`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
@@ -208,6 +208,11 @@ Après chaque modification, dans le même commit :
 ---
 
 ## Historique (le plus récent en haut)
+
+### 07/11
+
+- **Fenêtres trop longues coupées** (capture de Benoît, « Tes catégories sont rangées ») : une fenêtre plus haute que l'écran écrasait sa liste au lieu de défiler (enfant de `.ui-sheet` rétréci par le flex). `.ui-sheet > *{flex-shrink:0}` : toutes les fenêtres défilent (catégories, comptes, choix…). Test t140.
+- Liste de contrôle sur le téléphone (point 5) publiée pour Benoît.
 
 ### 06/11
 
