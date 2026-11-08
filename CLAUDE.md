@@ -19,7 +19,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 |---|---|
 | `beta/index.html` | **L'appli** (≈ 9 700 lignes) : HTML + CSS + JS dans un seul fichier. Servie par GitHub Pages (`/Tickets-/beta/`). |
 | `index.html`, `sw.js`, `manifest.webmanifest` | Racine : renvoi vers la β (l'ancienne version stable est retirée depuis le 07/11) + service worker (réseau d'abord), qui sert la β dans un navigateur. |
-| `relais/cours-worker.js` | Worker Cloudflare : cours Yahoo / CoinGecko (`/search`, `/quote`, `/chart`, `/crypto/*`), inflation INSEE (`/inflation`) et routage `/foyer`. |
+| `relais/cours-worker.js` | Worker Cloudflare : cours Yahoo / CoinGecko (`/search`, `/quote`, `/chart`, `/crypto/*`), inflation INSEE (`/inflation`) et routage `/foyer`. Limite par adresse en mémoire (`rlHit`, `RL_MAX` par minute, 429 ; test t153). |
 | `relais/foyer.js` | Foyer partagé : un Durable Object SQLite par foyer (classe `Foyer`). |
 | `wrangler.jsonc` | Config du Worker ; déployé par Workers Builds à chaque push sur `main`. |
 | `app-android/` | Appli Android Capacitor 7, code natif dans `native/`. **Perso** : charge la β en ligne (`server.url`) et en garde une copie pour marcher sans réseau (`TkOfflineClient`). **Store** : la β est dans l'APK (copiée à la compilation avec pdf.js et `insee.json`), mises à jour par le Store. |

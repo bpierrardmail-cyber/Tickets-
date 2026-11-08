@@ -23,6 +23,29 @@ const CORS = {
 const UA = { "User-Agent": "Mozilla/5.0 (compatible; TicketsApp/1.0)", "Accept": "application/json" };
 const TYPES_OK = ["EQUITY", "ETF", "MUTUALFUND", "INDEX"];
 
+// Limite par adresse (08/11, sécurité point 7) : un téléphone fait quelques requêtes par minute (Bourse, Analyse avancée) ;
+// au-delà de RL_MAX « coûts » par minute, réponse 429 sans interroger Yahoo / CoinGecko / INSEE.
+// Compteur en mémoire du relais (par instance, gratuit, rien n'est écrit) : il arrête un client qui insiste,
+// sans garantie stricte au niveau mondial. Le foyer partagé a ses propres protections (foyer.js) et n'est pas compté ici.
+// L'adresse n'est jamais écrite : seulement gardée en mémoire une minute (IPv6 : le bloc /64 d'une box).
+export const RL_MAX = 120, RL_WIN = 60000;
+const RL = new Map();
+export function rlHit(ip, cost, now) {
+  if (!ip) return true;
+  now = now || Date.now();
+  if (ip.includes(":")) ip = ip.split(":").slice(0, 4).join(":");
+  let e = RL.get(ip);
+  if (!e || now - e.t >= RL_WIN) { e = { t: now, n: 0 }; RL.set(ip, e); }
+  e.n += cost || 1;
+  if (RL.size > 5000) for (const [k, v] of RL) if (now - v.t >= RL_WIN) RL.delete(k);
+  return e.n <= RL_MAX;
+}
+function rlCost(url) {
+  if (url.pathname === "/quote") return Math.max(1, Math.ceil((url.searchParams.get("symbols") || "").split(",").filter(Boolean).slice(0, 40).length / 5));
+  if (url.pathname === "/crypto/price") return 2;
+  return 1;
+}
+
 function json(obj, ttl) {
   return new Response(JSON.stringify(obj), {
     headers: { ...CORS, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "public, max-age=" + (ttl || 60) },
@@ -120,6 +143,10 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/foyer" || url.pathname.startsWith("/foyer/")) return handleFoyer(request, env);
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
+    if (request.method !== "GET") return new Response("méthode", { status: 405, headers: CORS });
+    if (!rlHit(request.headers.get("CF-Connecting-IP") || "", rlCost(url))) {
+      return new Response(JSON.stringify({ error: "limite" }), { status: 429, headers: { ...CORS, "Content-Type": "application/json; charset=utf-8", "Retry-After": "60", "Cache-Control": "no-store" } });
+    }
     try {
       if (url.pathname === "/inflation") {
         try { const r = await inflation(); return json(r ? { ok: true, ...r } : { ok: false }, r ? 43200 : 300); }
