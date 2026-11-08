@@ -164,11 +164,15 @@ with sync_playwright() as p:
     check(not calls(p2, "stage"), "rien n'est envoyé avant la restauration (le téléphone vide ne remplace pas la sauvegarde)")
     p2.locator(".drv-f").nth(1).click(); p2.wait_for_timeout(400)
     s=norm(p2.locator(".sheet-overlay").last.inner_text())
-    check("Sur le téléphone" not in s and "continue ensuite ici" in s, "confirmation du nouveau téléphone (sans comparaison)")
+    check("Sur le téléphone" not in s and "sauvegarde automatique sur Google Drive sera activée" in s and "Menu › Sauvegarder" in s, "confirmation du nouveau téléphone : Drive sera activée, désactivable dans le menu")
     p2.evaluate("()=>{ window.__pre=1; }"); p2.locator("#drvRsOk").click(); until(p2, "()=>{ try{ return !window.__pre && !!JSON.parse(localStorage.getItem('driveRestored')) && document.readyState==='complete'; }catch(x){ return false; } }", 20000); p2.wait_for_timeout(2500)
     E=LS(p2, "entries")
     check(E and len(E)>=2 and LS(p2, "driveSec")==SEC64 and LS(p2, "driveCfg")["on"] is True and LS(p2, "askName") is False, "tout est revenu ; même clé ; sauvegarde Drive active")
     check(any(c[1].get("on") is True for c in calls(p2, "setup")), "Android : sauvegarde Drive activée sur le nouveau téléphone")
+    s=norm(p2.locator(".sheet-overlay").last.inner_text()) if p2.locator(".sheet-overlay").count() else ""
+    check("restauré" in s.lower() and "Sauvegarde Google Drive activée" in s and "désactiver dans Menu › Sauvegarder" in s and p2.locator("#drvActGo").count()==1, "après la restauration : « Sauvegarde Google Drive activée », désactivable dans le menu")
+    p2.locator(".sheet-overlay .ui-yes").last.click(); p2.wait_for_timeout(300)
+    check(LS(p2, "drvActMsg") is None, "message montré une seule fois")
     t=norm(p2.locator("#app").inner_text()); check("Tout est revenu" in t and "même clé" in t, "accueil : « Tout est revenu »")
     # ---------- 6. Réglages › Restaurer
     pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="settings"]').click(); pg.wait_for_timeout(300)

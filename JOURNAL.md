@@ -19,7 +19,7 @@ Après chaque modification, dans le même commit :
 ## État actuel (31/10/2026)
 
 **Versions**
-- β web : `beta/index.html`, étiquette `07/11 14:22`, environ 9 800 lignes.
+- β web : `beta/index.html`, étiquette `08/11`, environ 9 800 lignes.
 - APK de test « Tickets Perso » (avec la Bourse) et « Tickets Store » (sans la Bourse), release `apk-beta`, recompilés quand la β ou l'appli Android change.
   - **Perso** : charge la β en ligne (chaque correction arrive tout de suite) et en garde une copie : sans réseau, elle ouvre la dernière version, avec les mêmes données.
   - **Store** : appli complète, la β est dans l'APK (avec le lecteur PDF et l'inflation INSEE du moment) ; aucune connexion pour l'usage normal, mises à jour par le Store.
@@ -61,7 +61,7 @@ Après chaque modification, dans le même commit :
 **Photos des tickets** : gardées en qualité d'origine (toutes les pages) en plus de la petite photo des listes ; galerie rangée par mois (⋯ : supprimer les photos d'un mois ou d'une année) ; Menu › Stockage (place utilisée, années / mois, « Garder les photos d'origine » Toujours / 5 ans / 2 ans). Les tickets restent toujours, la galerie du téléphone n'est jamais touchée.
 
 **Foyer partagé**
-- Invitation par QR code. Copies chiffrées sur le relais, que le relais ne peut pas lire. Code + empreinte obligatoires.
+- Invitation par QR code. Copies chiffrées sur le relais, que le relais ne peut pas lire. Code + empreinte choisis par chaque téléphone, fortement conseillés (08/11).
 - Droits par onglet : Masqué / Lecture / Modif.
 - Comptes choisis ou « Aucun · ses tickets ». Option « Tickets visibles : tout le foyer ».
 - L'Accueil des membres est personnel.
@@ -130,6 +130,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **08/11 · code et empreinte** : plus obligatoires, « fortement conseillés » ; chaque téléphone décide pour lui (« un code est personnel » : le propriétaire en créant le foyer, le membre en le rejoignant) ; avertissement si on passe ; l'empreinte jamais proposée sans lecteur. Après une restauration Drive, dire clairement que la sauvegarde Drive est activée et qu'elle se désactive dans le menu.
 - **08/11** : version Perso = `fr.bpierrard.budget.perso` (« pour que les deux soient identiques » ; pas exactement le même, sinon les deux applis ne peuvent pas être installées ensemble) ; nouvelle appli à installer (avec la nouvelle clé, la réinstallation était déjà prévue).
 - **08/11** : identifiant de la version Store = `fr.bpierrard.budget` (générique tant que le nom de l'appli n'est pas choisi) ; changé dans la compilation dès maintenant (l'APK Store de test devient une nouvelle appli ; identifiant Google Android à créer pour ce nom).
 - **07/11 · relais et sauvegarde** : rester sur l'offre gratuite de Cloudflare (envois groupés, vérifications espacées ; WebSocket abandonné) ; 3 créations de foyer par réseau et par jour ; foyer effacé après 15 jours sans membre ou 3 mois sans activité, avec un message clair (sans parler du relais) ; copie de secours sur le relais supprimée, le foyer est dans la sauvegarde (Drive ou fichier) ; **sauvegarde Google Drive gratuite** ; revoir plus tard le contenu de Tickets Plus ; ancienne version à la racine retirée.
@@ -192,7 +193,7 @@ Après chaque modification, dans le même commit :
   - synchro DSP2 via un agrégateur payant, seulement dans Plus, à décider.
 - **23/10** : l'Analyse avancée fait partie de Tickets Plus.
 - **18/10**
-  - Foyer : code + empreinte obligatoires sur chaque téléphone. Rejoindre un foyer est gratuit ; en créer un est réservé à Plus dans la version Store.
+  - Foyer : code + empreinte obligatoires sur chaque téléphone (remplacé le 08/11 : choisis par chaque téléphone, on peut passer). Rejoindre un foyer est gratuit ; en créer un est réservé à Plus dans la version Store.
   - Un enfant est en consultation seulement.
   - Le QR code lisible par l'appareil photo est reporté à la sortie Store.
   - Analyse : en vue « Moi », un frais commun payé en entier depuis son compte compte pour son montant complet, avec « dont X pour les autres » en petit. Avec « chacun sa part », seule sa part compte.
@@ -214,6 +215,8 @@ Après chaque modification, dans le même commit :
 
 ### 08/11
 
+- **Code et empreinte au choix de chaque téléphone** (`fyEnsureLock`, `fyLockScreen`) : « Fortement conseillé… Choisis ton propre code » ; bouton « Passer » → « Continuer sans code ? » (avertissement, `lockSkip` retenu) ; après le code, l'empreinte seulement si le téléphone a un lecteur avec une empreinte enregistrée (`fyBioOk`), avec « Pas d'empreinte · le code suffit » (`lockCfg.bioSkip`). Écran du foyer : `fyLockRow` (« Code actif sur ce téléphone » ou « Pas de code sur ce téléphone · Ajouter »). Réglages › Code et empreinte : ajouter / retirer l'empreinte (`lockBioOff`), retirer le code, permis aussi dans un foyer (avertissement). Test t152.
+- **Restauration Drive sur un nouveau téléphone** : la confirmation dit « La sauvegarde automatique sur Google Drive sera activée… Tu pourras la désactiver dans Menu › Sauvegarder › Sauvegarde sur Google Drive » ; après le redémarrage, une fenêtre « Restauré ✓ · Sauvegarde Google Drive activée » (OK / Réglages Drive ; `drvActMsg`, `drvActAuto`). t126 adapté.
 - **Nom de l'appli à un seul endroit** : `APP_NAME` en tête du script (« Bienvenue dans … », « Partager › … », « … Plus », écran de verrouillage, invitations, dossier Documents, guide de l'Aide…) ; à changer aussi : `<title>`, `guide/*.md`, `APP_NAME` de `apk-beta.yml` (nom sous l'icône). « Gratuite » retiré après Google Drive (diapo « Ne perds jamais tes comptes », écran « Tes sauvegardes », guide).
 - **Nouvelle clé de signature en place** : secrets GitHub créés par Benoît, APK signés avec la nouvelle clé (SHA-1 `86:50:A9:…:4F:DF`, vérifié sur l'APK publié) ; identifiants `fr.bpierrard.budget.perso` (Perso) et `fr.bpierrard.budget` (Store). L'ancienne clé de test (publique) est retirée du dépôt ; sans les secrets, la compilation s'arrête. Reste pour Benoît : deux identifiants Android dans le projet Google `app-budget-sbpi`, réinstallation de la Perso (sauvegarde, installation à côté, restauration), puis suppression des anciens identifiants Google.
 

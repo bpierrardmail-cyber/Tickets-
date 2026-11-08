@@ -81,7 +81,7 @@ Menu › Réglages › Rappels (appli Android) : tes prélèvements de la veille
 
 ## Code et sécurité
 
-- Un code à 6 chiffres et ton empreinte protègent l'appli : obligatoires dans un foyer.
+- Quand tu rejoins le foyer, tu choisis ton propre code à 6 chiffres, puis ton empreinte si ton téléphone a un lecteur. Fortement conseillé (ce sont les comptes du foyer), mais tu peux passer. Pour changer d'avis : Menu › Réglages › Code et empreinte.
 - Si tu quittes le foyer (Menu › Foyer › Quitter le foyer), les données du foyer partent de ton téléphone ; tu retrouves celles que tu avais avant de le rejoindre.
 - Si le propriétaire te retire du foyer, ton accès est coupé tout de suite.
 

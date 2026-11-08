@@ -121,7 +121,7 @@ Les maquettes (canevas « Tickets — Plan de l'appli » et autres) sont des art
 ### Foyer partagé : le propriétaire est le centre
 - Le téléphone du propriétaire a toutes les données. Il publie sur le relais une copie **chiffrée** pour chaque membre : AES-GCM, gzip, format `g1.`, filtrée selon ses droits.
 - Un membre qui a le droit de modifier envoie ses changements dans `/inbox`. Le propriétaire les fusionne fiche par fiche, en gardant la plus récente, puis republie.
-- Invitation par QR code. Un code à 6 chiffres et l'empreinte sont obligatoires sur chaque téléphone.
+- Invitation par QR code. Un code à 6 chiffres et l'empreinte sont fortement conseillés, choisis par chaque téléphone.
 - Droits par onglet : Masqué / Lecture / Modif.
 
 ---
