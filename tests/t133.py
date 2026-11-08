@@ -37,9 +37,15 @@ with sync_playwright() as p:
     check(len(entries(pg))==1 and "Choisis une catégorie" in norm(pg.locator("body").inner_text()), "Enregistrer refusé sans catégorie")
     if pg.locator('#chips .chip[data-cat="Loisirs"]').count()==0: pg.locator("#catMore").click(); pg.wait_for_timeout(300)
     pg.locator('#chips .chip[data-cat="Loisirs"]').click(); pg.wait_for_timeout(300)
+    an=norm(pg.locator("#artnone").inner_text()) if pg.locator("#artnone").count() else ""
+    check("Loisirs · ticket entier" in an and "12,50" in an, "aucun article : annoncé avant l'enregistrement (« "+an.replace(chr(10)," ")+" »)")
     pg.locator("button:has-text('Enregistrer')").first.click(); pg.wait_for_timeout(700)
     E=entries(pg); e=[x for x in E if x["marchand"]=="Boutique Test"]
     check(len(e)==1 and len(e[0]["articles"])==1 and abs(e[0]["articles"][0]["prix"]-12.5)<0.001 and "ticket entier" in e[0]["articles"][0]["label"], "ticket sans article : un article du ticket entier ajouté %s" % (e[0]["articles"] if e else None))
+    newTicket(pg, "5", "Essai articles"); pg.locator("#artnoneadd").click(); pg.wait_for_timeout(400)
+    check(pg.locator("#artnone").count()==0 and pg.locator("#arts input").count()>0, "« + Ajouter les articles » : une ligne d'article, l'annonce disparaît")
+    pg.locator("#cancel").click(); pg.wait_for_timeout(400)
+    if pg.locator(".sheet-overlay .ui-yes").count(): pg.locator(".sheet-overlay .ui-yes").last.click(); pg.wait_for_timeout(300)
     # retrait
     newTicket(pg, "60", "RETRAIT DAB")
     if pg.locator('#chips .chip[data-cat="Autre"]').count()==0: pg.locator("#catMore").click(); pg.wait_for_timeout(300)

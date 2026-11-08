@@ -6,11 +6,11 @@
        Scripts (08/11) : seul le script de la page s'exécute, reconnu par son empreinte (python3 outils/csp.py après chaque modification).
        Le relais et les cours (Perso) ; les librairies (Tesseract, pdf.js) sont dans l'appli ; localhost = relais imité des tests (rien ne sort du téléphone).
        Toute nouvelle connexion doit être ajoutée ici (et justifiée, voir CLAUDE.md). -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ucvIhUr9ARWpyhI/DW4VpYLb1tzbcd6l0mnLqfwNMpw=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-7K5b+jgTfb/f6wi6JjqtA1Eb1Ob+f7FxYNDcLSKk1z0=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="08/11 11:24" />
+  <meta name="build" content="08/11 13:33" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -192,6 +192,9 @@
     .f-ol b, .f-ol select{ color:var(--accent); font-weight:600; } .f-ol select{ background:none; border:0; font-size:14.5px; text-align:right; max-width:62%; }
     .f-osub{ font-size:11.5px; margin:-4px 0 10px; text-align:right; }
     .f-artadd{ display:flex; gap:8px; margin-top:10px; } .f-artadd .btn{ flex:1; }
+    .art-none{ display:grid; gap:4px; padding:12px 14px; border:1px dashed var(--line); border-radius:14px; color:var(--ink-soft); font-size:13.5px; line-height:1.4; }
+    .art-none b{ color:var(--ink); font-size:14px; } .art-none i{ font-style:normal; color:var(--ink); }
+    .art-none-b{ justify-self:start; margin-top:6px; background:none; border:0; padding:4px 0; color:var(--accent); font:inherit; font-weight:700; cursor:pointer; }
     .sh-m{ display:flex; gap:12px; align-items:flex-start; width:100%; text-align:left; background:none; border:0; border-top:1px solid var(--line); padding:11px 4px; color:var(--ink); cursor:pointer; }
     .sh-m .rd{ width:18px; height:18px; border-radius:50%; border:2px solid var(--accent); flex:none; margin-top:2px; box-sizing:border-box; }
     .sh-m.on .rd{ background:radial-gradient(var(--accent) 42%, transparent 48%); } .sh-m b{ font-size:14.5px; } .sh-m small{ display:block; color:var(--muted); font-size:12px; margin-top:2px; }
@@ -1514,6 +1517,7 @@
     .fy-qr{ align-self:center; margin:8px auto 4px; width:256px; padding:10px; border-radius:20px; background:#fff; box-sizing:border-box; }
     .fy-qr svg{ display:block; width:236px; height:236px; }
     .fy-qrt{ text-align:center; display:flex; flex-direction:column; gap:6px; margin:10px 0 12px; font-size:15px; line-height:1.35; }
+    .fy-qrhow{ margin:0 0 12px; padding:10px 12px; border-radius:12px; background:var(--card2, var(--card)); border:1px solid var(--line); font-size:13px; line-height:1.4; color:var(--ink-soft); } .fy-qrhow b{ color:var(--ink); }
     .fy-qrt small{ font-size:12.5px; color:var(--ink-soft); }
     .fy-recap > div{ display:flex; justify-content:space-between; gap:12px; padding:10px 0; font-size:13.5px; }
     .fy-recap span{ color:var(--ink-soft); }
@@ -5317,6 +5321,12 @@
       }
       h += '<div class="f-arth" id="artshead"><label class="f">Articles (rangés par produit)</label><span id="artsum"></span></div><div id="arts">';
       (d.articles||[]).forEach(function(a){ h += artRow(a, d); });
+      // aucun article : dire avant l'enregistrement ce qui sera créé (08/11, accordé par Benoît)
+      if(!state.draftRO && !(d.articles||[]).length){
+        var mt0=num(d.montant);
+        h += '<div class="art-none" id="artnone"><b>Aucun article</b><span>Il sera enregistré comme 1 article : <i>'+esc((d.categorie ? catLabel(d.categorie) : "catégorie")+" · ticket entier")+'</i>'+(mt0 ? ' ('+esc(fmtK(mt0))+')' : '')+'.</span>'+
+          '<button type="button" class="art-none-b" id="artnoneadd">＋ Ajouter les articles</button></div>';
+      }
       h += '</div><div class="f-artadd"><button class="btn ghost" id="addart" type="button">＋ Article</button>'+
            '<button class="btn ghost" id="addremise" type="button">＋ Remise</button></div>';
       h += '<div class="btns f-bar"><button class="btn ghost" id="cancel" type="button">Annuler</button>'+
@@ -5362,6 +5372,7 @@
       var photochg=document.getElementById("photochg"); if(photochg) photochg.onclick=function(){ readForm(); var pi=document.getElementById("photoin"); if(pi) pi.click(); };
       var photodel=document.getElementById("photodel"); if(photodel) photodel.onclick=function(){ readForm(); state.draft.photo=""; state.draft.photoFiles=null; render(); };
       document.getElementById("addart").onclick=function(){ readForm(); state.draft.articles.push({label:"",prix:"",produit:""}); render(); };
+      var anb=document.getElementById("artnoneadd"); if(anb) anb.onclick=function(){ document.getElementById("addart").click(); };
       var fsh=document.getElementById("fshare"); if(fsh) fsh.onclick=function(){ readForm(); shareSheet(); };
 
       var orb=document.getElementById("ocrRawBtn"); if(orb) orb.onclick=ocrRawSheet;
@@ -12953,7 +12964,8 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       var m=fyCfg.members[mid];
       var s=uiSheet('<div class="sheet-title">Inviter '+esc(m.name)+'</div><div class="fy-qr">'+qrSvg(text, 236)+'</div>'+
         '<div class="fy-qrt"><b>Scanne ce code avec '+APP_NAME+' sur le téléphone de '+esc(m.name)+'</b><small id="fyExp"></small></div>'+
-        '<div class="fy-card fy-list fy-recap"><div><span>Accès</span><b>'+esc(fyRightsLabel(m))+'</b></div><div><span>Onglets</span><b>'+esc(fyTabsLabel(m))+'</b></div>'+(comptes.length?'<div><span>Comptes</span><b>'+esc(fyAcctsLabel(m))+'</b></div>':'')+'<div><span>Sur son téléphone</span><b style="color:var(--accent)">code + empreinte obligatoires</b></div></div>'+
+        '<div class="fy-qrhow"><b>Avant</b> : installe '+APP_NAME+' sur son téléphone, puis dans l\'appli : Menu › Rejoindre un foyer (pas avec l\'appareil photo du téléphone).'+((EDITION==="store" && plusOwn()) ? ' Ton '+APP_NAME+' Plus couvre '+esc(m.name)+' : rien à acheter.' : '')+'</div>'+
+        '<div class="fy-card fy-list fy-recap"><div><span>Accès</span><b>'+esc(fyRightsLabel(m))+'</b></div><div><span>Onglets</span><b>'+esc(fyTabsLabel(m))+'</b></div>'+(comptes.length?'<div><span>Comptes</span><b>'+esc(fyAcctsLabel(m))+'</b></div>':'')+'<div><span>Sur son téléphone</span><b style="color:var(--accent)">son code et son empreinte (conseillés)</b></div></div>'+
         '<div class="ui-stack"><button type="button" class="btn ghost" id="fyShare">Le QR ne passe pas ? Envoyer l\'invitation</button><button type="button" class="btn primary ui-no">Terminé</button></div>');
       var tick=setInterval(function(){
         var e=s.q("#fyExp"); if(!e || !document.body.contains(s.ov)){ clearInterval(tick); return; }

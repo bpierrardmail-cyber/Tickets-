@@ -60,6 +60,8 @@ with sync_playwright() as p:
     # 2. Marie, téléphone avec lecteur
     open_foyer(O); O.locator("#fyAdd").click(); O.wait_for_timeout(300); O.locator('[data-n="Marie"]').click(); O.wait_for_timeout(150)
     O.locator('[data-q="w"]').click(); O.wait_for_timeout(150); O.locator("#fyOk").click(); O.wait_for_timeout(1500)
+    qs=O.locator(".sheet-overlay").last.inner_text()
+    check("Rejoindre un foyer" in qs and "appareil photo" in qs and "conseillés" in qs and "obligatoires" not in qs, "écran du QR code : installer l'appli d'abord, code et empreinte conseillés")
     inv=read_qr(O, "t152_qr.png"); O.locator(".ui-no").last.click(); O.wait_for_timeout(300)
     M=fresh(b, errs, "M", BIO); M.evaluate("()=>{localStorage.clear(); localStorage.setItem('foyerApi', JSON.stringify('%s'));}" % API)
     M.reload(); M.wait_for_timeout(1200); btn(M, "Rejoindre un foyer (QR code)")

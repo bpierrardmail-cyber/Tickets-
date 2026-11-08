@@ -217,6 +217,8 @@ Après chaque modification, dans le même commit :
 
 ### 08/11
 
+- **Ticket sans article annoncé** (accordé le 08/11) : à la place de la liste vide, « Aucun article · Il sera enregistré comme 1 article : … · ticket entier (montant) » et « ＋ Ajouter les articles » (`#artnone`, `#artnoneadd`). t133.
+- **Écran du QR code d'invitation** : « Avant : installe l'appli sur son téléphone, puis dans l'appli : Menu › Rejoindre un foyer (pas avec l'appareil photo) » (+ « Ton Plus couvre … » dans la Store avec Plus) ; « son code et son empreinte (conseillés) » au lieu d'« obligatoires » (`.fy-qrhow`). t152.
 - **Corrections de la revue de sécurité** (« tout ce qui a été remonté, même mineur, doit être corrigé ») :
   - **C1** pollution de prototype : `Object.freeze(Object.prototype)` en tête du script ; chemins venus d'un autre téléphone vérifiés (`fyPathOk` : jamais `__proto__` / `constructor` / `prototype`, 3 morceaux au plus) dans `fyApplyFromMember`, `fyDeltaOn`, `fyPatch` ; dictionnaires des droits sans prototype (`fyRules`).
   - **C2** photo piégée : `phSafe` (seulement `data:image/…;base64,…`) dans `photoOf`, `initPhotos`, la corbeille, `saveDraft`, `restoreApply` (photos) et `fyFromMember`.
