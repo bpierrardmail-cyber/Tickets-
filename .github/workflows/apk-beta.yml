@@ -98,7 +98,7 @@ jobs:
             echo "::add-mask::$KS_PASS"
             echo "Clé de signature : celle des secrets GitHub"
           else
-            echo "::warning::Secrets TK_KEYSTORE_B64 / TK_KEYSTORE_PASS absents : APK signés avec l'ancienne clé de test (publique)"
+            echo "::error::Secrets TK_KEYSTORE_B64 / TK_KEYSTORE_PASS absents : impossible de signer les APK"; exit 1
           fi
 
       - name: Dépendances Capacitor

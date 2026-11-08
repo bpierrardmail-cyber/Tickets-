@@ -212,6 +212,10 @@ Après chaque modification, dans le même commit :
 
 ## Historique (le plus récent en haut)
 
+### 08/11
+
+- **Nouvelle clé de signature en place** : secrets GitHub créés par Benoît, APK signés avec la nouvelle clé (SHA-1 `86:50:A9:…:4F:DF`, vérifié sur l'APK publié) ; identifiants `fr.bpierrard.budget.perso` (Perso) et `fr.bpierrard.budget` (Store). L'ancienne clé de test (publique) est retirée du dépôt ; sans les secrets, la compilation s'arrête. Reste pour Benoît : deux identifiants Android dans le projet Google `app-budget-sbpi`, réinstallation de la Perso (sauvegarde, installation à côté, restauration), puis suppression des anciens identifiants Google.
+
 ### 07/11
 
 - **Sécurité, mesures 1, 3, 4, 5** (« tu peux faire les points 1, 3, 4 et 5 » ; réponses de Benoît dans le document : pas de chiffrement sur le téléphone pour l'instant ; **couper la sauvegarde Android automatique** ; fichier chiffré au choix plus tard ; relecture pro à voir) :
