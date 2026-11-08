@@ -30,7 +30,7 @@ Gratuit, environ 20 minutes, guidé écran par écran. De préférence avec un c
 - [ ] Activer « Google Drive API ».
 - [ ] Écran de consentement : nom « Tickets », adresse de contact, lien vers la politique de confidentialité sur bpierrard.fr, accès demandé `drive.file` seulement.
 - [ ] Deux identifiants OAuth de type Android (un par édition), avec l'empreinte SHA-1 de la clé de signature des APK de test `39:71:91:8B:B4:6E:90:5D:1B:8F:CA:1C:FF:15:02:A7:D2:B3:78:D2` :
-  - Perso : `fr.bpierrard.tickets.beta` ;
+  - Perso : `fr.bpierrard.budget.perso` (depuis le 08/11 ; avant : `fr.bpierrard.tickets.beta`) ;
   - Store : `fr.bpierrard.budget` (définitif, décidé le 08/11 ; avant : `fr.bpierrard.tickets.store`).
 - [ ] Plus tard, à la sortie sur le Store : ajouter l'empreinte de la clé de Google Play, et le nom définitif de l'appli.
 

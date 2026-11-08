@@ -51,7 +51,7 @@ jobs:
       matrix:
         include:
           - edition: perso
-            app_id: fr.bpierrard.tickets.beta     # identifiant de l'appli déjà installée : mise à jour sans perte
+            app_id: fr.bpierrard.budget.perso     # 08/11 : même famille que la version Store (les deux doivent rester différents pour s'installer côte à côte)
             app_name: Tickets Perso
           - edition: store
             app_id: fr.bpierrard.budget    # identifiant définitif de la version Store (décidé le 08/11, générique tant que le nom n'est pas choisi)
