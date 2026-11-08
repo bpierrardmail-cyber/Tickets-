@@ -182,7 +182,7 @@ Le réseau étant souvent restreint dans les environnements de Claude, bloquer t
 ## Encore à décider (ne pas trancher seul)
 
 - Répartition gratuit / Plus et prix de Plus (décidé le 31/10 : l'onglet À venir est ouvert à tous ; ses 12 prochains mois, frais fixes et provisions sont gratuits, les factures et leurs estimations dans Plus).
-- Nom définitif de l'appli et identifiant Store : **Copek** retenu le 04/11, à confirmer (INPI, domaines) ; identifiant Store **décidé le 08/11 : `fr.bpierrard.budget`** (générique, ne change pas avec le nom ; dans `apk-beta.yml`). Ne rien renommer dans l'appli avant la confirmation.
+- Nom définitif de l'appli et identifiant Store : **Copek** retenu le 04/11, à confirmer (INPI, domaines) ; le nom affiché est dans `APP_NAME` (en tête du script de `beta/index.html`) ; identifiant Store **décidé le 08/11 : `fr.bpierrard.budget`** (générique, ne change pas avec le nom ; dans `apk-beta.yml`). Ne rien renommer dans l'appli avant la confirmation.
 - Type de compte Google Play.
 - Lecture des tickets par une IA (mise de côté le 28/10/2026) : en ligne seulement en option Plus, avec accord. Prévue plus tard : « Lire avec mon IA » (l'IA déjà sur le téléphone, par le partage Android) ; voir JOURNAL.md, « Améliorations prévues ».
 - Lien avec la banque (mis de côté le 22/10/2026) : pistes dans l'ordre — bouton « Ouvrir ma banque », import de relevé CSV/OFX sur le téléphone, synchro DSP2 via un agrégateur payant (seulement Plus, à décider).

@@ -32,7 +32,7 @@ with sync_playwright() as p:
     pg.locator("#wlcNext").click(); pg.wait_for_timeout(200); t=W(pg)
     check("Importe ton relevé" in t and "OFX" in t and "QIF" in t and "CSV" in t, "3e carte : « Importe ton relevé » · OFX, QIF, CSV")
     pg.locator("#wlcNext").click(); pg.wait_for_timeout(200); t=W(pg)
-    check("Ne perds jamais tes comptes" in t and "gratuite" in t and "code de secours" in t and "ZIP" in t and pg.locator(".wlc-art svg").count()==1, "4e carte : « Ne perds jamais tes comptes » (Drive gratuit, code de secours, ZIP / JSON), avec son dessin")
+    check("Ne perds jamais tes comptes" in t and "gratuite" not in t and "code de secours" in t and "ZIP" in t and pg.locator(".wlc-art svg").count()==1, "4e carte : « Ne perds jamais tes comptes » (Drive, code de secours, ZIP / JSON, sans « gratuite »), avec son dessin")
     pg.locator("#wlcNext").click(); pg.wait_for_timeout(200); t=W(pg)
     check("Vois ce qui arrive" in t and "Menu › Aide" in t and pg.locator("#wlcNext").inner_text()=="Commencer", "5e carte : « Vois ce qui arrive », bouton « Commencer »")
     pg.locator("#wlcPrev").click(); pg.wait_for_timeout(200); check("Ne perds jamais tes comptes" in W(pg), "« ‹ Retour » : carte précédente")

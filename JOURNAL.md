@@ -214,6 +214,7 @@ Après chaque modification, dans le même commit :
 
 ### 08/11
 
+- **Nom de l'appli à un seul endroit** : `APP_NAME` en tête du script (« Bienvenue dans … », « Partager › … », « … Plus », écran de verrouillage, invitations, dossier Documents, guide de l'Aide…) ; à changer aussi : `<title>`, `guide/*.md`, `APP_NAME` de `apk-beta.yml` (nom sous l'icône). « Gratuite » retiré après Google Drive (diapo « Ne perds jamais tes comptes », écran « Tes sauvegardes », guide).
 - **Nouvelle clé de signature en place** : secrets GitHub créés par Benoît, APK signés avec la nouvelle clé (SHA-1 `86:50:A9:…:4F:DF`, vérifié sur l'APK publié) ; identifiants `fr.bpierrard.budget.perso` (Perso) et `fr.bpierrard.budget` (Store). L'ancienne clé de test (publique) est retirée du dépôt ; sans les secrets, la compilation s'arrête. Reste pour Benoît : deux identifiants Android dans le projet Google `app-budget-sbpi`, réinstallation de la Perso (sauvegarde, installation à côté, restauration), puis suppression des anciens identifiants Google.
 
 ### 07/11

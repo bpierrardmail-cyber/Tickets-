@@ -202,14 +202,14 @@ Tes données sont seulement sur ton téléphone : si tu le perds, seule une sauv
 **Comment ça marche, en bref**
 
 - **Ce qui est sauvegardé** : tes tickets, comptes, frais fixes, épargne, provisions, factures, catégories et réglages ; avec un foyer partagé, **le foyer aussi** (tes membres, leurs droits et leurs clés). Les photos seulement dans la sauvegarde complète (ZIP).
-- **Où** : sur ton Google Drive (automatique, gratuit) et/ou dans un fichier que tu ranges où tu veux.
+- **Où** : sur ton Google Drive (automatique) et/ou dans un fichier que tu ranges où tu veux.
 - **La clé** : ton **code de secours** (26 caractères). La sauvegarde Drive et la partie foyer d'un fichier sont chiffrées avec lui, sur ton téléphone : sans lui, personne ne peut les ouvrir, ni Google, ni nous. Note-le sur papier.
 - **Restaurer** sur un nouveau téléphone : la sauvegarde + le code rendent tes données et ton foyer ; tes membres gardent leur accès, sans nouveau QR code. Si tu as restauré sur un nouveau téléphone, n'utilise plus l'application sur l'ancien pour éviter les erreurs de synchronisation.
 - **Sans sauvegarde** : un téléphone perdu, ce sont tes données perdues ; il faut recréer le foyer et réinviter tout le monde.
 
 **Sauvegarder** (Menu › Sauvegarder · restaurer ; « Comment ça marche ? » en haut montre le schéma)
 
-- **Sauvegarde sur Google Drive** (appli Android, gratuite) : activée une fois, elle part toute seule quand tu quittes l'appli, dès qu'il y a du réseau. Chiffrée sur ton téléphone, sans photos ; l'appli ne voit que son dossier « Tickets – sauvegardes ». Garde bien le **code de secours** montré à l'activation (le même que celui du foyer si tu en as un) : sans lui, une sauvegarde ne peut pas être ouverte.
+- **Sauvegarde sur Google Drive** (appli Android) : activée une fois, elle part toute seule quand tu quittes l'appli, dès qu'il y a du réseau. Chiffrée sur ton téléphone, sans photos ; l'appli ne voit que son dossier « Tickets – sauvegardes ». Garde bien le **code de secours** montré à l'activation (le même que celui du foyer si tu en as un) : sans lui, une sauvegarde ne peut pas être ouverte.
 - Si un envoi n'est pas parti, la ligne du menu passe en rouge, et un bandeau s'affiche sur l'accueil au bout d'une heure. « Vérifier » ouvre la dernière sauvegarde sans rien changer ; « Wi-Fi seulement » et les durées de conservation se règlent dans le même écran.
 - **Sauvegarde complète** : données et photos des tickets, dans un fichier ZIP. À faire de temps en temps.
 - **Données seules** : un petit fichier, sans photos. Pour tous les jours.
