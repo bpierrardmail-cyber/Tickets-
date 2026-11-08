@@ -236,7 +236,8 @@ public class TkDrive {
      */
     static int prune(Context c, String token, List<JSONObject> files) {
         SharedPreferences p = prefs(c);
-        int kd = p.getInt("keepD", 30), km = p.getInt("keepM", 12), ky = p.getInt("keepY", 5);
+        // minimums imposés ici (08/11, revue E2) : même une page piratée ne peut pas faire effacer l'historique
+        int kd = Math.max(7, p.getInt("keepD", 30)), km = Math.max(3, p.getInt("keepM", 12)), ky = Math.max(1, p.getInt("keepY", 5));
         long now = System.currentTimeMillis();
         Set<String> days = new HashSet<>(), months = new HashSet<>(), years = new HashSet<>();
         Calendar cal = Calendar.getInstance();
@@ -248,7 +249,7 @@ public class TkDrive {
             String y = String.valueOf(cal.get(Calendar.YEAR)), m = y + "-" + cal.get(Calendar.MONTH), d = m + "-" + cal.get(Calendar.DAY_OF_MONTH);
             long ageD = (now - t) / 86400000L;
             boolean keep;
-            if (i == 0 || t == 0) keep = true;
+            if (i < 3 || t == 0) keep = true;   // les 3 plus récentes sont toujours gardées
             else if (ageD < kd) keep = !days.contains(d);
             else if (ageD < km * 31L) keep = !months.contains(m);
             else if (ageD < ky * 366L) keep = !years.contains(y);

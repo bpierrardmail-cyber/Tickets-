@@ -1,7 +1,8 @@
 // Réglages propres à Tickets β, ajoutés au projet Android généré par Capacitor.
 def runNum = (System.getenv("GITHUB_RUN_NUMBER") ?: "1") as Integer
-// Clé de signature (08/11) : seulement celle des secrets GitHub (TK_KEYSTORE_B64, TK_KEYSTORE_PASS), écrite par le workflow
-// dans TK_KS_FILE. L'ancienne clé de test (publique) est retirée du dépôt.
+// Clé de signature : depuis le 08/11 (revue E5), le workflow compile un APK NON signé et le signe ensuite à part (apksigner),
+// pour que la clé ne soit jamais présente pendant la compilation. Ce bloc ne sert que pour une compilation à la main
+// (TK_KS_FILE, TK_KS_PASS dans l'environnement).
 def ksEnv = System.getenv("TK_KS_FILE")
 def ks = ksEnv ? file(ksEnv) : file("/clé-absente")
 def ksPass = System.getenv("TK_KS_PASS") ?: ""

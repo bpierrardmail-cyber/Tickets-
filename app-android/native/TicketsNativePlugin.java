@@ -77,6 +77,17 @@ public class TicketsNativePlugin extends Plugin {
         });
     }
 
+    /** Écran privé (08/11, revue F1) : l'appli n'apparaît plus dans l'aperçu des applis récentes ni dans les captures d'écran. */
+    @PluginMethod
+    public void setSecure(final PluginCall call) {
+        final boolean on = Boolean.TRUE.equals(call.getBoolean("on", false));
+        getActivity().runOnUiThread(() -> {
+            if (on) getActivity().getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);
+            else getActivity().getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);
+            call.resolve();
+        });
+    }
+
     @PluginMethod
     public void biometricAvailable(PluginCall call) {
         int r = BiometricManager.from(getContext()).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK);
@@ -286,9 +297,9 @@ public class TicketsNativePlugin extends Plugin {
         if (call.hasOption("on")) e.putBoolean("on", Boolean.TRUE.equals(call.getBoolean("on", false)));
         if (call.hasOption("wifi")) e.putBoolean("wifi", Boolean.TRUE.equals(call.getBoolean("wifi", false)));
         if (call.hasOption("remind")) e.putBoolean("remind", Boolean.TRUE.equals(call.getBoolean("remind", false)));
-        if (call.hasOption("keepD")) e.putInt("keepD", call.getInt("keepD", 30));
-        if (call.hasOption("keepM")) e.putInt("keepM", call.getInt("keepM", 12));
-        if (call.hasOption("keepY")) e.putInt("keepY", call.getInt("keepY", 5));
+        if (call.hasOption("keepD")) e.putInt("keepD", Math.max(7, call.getInt("keepD", 30)));
+        if (call.hasOption("keepM")) e.putInt("keepM", Math.max(3, call.getInt("keepM", 12)));
+        if (call.hasOption("keepY")) e.putInt("keepY", Math.max(1, call.getInt("keepY", 5)));
         e.commit();
         if (!TkDrive.prefs(c).getBoolean("on", false)) {
             TkDrive.cancelAll(c);
@@ -306,6 +317,8 @@ public class TicketsNativePlugin extends Plugin {
     public void driveStage(final PluginCall call) {
         final String data = call.getString("data");
         if (data == null || data.isEmpty()) { call.reject("données manquantes"); return; }
+        // seulement une sauvegarde chiffrée par l'appli (08/11, revue E2)
+        if (!(data.startsWith("g1.") || data.startsWith("p1.")) || data.length() > 200 * 1024 * 1024) { call.reject("format", "fail"); return; }
         final Context c = getContext();
         if (!TkDrive.prefs(c).getBoolean("on", false)) { call.reject("sauvegarde Drive désactivée", "off"); return; }
         final String name = call.getString("name", "tickets.tkb");

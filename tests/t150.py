@@ -46,7 +46,8 @@ with sync_playwright() as p:
     # 2. sauvegarde fichier
     O.locator("#hmenu").click(); O.wait_for_timeout(400)
     O.locator('.dr-row[data-k="backup"]').click(); O.wait_for_timeout(400)
-    with O.expect_download(timeout=15000) as dl: O.locator(".sheet-overlay button, .sheet-overlay .dr-row", has_text="Données seules").first.click()
+    O.locator(".sheet-overlay button, .sheet-overlay .dr-row", has_text="Données seules").first.click(); O.wait_for_timeout(400)
+    with O.expect_download(timeout=15000) as dl: O.locator(".sheet-overlay button", has_text="Sans chiffrement").first.click()   # 08/11 : chiffrée au choix (testé dans t155)
     import tempfile; path=os.path.join(tempfile.mkdtemp(), "t150_sauvegarde.json"); dl.value.save_as(path); bk=json.load(open(path, encoding="utf-8"))
     fb=bk["data"].get("fyBk") or {}
     check(fb.get("fid")==ls(O,"fyCfg")["fid"] and fb.get("v","").startswith("g1."), "la sauvegarde contient le foyer chiffré (fyBk)")
