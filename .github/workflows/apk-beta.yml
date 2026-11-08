@@ -134,6 +134,8 @@ jobs:
           cp native/tickets.gradle android/app/
           printf "\napply from: 'tickets.gradle'\n" >> android/app/build.gradle
           chmod +x android/gradlew
+          # le téléchargement de Gradle échoue parfois au bout de 10 s : 2 min, et nouvel essai à la compilation
+          sed -i 's/^networkTimeout=.*/networkTimeout=120000/' android/gradle/wrapper/gradle-wrapper.properties || true
           npx cap sync android
 
       - name: Icône et écran de démarrage
@@ -142,7 +144,7 @@ jobs:
 
       - name: Compilation
         working-directory: app-android/android
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        run: for i in 1 2 3; do ./gradlew assembleRelease --no-daemon --stacktrace && exit 0; echo "essai $i raté, nouvel essai dans 20 s"; sleep 20; done; exit 1
 
       - name: APK non signé
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -155,6 +157,7 @@ jobs:
   sign:
     # Signature et publication : seule étape qui reçoit la clé (secrets) et le droit d'écrire ; aucun paquet npm ni Gradle ici
     needs: apk
+    if: ${{ !cancelled() }}   # chaque édition compilée est signée et publiée, même si l'autre a échoué
     runs-on: ubuntu-latest
     permissions:
       contents: write
