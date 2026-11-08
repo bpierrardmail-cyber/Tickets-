@@ -54,7 +54,7 @@ jobs:
             app_id: fr.bpierrard.tickets.beta     # identifiant de l'appli déjà installée : mise à jour sans perte
             app_name: Tickets Perso
           - edition: store
-            app_id: fr.bpierrard.tickets.store    # provisoire, en attendant le nom définitif
+            app_id: fr.bpierrard.budget    # identifiant définitif de la version Store (décidé le 08/11, générique tant que le nom n'est pas choisi)
             app_name: Tickets Store
     defaults:
       run:

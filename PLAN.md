@@ -31,7 +31,7 @@ Gratuit, environ 20 minutes, guidé écran par écran. De préférence avec un c
 - [ ] Écran de consentement : nom « Tickets », adresse de contact, lien vers la politique de confidentialité sur bpierrard.fr, accès demandé `drive.file` seulement.
 - [ ] Deux identifiants OAuth de type Android (un par édition), avec l'empreinte SHA-1 de la clé de signature des APK de test `39:71:91:8B:B4:6E:90:5D:1B:8F:CA:1C:FF:15:02:A7:D2:B3:78:D2` :
   - Perso : `fr.bpierrard.tickets.beta` ;
-  - Store : `fr.bpierrard.tickets.store` (provisoire).
+  - Store : `fr.bpierrard.budget` (définitif, décidé le 08/11 ; avant : `fr.bpierrard.tickets.store`).
 - [ ] Plus tard, à la sortie sur le Store : ajouter l'empreinte de la clé de Google Play, et le nom définitif de l'appli.
 
 Sans ces identifiants, tout peut être préparé et testé avec un faux Drive, mais rien ne peut partir sur un vrai Drive.
@@ -121,7 +121,7 @@ Faite le 05/11 (voir `JOURNAL.md`).
 - [x] **Appli de démonstration** (faite le 05/11) : un « Mode démo » avec un foyer inventé (tickets, comptes, frais, groupes, factures), séparé des vraies données, pour présenter l'appli sans rien montrer de perso ; on en sort d'un geste et les vraies données reviennent telles quelles. Aussi en lien web, pour une présentation sur ordinateur.
 - [ ] **Présentation gratuit / Plus à revoir** : fiche du Play Store (texte, captures) et diapos du premier démarrage, avec les nouveautés (groupes, corbeille, rappels, sauvegarde Drive, un achat pour tout le foyer).
 - [ ] **Guides de l'Aide à revoir** (propriétaire et membre), avec les corrections de Benoît.
-- [ ] **Nouveau nom de l'appli : Copek** (choisi le 04/11), à confirmer après la vérification de la marque à l'INPI et des domaines copek.fr / copek.app ; identifiant Store prévu `fr.bpierrard.copek`. Pour mémoire : à choisir avant la première publication sur le Play Store, car l'identifiant Store (`fr.bpierrard.tickets.store`, provisoire) ne pourra plus changer ensuite. Vérifier qu'il est libre (Play Store, INPI, nom de domaine). Le changement touche les textes, l'icône, la présentation et les guides, pas les données.
+- [ ] **Nouveau nom de l'appli : Copek** (choisi le 04/11), à confirmer après la vérification de la marque à l'INPI et des domaines copek.fr / copek.app ; identifiant Store **décidé le 08/11 : `fr.bpierrard.budget`** (générique, indépendant du nom). Pour mémoire : à choisir avant la première publication sur le Play Store, car l'identifiant Store (`fr.bpierrard.tickets.store`, provisoire) ne pourra plus changer ensuite. Vérifier qu'il est libre (Play Store, INPI, nom de domaine). Le changement touche les textes, l'icône, la présentation et les guides, pas les données.
 
 ### Nouvelles fonctions pour le foyer
 

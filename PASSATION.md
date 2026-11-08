@@ -28,7 +28,7 @@ Il l'utilise sur son téléphone Android, en foyer partagé avec sa femme.
 | Édition | Pour qui | Bourse | Comment elle se charge | Mises à jour |
 |---|---|---|---|---|
 | **Perso** (`Tickets Perso`, `fr.bpierrard.tickets.beta`) | Benoît | oui | charge la β en ligne et garde une copie pour marcher sans réseau | immédiates à chaque push |
-| **Store** (`Tickets Store`, `fr.bpierrard.tickets.store`, identifiant provisoire) | public | non | l'appli entière est dans l'APK, aucune connexion pour l'usage normal | par le Play Store |
+| **Store** (`Tickets Store`, `fr.bpierrard.budget`, identifiant définitif depuis le 08/11) | public | non | l'appli entière est dans l'APK, aucune connexion pour l'usage normal | par le Play Store |
 
 **Exigences permanentes de Benoît :**
 - marcher sans bug pour une grande famille : 10 personnes et plus, plus de 10 comptes, affichage lisible ;
