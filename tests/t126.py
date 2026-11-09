@@ -135,6 +135,7 @@ with sync_playwright() as p:
     open_drive(pg)
     check(pg.locator("#drvUndo").count()==1 and "possible 30 jours" in app_txt(pg), "écran Drive : « Annuler la restauration » toujours là")
     pg.locator("#hback").click(); pg.wait_for_timeout(400)
+    if pg.locator(".mnsub").count(): pg.locator('#nav .navi[data-view="list"]').click(); pg.wait_for_timeout(400)   # écran Drive ouvert depuis le menu : ‹ ramène au menu
     # ---------- 4. un autre téléphone
     pg.evaluate("()=>{ __dv.files.unshift({ id:'autre', created:Date.now()-2*3600000, n:'7', c:'2', d:'telB', kf:__dv.files[0].kf, size:'1', data:__dv.files[0].data }); __dv.otherAt=Date.now()-2*3600000; __dvSave(); }")
     show(pg)
