@@ -48,7 +48,7 @@ with sync_playwright() as p:
     check(pg.locator(".wlc").count()==0 and pg.locator(".sheet-overlay").count()==0, "« Passer » : l'accueil se ferme (pas de choix de démarrage)")
     pg.reload(); pg.wait_for_timeout(1500); check(pg.locator(".wlc").count()==0, "redémarrage : plus d'accueil")
     # ---------- 3. Menu › Aide
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="aide"]').click(); pg.wait_for_timeout(300)
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="aide"]').click(); pg.wait_for_timeout(200); pg.locator('.dr-row[data-k="aide"]').click(); pg.wait_for_timeout(300)
     hs=[norm(x) for x in pg.locator(".aide-h").all_inner_texts()]
     check(len(hs)==12 and hs[0].startswith("Pour commencer") and hs[-1].startswith("Questions fréquentes"), "Menu › Aide : le guide du propriétaire, 12 parties %s" % [h[:14] for h in hs])
     pg.locator(".aide-h").nth(1).click(); pg.wait_for_timeout(200)
@@ -74,7 +74,7 @@ with sync_playwright() as p:
     check("Ajouter tes tickets" in t and "guide du membre" in t.lower(), "2e diapo du membre : « Ajouter tes tickets », le guide du membre")
     pg.locator("#wlcNext").click(); pg.wait_for_timeout(300)
     check(pg.locator(".wlc").count()==0 and pg.evaluate("()=>localStorage.getItem('welcomeFy')")=="1", "« Commencer » : fermé, noté pour le membre")
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="aide"]').click(); pg.wait_for_timeout(300)
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="aide"]').click(); pg.wait_for_timeout(200); pg.locator('.dr-row[data-k="aide"]').click(); pg.wait_for_timeout(300)
     hs=[norm(x) for x in pg.locator(".aide-h").all_inner_texts()]
     check(len(hs)==11 and hs[0].startswith("Ce que tu vois") and "Guide du membre" in norm(pg.locator("#app").inner_text()), "membre : Menu › Aide montre le guide du membre (11 parties)")
     c.close()

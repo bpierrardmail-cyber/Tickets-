@@ -125,7 +125,7 @@ with sync_playwright() as p:
                 inspect("fiche d'un ticket")
                 if pg.locator("#cancel").count(): pg.locator("#cancel").click(); pg.wait_for_timeout(300)
             closeSheets()
-        pg.locator("#hmenu").click(); pg.wait_for_timeout(300)
+        pg.locator("#hmenu").click(); pg.wait_for_timeout(300); pg.locator('.mnsub[data-ms="aide"]').click(); pg.wait_for_timeout(200)
         if pg.locator('.dr-row[data-k="aide"]').count(): pg.locator('.dr-row[data-k="aide"]').click(); pg.wait_for_timeout(500); inspect("aide")
         check(not errs, "%s : erreurs %s"%(tag, errs[:3]))
         c.close()

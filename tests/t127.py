@@ -51,8 +51,9 @@ with sync_playwright() as p:
         pg.locator('nav [data-view="communes"]').first.click(); pg.wait_for_timeout(900)
         return norm(pg.locator("#app").inner_text())
     def menu(pg):
-        pg.locator("#hmenu").click(); pg.wait_for_timeout(400)
-        t=norm(pg.locator(".drawer").inner_text()); pg.locator(".dr-x").click(); pg.wait_for_timeout(300); return t
+        pg.locator("#hmenu").click(); pg.wait_for_timeout(400); t=""
+        for ms in ("gerer","sauv","regl","aide"): pg.locator('.mnsub[data-ms="%s"]' % ms).click(); pg.wait_for_timeout(200); t+=norm(pg.locator(".mn-pg").inner_text())+"\n"
+        pg.locator("#hback").click(); pg.wait_for_timeout(300); return t
     # ---------- 1. propriétaire avec Plus : la copie du membre dit « plus »
     puts=[]
     own=dict(data); own["plusUnlocked"]=True

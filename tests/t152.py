@@ -81,8 +81,8 @@ with sync_playwright() as p:
     check(M.locator("#lockscreen").count()==0, "pas de nouvelle demande d'empreinte")
     open_foyer(M); check("Code actif sur ce téléphone" in txt(M), "écran du foyer de Marie : « Code actif sur ce téléphone »")
     # 3. Réglages › Code et empreinte
-    M.locator("#hmenu").click(); M.wait_for_timeout(400); M.locator('.dr-row[data-k="settings"]').click(); M.wait_for_timeout(300)
-    M.locator('.sheet-overlay .dr-row[data-k="lock"]').click(); M.wait_for_timeout(500)
+    M.locator("#hmenu").click(); M.wait_for_timeout(400); M.locator('.mnsub[data-ms="regl"]').click(); M.wait_for_timeout(300)
+    M.locator('.mn-pg .dr-row[data-k="lock"]').click(); M.wait_for_timeout(500)
     s=M.locator(".sheet-overlay").last.inner_text()
     check("Ajouter l'empreinte" in s and "Retirer le code" in s and "Obligatoires" not in s, "Réglages : ajouter l'empreinte, retirer le code")
     M.locator(".sheet-overlay button", has_text="Retirer le code").click(); M.wait_for_timeout(400)

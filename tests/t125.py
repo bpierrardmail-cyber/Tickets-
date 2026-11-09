@@ -90,9 +90,9 @@ def show(pg):
     pg.evaluate("()=>{ Object.defineProperty(document,'hidden',{configurable:true,get:()=>false}); Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>'visible'}); document.dispatchEvent(new Event('visibilitychange')); }")
     pg.wait_for_timeout(900)
 def menu_row(pg):
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(400)
-    t=norm(pg.locator('.dr-row[data-k="backup"]').inner_text()); col=pg.locator('.dr-row[data-k="backup"] .st').get_attribute("style") or ""
-    pg.locator(".dr-x").click(); pg.wait_for_timeout(300)
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="sauv"]').click(); pg.wait_for_timeout(300)
+    t=norm(pg.locator('.mn-stat').inner_text()); col=(pg.locator('.dr-row[data-k="drive"] .st').get_attribute("style") or "") if pg.locator('.dr-row[data-k="drive"] .st').count() else ""
+    pg.locator("#hback").click(); pg.wait_for_timeout(300)
     return t, col
 
 with sync_playwright() as p:
@@ -109,10 +109,10 @@ with sync_playwright() as p:
         return pg
     pg=page()
     # ---------- 1. activer
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="backup"]').click(); pg.wait_for_timeout(400)
-    t=norm(pg.locator(".sheet-overlay").last.inner_text())
-    check("Sauvegarde sur Google Drive" in t and "Nouveau" in t and "Sauvegarde complète" in t and "Données seules" in t, "Menu › Sauvegarder : Drive en tête, complète et données seules gardées")
-    pg.locator('.sheet-overlay .dr-row[data-k="drive"]').click(); pg.wait_for_timeout(400)
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="sauv"]').click(); pg.wait_for_timeout(400)
+    t=norm(pg.locator(".mn-pg").last.inner_text())
+    check("Sauvegarde Google Drive" in t and "Sauvegarde complète" in t and "Données seules" in t, "Menu › Sauvegarder : Drive en tête, complète et données seules gardées")
+    pg.locator('.mn-pg .dr-row[data-k="drive"]').click(); pg.wait_for_timeout(400)
     t=norm(pg.locator(".sheet-overlay").last.inner_text())
     check("Chiffrée" in t and "Sans photos" in t and "Tickets – sauvegardes" in t and "Choisir le compte Google" in t, "présentation : automatique, chiffrée, sans photos, dossier de l'appli")
     pg.locator("#drvGo").click(); pg.wait_for_timeout(700)
@@ -155,8 +155,8 @@ with sync_playwright() as p:
     r,col=menu_row(pg); check("en attente" in r, "la ligne du menu reste rouge après la fermeture du bandeau")
     pg.evaluate("()=>{ __dv.pendingSince=Date.now()-20*60000; __dvSave(); }"); show(pg)
     check(pg.locator("#drvBanX").count()==0, "attente de 20 min : pas de bandeau")
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="backup"]').click(); pg.wait_for_timeout(400)
-    pg.locator('.sheet-overlay .dr-row[data-k="drive"]').click(); pg.wait_for_timeout(700)
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="sauv"]').click(); pg.wait_for_timeout(400)
+    pg.locator('.mn-pg .dr-row[data-k="drive"]').click(); pg.wait_for_timeout(700)
     t=norm(pg.locator("#app").inner_text())
     check("En attente" in t and "Android réessaie tout seul" in t and pg.locator("#drvNow").count()==1, "écran : « En attente », « Envoyer maintenant »")
     pg.evaluate("()=>{ __dv.autoSend=true; __dvSave(); }"); pg.locator("#drvNow").click(); pg.wait_for_timeout(4500)
@@ -178,8 +178,8 @@ with sync_playwright() as p:
     # ---------- 5. Wi-Fi, durées, vérifier, désactiver
     pg.evaluate("()=>{}"); show(pg)
     if not pg.locator("#drvWifi").count():
-        pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="backup"]').click(); pg.wait_for_timeout(400)
-        pg.locator('.sheet-overlay .dr-row[data-k="drive"]').click(); pg.wait_for_timeout(700)
+        pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="sauv"]').click(); pg.wait_for_timeout(400)
+        pg.locator('.mn-pg .dr-row[data-k="drive"]').click(); pg.wait_for_timeout(700)
     pg.locator("#drvWifi").check(); pg.wait_for_timeout(300)
     check(any(s.get("wifi") is True for s in calls(pg, "setup")), "« Wi-Fi seulement » envoyé à Android")
     pg.locator("#drvKeep").click(); pg.wait_for_timeout(300)
@@ -196,8 +196,8 @@ with sync_playwright() as p:
     # ---------- 6. autre téléphone, sauvegardes déjà sur le compte
     p2=page()
     p2.evaluate("k=>{ __dv.connect={ email:'alex.test@gmail.com', count:5, kfs:[k], last:Date.now()-86400000 }; __dvSave(); }", kf)
-    p2.locator("#hmenu").click(); p2.wait_for_timeout(400); p2.locator('.dr-row[data-k="backup"]').click(); p2.wait_for_timeout(400)
-    p2.locator('.sheet-overlay .dr-row[data-k="drive"]').click(); p2.wait_for_timeout(400); p2.locator("#drvGo").click(); p2.wait_for_timeout(700)
+    p2.locator("#hmenu").click(); p2.wait_for_timeout(400); p2.locator('.mnsub[data-ms="sauv"]').click(); p2.wait_for_timeout(400)
+    p2.locator('.mn-pg .dr-row[data-k="drive"]').click(); p2.wait_for_timeout(400); p2.locator("#drvGo").click(); p2.wait_for_timeout(700)
     t=norm(p2.locator(".sheet-overlay").last.inner_text())
     check("sauvegardes trouvées" in t.lower() and "5 sauvegardes" in t and p2.locator(".fy-code").count()==0, "compte avec 5 sauvegardes : le code est demandé, pas de nouveau code")
     p2.locator("#drvCode").fill("AAAA-BBBB-CCCC-DDDD-EEEE-FFFF-GG"); p2.locator("#drvOk").click(); p2.wait_for_timeout(500)
@@ -214,13 +214,13 @@ with sync_playwright() as p:
     check(G and G[-1]["remind"] is True, "rappels activés : Android prévient après 24 h sans envoi (remind)")
     # ---------- 8. version Store sans Plus
     p3=page(APP+"?edition=store")
-    p3.locator("#hmenu").click(); p3.wait_for_timeout(400); p3.locator('.dr-row[data-k="backup"]').click(); p3.wait_for_timeout(400)
-    t=norm(p3.locator(".sheet-overlay").last.inner_text()); check("Google Drive" in t and "✦" not in t, "Store sans Plus : Drive proposé, gratuit (décision du 07/11)")
-    p3.locator('.sheet-overlay .dr-row[data-k="drive"]').click(); p3.wait_for_timeout(400)
+    p3.locator("#hmenu").click(); p3.wait_for_timeout(400); p3.locator('.mnsub[data-ms="sauv"]').click(); p3.wait_for_timeout(400)
+    t=norm(p3.locator(".mn-pg").last.inner_text()); check("Google Drive" in t and "✦" not in t, "Store sans Plus : Drive proposé, gratuit (décision du 07/11)")
+    p3.locator('.mn-pg .dr-row[data-k="drive"]').click(); p3.wait_for_timeout(400)
     t=norm(p3.locator(".sheet-overlay").last.inner_text()); check("Découvrir Tickets Plus" not in t and p3.locator("#drvGo").count()==1, "Store sans Plus : la présentation de Drive, sans demander Plus")
     # ---------- 9. navigateur
     p4=page(mock=False)
-    p4.locator("#hmenu").click(); p4.wait_for_timeout(400); p4.locator('.dr-row[data-k="backup"]').click(); p4.wait_for_timeout(400)
+    p4.locator("#hmenu").click(); p4.wait_for_timeout(400); p4.locator('.mnsub[data-ms="sauv"]').click(); p4.wait_for_timeout(400)
     t=norm(p4.locator("body").inner_text()); check("Google Drive" not in t or "Envoie le fichier" in t, "navigateur : pas de sauvegarde Drive")
     check(not errs, "pas d'erreur %s"%errs[:3])
     b.close()

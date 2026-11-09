@@ -79,7 +79,7 @@ with sync_playwright() as p:
     pg.reload(); pg.wait_for_timeout(1200)
     for k in "123456": pg.locator('#lockscreen button[data-k="%s"]' % k).click(); pg.wait_for_timeout(60)
     pg.wait_for_timeout(800)
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="foyer"]').click(); pg.wait_for_timeout(800); snap("foyer", 70)
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="gerer"]').click(); pg.wait_for_timeout(200); pg.locator('.dr-row[data-k="foyer"]').click(); pg.wait_for_timeout(800); snap("foyer", 70)
     b.close()
 # widgets : ce sont des écrans d'Android ; dessinés ici dans le style de l'appli
 html="""<html><head><meta charset="utf-8"><style>body{margin:0;width:272px;height:250px;font-family:Inter,system-ui,sans-serif;color:#e8eaf0;background:#1d2c42}

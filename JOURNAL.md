@@ -216,6 +216,15 @@ Après chaque modification, dans le même commit :
 
 ## Historique (le plus récent en haut)
 
+### 09/11
+- **Menu refondu** (maquette « Menu refondu » validée : « Tu peux intégrer ») : ☰ ouvre une page `menu` (`renderMenu`, `menuItems`) au lieu du tiroir, avec la recherche « Chercher un réglage… » (tous les sous-onglets, dit où est la ligne) et 4 sous-onglets (`MENU_SUBS`, gardé dans `menuSub`) :
+  - **Gérer** : Comptes bancaires (`acctSheet`), Épargne, Liquide, Catégories et produits, Budgets, Frais fixes, Provisions, Factures ✦, Personnes, Foyer partagé, Groupes ✦, Corbeille ; un membre : Mes comptes, Foyer, Corbeille ;
+  - **Sauvegarde** : carte d'état (Drive ou dernière sauvegarde), Sauvegarder (Drive, complète, données), Restaurer (annuler, Drive, fichier — sorti des Réglages), **Ton code de secours** (`menuCodeShow` : code du foyer ou de Drive, copier), Comment ça marche, Stockage, Exporter ; un membre : Mes comptes (`drvMemberSheet`) ;
+  - **Réglages** : Affichage, Monnaie, Code et empreinte (`menuLock`), Écran privé, Rappels, Widgets (nouvelle fiche `menuWidgets` : lesquels, comment les ajouter, économie d'énergie), Mode démo ;
+  - **Aide** : Guide, Revoir l'accueil, ✦ Tickets Plus, À propos (`menuAbout`).
+  - Les écrans existants restent à leur place : le menu est un 2e chemin. Un écran avec ‹ ouvert depuis le menu y ramène (`state.fromMenu`, `menuGo`, `bindBack`) ; un onglet (Budget, À venir…) n'a pas de ‹, on y reste. ‹ du menu revient à l'écran d'avant (`menuPrev`). `openSettings()` ouvre Réglages ; les anciennes fenêtres `openSettingsSheet` / `backupMenu` restent pour les autres appels.
+  - Textes « Menu › … » de l'appli et du guide mis à jour. Test t156 ; tests du menu adaptés.
+
 ### 08/11
 
 - **Ticket sans article annoncé** (accordé le 08/11) : à la place de la liste vide, « Aucun article · Il sera enregistré comme 1 article : … · ticket entier (montant) » et « ＋ Ajouter les articles » (`#artnone`, `#artnoneadd`). t133.

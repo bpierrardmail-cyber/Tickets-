@@ -40,8 +40,8 @@ with sync_playwright() as p:
     check(pg.evaluate("()=>window.__ln.length")==0, "rappels pas activés : rien de programmé")
     def open_rap():
         pg.locator("#hmenu").click(); pg.wait_for_timeout(400)
-        pg.locator('.dr-row[data-k="settings"]').click(); pg.wait_for_timeout(300)
-        pg.locator('.sheet-overlay .dr-row[data-k="rappels"]').click(); pg.wait_for_timeout(300)
+        pg.locator('.mnsub[data-ms="regl"]').click(); pg.wait_for_timeout(300)
+        pg.locator('.mn-pg .dr-row[data-k="rappels"]').click(); pg.wait_for_timeout(300)
     def LN(): return pg.evaluate("()=>window.__ln.map(n=>({id:n.id, t:n.title, b:n.body, at:new Date(n.schedule.at).toISOString(), h:new Date(n.schedule.at).getHours(), go:n.extra&&n.extra.go, ch:n.channelId}))")
     # ---------- 1. activer
     open_rap()
@@ -81,8 +81,8 @@ with sync_playwright() as p:
     p2.route("**/*", lambda r: r.continue_() if r.request.url.startswith("file:") else r.abort())
     p2.goto(APP); p2.wait_for_timeout(300)
     p2.evaluate("d=>{localStorage.clear(); for(const k in d) localStorage.setItem(k, JSON.stringify(d[k]));}", data); p2.reload(); p2.wait_for_timeout(900)
-    p2.locator("#hmenu").click(); p2.wait_for_timeout(400); p2.locator('.dr-row[data-k="settings"]').click(); p2.wait_for_timeout(300)
-    p2.locator('.sheet-overlay .dr-row[data-k="rappels"]').click(); p2.wait_for_timeout(300)
+    p2.locator("#hmenu").click(); p2.wait_for_timeout(400); p2.locator('.mnsub[data-ms="regl"]').click(); p2.wait_for_timeout(300)
+    p2.locator('.mn-pg .dr-row[data-k="rappels"]').click(); p2.wait_for_timeout(300)
     t=norm(p2.locator(".sheet-overlay").last.inner_text())
     check("marchent dans l'appli Android" in t and p2.locator("#rapOn").is_disabled() and p2.locator("#rapOk").count()==0, "navigateur : expliqué, pas activable")
     check(not errs, "pas d'erreur %s"%errs[:3])

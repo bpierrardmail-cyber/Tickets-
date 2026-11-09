@@ -129,19 +129,14 @@ with sync_playwright() as p:
         # menu et tout ce qu'il ouvre
         nav("list")
         if click("#hmenu", 400):
-            inspect("menu")
-            keys=pg.evaluate("()=>[].map.call(document.querySelectorAll('.drawer .dr-row[data-k]'), b=>b.getAttribute('data-k'))")
-            for k in keys:
-                if k in ("pdf",): continue
-                closeAll(); nav("list"); click("#hmenu", 400)
-                if click('.drawer .dr-row[data-k="%s"]'%k, 700):
+            for ms in ("gerer","sauv","regl","aide"):
+              click('.mnsub[data-ms="%s"]'%ms, 300); inspect("menu · "+ms)
+              keys=pg.evaluate("()=>[].map.call(document.querySelectorAll('.mn-pg .dr-row[data-k]'), b=>b.getAttribute('data-k'))")
+              for k in keys:
+                if k in ("pdf","demo","restore","lock","full","data","rdrive","undo","perso","drive","backup"): continue
+                closeAll(); nav("list"); click("#hmenu", 400); click('.mnsub[data-ms="%s"]'%ms, 300)
+                if click('.mn-pg .dr-row[data-k="%s"]'%k, 700):
                     inspect("menu › "+k)
-                    if k=="settings":
-                        sk=pg.evaluate("()=>[].map.call(document.querySelectorAll('.sheet-overlay .dr-row[data-k]'), b=>b.getAttribute('data-k'))")
-                        for s2 in sk:
-                            if s2 in ("demo","restore","lock"): continue
-                            closeAll(); nav("list"); click("#hmenu", 400); click('.drawer .dr-row[data-k="settings"]', 500)
-                            if click('.sheet-overlay .dr-row[data-k="%s"]'%s2, 500): inspect("réglages › "+s2)
                     if k=="plus":
                         for _ in range(6):
                             if not click("#wlcNext", 400): break

@@ -4,8 +4,8 @@
 
 Tickets garde tout sur ton téléphone : pas de compte à créer, pas besoin d'internet.
 
-1. **Ton prénom** : demandé au premier démarrage. Il sert pour « Payé par » et pour partager les dépenses. Tu peux le changer dans Menu › Personnes.
-2. **Les personnes du foyer** : Menu › Personnes. Ajoute chaque personne qui paie ou pour qui tu dépenses.
+1. **Ton prénom** : demandé au premier démarrage. Il sert pour « Payé par » et pour partager les dépenses. Tu peux le changer dans Menu › Gérer › Personnes.
+2. **Les personnes du foyer** : Menu › Gérer › Personnes. Ajoute chaque personne qui paie ou pour qui tu dépenses.
 3. **Ton compte** : un compte courant est créé tout seul, c'est ton compte principal. Pour en ajouter un autre ou le modifier : onglet Opérations, puis la roue ⚙ en haut à droite.
 
 **L'écran d'accueil**
@@ -17,7 +17,13 @@ Tickets garde tout sur ton téléphone : pas de compte à créer, pas besoin d'i
 - Le bouton en haut à droite choisit qui tu regardes : toi, une personne, ou tout le foyer.
 - En bas, 5 onglets : Accueil, Opérations, Budget, À venir, Foyer (et Bourse dans la version Perso). Le bouton vert **＋**, sur l'Accueil et Opérations, ajoute tout : scanner ou saisir un ticket, un virement, un frais fixe, importer un relevé.
 
-Tu peux revoir l'accueil de l'appli dans Menu › Aide. Les fonctions marquées ✦ font partie de Tickets Plus : Menu › ✦ Tickets Plus les présente toutes.
+**Le menu** (☰ en haut à gauche) a quatre sous-onglets, et une recherche « Chercher un réglage… » qui trouve n'importe quelle ligne :
+- **Gérer** : tout ce qui se configure, au même endroit — comptes bancaires, épargne, liquide, catégories et produits, budgets, frais fixes, provisions, factures, personnes, foyer partagé, groupes, corbeille. Chaque ligne ouvre l'écran habituel ; ‹ te ramène au menu.
+- **Sauvegarde** : où en est ta sauvegarde, sauvegarder, restaurer, ton code de secours, le stockage et l'export.
+- **Réglages** : affichage, monnaie, code et empreinte, écran privé, rappels, widgets, mode démo.
+- **Aide** : ce guide, l'accueil de l'appli à revoir, Tickets Plus, la version.
+
+Les fonctions marquées ✦ font partie de Tickets Plus : Menu › Aide › ✦ Tickets Plus les présente toutes.
 
 ## Scanner un ticket
 
@@ -158,7 +164,7 @@ Compte comme payé pour le commun : les frais communs (selon le compte qui les p
 
 ✦ Tickets Plus. Un seul achat pour tout le foyer : tes membres profitent aussi des fonctions ✦, selon leurs droits (les widgets restent par téléphone). Dans un groupe, un membre avec Foyer en modification ajoute, retire, rembourse et crée des groupes comme toi ; en lecture, il les voit sans les changer. Ton téléphone reste le centre : il garde toutes les données et envoie à chaque membre seulement ce que tu partages avec lui. Les données sont chiffrées : personne d'autre ne peut les lire.
 
-1. Menu › Foyer partagé, puis crée ton foyer.
+1. Menu › Gérer › Foyer partagé, puis crée ton foyer.
 2. Ajoute un membre : choisis la personne, puis ses droits.
 3. Il scanne le QR code avec Tickets (« Rejoindre un foyer » au premier démarrage). Rejoindre un foyer est gratuit.
 
@@ -166,7 +172,7 @@ Compte comme payé pour le commun : les frais communs (selon le compte qui les p
 
 **Écran privé** (Menu › Réglages, appli Android) : l'appli n'apparaît plus dans l'aperçu des applis récentes et ses captures d'écran sont noires. Après 5 codes faux, l'appli fait attendre (30 s, puis de plus en plus).
 
-**Code et empreinte** : chaque téléphone choisit les siens (toi en créant le foyer, chaque membre en le rejoignant) ; fortement conseillés, mais on peut passer. L'empreinte n'est proposée que si le téléphone a un lecteur. Pour changer : Menu › Réglages › Code et empreinte ; l'écran du foyer te rappelle s'il n'y a pas de code. Garde bien ton code de secours (26 caractères) : avec ta sauvegarde (Drive ou fichier), il te rend ton foyer sur un nouveau téléphone. Fais une sauvegarde : l'écran du foyer te dit à quand remonte la dernière.
+**Code et empreinte** : chaque téléphone choisit les siens (toi en créant le foyer, chaque membre en le rejoignant) ; fortement conseillés, mais on peut passer. L'empreinte n'est proposée que si le téléphone a un lecteur. Pour changer : Menu › Réglages › Code et empreinte ; l'écran du foyer te rappelle s'il n'y a pas de code. Garde bien ton code de secours (26 caractères, Menu › Sauvegarde › Voir mon code de secours) : avec ta sauvegarde (Drive ou fichier), il te rend ton foyer sur un nouveau téléphone. Fais une sauvegarde : l'écran du foyer te dit à quand remonte la dernière.
 
 **Les mises à jour** : une modification part chez les membres environ une minute et demie après (avec toutes celles faites entre-temps), ou tout de suite quand tu quittes l'appli ou avec « Mettre à jour maintenant ». Appli fermée, rien ne part.
 
@@ -209,7 +215,7 @@ Tes données sont seulement sur ton téléphone : si tu le perds, seule une sauv
 - **Restaurer** sur un nouveau téléphone : la sauvegarde + le code rendent tes données et ton foyer ; tes membres gardent leur accès, sans nouveau QR code. Si tu as restauré sur un nouveau téléphone, n'utilise plus l'application sur l'ancien pour éviter les erreurs de synchronisation.
 - **Sans sauvegarde** : un téléphone perdu, ce sont tes données perdues ; il faut recréer le foyer et réinviter tout le monde.
 
-**Sauvegarder** (Menu › Sauvegarder · restaurer ; « Comment ça marche ? » en haut montre le schéma)
+**Sauvegarder** (Menu › Sauvegarde ; « Comment ça marche ? » montre le schéma)
 
 - **Sauvegarde sur Google Drive** (appli Android) : activée une fois, elle part toute seule quand tu quittes l'appli, dès qu'il y a du réseau. Chiffrée sur ton téléphone, sans photos ; l'appli ne voit que son dossier « Tickets – sauvegardes ». Garde bien le **code de secours** montré à l'activation (le même que celui du foyer si tu en as un) : sans lui, une sauvegarde ne peut pas être ouverte.
 - Si un envoi n'est pas parti, la ligne du menu passe en rouge, et un bandeau s'affiche sur l'accueil au bout d'une heure. « Vérifier » ouvre la dernière sauvegarde sans rien changer ; « Wi-Fi seulement » et les durées de conservation se règlent dans le même écran.
@@ -218,17 +224,17 @@ Tes données sont seulement sur ton téléphone : si tu le perds, seule une sauv
 - **Chiffrée ou non** : si tu as un code de secours, l'appli te demande à chaque fois. Chiffrée (conseillé), personne ne peut lire le fichier sans ton code, même si tu l'envoies par mail ; les photos du ZIP sont chiffrées aussi. Pour la restaurer, le code est demandé (sur ton téléphone, il est reconnu tout seul).
 - Garde le fichier sur le téléphone (Documents/Tickets) ou envoie-le ailleurs (Google Drive, mail, ordinateur). Le mieux : ailleurs.
 
-**Restaurer** (Menu › Sauvegarder · restaurer, ou Menu › Réglages › Restaurer une sauvegarde) : depuis Google Drive, ou un fichier ZIP ou JSON. La sauvegarde remplace les données du téléphone.
+**Restaurer** (Menu › Sauvegarde › Restaurer) : depuis Google Drive, ou un fichier ZIP ou JSON. La sauvegarde remplace les données du téléphone.
 
-- Depuis Drive : Menu › Sauvegarder › Google Drive › Restaurer, puis choisis la date. Avant, l'état actuel part aussi sur Drive et reste gardé 30 jours sur le téléphone : « Annuler la restauration » le remet (bandeau de l'accueil, ou l'écran de la sauvegarde).
+- Depuis Drive : Menu › Sauvegarde › Depuis Google Drive, puis choisis la date. Avant, l'état actuel part aussi sur Drive et reste gardé 30 jours sur le téléphone : « Annuler la restauration » le remet (bandeau de l'accueil, ou l'écran de la sauvegarde).
 - Les photos des tickets, ton code, ton empreinte et tes réglages ne changent pas.
-- Nouveau téléphone : au premier démarrage, « Restaurer depuis Google Drive », ton compte Google, puis ton code de secours ; la sauvegarde Drive est alors activée sur ce téléphone (tu peux la désactiver dans Menu › Sauvegarder › Sauvegarde sur Google Drive) ; ou « Restaurer une sauvegarde » avec un fichier, et ton code de secours si tu as un foyer partagé. Les photos ne reviennent qu'avec une sauvegarde complète (ZIP).
+- Nouveau téléphone : au premier démarrage, « Restaurer depuis Google Drive », ton compte Google, puis ton code de secours ; la sauvegarde Drive est alors activée sur ce téléphone (tu peux la désactiver dans Menu › Sauvegarde › Sauvegarde Google Drive) ; ou « Restaurer une sauvegarde » avec un fichier, et ton code de secours si tu as un foyer partagé. Les photos ne reviennent qu'avec une sauvegarde complète (ZIP).
 - Si un autre téléphone envoie des sauvegardes dans ton dossier, l'appli te prévient. N'utilise pas deux téléphones avec les mêmes sauvegardes.
 
 **Les photos des tickets**
 
 - Elles sont gardées en qualité d'origine, pour pouvoir les relire.
-- Menu › Stockage montre la place prise, année par année, mois par mois.
+- Menu › Sauvegarde › Stockage montre la place prise, année par année, mois par mois.
 - Pour faire de la place : « Supprimer » sur un mois ou une année, ou ⋯ dans la galerie. Les tickets restent ; seules leurs photos partent.
 - « Garder les photos d'origine » : Toujours, 5 ans ou 2 ans. Au-delà, une petite photo reste.
 - La galerie photo du téléphone est à part : Tickets n'y touche jamais.
@@ -252,11 +258,11 @@ Pour essayer l'appli ou la montrer sans tes chiffres : Menu › Réglages › Mo
 
 **J'ai supprimé un ticket par erreur.** Touche « Annuler » tout de suite, ou retrouve-le dans Opérations › Tickets › Corbeille (30 jours) et touche « Remettre ».
 
-**Je change de téléphone.** Avec la sauvegarde Drive : au premier démarrage du nouveau, « Restaurer depuis Google Drive » et ton code de secours. Pour les photos aussi : une sauvegarde complète (ZIP), puis Menu › Réglages › Restaurer. Avec un foyer partagé, il revient avec la sauvegarde (Drive ou fichier) et ton code de secours : tes membres n'ont rien à refaire.
+**Je change de téléphone.** Avec la sauvegarde Drive : au premier démarrage du nouveau, « Restaurer depuis Google Drive » et ton code de secours. Pour les photos aussi : une sauvegarde complète (ZIP), puis Menu › Sauvegarde › Depuis un fichier. Avec un foyer partagé, il revient avec la sauvegarde (Drive ou fichier) et ton code de secours : tes membres n'ont rien à refaire.
 
 **Mon code de secours.** Ne le donne à personne, même pas à un membre du foyer : il ouvre ton foyer et tes sauvegardes. Les membres n'en ont pas besoin, ils ont leur propre accès.
 
-**Le téléphone manque de place.** Menu › Stockage : supprime les photos des années anciennes, ou garde les photos d'origine 2 ou 5 ans.
+**Le téléphone manque de place.** Menu › Sauvegarde › Stockage : supprime les photos des années anciennes, ou garde les photos d'origine 2 ou 5 ans.
 
 **Faut-il internet ?** Non. Seuls le foyer partagé et l'achat de Tickets Plus en ont besoin.
 

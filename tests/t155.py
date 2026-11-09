@@ -28,16 +28,16 @@ def page(b, errs, tag):
     pg.route("**/*", lambda r: r.continue_() if r.request.url.startswith("file:") else r.abort())
     pg.goto(APP); pg.wait_for_timeout(400); return pg
 def save(pg, what, chiffre):
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="backup"]').click(); pg.wait_for_timeout(300)
-    pg.locator(".sheet-overlay button", has_text=what).first.click(); pg.wait_for_timeout(400)
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="sauv"]').click(); pg.wait_for_timeout(300)
+    pg.locator(".mn-pg .dr-row", has_text=what).first.click(); pg.wait_for_timeout(400)
     s=pg.locator(".sheet-overlay").last.inner_text()
     with pg.expect_download(timeout=30000) as dl:
         pg.locator(".sheet-overlay button", has_text=("Chiffrée avec mon code" if chiffre else "Sans chiffrement")).first.click()
     P=os.path.join(TMP, dl.value.suggested_filename); dl.value.save_as(P); pg.wait_for_timeout(500); return s, P
 def restore(pg, path, code):
     while pg.locator(".sheet-overlay").count(): pg.keyboard.press("Escape"); pg.wait_for_timeout(300); pg.locator(".sheet-overlay .ui-no, .sheet-overlay .ui-cancel").last.click(timeout=2000) if pg.locator(".sheet-overlay .ui-no, .sheet-overlay .ui-cancel").count() else None; pg.wait_for_timeout(300)
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="settings"]').click(); pg.wait_for_timeout(300)
-    with pg.expect_file_chooser() as fc: pg.locator('.sheet-overlay .dr-row[data-k="restore"]').click()
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="sauv"]').click(); pg.wait_for_timeout(300)
+    with pg.expect_file_chooser() as fc: pg.locator('.mn-pg .dr-row[data-k="restore"]').click()
     fc.value.set_files(path); pg.wait_for_timeout(1500)
     t=pg.locator(".sheet-overlay").last.inner_text() if pg.locator(".sheet-overlay").count() else ""
     return t

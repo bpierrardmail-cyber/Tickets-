@@ -97,9 +97,9 @@ with sync_playwright() as p:
     pg.locator(".ui-toast.undo button").click(); pg.wait_for_timeout(400)
     check(pg.locator(".gmh").count()==4 and ids["Fleuriste fictif"] in pg.evaluate(IDB)["orig"], "Annuler : la photo revient")
     # ---------- 3. Menu › Stockage
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(400)
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="sauv"]').click(); pg.wait_for_timeout(200)
     r=norm(pg.locator('.dr-row[data-k="stockage"]').inner_text()); check(" Mo" in r or " Ko" in r, "menu : « Stockage » avec la place utilisée (%s)" % r.replace("\n"," "))
-    pg.locator('.dr-row[data-k="stockage"]').click(); pg.wait_for_timeout(500)
+    pg.locator('.mnsub[data-ms="sauv"]').click(); pg.wait_for_timeout(200); pg.locator('.dr-row[data-k="stockage"]').click(); pg.wait_for_timeout(500)
     t=norm(pg.locator("#app").inner_text()); print("  stockage :", t.replace("\n"," | ")[:400])
     check("utilisés par l'appli" in t and "Photos · 4 ·" in t and "Données ·" in t and "Toujours" in t, "Stockage : total, photos (4), données, « Garder les photos d'origine : Toujours »")
     check([x.split()[0] for x in pg.locator(".sto-yh").all_inner_texts()]==["▸2026","▸2025","▸2023"] or len(pg.locator(".sto-yh").all_inner_texts())==3, "Stockage : années 2026, 2025, 2023")
@@ -119,9 +119,9 @@ with sync_playwright() as p:
     D=pg.evaluate(IDB); L=E(); lib=[e for e in L if e["marchand"]=="Librairie fictive"]
     check(old not in D["photos"] and lib and not lib[0].get("photo") and pg.locator('.sto-yh[data-y="2023"]').count()==0, "« Supprimer » 2023 : photo effacée, le ticket reste")
     # ---------- 4. sauvegardes
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="backup"]').click(); pg.wait_for_timeout(300)
-    s=norm(pg.locator(".sheet-overlay").last.inner_text()); check("Sauvegarde complète" in s and "Données + 3 photos" in s and "Données seules" in s, "Sauvegarder (appli Android) : Google Drive, complète (3 photos) ou données seules")
-    with pg.expect_download(timeout=30000) as dl: pg.locator(".sheet-overlay button", has_text="Sauvegarde complète").click()
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="sauv"]').click(); pg.wait_for_timeout(300)
+    s=norm(pg.locator(".mn-pg").last.inner_text()); check("Sauvegarde complète" in s and "données + 3 photos" in s.lower() and "Données seules" in s, "Sauvegarder (appli Android) : Google Drive, complète (3 photos) ou données seules")
+    with pg.expect_download(timeout=30000) as dl: pg.locator(".mn-pg .dr-row", has_text="Sauvegarde complète").click()
     ZP=os.path.join(TMP, dl.value.suggested_filename); dl.value.save_as(ZP); pg.wait_for_timeout(400)
     z=zipfile.ZipFile(ZP); names=z.namelist(); print("  zip :", names)
     check(dl.value.suggested_filename.startswith("tickets-sauvegarde-complete-") and z.testzip() is None, "ZIP « tickets-sauvegarde-complete-… », CRC justes")
@@ -131,12 +131,12 @@ with sync_playwright() as p:
     gar=[x for x in dj["_zip"] if x["id"]==ids["Garage fictif"]]
     check(gar and gar[0]["o"]==1, "photo de 2025 : l'origine")
     check(pg.evaluate("()=>!!localStorage.getItem('lastBackupFull')"), "date de la dernière sauvegarde complète notée")
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="backup"]').click(); pg.wait_for_timeout(300)
-    with pg.expect_download(timeout=10000) as dl: pg.locator(".sheet-overlay button", has_text="Données seules").click()
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="sauv"]').click(); pg.wait_for_timeout(300)
+    with pg.expect_download(timeout=10000) as dl: pg.locator(".mn-pg .dr-row", has_text="Données seules").click()
     JP=os.path.join(TMP, dl.value.suggested_filename); dl.value.save_as(JP)
     jj=json.load(open(JP, encoding="utf-8")); check(JP.endswith(".json") and "photos" not in jj and "_zip" not in jj and len(jj["data"]["entries"])==4, "données seules : JSON sans photos")
     # suppression d'un mois de Stockage avec une sauvegarde complète faite
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="stockage"]').click(); pg.wait_for_timeout(400)
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="sauv"]').click(); pg.wait_for_timeout(200); pg.locator('.dr-row[data-k="stockage"]').click(); pg.wait_for_timeout(400)
     pg.locator('.sto-del[data-y="2025"]').click(); pg.wait_for_timeout(300)
     s=norm(pg.locator(".sheet-overlay").last.inner_text()); check("Dernière sauvegarde complète : aujourd'hui" in s, "confirmation : « Dernière sauvegarde complète : aujourd'hui »")
     pg.locator(".sheet-overlay .ui-no").click(); pg.wait_for_timeout(200)

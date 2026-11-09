@@ -7,7 +7,7 @@ Tu as rejoint le foyer de quelqu'un : c'est son téléphone qui garde les donné
 - **Les onglets** : chacun est masqué, en lecture ou en modification, selon ses choix. Il peut les changer à tout moment.
 - **Les comptes** : tu vois les comptes qu'il a choisis pour toi, ou seulement tes tickets.
 - **Les tickets** : les tiens, ou ceux de tout le foyer s'il l'a décidé (ceux des autres en lecture seule).
-- Menu › Foyer montre tes droits et la dernière mise à jour.
+- Menu › Gérer › Foyer partagé montre tes droits et la dernière mise à jour.
 
 Rejoindre un foyer est gratuit. Si le propriétaire a Tickets Plus, ses fonctions ✦ marchent aussi pour toi, selon tes droits (groupes, qui doit combien à qui, factures, analyse avancée) ; les widgets restent à acheter sur chaque téléphone.
 
@@ -42,11 +42,11 @@ Si le foyer n'a été utilisé par aucun téléphone pendant 3 mois, il est effa
 - **En lecture** : tu vois les chiffres, tu ne peux rien changer. Si tu essaies, l'appli te le dit.
 - **En modification** : ce que tu ajoutes ou changes part chez le propriétaire, tout seul. S'il a modifié la même chose de son côté, le changement le plus récent l'emporte.
 - Les tickets et les frais des autres restent en lecture seule.
-- Si tu es connecté, la mise à jour se fait toute seule ; Menu › Foyer › « Mettre à jour maintenant » la lance tout de suite.
+- Si tu es connecté, la mise à jour se fait toute seule ; Menu › Gérer › Foyer partagé › « Mettre à jour maintenant » la lance tout de suite.
 
 ## Mes comptes (privé)
 
-En plus du foyer, tu as un espace à toi : Menu › Mes comptes.
+En plus du foyer, tu as un espace à toi : Menu › Gérer › Mes comptes.
 
 - Tickets, comptes, frais fixes, épargne : une appli complète pour toi, avec ta propre sauvegarde.
 - Rien n'en sort : ni le propriétaire ni le relais ne le voient.
@@ -57,7 +57,7 @@ En plus du foyer, tu as un espace à toi : Menu › Mes comptes.
 ## Sauvegarder
 
 - **Le foyer** est sauvegardé par le propriétaire : sur un nouveau téléphone, il suffit de le rejoindre à nouveau.
-- **Mes comptes** a sa propre sauvegarde : Menu › Sauvegarder · restaurer › Aller dans Mes comptes, puis Menu › Sauvegarder · restaurer.
+- **Mes comptes** a sa propre sauvegarde : Menu › Sauvegarde › Mes comptes › Aller dans Mes comptes, puis Menu › Sauvegarde.
   - Sur Google Drive (appli Android) : automatique, chiffrée, sur **ton** compte Google, avec **ton** code de secours à toi (à noter et garder). Personne du foyer ne peut la lire, pas même le propriétaire.
   - Ou dans un fichier (ZIP ou JSON) que tu gardes où tu veux.
 - Si le propriétaire a Tickets Plus, la sauvegarde sur Drive est comprise pour toi aussi.
@@ -82,7 +82,7 @@ Menu › Réglages › Rappels (appli Android) : tes prélèvements de la veille
 ## Code et sécurité
 
 - Quand tu rejoins le foyer, tu choisis ton propre code à 6 chiffres, puis ton empreinte si ton téléphone a un lecteur. Fortement conseillé (ce sont les comptes du foyer), mais tu peux passer. Pour changer d'avis : Menu › Réglages › Code et empreinte.
-- Si tu quittes le foyer (Menu › Foyer › Quitter le foyer), les données du foyer partent de ton téléphone ; tu retrouves celles que tu avais avant de le rejoindre.
+- Si tu quittes le foyer (Menu › Gérer › Foyer partagé › Quitter le foyer), les données du foyer partent de ton téléphone ; tu retrouves celles que tu avais avant de le rejoindre.
 - Si le propriétaire te retire du foyer, ton accès est coupé tout de suite.
 
 ## Mode démo
@@ -98,10 +98,10 @@ Pour essayer l'appli ou la montrer sans tes chiffres : Menu › Réglages › Mo
 
 **Je ne vois pas un onglet.** Le propriétaire l'a masqué pour toi. Demande-lui de changer tes droits.
 
-**Mes changements n'apparaissent pas chez lui.** Ton téléphone doit être connecté, et le sien aussi pour les recevoir. Menu › Foyer montre la dernière mise à jour.
+**Mes changements n'apparaissent pas chez lui.** Ton téléphone doit être connecté, et le sien aussi pour les recevoir. Menu › Gérer › Foyer partagé montre la dernière mise à jour.
 
 **Je ne peux rien modifier.** Tu es en lecture pour cet onglet. Le propriétaire peut le passer en modification.
 
-**Je change de téléphone.** Installe Tickets sur le nouveau, puis demande au propriétaire un nouveau QR code d'invitation. Pour retrouver Mes comptes : va dans Mes comptes, puis Menu › Sauvegarder · restaurer › Depuis Google Drive, avec ton code de secours.
+**Je change de téléphone.** Installe Tickets sur le nouveau, puis demande au propriétaire un nouveau QR code d'invitation. Pour retrouver Mes comptes : va dans Mes comptes, puis Menu › Sauvegarde › Depuis Google Drive, avec ton code de secours.
 
 **Faut-il internet ?** Oui, pour recevoir et envoyer les données du foyer. Le reste marche sans.

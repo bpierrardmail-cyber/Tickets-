@@ -40,7 +40,7 @@ with sync_playwright() as p:
     # ---------- 1. entrer dans la démo
     pg=page(BASE, real)
     check("Vraie Boulangerie" in nav(pg, "tickets"), "avant : les vraies données")
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(300); pg.locator('.dr-row[data-k="settings"]').click(); pg.wait_for_timeout(300)
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(300); pg.locator('.mnsub[data-ms="regl"]').click(); pg.wait_for_timeout(300)
     pg.locator('.dr-row[data-k="demo"]').click(); pg.wait_for_timeout(300)
     with pg.expect_navigation(): pg.locator(".sheet-overlay button", has_text="Entrer dans la démo").click()
     pg.wait_for_timeout(1800)
@@ -61,7 +61,7 @@ with sync_playwright() as p:
     for sub in ["Budgets","Analyse","Produits"]:
         nav(pg, "depenses"); pg.locator('.dpsub', has_text=sub).first.click(); pg.wait_for_timeout(600)
     check("Hausses" in body(pg) or True, "Dépenses : Produits, Budgets, Analyse ouverts")
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(300); pg.locator('.dr-row[data-k="foyer"]').click(); pg.wait_for_timeout(900)
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(300); pg.locator('.mnsub[data-ms="gerer"]').click(); pg.wait_for_timeout(200); pg.locator('.dr-row[data-k="foyer"]').click(); pg.wait_for_timeout(900)
     t=body(pg); check("Marie" in t and "Léa" in t, "Foyer partagé : Marie et Léa (inventées)")
     check(not relay, "aucune requête vers le relais %s" % relay[:2])
     # ---------- 2. version gratuite

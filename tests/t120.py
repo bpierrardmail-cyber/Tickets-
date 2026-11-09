@@ -45,15 +45,17 @@ with sync_playwright() as p:
     # ---------- 1. aller dans « Mes comptes »
     pg.locator("#hmenu").click(); pg.wait_for_timeout(400)
     check(pg.locator('.dr-row[data-k="perso"]').count()==1, "menu du membre : « Mes comptes »")
-    pg.locator('.dr-row[data-k="perso"]').click(); pg.wait_for_timeout(300)
+    pg.locator('.mnsub[data-ms="gerer"]').click(); pg.wait_for_timeout(200); pg.locator('.dr-row[data-k="perso"]').click(); pg.wait_for_timeout(300)
     pg.locator(".sheet-overlay button", has_text="Aller dans Mes comptes").click(); after_reload()
     t=tickets()
     check("Librairie perso" in t and "Boulangerie du foyer" not in t and pg.locator("#persoPill").count()==1, "« Mes comptes » : ses données d'avant le foyer, pastille « 🔒 Mes comptes · privé »")
     st=pg.evaluate("()=>({ cfg:localStorage.getItem('fyCfg'), keep:!!localStorage.getItem('fyPerso') })")
     check(st["cfg"] is None and st["keep"], "le foyer est mis de côté tel quel (fyPerso), plus de foyer actif")
     pg.locator("#hmenu").click(); pg.wait_for_timeout(400)
-    check("Foyer de Alex" in norm(pg.locator('.dr-row[data-k="foyer"]').inner_text()) and pg.locator('.dr-row[data-k="backup"]').count()==1, "menu : « Foyer de Alex · revenir », et Sauvegarder (c'est son appli)")
-    pg.locator(".dr-x").click(); pg.wait_for_timeout(300)
+    pg.locator('.mnsub[data-ms="gerer"]').click(); pg.wait_for_timeout(200); fa=norm(pg.locator('.dr-row[data-k="perso"]').inner_text())
+    pg.locator('.mnsub[data-ms="sauv"]').click(); pg.wait_for_timeout(200)
+    check("Foyer de Alex" in fa and pg.locator('.dr-row[data-k="full"]').count()==1, "menu : « Foyer de Alex · revenir », et Sauvegarder (c'est son appli)")
+    pg.locator("#hback").click(); pg.wait_for_timeout(300)
     # ---------- 2. ticket perso, rien d'envoyé
     pg.locator('#nav .navi[data-view="list"]').click(); pg.wait_for_timeout(300)
     (pg.locator("#navplus").click(), pg.wait_for_timeout(300), pg.locator('.dr-row[data-k="man"]').click(), pg.wait_for_timeout(400), pg.locator('.cattiles .chip:not(.more)').first.click()); pg.wait_for_timeout(400)
@@ -69,7 +71,7 @@ with sync_playwright() as p:
     av=pg.evaluate("()=>JSON.parse(localStorage.getItem('fyAvant'))")
     check(any(e["marchand"]=="Cadeau perso" for e in av["entries"]) and pg.evaluate("()=>JSON.parse(localStorage.getItem('fyCfg')).owner")=="Alex", "les données perso sont gardées de côté, le foyer est actif")
     # ---------- 4. de nouveau dans « Mes comptes »
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="perso"]').click(); pg.wait_for_timeout(300)
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="gerer"]').click(); pg.wait_for_timeout(200); pg.locator('.dr-row[data-k="perso"]').click(); pg.wait_for_timeout(300)
     pg.locator(".sheet-overlay button", has_text="Aller dans Mes comptes").click(); after_reload()
     t=tickets(); check("Cadeau perso" in t and "Librairie perso" in t, "de retour dans « Mes comptes » : les tickets perso sont toujours là")
     # ---------- 5. envoyer aussi au foyer

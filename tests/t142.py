@@ -43,7 +43,7 @@ with sync_playwright() as p:
       "epargne":[{"id":3,"nom":"Livret Marie","owner":"Marie","vals":{"2026-10":100}}],"commRemb":[{"id":7,"month":"2026-10","from":"Marie","to":"Alex","montant":10,"date":"2026-10-06"}],
       "groupes":[{"id":1,"nom":"Week-end","membres":["Alex","Marie"],"dep":[{"id":1,"date":"2026-10-10","label":"Gîte","montant":40,"payePar":"Marie","pour":["Marie"]}],"rembs":[]}]})
     c, pg = start(d)
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.drawer .dr-row[data-k="persons"]').click(); pg.wait_for_timeout(400)
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="gerer"]').click(); pg.wait_for_timeout(200); pg.locator('.dr-row[data-k="persons"]').click(); pg.wait_for_timeout(400)
     pg.locator('.sheet-overlay [data-p="Marie"]').click(); pg.wait_for_timeout(300); pg.locator('.sheet-overlay button[data-i="0"]').click(); pg.wait_for_timeout(300)
     pg.locator(".sheet-overlay input").first.fill("Mia"); pg.locator('.sheet-overlay button[type="submit"]').click(); pg.wait_for_timeout(500)
     cp=ls(pg,"communParts"); f=ls(pg,"fraisCommuns")[0]; e=ls(pg,"entries")[0]; ep=ls(pg,"epargne")[0]; rb=ls(pg,"commRemb")[0]; g=ls(pg,"groupes")[0]

@@ -24,11 +24,11 @@ with sync_playwright() as p:
     pg.evaluate("d=>{localStorage.clear(); for(const k in d) localStorage.setItem(k, JSON.stringify(d[k]));}", data); pg.reload(); pg.wait_for_timeout(900)
     def open_csv():
         pg.locator("#hmenu").click(); pg.wait_for_timeout(400)
-        pg.locator('.dr-row[data-k="pdf"]').click(); pg.wait_for_timeout(300)
+        pg.locator('.mnsub[data-ms="sauv"]').click(); pg.wait_for_timeout(200); pg.locator('.dr-row[data-k="pdf"]').click(); pg.wait_for_timeout(300)
         pg.locator(".sheet-overlay button", has_text="Tableur").click(); pg.wait_for_timeout(300)
     # ---------- 1. ZIP de 3 fichiers
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(400)
-    check("PDF ou tableur" in pg.locator('.dr-row[data-k="pdf"]').inner_text(), "menu : « Exporter · PDF ou tableur »"); pg.locator(".dr-x").click(); pg.wait_for_timeout(300)
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="sauv"]').click(); pg.wait_for_timeout(200)
+    check("PDF ou tableur" in pg.locator('.dr-row[data-k="pdf"]').inner_text(), "menu : « Exporter · PDF ou tableur »"); pg.locator("#hback").click(); pg.wait_for_timeout(300)
     open_csv()
     with pg.expect_download(timeout=15000) as dl: pg.locator("#csvGo").click()
     f=dl.value.path(); z=zipfile.ZipFile(f); names=sorted(z.namelist()); print("  ", dl.value.suggested_filename, names)
@@ -53,7 +53,7 @@ with sync_playwright() as p:
     pg.locator("#csvGo").click(); pg.wait_for_timeout(200)
     check("Coche au moins un contenu" in pg.locator(".sheet-overlay").last.inner_text(), "rien de coché : « Coche au moins un contenu »")
     pg.evaluate("()=>document.querySelectorAll('.sheet-overlay').forEach(x=>x.remove())")
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="pdf"]').click(); pg.wait_for_timeout(300)
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="sauv"]').click(); pg.wait_for_timeout(200); pg.locator('.dr-row[data-k="pdf"]').click(); pg.wait_for_timeout(300)
     pg.locator(".sheet-overlay button", has_text="PDF").click(); pg.wait_for_timeout(300)
     check("exporter en pdf" in pg.locator(".sheet-overlay").last.inner_text().lower(), "Exporter › PDF : le choix de la période du bilan")
     check(not errs, "pas d'erreur %s"%errs[:3])

@@ -58,8 +58,9 @@ with sync_playwright() as p:
         pg.wait_for_timeout(300); pg.reload(); unlock(pg)
         return pg
     def menu(pg):
-        pg.locator("#hmenu").click(); pg.wait_for_timeout(400)
-        return norm(pg.locator(".drawer").inner_text())
+        pg.locator("#hmenu").click(); pg.wait_for_timeout(400); t=""
+        for ms in ("gerer","sauv","regl","aide"): pg.locator('.mnsub[data-ms="%s"]' % ms).click(); pg.wait_for_timeout(200); t+=norm(pg.locator(".mn-pg").inner_text())+"\n"
+        return t
     def member(plus):
         m=dict(foyer); m["fyCfg"]={"role":"edit","fid":"F_T","mid":"m1","tok":"T","km":KM,"me":"Marie","owner":"Alex","tabs":["list"],"ed":["list"],"accts":None,"tk":"own","plus":plus,"snapT":1}
         m["fyAvant"]={"entries":[{"id":50,"date":"2026-10-20","marchand":"Librairie","montant":12,"categorie":"Loisirs","payePar":"Marie","articles":[]}]}
@@ -67,8 +68,8 @@ with sync_playwright() as p:
     # ---------- 1. membre : la ligne et la fiche
     pg=page(member(True))
     t=menu(pg)
-    check("Sauvegarder · restaurer" in t and "Mes comptes" in t, "membre : ligne « Sauvegarder · restaurer » dans le menu (%s)" % t.replace("\n"," | ")[:160])
-    pg.locator('.dr-row[data-k="backup"]').click(); pg.wait_for_timeout(500)
+    check("sauvegardé par Alex" in t and "Mes comptes" in t, "membre : Menu › Sauvegarde « Mes comptes · le foyer est sauvegardé par Alex » (%s)" % t.replace("\n"," | ")[:160])
+    pg.locator('.mnsub[data-ms="sauv"]').click(); pg.wait_for_timeout(300); pg.locator('.dr-row[data-k="backup"]').click(); pg.wait_for_timeout(500)
     s=norm(pg.locator(".sheet-overlay").last.inner_text()) if pg.locator(".sheet-overlay").count() else ""
     check("sauvegardées par Alex" in s and "Ta seule sauvegarde" in s and "Aller dans Mes comptes" in s and "Copie du foyer" not in s and pg.locator(".sheet-overlay").last.locator("button").count()==2, "fiche du membre : foyer sauvegardé par Alex, « Mes comptes » à part")
     nav(pg, pg.locator(".sheet-overlay button", has_text="Aller dans Mes comptes"))
@@ -76,10 +77,9 @@ with sync_playwright() as p:
     # ---------- 2. Plus du propriétaire toujours là
     t=menu(pg)
     check("Tickets Plus" not in t, "Mes comptes : pas de ligne « Tickets Plus » (Plus du propriétaire)")
-    pg.locator('.dr-row[data-k="backup"]').click(); pg.wait_for_timeout(500)
-    s=norm(pg.locator(".sheet-overlay").last.inner_text())
-    check("Sauvegarde sur Google Drive" in s and "✦" not in s and "Depuis Google Drive" in s, "Mes comptes : sauvegarde et restauration Drive, sans ✦")
-    pg.locator(".sheet-overlay .ui-no").click(); pg.wait_for_timeout(300)
+    pg.locator('.mnsub[data-ms="sauv"]').click(); pg.wait_for_timeout(500)
+    s=norm(pg.locator(".mn-pg").last.inner_text())
+    check("Sauvegarde Google Drive" in s and "✦" not in s and "Depuis Google Drive" in s, "Mes comptes : sauvegarde et restauration Drive, sans ✦")
     # ---------- 3. Drive activé : revenir au foyer prépare d'abord la sauvegarde
     pg.evaluate("()=>{ localStorage.setItem('driveCfg', JSON.stringify({on:true})); localStorage.setItem('driveSec', JSON.stringify('QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI')); }")
     pg.wait_for_timeout(300); pg.reload(); unlock(pg)
@@ -93,7 +93,7 @@ with sync_playwright() as p:
     check("Mes comptes · Drive" in t, "membre : statut « Mes comptes · Drive » quand la sauvegarde est activée")
     # ---------- 4. propriétaire sans Plus
     pn=page(member(False))
-    pn.locator("#hmenu").click(); pn.wait_for_timeout(400); pn.locator('.dr-row[data-k="perso"]').click(); pn.wait_for_timeout(400)
+    pn.locator("#hmenu").click(); pn.wait_for_timeout(400); pn.locator('.mnsub[data-ms="gerer"]').click(); pn.wait_for_timeout(200); pn.locator('.dr-row[data-k="perso"]').click(); pn.wait_for_timeout(400)
     nav(pn, pn.locator(".sheet-overlay button", has_text="Aller dans Mes comptes"))
     check("Tickets Plus" in menu(pn), "propriétaire sans Plus : l'offre Plus revient dans Mes comptes")
     check(not errs, "pas d'erreur %s"%errs[:3])

@@ -61,7 +61,7 @@ def reload(pg, wait=2600):
     pg.reload(); pg.wait_for_timeout(700); unlock(pg); pg.wait_for_timeout(wait)
 def open_foyer(pg):
     pg.locator("#hmenu").click(); pg.wait_for_timeout(300)
-    pg.locator('.dr-row[data-k="foyer"]').click(); pg.wait_for_timeout(500)
+    pg.locator('.mnsub[data-ms="gerer"]').click(); pg.wait_for_timeout(200); pg.locator('.dr-row[data-k="foyer"]').click(); pg.wait_for_timeout(500)
 def read_qr(pg, name):
     path = os.path.join(SP, name)
     pg.locator(".fy-qr").screenshot(path=path)

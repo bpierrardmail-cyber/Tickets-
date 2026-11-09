@@ -16,7 +16,7 @@ with sync_playwright() as p:
     check(pages()==2 and "det" not in pg.evaluate("document.body.className"), "simple par défaut : 2 graphiques par page")
     # Réglages › Affichage › Détaillé
     pg.locator("#hmenu").click(); pg.wait_for_timeout(400)
-    pg.locator('.dr-row[data-k="settings"]').click(); pg.wait_for_timeout(400)
+    pg.locator('.mnsub[data-ms="regl"]').click(); pg.wait_for_timeout(400)
     pg.locator('.dr-row[data-k="aff"]').click(); pg.wait_for_timeout(400)
     pg.locator(".sheet-overlay button", has_text="Détaillé").click(); pg.wait_for_timeout(700)
     check("det" in pg.evaluate("document.body.className") and pages()==4, "détaillé : 4 graphiques par page")

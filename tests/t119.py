@@ -28,7 +28,7 @@ with sync_playwright() as p:
     for k in "123456": pg.locator('#lockscreen button[data-k="%s"]' % k).click(); pg.wait_for_timeout(60)
     pg.wait_for_timeout(800)
     def ask(mid):
-        pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.dr-row[data-k="foyer"]').click(); pg.wait_for_timeout(600)
+        pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="gerer"]').click(); pg.wait_for_timeout(200); pg.locator('.dr-row[data-k="foyer"]').click(); pg.wait_for_timeout(600)
         pg.locator('.fy-mrow[data-m="%s"]' % mid).click(); pg.wait_for_timeout(300)
         pg.locator(".sheet-overlay button", has_text="Retirer du foyer").click(); pg.wait_for_timeout(300)
         t=norm(pg.locator(".sheet-overlay").last.inner_text()); pg.evaluate("()=>document.querySelectorAll('.sheet-overlay').forEach(x=>x.remove())"); return t

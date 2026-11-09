@@ -52,7 +52,7 @@ with sync_playwright() as p:
     ok=pg.evaluate("""()=>Promise.all(['accueil','scan','releve','avenir','foyer','equilibre','factures','analyse','widgets'].map(n=>new Promise(r=>{ const i=new Image(); i.onload=()=>r(i.naturalWidth===544); i.onerror=()=>r(false); i.src='vitrine/'+n+'.jpg'; })))""")
     check(all(ok), "les 9 captures de beta/vitrine existent (544 × 500) %s" % ok)
     # ---------- menu
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(400)
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="aide"]').click(); pg.wait_for_timeout(200)
     check(pg.locator('.dr-row[data-k="plus"]').count()==1, "menu : « ✦ Tickets Plus »")
     pg.locator('.dr-row[data-k="plus"]').click(); pg.wait_for_timeout(300)
     check("Foyer partagé" in W(pg, ".wlc.plus"), "menu › Tickets Plus : le carrousel")
@@ -71,7 +71,7 @@ with sync_playwright() as p:
     c, pg = open_app({"plusUnlocked":True}, True)
     check(pg.locator(".wlc").count()==1 and pg.locator("#wlcPlus").count()==0, "avec Plus : l'accueil sans lien Tickets Plus")
     pg.locator("#wlcSkip").click(); pg.wait_for_timeout(200)
-    pg.locator("#hmenu").click(); pg.wait_for_timeout(400)
+    pg.locator("#hmenu").click(); pg.wait_for_timeout(400); pg.locator('.mnsub[data-ms="aide"]').click(); pg.wait_for_timeout(200)
     check(pg.locator('.dr-row[data-k="plus"]').count()==0, "avec Plus : pas de ligne « Tickets Plus » dans le menu")
     c.close()
     check(not errs, "pas d'erreur %s"%errs[:3])
