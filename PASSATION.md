@@ -1,42 +1,42 @@
 # Tickets : dossier de passation
 
-*État au 01/11/2026, étiquette `03/11 23:22`. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
+*État au 09/11/2026. Le fichier sert à reprendre le projet dans une autre conversation Claude.*
 
 > **À Claude qui reprend le projet**
 >
 > 1. Lis d'abord ce fichier.
 > 2. Lis ensuite `CLAUDE.md` puis `JOURNAL.md` dans le dépôt. Ils sont tenus à jour à chaque modification et font foi s'ils diffèrent de ce document.
 > 3. Réponds à Benoît **en français**, court et concret.
-> 4. **Ne modifie rien sans lui avoir montré la proposition**. Une maquette suffit. Il dit « tu peux intégrer » ou « tu peux y aller » quand il est d'accord.
+> 4. **Ne modifie rien sans lui avoir montré la proposition**. Une maquette suffit. Il dit « tu peux intégrer » quand il est d'accord. « Ne fais rien », « comment tu vois ça », « montre-moi », « tu en penses quoi » appellent un avis ou une maquette, pas une modification.
 
 ---
 
 ## 1. Le projet en bref
 
-**Tickets** est une appli de suivi des dépenses d'un foyer, écrite par et pour Benoît Pierrard. Elle couvre :
-- les tickets de caisse scannés et leurs articles ;
-- les comptes, les frais fixes, le commun entre conjoints ;
-- l'épargne, les provisions, les factures ;
-- la Bourse.
+**Tickets** (nom provisoire ; **Copek** retenu le 04/11, à confirmer) est une appli de suivi des dépenses d'un foyer, écrite par et pour Benoît Pierrard :
+- tickets de caisse scannés et leurs articles, catégories en arbre, budgets ;
+- comptes, opérations du mois, frais fixes, virements chaque mois, import de relevé ;
+- commun entre les membres du foyer, qui doit combien à qui, groupes ponctuels ;
+- épargne, provisions, factures (lecture et estimation) ;
+- la Bourse (version Perso seulement).
 
-Il l'utilise sur son téléphone Android, en foyer partagé avec sa femme.
+Il l'utilise sur son téléphone Android, en **foyer partagé** avec sa femme Sylvette (elle a la version Store).
 
-**Objectif** : une version sur le Play Store, gratuite, avec des fonctions payantes appelées « Tickets Plus ». Ce n'est pas une appli payante d'office.
+**Objectif** : une version sur le Play Store, gratuite, avec des fonctions payantes « Tickets Plus » (✦).
 
 **Deux éditions, un seul code :**
 
-| Édition | Pour qui | Bourse | Comment elle se charge | Mises à jour |
-|---|---|---|---|---|
-| **Perso** (`Tickets Perso`, `fr.bpierrard.budget.perso` depuis le 08/11) | Benoît | oui | charge la β en ligne et garde une copie pour marcher sans réseau | immédiates à chaque push |
-| **Store** (`Tickets Store`, `fr.bpierrard.budget`, identifiant définitif depuis le 08/11) | public | non | l'appli entière est dans l'APK, aucune connexion pour l'usage normal | par le Play Store |
+| Édition | Identifiant | Pour qui | Bourse | Chargement | Mises à jour |
+|---|---|---|---|---|---|
+| **Perso** | `fr.bpierrard.budget.perso` | Benoît | oui | charge la β en ligne et en garde une copie pour marcher sans réseau | à chaque push |
+| **Store** | `fr.bpierrard.budget` (définitif) | public | non | l'appli entière est dans l'APK, aucune connexion pour l'usage normal | par le Play Store |
 
-**Exigences permanentes de Benoît :**
-- marcher sans bug pour une grande famille : 10 personnes et plus, plus de 10 comptes, affichage lisible ;
-- rien à configurer pour l'utilisateur ;
-- aucune source de données payante ;
-- **marcher sans réseau** : seuls le foyer partagé, l'achat de Plus et la Bourse (Perso) utilisent le réseau ;
-- le relais ne doit **jamais** pouvoir lire les données du foyer, car elles sont chiffrées sur le téléphone ;
-- les données restent sur le téléphone.
+**Exigences permanentes :**
+- marcher sans bug pour une grande famille (10 personnes et plus, plus de 10 comptes, affichage lisible) ;
+- rien à configurer ; aucune source de données payante ;
+- **marcher sans réseau** (seuls le foyer partagé, l'achat de Plus, la sauvegarde Drive et la Bourse utilisent le réseau) ;
+- le relais ne doit **jamais** pouvoir lire les données du foyer (chiffrées sur le téléphone) ;
+- sécurité au maximum : « tout ce qui a été remonté, même mineur, doit être corrigé » (08/11).
 
 ---
 
@@ -45,264 +45,114 @@ Il l'utilise sur son téléphone Android, en foyer partagé avec sa femme.
 | Quoi | Lien |
 |---|---|
 | Dépôt GitHub (public) | https://github.com/bpierrardmail-cyber/Tickets- |
-| **Appli β (web)**, servie par GitHub Pages | https://bpierrardmail-cyber.github.io/Tickets-/beta/ |
-| Appli β, version Store dans un navigateur | https://bpierrardmail-cyber.github.io/Tickets-/beta/?edition=store |
-| Ancienne version stable (ne pas toucher) | https://bpierrardmail-cyber.github.io/Tickets-/ |
-| Page des APK de test (release `apk-beta`) | https://github.com/bpierrardmail-cyber/Tickets-/releases/tag/apk-beta |
-| **APK Perso** (avec Bourse) | https://github.com/bpierrardmail-cyber/Tickets-/releases/download/apk-beta/Tickets-perso.apk |
-| **APK Store** (sans Bourse) | https://github.com/bpierrardmail-cyber/Tickets-/releases/download/apk-beta/Tickets-store.apk |
-| Relais Cloudflare (Worker `tickets`) | https://tickets.bpierrard-mail.workers.dev |
-| `CLAUDE.md`, texte brut | https://raw.githubusercontent.com/bpierrardmail-cyber/Tickets-/main/CLAUDE.md |
-| `JOURNAL.md`, texte brut | https://raw.githubusercontent.com/bpierrardmail-cyber/Tickets-/main/JOURNAL.md |
-| Fichier de l'appli, texte brut | https://raw.githubusercontent.com/bpierrardmail-cyber/Tickets-/main/beta/index.html |
+| **Appli β (web)** | https://bpierrardmail-cyber.github.io/Tickets-/beta/ |
+| β, version Store dans un navigateur | https://bpierrardmail-cyber.github.io/Tickets-/beta/?edition=store |
+| β en mode démo (foyer inventé) | https://bpierrardmail-cyber.github.io/Tickets-/beta/?demo |
+| **APK Perso** | https://github.com/bpierrardmail-cyber/Tickets-/releases/download/apk-beta/Tickets-perso.apk |
+| **APK Store** | https://github.com/bpierrardmail-cyber/Tickets-/releases/download/apk-beta/Tickets-store.apk |
+| `CLAUDE.md` / `JOURNAL.md` (texte brut) | https://raw.githubusercontent.com/bpierrardmail-cyber/Tickets-/main/CLAUDE.md · …/JOURNAL.md |
 
-**Accès au dépôt depuis un autre abonnement :**
-- **Avec Claude Code**, relier le compte GitHub `bpierrardmail-cyber`, ou un compte ajouté comme collaborateur avec droit d'écriture. Claude peut alors lire, modifier, committer et pousser sur `main`.
-- **Avec Claude en simple conversation**, les liens bruts ci-dessus suffisent pour lire. Pour modifier, il faut une connexion GitHub ; sinon Benoît applique lui-même les changements.
+**Accès au dépôt** : avec Claude Code, relier le compte GitHub `bpierrardmail-cyber` (ou un collaborateur avec droit d'écriture) ; Claude peut alors committer et pousser sur `main`. En simple conversation, les liens bruts suffisent pour lire.
 
-**Comptes externes (seul Benoît y a accès) :**
-- Cloudflare : le Worker `tickets` est redéployé tout seul par Workers Builds à chaque push sur `main`.
-- GitHub Pages et GitHub Actions : la β est publiée et les APK compilés à chaque push.
+**Comptes externes (seul Benoît y a accès)** : GitHub (Pages, Actions, secrets de signature ; validation en deux étapes, branche `main` protégée contre la suppression et le force-push), Cloudflare (Worker `tickets`, redéployé à chaque push), Google Cloud (projet `app-budget-sbpi`, accès Drive). **La clé de signature et son mot de passe ne sont que dans les secrets GitHub et chez Benoît** : jamais dans le dépôt ni dans une conversation.
 
-Les maquettes (canevas « Tickets — Plan de l'appli » et autres) sont des artefacts de l'abonnement actuel. Elles ne sont pas visibles ailleurs, sauf si Benoît les partage.
+Les maquettes et la page « Tickets · À faire » sont des artefacts claude.ai de Benoît.
 
 ---
 
 ## 3. Architecture
 
-### Fichiers du dépôt
-
 | Chemin | Rôle |
 |---|---|
-| `beta/index.html` | **L'appli** : environ 9 800 lignes, HTML, CSS et JS dans un seul fichier. On travaille **uniquement ici**. |
-| `index.html`, `sw.js`, `manifest.webmanifest`, `icon.svg` | Ancienne version stable et service worker (réseau d'abord), qui sert aussi la β dans un navigateur. Ne pas toucher sans demande. |
-| `relais/cours-worker.js` | Worker Cloudflare, voir les routes ci-dessous. |
-| `relais/foyer.js` | Foyer partagé : un Durable Object SQLite par foyer (classe `Foyer`), dans l'offre gratuite. |
-| `wrangler.jsonc` | Configuration du Worker. |
-| `app-android/` | Appli Android Capacitor 7 : `capacitor.config.json`, et le code natif dans `native/`. |
-| `app-android/beta-test.keystore` | Clé de signature **de test** (mot de passe dans `tickets.gradle`). Ne convient pas au Store : il faudra une vraie clé d'envoi, gardée secrète hors du dépôt. |
-| `.github/workflows/apk-beta.yml` | Compile les deux APK quand `beta/**` ou `app-android/**` change, puis les publie dans la release `apk-beta`. Durée : environ 3 minutes. |
-| `tests/` | Tests Playwright en Python, avec données fictives, plus le relais local et `run.sh`. Mode d'emploi dans `tests/README.md`. |
-| `CLAUDE.md` | Guide technique détaillé : fonctions clés, données, règles. |
-| `JOURNAL.md` | État actuel, en cours, décisions datées, historique. |
+| `beta/index.html` | **L'appli** (≈ 14 000 lignes) : HTML, CSS et JS dans un seul fichier. On travaille **uniquement ici**. |
+| `index.html`, `sw.js`, `manifest.webmanifest` | Racine : renvoi vers la β + service worker (réseau d'abord) pour le navigateur. |
+| `relais/cours-worker.js`, `relais/foyer.js` | Worker Cloudflare : cours, inflation INSEE, foyer partagé (un Durable Object SQLite par foyer), limites par adresse. |
+| `outils/csp.py` | Met à jour l'**empreinte du script dans la CSP** (obligatoire après toute modification du script, sinon l'appli ne démarre plus). |
+| `app-android/` | Appli Capacitor 7 ; code natif dans `native/` (ML Kit, scanner de documents, widgets, Drive, rappels, copie hors ligne). |
+| `.github/workflows/apk-beta.yml` | Compile les deux APK sans clé, puis les signe dans un job à part (secrets `TK_KEYSTORE_B64` / `TK_KEYSTORE_PASS`). |
+| `tests/` | ≈ 75 tests Playwright (Python), données inventées, relais local. |
+| `guide/` | Guide du propriétaire et du membre (`*.md`) ; `python3 guide/maj.py` les met dans l'appli. |
+| `PLAN.md`, `legal/` | Plan des chantiers ; textes légaux à relire. |
 
-**Routes du relais** (`relais/cours-worker.js`) :
-- cours Yahoo et CoinGecko : `/search`, `/quote`, `/chart`, `/crypto/*` ;
-- inflation INSEE : `/inflation` ;
-- foyer partagé : `/foyer`.
+**Code** : ES5 uniquement (`var`, `function`), un seul `<script>` (IIFE) ; sections `// ---------- Titre ----------` ; `store.read/write` (jamais `localStorage` direct), `num()` pour lire un montant, `esc()` pour tout texte inséré en HTML. Détails : `CLAUDE.md`.
 
-### Code de l'appli (règles strictes)
-- **ES5 uniquement** : `var` et `function`. Pas de `let`/`const`, de fonctions flèches, de gabarits `` ` `` ni d'`async`. Tout le JS tient dans un seul `<script>` (IIFE).
-- Sections repérées par `// ---------- Titre ----------`.
-- Outils internes :
-  - `store.read(k, def)` et `store.write(k, v)` : JSON dans localStorage ;
-  - `render()` et `renderView()` ;
-  - fenêtres intégrées : `uiForm`, `uiChoice`, `uiToast`, `uiUndoToast` ;
-  - `num(x)` pour lire un montant, **jamais `parseFloat`** ;
-  - `fmt`, `fmtK`, `fmtS` pour afficher un montant ;
-  - **tout texte inséré en HTML passe par `esc()`**.
-- Thème sombre, écran mobile, à tester à 412 px de large.
-- Éditions :
-  - `EDITION` vaut `perso` ou `store`. L'appli Android l'annonce par `TicketsApp/<édition>` dans son identifiant de navigateur ; dans un navigateur, on ajoute `?edition=store`.
-  - `PLUS_FEATURES = ["widgets","foyer","avancee","factures"]`, à vérifier avec `canUse()`.
-  - `appLocal()` est vrai quand c'est l'appli Store : la page est dans l'APK, à l'adresse `https://localhost`.
+**Sécurité (revue du 08/11, tout corrigé)** : CSP par empreinte, `Object.prototype` figé, contrôle de tout ce qui vient d'un autre téléphone, d'une sauvegarde ou d'un fichier (`fyPathOk`, `phSafe`, `fyAllowed`), code du téléphone en PBKDF2, écran privé, sauvegarde fichier chiffrée au choix, relais limité et sans lecture possible.
 
-### Sans réseau
-- **Store** : `beta/`, pdf.js et `insee.json` sont copiés dans l'APK à la compilation. Ni vérification de version, ni service worker.
-- **Perso** : `TkOfflineClient.java` sert la page depuis le réseau, avec un délai court, et en garde une copie (`tk-offline-page.html`). Sans réseau, il sert la copie à la même adresse, donc avec les mêmes données.
-- Tesseract (lecture des tickets dans un navigateur) n'est chargé qu'au besoin, jamais dans l'appli Store. Sur Android, la lecture passe par **ML Kit**, inclus dans l'APK et hors ligne.
-
-### Android (`app-android/native`)
-- `TicketsNativePlugin` : sauvegarde, partage, widgets, lecture de QR code.
-- `TicketOcrPlugin` : ML Kit.
-- Widgets `TkWidget*` : Scan, Solde, Commun, Mois, Foyer, Bourse. Ils sont masqués par défaut et se déverrouillent par empreinte (`TkUnlockActivity`).
-- `patch-manifest.js` et `tickets.gradle` sont appliqués par le workflow.
-
-### Foyer partagé : le propriétaire est le centre
-- Le téléphone du propriétaire a toutes les données. Il publie sur le relais une copie **chiffrée** pour chaque membre : AES-GCM, gzip, format `g1.`, filtrée selon ses droits.
-- Un membre qui a le droit de modifier envoie ses changements dans `/inbox`. Le propriétaire les fusionne fiche par fiche, en gardant la plus récente, puis republie.
-- Invitation par QR code. Un code à 6 chiffres et l'empreinte sont fortement conseillés, choisis par chaque téléphone.
-- Droits par onglet : Masqué / Lecture / Modif.
+**Foyer partagé** : le téléphone du propriétaire a tout et publie pour chaque membre une copie chiffrée filtrée par ses droits (onglet par onglet : Masqué / Lecture / Modif.) ; un membre envoie ses changements, le propriétaire les contrôle et les fusionne. Invitation par QR code ; code et empreinte conseillés, choisis par chaque téléphone. Le foyer est dans la sauvegarde (Drive ou fichier), pas sur le relais.
 
 ---
 
-## 4. Ce que fait l'appli aujourd'hui
+## 4. Ce que fait l'appli (09/11)
 
-**Barre du bas** : Accueil · Dépenses · Compte · À venir · Commun · Bourse. La version Store n'a pas la Bourse. Chaque onglet a ses sous-onglets sous forme de boutons sous le titre. ✦ = Tickets Plus : la fonction reste visible, seul le bouton demande Plus.
+**Barre du bas** : Accueil · Opérations · Budget · À venir · Foyer (+ Bourse en Perso), un seul bouton **＋** (scanner, saisir, virement, frais fixe, importer un relevé). Chaque onglet a ses sous-onglets en boutons. ✦ = Plus : la fonction reste visible, seul le bouton demande Plus.
 
-- **Accueil** : graphiques choisis par l'utilisateur, grande carte du haut au choix, puces ✍️ Saisie et 🧾 Tickets, filtre par personne.
-- **Dépenses**, sous-onglets Tickets · Produits · Budgets · Analyse :
-  - Tickets : liste du mois et galerie de photos ;
-  - Produits : prix, hausses, magasins, familles ;
-  - Budgets : budgets par catégorie ;
-  - Analyse : graphiques et ✦ Analyse avancée (inflation perso INSEE, comparaison avec l'an dernier, alertes, pistes d'économies, résumé à coller dans une IA).
-- **Compte**, sous-onglets Opérations · Épargne · Graphiques, plus la roue du compte :
-  - Opérations : la liste du mois comme un relevé de banque, avec « ＋ Ajouter » (virement reçu ou envoyé, « ↻ Reprendre des virements » du mois d'avant, frais fixe, ticket) ;
-  - « ↻ Reprendre des virements » : dans le mois suivant, un mois choisi, une période, ou chaque mois (série qui crée le virement de chaque mois, 12 mois à l'avance ; modifier à partir d'un mois, retirer un mois, arrêter) ;
-  - toucher un virement : Modifier, « ↻ Reprendre ce virement », et pour un virement envoyé (pas vers l'épargne) « 📅 Passer en frais fixe » (commun ou perso à choisir ; un mois, plusieurs mois ou sans fin ; le virement est remplacé, le solde ne bouge pas, les mêmes virements des mois couverts partent aussi, « Annuler » possible) ;
-  - frais fixe : « Prélevé sur » ne montre que les comptes, celui par défaut déjà choisi (compte principal pour un frais commun, compte de la personne sinon) ;
-  - Épargne : la courbe de l'épargne (6 / 12 mois / Tout ; sur la période, dont provisions, disponible) et les comptes épargne ; Graphiques : Ce mois, Dépenses, Solde, Entrées-sorties (03/11 : Épargne et Provisions retirés de Graphiques) ;
-  - roue du compte : modifier, solde reporté, **import d'un relevé** OFX, QIF ou CSV lu sur le téléphone (un virement déjà dans l'appli et retrouvé devient « fait »), annuler le dernier import.
-- **À venir**, sous-onglets 12 mois · Frais fixes · Provisions · Factures :
-  - 12 mois : les 12 prochains mois, « À payer bientôt », et ✦ « Tes comptes dans 12 mois » (projection et simulateur) ;
-  - Factures (✦ en Store) : import de factures PDF ou photos, et estimation de la prochaine facture selon la saison ; dans le détail d'un fournisseur, toucher une facture pour la modifier, appui long pour la supprimer (annulable) ; appui long sur la carte d'un fournisseur pour le supprimer avec ses factures (provision gardée) ; une facture récente gardée sans ses effets est signalée « Pas dans tes comptes · Ajouter » ; une facture payée par une provision se règle en un seul geste (elle va dans le compte et sort de la provision, avec en option le virement du livret vers le compte), depuis la provision, le fournisseur ou la facture ;
-  - Provisions : graphique « De côté » ou « Avec les factures prévues » (solde de chaque mois recalculé après les factures à venir : montant prévu, factures estimées du fournisseur suivi, sinon le même mois l'an dernier), liste des factures prévues avec ce qui manquera et « Passer à X € / mois » ;
-  - Provisions : la mise de côté de chaque mois est un frais fixe « Provision · nom » relié (« Remplie par » : Commun, chacun sa part, une personne, ou pas dans les frais fixes) ; elle compte dans les parts du Commun et l'Analyse, et sort du compte qui paie sauf si l'argent y reste ; une facture payée par la provision sort du compte mais ne compte pas une 2ᵉ fois dans les parts ;
-  - plusieurs factures d'un coup (plusieurs PDF, ou plusieurs factures en photos, recto et verso, même dans le désordre) : un écran de contrôle « 6 photos · 6 lues · 3 factures trouvées » liste les factures ; la plus récente est vérifiée en entier, les plus anciennes se contrôlent une par une ou se décochent ; une photo illisible se reprend ; rien n'est enregistré avant « Appliquer ».
-- **Commun** : part de chacun dans le commun, en %, et parts propres à chaque frais ; frais communs du mois ; produits partagés.
-- **Bourse** (Perso seulement) : cours Yahoo et CoinGecko via le relais. Elle compte une fois dans l'épargne.
-- **Menu** : Foyer partagé, Personnes, Sauvegarder (complète en ZIP avec les photos, ou données seules), Stockage · Exporter (PDF ou tableur), Aide, Réglages.
-- **Accueil** : au premier démarrage, 3 diapos (Bienvenue, Bien scanner, Pour aller plus loin) ; un membre du foyer a ses 2 diapos ; à revoir dans Menu › Aide. Le guide est dans Menu › Aide (propriétaire et membre).
-- **Photos des tickets** : en qualité d'origine (toutes les pages) ; galerie par mois, suppression d'un mois ou d'une année ; Menu › Stockage (place utilisée, « Garder les photos d'origine »). Les tickets restent toujours ; la galerie du téléphone n'est jamais touchée.
-- **Scan d'un ticket** : ML Kit, puis `parseTicket`. L'appli compare les articles au total et propose les produits appris, chaque personne ayant les siens. « Copier la lecture » sert à déboguer un ticket mal lu.
+- **Accueil = Résumé** (le tableau de bord à graphiques est retiré le 09/11) :
+  - propriétaire : « Il te reste … jusqu'au 31 », alertes (budget, découvert, prélèvement proche), dernières opérations, ligne Foyer ;
+  - membre : sa part du commun (ou ses tickets s'il n'a pas de part), qui doit quoi, cases Mon compte · Fin du mois · Mes tickets selon ses droits, prochaines dépenses communes avec sa part, ses derniers tickets.
+- **Opérations** : Opérations (le mois comme un relevé, « À venir » à cocher, recherche, roue du compte : modifier, solde reporté, import de relevé OFX/QIF/CSV, annuler l'import) · Tickets (liste du mois, galerie, corbeille) · Épargne · Graphiques.
+- **Budget** : Budgets · Analyse (✦ Analyse avancée) · Produits.
+- **À venir** : 12 mois (✦ projection) · Frais fixes · Provisions · Factures ✦ (import PDF ou photos, estimation saisonnière, factures payées par une provision).
+- **Foyer** : parts du commun, frais communs, produits partagés, ✦ qui doit combien à qui, ✦ groupes ponctuels.
+- **Menu (☰)**, page à 4 sous-onglets avec recherche « Chercher un réglage… » :
+  - **Gérer** : ligne « Créer » (＋ Compte, Frais fixe, Provision, Livret, Catégorie, Virement mensuel, Personne) qui n'ouvre **que** le formulaire, en plein écran ; chaque ligne ouvre sa page de gestion (liste complète, « ＋ Nouveau », toucher pour modifier) : comptes, épargne, frais fixes, virements chaque mois, provisions, catégories ; et budgets, personnes, produits, factures, foyer, groupes, corbeille ;
+  - **Sauvegarde** : état, Google Drive (gratuit, automatique, chiffré), sauvegarde complète ZIP ou données seules, restaurer, **code de secours**, stockage, export PDF ou tableur ;
+  - **Réglages** : affichage simple / détaillé, monnaie, code et empreinte, écran privé, rappels, widgets, mode démo ;
+  - **Aide** : guide (propriétaire / membre), revoir l'accueil, Tickets Plus, à propos.
+- **Icônes sans couleur** (09/11) : tous les emojis de l'interface sont dessinés au trait, couleur du texte (`icoMono`).
+- **Fiche d'un ticket** : scan par ML Kit (scanner de documents Google), articles comparés au total, produits appris par personne, catégorie obligatoire en tuiles, ticket sans article annoncé, partage « Qui paie ce ticket ? », retrait d'espèces reconnu.
+- **Android** : marche sans réseau, widgets masqués par défaut (empreinte pour voir), rappels locaux, sauvegarde Drive en arrière-plan, relevé partagé depuis l'appli de la banque.
 
 ---
 
-## 5. Avancement : la semaine du 31/10
+## 5. En cours / à faire
 
-Fait et poussé le 01/11 :
-1. **Factures** : modifier, supprimer (une facture ou tout un fournisseur, annulable), nombre de factures par fournisseur ; une facture gardée sans ses effets peut être mise dans les comptes (« Pas dans tes comptes · Ajouter »).
-2. **Provisions reliées aux frais fixes, au Commun et aux comptes** : la mise de côté est un frais fixe « Provision · nom » (les anciens frais « Eau 20 € », « Amazon 6 € » sont reliés, pas doublés) ; une facture payée par une provision va dans le compte et sort de la provision en un seul geste, sans compter deux fois dans les parts du Commun.
-3. **Provisions avec les factures prévues** : graphique « De côté » / « Avec les factures prévues », liste de ce qui manquera, « Passer à X € / mois » ; carte du fournisseur « prête pour mai · il restera 28 € ». Corrigé : un mois futur repartait de 0.
-4. **Compte** : plus d'onglet Virements, « ＋ Ajouter » dans les Opérations ; reprendre des virements du mois d'avant (mois suivant, un mois, une période, chaque mois) ; passer un virement en frais fixe, avec « Frais commun ou perso ? » à choisir à chaque fois (rien de coché d'avance, l'appli le redemande si on oublie) ; « Prélevé sur » sans « Automatique ».
-5. **Tests indépendants de la date** (`tests/horloge.py`).
-6. **Accueil** : la petite carte « Compte · Épargne » n'est plus réduite dans un coin. Sa courbe était prise pour un anneau ; elle prend maintenant toute la largeur de la carte comme les barres de « Compte · Solde », montants au-dessus, mois en dessous, Bourse en pointillés, sans les petits points (`enrichMiniCharts` reconnaît les `polyline`). Test t97 complété.
-7. **« Total provisions »** au lieu de « Total mis de côté » ou « Provisions mises de côté », dans À venir › Provisions et Compte › Graphiques.
-8. **Factures Free Mobile en PDF** : date, montant et prélèvement lus (accents détachés, « 15.99 e », date en lettres).
-9. **Lecture des factures plus tolérante, et apprise** : quand les règles ne trouvent rien, la date et le montant les plus probables d'après les mots autour ; une correction est retenue pour le fournisseur et la facture suivante est lue au même endroit ; dans un import de plusieurs factures, corriger la plus récente remplit les autres ; la 1re facture d'un fournisseur enregistrée sans correction est aussi retenue, et l'appli dit que la lecture s'améliore après la 1re facture.
-10. **Abonnements (02/11)** : sans consommation sur les factures, la prochaine facture et le « par mois » suivent le prix de la dernière facture ; le rythme vient de l'historique.
-11. **Relevé et contrôles (02/11)** : factures et tickets confirmés ou corrigés par le relevé importé (gardé dans l'appli), facture manquante signalée, ticket qui complète le paiement du relevé sans doublon, import qui corrige le total d'un ticket ; contrôles de cohérence (montant inhabituel, HT + TVA, dates) ; lecture apprise par voisinage ; données Factur-X des PDF.
-12. **Scan des tickets (02/11)** : scanner de documents de Google (photo recadrée et redressée, nouvel APK ; repli sur l'appareil photo), total recoupé avec la carte et la TVA, total appris par magasin, jeu d'essai de tickets inventés.
-13. **Stockage (02/11)** : plus de limite de 5 Mo ; une donnée qui ne tient plus dans la mémoire locale part dans le stockage du téléphone, sans perte.
-14. **Photos et sauvegarde complète (02/11)** : photos des tickets gardées en qualité d'origine, visionneuse avec zoom ; galerie par mois (⋯ : supprimer un mois ou une année, annulable) ; Menu › Stockage ; sauvegarde complète en ZIP (données + photos) ou données seules ; restauration du ZIP.
-15. **Accueil en diapos (02/11)** : 3 diapos au premier démarrage (une fois aussi sur un téléphone déjà utilisé), 2 pour un membre ; Menu › Aide › « Revoir l'accueil ».
-16. **Qui doit combien à qui (02/11, ✦ Plus)** : dans Commun, ce que chacun a payé pour le commun comparé à sa part, le moins de remboursements possible, « Remboursé » avec ou sans virement, report d'un mois sur l'autre, historique.
-17. **Ticket partagé avec plusieurs personnes (02/11)** : « Dépense commune » sur les articles, « Partagé avec » sur la fiche (personnes et parts au choix), « Tout le ticket en commun ».
-18. **Accueil en vitrine et carrousel Tickets Plus (02/11)** : 4 cartes avec de vraies captures de l'appli (scan, relevé OFX/QIF/CSV, 12 mois, sauvegarde ZIP/JSON), « ✦ Découvrir Tickets Plus » sur chaque carte (Store), carrousel de 6 cartes réutilisé par le menu et les boutons ✦ ; captures refaites par `tests/vitrine.py`.
-19. **Guide dans l'appli (02/11)** : Menu › Aide, guide du propriétaire et guide du membre, parties à déplier et recherche, sans internet ; sources `guide/*.md`.
-20. **Espace perso d'un membre (02/11)** : Menu › Mes comptes, un espace privé sur son téléphone en plus du foyer ; pastille « 🔒 Mes comptes · privé » pour revenir au foyer.
-21. **Export pour un tableur (03/11)** : Menu › Exporter › Tableur, fichiers CSV (tickets, articles, opérations, frais fixes et provisions) pour Excel ou Google Sheets.
-24. **Fiche du ticket sur un écran et corbeille (04/11)** : Options repliées (compte, groupe, partage « Qui paie ce ticket ? »), Supprimer dans ⋯, tickets supprimés gardés 30 jours dans Dépenses › Tickets › Corbeille.
-23. **Rappels hors ligne (03/11, gratuits)** : Menu › Réglages › Rappels : prélèvement ou facture demain, virement à faire, budget à 80 %, sauvegarde ancienne ; notifications locales, sans réseau.
-22. **Groupes ponctuels (03/11, ✦ Plus)** : Commun › Groupes, pour un voyage ou une sortie, même avec des amis sans l'appli : dépenses (ou tickets), qui doit combien à qui, remboursements avec ou sans virement, récap à envoyer.
+- **Tests à faire par Benoît sur son téléphone** : chapitre 1 de la page « Tickets · À faire » (claude.ai). À y ajouter : le nouveau menu (Gérer, création directe), les icônes sans couleur, l'Accueil sans tableau de bord (le sien et celui de Sylvette).
+- **Améliorations notées** :
+  - widget Bourse en économie d'énergie : afficher « mise à jour en pause » au lieu d'une vieille heure ;
+  - « Lire avec mon IA » (photo + consigne envoyées à l'IA du téléphone par le partage Android, réponse collée dans Tickets) ;
+  - Benoît a une autre liste d'améliorations à donner.
+- **Avant la sortie Store** : brancher l'achat de Plus (Play Billing, aujourd'hui un drapeau local) ; paquet AAB signé ; écran Licences et « Source : INSEE » ; suppression du foyer ; politique de confidentialité et fiche « Sécurité des données » ; QR code lisible par l'appareil photo ; **domaine propre en Europe** (nom définitif) pour l'appli et le relais.
+- **Comptes** : validation en deux étapes Google possible à partir du 15/11 (Benoît).
 
-Fait et poussé le 31/10 :
-1. **Sans réseau** pour les deux éditions. L'APK Store est autonome ; la Perso garde une copie.
-2. **Estimation saisonnière des factures** : profil du foyer appris sur 12 mois, sinon un coefficient de saison par type d'énergie.
-3. **Réorganisation complète de la navigation, en 4 étapes** :
-   - étape 1 : l'onglet Factures devient « À venir » ;
-   - étape 2 : Compte en sous-onglets, avec la roue du compte ;
-   - étape 3 : l'onglet Dépenses ;
-   - étape 4 : finitions (menu allégé, Projection dans À venir, présentation des fonctions Plus au lieu des écrans verrouillés).
-4. **Factures d'eau en photos**, d'après une vraie lecture envoyée par Benoît (3 factures, 6 photos) :
-   - les factures prises d'un coup sont séparées ;
-   - les dates mal lues par le téléphone sont réparées ;
-   - le fournisseur écrit sur deux lignes est retrouvé ;
-   - « site Internet » ne fait plus une facture internet.
-5. **Écran de contrôle de plusieurs factures**, à sa demande : nombre de pages lues sur le nombre de photos, « LA PLUS RÉCENTE », contrôle des plus anciennes, « Reprendre » une photo illisible, rien d'enregistré avant « Appliquer ». Même écran pour plusieurs PDF.
-6. **Accueil** : la page des petits graphiques (« 3 / 8 ») est gardée même quand l'appli se redessine au démarrage. **Commun** : Frais communs et Produits partagés se replient de la même façon en touchant leur titre, et le graphique reprend alors sa place ; « Modifier dans À venir » dans la liste des frais communs (01/11).
-
-**À faire valider par Benoît sur son téléphone :**
-- la nouvelle navigation, et les retours éventuels ;
-- le mode avion avec les nouveaux APK :
-  - Perso : l'ouvrir une fois avec le réseau, puis passer en mode avion ;
-  - Store : l'appli repart vide, donc faire une sauvegarde avant et la restaurer après ;
-- l'import de relevé avec ses exports BoursoBank (OFX, QIF, CSV) ;
-- les factures d'eau en photo : réimporter ses 6 photos d'un coup, après avoir supprimé l'ancienne mauvaise facture si elle a été enregistrée ; en cas de souci, il enverra « Copier la lecture » ;
-- les provisions reliées (01/11) : ses frais « Eau » et « Amazon » doivent être devenus « Provision · Eau » / « Provision · Amazon » sans doublon ; les autres provisions ont un frais à partir de novembre (sinon « Remplie par » → « Pas dans les frais fixes ») ; la facture Région Minière du 02/11 : « Ajouter » la met dans le compte et la retire de « Eau » ;
-- les virements repris ou « chaque mois » (CAF, Sylvette…), et « Passer en frais fixe » (Claude ia…) ; pour MAAF RC SBPI, déjà passé en frais fixe avant le choix commun / perso : le remettre en « Commun » dans À venir › Frais fixes › Modifier › « Pour qui » ;
-- la petite carte « Compte · Épargne » de l'Accueil ;
-- l'accueil (il s'ouvre une fois au démarrage, puis Menu › Aide › « Revoir l'accueil ») ;
-- les photos : scanner un ticket, l'ouvrir dans la galerie (photo d'origine, zoom), Menu › Stockage, une sauvegarde complète (ZIP dans Documents/Tickets ou envoyée vers Drive) ;
-- le scanner de documents avec le nouvel APK (ticket et photos de facture ; la 1re fois il se télécharge avec les services Google) ; un ticket au total mal lu (« Prendre … ») ; un magasin corrigé une fois, puis un 2e ticket du même magasin ;
-- relevé et contrôles : réimporter un relevé BoursoBank (les lignes sont gardées à partir de cet import), puis une facture Free ou EDF (bandeau « Retrouvée sur ton relevé ») et un ticket déjà payé par carte (« Compléter ce paiement ») ;
-- la lecture des factures : ses trois types de factures ratées (à réimporter ; envoyer les PDF ou « Copier la lecture » si l'une reste mal lue), et corriger une fois un fournisseur mal lu pour voir la suivante bien lue ;
-- les 12 factures Free Mobile : refaire l'import (sans rien appliquer de l'ancien essai), dates du 27 et 9,99 / 15,99 € attendus.
-
-**Tests automatiques** : les 44 tests de `tests/` passent (t96 : écran de contrôle des factures ; t97 : page gardée des petits graphiques ; t98 : modifier ou supprimer une facture ; t99 : mettre dans les comptes une facture gardée sans ses effets ; t100 : payer une facture avec une provision ; t101 : provisions reliées aux frais fixes, au Commun et aux comptes ; t102 : graphique des provisions avec les factures prévues ; t103 : reprendre des virements, virements « chaque mois » ; t104 : « Prélevé sur » d'un frais fixe ; t105 : passer un virement en frais fixe ; t106 : « Total provisions » ; t107 : factures Free Mobile en PDF ; t108 : lecture générale des factures et apprentissage par fournisseur ; t109 : abonnement dont le prix change ; t110 : factures et relevé, contrôles, Factur-X ; t111 : tickets et relevé ; t112 : scan des tickets, jeu d'essai ; t113 : stockage au-delà de la mémoire locale ; t114 : photos d'origine, Stockage, sauvegarde complète ; t115 : accueil en diapos ; t116 : qui doit combien à qui ; t117 : ticket partagé avec plusieurs personnes ; t118 : carrousel Tickets Plus ; t119 : avertissement en retirant un membre pas à jour ; t120 : espace perso d'un membre ; t121 : export CSV ; t122 : groupes ponctuels ; t123 : rappels ; t124 : fiche du ticket, partage, corbeille). t93 (foyer) attend parfois le relais local : en cas d'échec isolé, le relancer seul. La date du navigateur est fixée au 30/10/2026 par `tests/horloge.py`, car les données inventées sont en octobre 2026. Les tests sur de vraies données (relevés BoursoBank, factures EDF et d'eau, vrais tickets) sont restés hors du dépôt, qui est public. Pour un nouveau cas, écrire des données inventées qui reproduisent le problème.
+**À décider par Benoît (ne pas trancher seul)** : répartition gratuit / Plus et prix (piste 4,99 €/an ou 9,99 € à vie) ; nom définitif (Copek, à vérifier INPI et domaines) ; type de compte Google Play ; lecture des tickets par une IA en ligne (mise de côté) ; lien direct avec la banque (mis de côté).
 
 ---
 
-## 6. Axes d'amélioration
+## 6. Comment travailler sur le projet
 
-### Prévus par Benoît (montrer une maquette avant de coder)
-- **« Lire avec mon IA »** : sur un ticket scanné, un bouton envoie la photo et une consigne prête à l'emploi à l'IA déjà installée sur le téléphone (Claude, Gemini, ChatGPT…), par le menu de partage d'Android.
-  - La consigne contient la liste des produits de l'utilisateur.
-  - Elle demande une réponse dans un format fixe : `TICKET` / `enseigne | date | total` / une ligne `nom | prix | produit` par article / `FIN`.
-  - La réponse est collée dans Tickets, qui remplit les articles et vérifie le total.
-  - Deux niveaux : sans nouvel APK (partage et copier-coller), puis avec un nouvel APK (Tickets apparaît dans « Partager » de l'appli IA).
-  - Cela s'ajoute à la lecture actuelle, sans la remplacer. Aucun coût pour nous, rien ne passe par notre relais.
-- **Retrait au distributeur** scanné : le proposer comme argent liquide plutôt que comme dépense.
-- **Lecture des tickets** : pour chaque ticket mal lu, demander la photo et « Copier la lecture », puis corriger `mlkitRows` et `parseTicket`.
-- **Partage entre utilisateurs** (laissé de côté le 02/11) : ce qui n'est pas personnel (libellé → produit, libellé de banque → enseigne, mise en page d'une enseigne) ; envoi volontaire puis tables livrées à la mise à jour, ou table commune par le relais (accord, seuil de plusieurs utilisateurs, déclaration Play Store).
-- **Factures** : table de lectures par fournisseur livrée avec l'appli (même format que `factAppris`), à remplir avec des libellés tirés de vraies factures (les guides en ligne n'en donnent presque pas) ; plus tard, partage volontaire par l'utilisateur de ce qui a été appris (nom du fournisseur et mots avant la valeur, sans montant ni date). « Lire avec mon IA » aussi pour les factures (avec celle des tickets) ; enrichir le corpus `tests/donnees/factures_fictives.json` à chaque format raté.
-- **Factures d'eau** : vérifier ce que ML Kit lit, quand Benoît enverra « Copier la lecture ».
-- **Import de relevé** : pistes possibles.
-  - Lire les fichiers Grisbi (`.gsb`, du XML).
-  - Rapprocher un remboursement de l'achat correspondant.
-
-### Avant la sortie sur le Play Store
-- Licences et légal (02/11, dans l'ordre) : écran « Licences » (pdf.js, Tesseract.js, Capacitor, AndroidX : Apache 2.0 / MIT) et « Source : INSEE » (Licence Ouverte) ; suppression du foyer (règle Google pour les comptes créés dans l'appli) ; politique de confidentialité et fiche « Sécurité des données » (ML Kit envoie des statistiques d'usage à Google, jamais les photos ni le texte lu). Yahoo / CoinGecko restent hors de la version Store.
-- Paquet signé (AAB) avec une vraie clé, envoyé à la Play Console : à la main d'abord, puis depuis GitHub Actions.
-- **Brancher l'achat de Tickets Plus**, qui n'est pas encore fait. Aujourd'hui `plusUnlocked` n'est qu'un drapeau local.
-- QR code d'invitation lisible par l'appareil photo (lien Play Store et install referrer).
-- Relais :
-  - offre Workers Paid ;
-  - WebSocket au lieu d'interroger régulièrement ;
-  - protection contre les abus à la création de foyer ;
-  - copies différentielles ;
-  - domaine propre hébergé dans l'UE.
-
-### À décider par Benoît (ne pas trancher seul)
-- **Gratuit ou Plus, et prix de Plus.** Le 31/10, il a décidé :
-  - gratuit : l'onglet À venir, avec 12 mois, Frais fixes et Provisions ;
-  - dans Plus : les factures, leurs estimations, l'Analyse avancée, la projection, les widgets, et la création d'un foyer (le rejoindre reste gratuit) ;
-  - reste à décider : l'import de relevé (gratuit pour l'instant).
-- Nom définitif de l'appli et identifiant Store.
-- Type de compte Google Play.
-- Lecture des tickets par une IA en ligne : mise de côté le 28/10. Si elle revient, seulement en option Plus et avec l'accord de l'utilisateur.
-- Lien direct avec la banque : mis de côté le 22/10. Pistes dans l'ordre : bouton « Ouvrir ma banque », import de relevé (fait), synchro DSP2 par un agrégateur payant (Plus seulement).
-
----
-
-## 7. Comment travailler sur le projet
-
-1. **Avant de modifier** : montrer une proposition ou une maquette. « Ne fais rien », « comment tu vois ça » ou « montre-moi » appellent un avis, pas une modification.
-2. **Modifier** `beta/index.html`. La méthode qui marche bien : un script Python qui remplace un extrait exact, avec `assert s.count(old)==1`, en écrivant les vrais caractères Unicode.
-3. **Vérifier la syntaxe** après chaque modification :
+1. **Montrer une maquette** avant de modifier (artefact HTML, thème sombre de l'appli).
+2. **Modifier** `beta/index.html` par un script Python qui remplace un extrait exact (`assert s.count(old)==1`), avec les vrais caractères Unicode.
+3. **Vérifier la syntaxe** :
    ```
    node -e "const h=require('fs').readFileSync('beta/index.html','utf8');const m=h.match(/<script>\n  \(function\(\)\{[\s\S]*?<\/script>/);new Function(m[0].replace(/^<script>/,'').replace(/<\/script>$/,''));console.log('OK')"
    ```
-4. **Mettre à jour l'étiquette de version** (heure de Paris) avant chaque commit :
+4. **Avant chaque commit** :
    ```
    sed -i "s#<meta name=\"build\" content=\"[^\"]*\" />#<meta name=\"build\" content=\"$(TZ=Europe/Paris date +'%d/%m %H:%M')\" />#" beta/index.html
+   python3 outils/csp.py && python3 outils/csp.py --check
    ```
-   Reporter cette étiquette dans `JOURNAL.md`, section « État actuel ».
-5. **Tenir `JOURNAL.md` à jour dans le même commit** : une entrée datée en haut de l'Historique, plus Décisions, État actuel et En cours si nécessaire. Mettre aussi `CLAUDE.md` à jour si une notion technique change.
-6. **Commit en français**, préfixé « β » quand il touche la β, poussé directement sur `main`. Le push met en ligne la β et la Perso, et recompile les deux APK.
-7. **Tester** avec les tests de `tests/` (mode d'emploi dans `tests/README.md`) :
-   - `sh tests/run.sh` lance les 41 tests ; `python3 tests/t95.py` en lance un seul ;
-   - ce sont des scripts Playwright en Python : Chromium sans interface, écran de 412×900, données injectées dans localStorage, relais local (Node et `node:sqlite` sur `localhost:8787`) ;
-   - aucune requête réseau extérieure pendant les tests ;
-   - ajouter un test pour chaque nouvelle fonction, **toujours avec des données inventées**.
+   (après `python3 guide/maj.py` aussi : il modifie le script).
+5. **`JOURNAL.md`** (entrée datée en haut de l'Historique, Décisions, État actuel, En cours) et **`CLAUDE.md`** si une notion technique change, **dans le même commit**.
+6. **Commit en français**, préfixé « β », poussé sur `main` (met en ligne la β et la Perso, recompile les APK en ~4 min).
+7. **Tester** : `sh tests/run.sh` (≈ 45 min, tout), `sh tests/run.sh t132 t156` (quelques-uns). Le relais local se lance seul. Date du navigateur fixée au 30/10/2026 (`tests/horloge.py`). Un nouveau test pour chaque fonction, **avec des données inventées**.
 
 ---
 
-## 8. Pièges connus
-- `state.avSub` est réservé à l'Analyse avancée. Les sous-onglets d'À venir utilisent `state.avnSub`.
-- Pour les soldes, toujours passer par `fraisKind(f, compte)` et `fraisAcctAmt(f, compte, mois)`. Les parts du commun **ne changent pas** les soldes des comptes.
-- Pour une provision, toujours passer par `provWhere(p)`. Si elle est déjà sur l'épargne ou le compte, ne pas la compter deux fois.
-- La mise de côté d'une provision est un frais fixe relié (`f.prov`, `f.provFrom`) recalculé par `provFraisSync()` à chaque affichage : c'est la provision qui décide (nom, montant, mois sautés) ; ne pas modifier ces champs sur le frais, passer par la provision. Une facture payée par une provision : frais `f.pp`, hors parts du Commun et de l'Analyse (`fraisPartV`).
-- Les virements « chaque mois » sont des séries (`virRec`, sur le téléphone du propriétaire) que `virRecSync()` transforme en vrais virements mois par mois ; un mois déjà créé n'est jamais recréé (`made`), même supprimé.
-- « Prélevé sur » d'un frais : enregistrer par `acctPicked(r, qui)`, qui ne force pas le compte quand c'est celui par défaut.
-- La Bourse compte une seule fois dans l'épargne, par la ligne automatique `bourseLink`.
-- Le filtre par personne ne s'applique ni aux comptes, ni au Bilan, ni aux widgets.
-- Le clavier Android met des espaces dans les montants : utiliser `num()`.
-- Les montants affichés contiennent des espaces fines insécables (U+202F). Il faut en tenir compte dans les tests qui comparent du texte.
-- Toute nouvelle connexion réseau doit être justifiée et avoir un repli sans réseau.
+## 7. Pièges connus
+
+- Oublier `python3 outils/csp.py` : l'appli affiche « ne démarre pas ».
+- `fitTexts`, `render()` et d'autres appels sont protégés par `try…catch` : une fonction supprimée par erreur ne lève pas d'erreur visible ; vérifier avec `grep` qu'aucun appel ne reste.
+- Les icônes au trait remplacent les emojis après coup dans le DOM ; l'emoji reste dans `.ico-t` (les tests qui cherchent « 📅 … » marchent toujours). Un nouvel emoji : lui ajouter un dessin dans `EMO_ICO`.
+- Soldes : toujours `fraisKind(f, compte)` et `fraisAcctAmt(f, compte, mois)` ; les parts du commun **ne changent pas** les soldes.
+- Provisions : `provWhere(p)` ; la mise de côté est un frais relié (`f.prov`) recalculé par `provFraisSync()` : passer par la provision.
+- Virements « chaque mois » : séries `virRec` transformées par `virRecSync()` ; un mois déjà créé n'est jamais recréé.
+- Catégories : toujours `catIn` / `catRoll` pour comparer à un budget ou un filtre.
+- Montants affichés avec des espaces fines insécables (U+202F) : en tenir compte dans les tests.
+- Toute nouvelle connexion réseau : l'ajouter à la CSP, la justifier, prévoir un repli sans réseau, la couper en mode démo.
 
 ---
 
-## 9. Données personnelles
-- **Ne jamais mettre dans le dépôt** les vrais relevés bancaires, photos de tickets ou factures de Benoît. Le dépôt est public.
-- Les tests et les maquettes utilisent des données inventées.
+## 8. Données personnelles
+
+- **Jamais dans le dépôt** (public) : vrais relevés, tickets, factures, sauvegardes, clé de signature, adresse mail de Benoît.
+- Tests et maquettes avec des données inventées. Une vraie sauvegarde ne se lit qu'en lecture seule (`python3 -I`), sans la recopier.
