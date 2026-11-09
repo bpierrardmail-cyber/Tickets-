@@ -19,6 +19,7 @@ with sync_playwright() as p:
     pg.locator('.mnsub[data-ms="regl"]').click(); pg.wait_for_timeout(400)
     pg.locator('.dr-row[data-k="aff"]').click(); pg.wait_for_timeout(400)
     pg.locator(".sheet-overlay button", has_text="Détaillé").click(); pg.wait_for_timeout(700)
+    pg.locator('#nav .navi[data-view="list"]').click(); pg.wait_for_timeout(700)
     check("det" in pg.evaluate("document.body.className") and pages()==4, "détaillé : 4 graphiques par page")
     pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(700)
     fs=pg.evaluate("()=>[].map.call(document.querySelectorAll('.ops-f button'), b=>b.getAttribute('data-f'))")

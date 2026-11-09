@@ -192,7 +192,7 @@ with sync_playwright() as p:
     sec=pg.evaluate("()=>JSON.parse(localStorage.getItem('driveSec'))"); kf=calls(pg, "stage")[0]["kf"]
     pg.locator("#drvOff").click(); pg.wait_for_timeout(300); pg.locator(".sheet-overlay .ui-yes").click(); pg.wait_for_timeout(500)
     check(any(s.get("on") is False for s in calls(pg, "setup")) and "Désactivée" in norm(pg.locator("#app").inner_text()), "Désactiver : envoi arrêté")
-    r,col=menu_row(pg); check("Drive" not in r, "menu : la ligne redevient la sauvegarde à la main (%s)"%r)
+    r,col=menu_row(pg); check(r.startswith("💾"), "menu : la ligne redevient la sauvegarde à la main (%s)"%r)
     # ---------- 6. autre téléphone, sauvegardes déjà sur le compte
     p2=page()
     p2.evaluate("k=>{ __dv.connect={ email:'alex.test@gmail.com', count:5, kfs:[k], last:Date.now()-86400000 }; __dvSave(); }", kf)

@@ -6,11 +6,11 @@
        Scripts (08/11) : seul le script de la page s'exécute, reconnu par son empreinte (python3 outils/csp.py après chaque modification).
        Le relais et les cours (Perso) ; les librairies (Tesseract, pdf.js) sont dans l'appli ; localhost = relais imité des tests (rien ne sort du téléphone).
        Toute nouvelle connexion doit être ajoutée ici (et justifiée, voir CLAUDE.md). -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-o8o891bU4QuSm+AScgIACPSrVZ4OyPpqmnk78DKBmmU=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-OqB9UskoG6uUlz6FOo2O/c/WUQT4zTTl/V778Nxn9xQ=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="09/11 13:37" />
+  <meta name="build" content="09/11 13:56" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -1626,7 +1626,7 @@
       state.menuQ=""; render(); window.scrollTo(0,0);
     }
     // un écran avec ‹ ramène au menu ; un onglet (Budget, À venir…) n'a pas de ‹ : on y reste, la barre du bas sert à repartir
-    function menuGo(fn){ var sub=state.menuSub; state.fromMenu=sub; fn(); if(!document.getElementById("hback")) state.fromMenu=null; }
+    function menuGo(fn){ var sub=state.menuSub; state.fromMenu={ sub:sub }; fn(); if(!document.getElementById("hback")) state.fromMenu=null; else state.fromMenu.v=state.view; }
     function menuClose(){ var v=state.menuPrev||(fyMember()?fyFirstTab():"list"); if(v==="menu") v="list"; state.menuPrev=null; state.view=v; render(); window.scrollTo(0,0); }
     function menuCodeShow(){
       if(fyCfg && fyCfg.role==="owner" && fyCfg.sec) return fyShowRecovery(false);
@@ -4273,7 +4273,7 @@
     }
     // Rangée d'actions au-dessus du graphique : [[id, libellé], …]
     function tabTools(list){ return '<div class="com-tools">'+list.map(function(x){ return '<button type="button" class="ap-tool com-add" id="'+x[0]+'">'+x[1]+'</button>'; }).join("")+'</div>'; }
-    function bindBack(fn){ var hb=document.getElementById("hback"); if(hb) hb.onclick=function(){ if(state.fromMenu && state.view!=="menu"){ var m=state.fromMenu; state.fromMenu=null; openMenu(m); return; } fn(); }; }
+    function bindBack(fn){ var hb=document.getElementById("hback"); if(hb) hb.onclick=function(){ var m=state.fromMenu; if(m && state.view===m.v){ state.fromMenu=null; openMenu(m.sub); return; } fn(); }; }
 
     var fyRendering=false;
     // ---------- Graphiques plein écran ----------

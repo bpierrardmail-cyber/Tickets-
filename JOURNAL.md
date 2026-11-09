@@ -224,6 +224,7 @@ Après chaque modification, dans le même commit :
   - **Aide** : Guide, Revoir l'accueil, ✦ Tickets Plus, À propos (`menuAbout`).
   - Les écrans existants restent à leur place : le menu est un 2e chemin. Un écran avec ‹ ouvert depuis le menu y ramène (`state.fromMenu`, `menuGo`, `bindBack`) ; un onglet (Budget, À venir…) n'a pas de ‹, on y reste. ‹ du menu revient à l'écran d'avant (`menuPrev`). `openSettings()` ouvre Réglages ; les anciennes fenêtres `openSettingsSheet` / `backupMenu` restent pour les autres appels.
   - Textes « Menu › … » de l'appli et du guide mis à jour. Test t156 ; tests du menu adaptés.
+  - Corrections : le menu s'ouvre aussi chez un membre (`FY_SUB.menu`) ; ‹ ne ramène au menu que depuis l'écran ouvert par le menu (`state.fromMenu = {sub, v}`), sinon retour habituel (ex. foyer › « Comment ça marche ? » › ‹ → foyer).
 
 ### 08/11
 
