@@ -10,7 +10,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="09/11 17:22" />
+  <meta name="build" content="09/11 18:11" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -68,9 +68,9 @@
     .drawer{ display:flex; flex-direction:column; }
     .dr-grp{ background:var(--card2); border:1px solid var(--line); border-radius:16px; overflow:hidden; margin-top:12px; }
     /* icônes au trait (icoMono) : couleur du texte, taille de la police */
-    .icw{ display:inline-flex; align-items:center; justify-content:center; vertical-align:-0.16em; line-height:1; }
-    .icw svg.ico{ width:1.15em; height:1.15em; flex:none; }
-    .ico-t{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; }
+    .icw{ display:inline; position:relative; white-space:nowrap; }
+    .icw svg.ico{ display:inline-block; width:1.15em; height:1.15em; vertical-align:-0.2em; }
+    .ico-t{ display:inline-block; width:0; height:0; overflow:hidden; vertical-align:top; font-size:1px; color:transparent; }
     .emo{ filter:grayscale(1) brightness(1.15); }
     .mn-pg .dr-grp, .gr-pg .dr-grp{ margin-top:0; }
     .mn-row{ display:flex; align-items:stretch; border-top:1px solid var(--line); }
