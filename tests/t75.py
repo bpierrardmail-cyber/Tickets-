@@ -24,7 +24,7 @@ with sync_playwright() as p:
         pg.evaluate("d=>{localStorage.clear(); for(const k in d) localStorage.setItem(k, JSON.stringify(d[k]));}", d); pg.reload(); pg.wait_for_timeout(900)
     def home():
         pg.locator('#nav .navi[data-view="list"]').click(); pg.wait_for_timeout(500)
-        return txt(pg, ".dash-big"), txt(pg, ".dash-cap"), txt(pg, "#heroCpt")
+        t=txt(pg, ".rs-hero"); return t, t, t   # Accueil = Résumé (09/11) : « Il te reste » suit le liquide
     def res():
         pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(600)
         pg.locator('.avtabs .cpsub[data-cp=""]').click(); pg.wait_for_timeout(500)
@@ -34,7 +34,7 @@ with sync_playwright() as p:
         return (ops+"\n"+pg.locator("#app").inner_text()).replace(" "," ").replace("\xa0"," ")
     # coché : compté partout
     load(True); big, cap, row=home(); print("  coché :", big.replace("\n",""), "|", cap, "|", row.replace("\n"," "))
-    check("16,59" in big and "Liquide" in row and "sans le liquide" not in cap, "coché : Accueil −52,55 + 35,96 = −16,59, colonne Liquide")
+    check("16,59" in big, "coché : Accueil −52,55 + 35,96 = −16,59")
     snap=pg.evaluate("()=>window.__wsnap ? 1 : 0")
     t=res(); check("Argent liquide ✎\n35,96" in t.replace("\t","\n") or "35,96 €" in t, "coché : détail du solde, liquide 35,96 €")
     check("banque + liquide" in t, "coché : graphique banque + liquide")
@@ -50,7 +50,7 @@ with sync_playwright() as p:
     pg.screenshot(path=os.path.join(SP,"t75_res_off.png"))
     check(pg.evaluate("()=>JSON.parse(localStorage.getItem('cptLiq'))")==False, "décoché : réglage gardé")
     big, cap, row=home(); print("  décoché :", big.replace("\n",""), "|", cap, "|", row.replace("\n"," "))
-    check("52,55" in big and "Liquide" not in row and "sans le liquide" in cap, "décoché : Accueil −52,55 (banque seule), pas de colonne Liquide, « sans le liquide »")
+    check("52,55" in big, "décoché : Accueil −52,55 (banque seule)")
     pg.screenshot(path=os.path.join(SP,"t75_home_off.png"))
     # rechargé : toujours décoché
     pg.reload(); pg.wait_for_timeout(900); big, cap, row=home(); check("52,55" in big, "après rechargement : toujours sans le liquide")

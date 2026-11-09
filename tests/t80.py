@@ -23,7 +23,7 @@ with sync_playwright() as p:
     check("Liquide 35,96 € · non compté" in t and "1 385 €" in t, "pas compté : « · non compté », fin de mois 1 385 €")
     pg.screenshot(path=os.path.join(SP,"t80_off.png"))
     pg.locator('#nav .navi[data-view="list"]').click(); pg.wait_for_timeout(600)
-    check("1 385,28" in norm(pg.locator(".dash-big").first.inner_text()) or "1 385" in norm(pg.locator(".dash-big").first.inner_text()), "Accueil suit : sans le liquide")
+    check("1 385" in norm(pg.locator(".rs-hero").first.inner_text()), "Accueil (Résumé) suit : sans le liquide")
     pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(600)
     pg.locator("#opsLiq").click(); pg.wait_for_timeout(400); pg.locator(".sheet-overlay button", has_text="Le compter").click(); pg.wait_for_timeout(500)
     check("non compté" not in top(), "le recompter")

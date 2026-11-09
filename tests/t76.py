@@ -115,12 +115,9 @@ with sync_playwright() as p:
     wt=pg.locator(".sheet-overlay").last.inner_text(); print("  roue :", wt.replace("\n"," | "))
     check("Modifier le compte" in wt and "Solde reporté" in wt and "Importer un relevé" in wt, "la roue du compte : modifier, solde reporté, import")
     pg.evaluate("()=>document.querySelectorAll('.sheet-overlay').forEach(x=>x.remove())"); pg.wait_for_timeout(300)
-    # Accueil : les cartes du compte
-    pg.locator('#nav .navi[data-view="list"]').click(); pg.wait_for_timeout(800)
-    cards=pg.evaluate("()=>[...document.querySelectorAll('[data-go=\"compte\"]')].map(c=>[c.getAttribute('data-m'), c.querySelectorAll('svg').length, c.innerText.replace(/\\s+/g,' ').slice(0,70)])")
-    print("  cartes compte de l'accueil :", cards)
-    check(len(cards)>=2 and all(c[1]>0 for c in cards), "Accueil : les cartes du compte ont leur graphique")
-    pg.locator('[data-go="compte"][data-m="solde"]').first.click(); pg.wait_for_timeout(700)
+    # Graphiques › Solde (l'Accueil n'a plus de cartes de graphiques depuis le 09/11)
+    pg.locator('.avtabs .cpsub[data-cp="graph"]').click(); pg.wait_for_timeout(500)
+    pg.locator('.thero .cch-tabs button[data-m="solde"]').click(); pg.wait_for_timeout(500)
     check(pg.locator(".avtabs .cpsub.on").inner_text()=="Graphiques" and pg.locator(".thero .cch-tabs button.on").get_attribute("data-m")=="solde", "toucher la carte « Solde » ouvre ce graphique")
     pg.locator('.avtabs .cpsub[data-cp=""]').click(); pg.wait_for_timeout(500); check(pg.locator("#opsBody").count()==1, "Opérations : la liste")
     # mois passé et mois à venir

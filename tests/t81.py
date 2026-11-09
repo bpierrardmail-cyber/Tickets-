@@ -24,7 +24,10 @@ with sync_playwright() as p:
     def load(d, url=APP):
         pg.evaluate("d=>{localStorage.clear(); for(const k in d) localStorage.setItem(k, JSON.stringify(d[k]));}", d); pg.goto(url); pg.wait_for_timeout(1000)
     def ls(k): return pg.evaluate("k=>JSON.parse(localStorage.getItem(k))", k)
-    def hero(): return norm(pg.locator("#heroCpt").inner_text()) if pg.locator("#heroCpt").count() else ""
+    def hero():   # l'Accueil n'a plus de carte Épargne (09/11) : le total se lit dans Opérations › Épargne
+        pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(600)
+        pg.locator('.avtabs .cpsub[data-cp="ep"]').click(); pg.wait_for_timeout(600)
+        return norm(pg.locator(".thero").first.inner_text()) if pg.locator(".thero").count() else norm(pg.locator("#app").inner_text())
     def ep_page():
         pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(600)
         pg.locator('.avtabs .cpsub[data-cp="ep"]').click(); pg.wait_for_timeout(600)

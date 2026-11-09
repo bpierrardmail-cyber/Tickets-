@@ -50,7 +50,7 @@ with sync_playwright() as p:
     def snap(name, y, sel=None):
         if sel: y=pg.evaluate("s=>{ const e=document.querySelector(s); return e ? e.getBoundingClientRect().top+window.scrollY : 0; }", sel)+y
         f=os.path.join(TMP, name+".png"); pg.screenshot(path=f, full_page=True); crop(f, name, y)
-    snap("accueil", -8, ".dash-hero")
+    snap("accueil", -8, ".rs-hero")   # Accueil = Résumé (09/11)
     pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(500); pg.locator('.cpsub[data-cp="tk"]').click(); pg.wait_for_timeout(500)   # les tickets sont dans Opérations
     pg.locator('.entry[data-id="901"]').first.click(); pg.wait_for_timeout(700); snap("scan", 95)
     pg.locator("#cancel").click(); pg.wait_for_timeout(400)

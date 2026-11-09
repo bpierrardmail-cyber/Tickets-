@@ -1,5 +1,5 @@
 # Provisions : le total s'appelle « Total provisions » dans À venir › Provisions ; aucun ancien titre sur l'Accueil ;
-# Compte › Graphiques n'a plus Provisions ni Épargne (03/11) ; l'ancienne carte « Compte · Provisions » de l'Accueil devient la carte Provisions.
+# Compte › Graphiques n'a plus Provisions ni Épargne (03/11) .
 # Données inventées.
 import sys, os
 HERE=os.path.dirname(os.path.abspath(__file__)); ROOT=os.path.dirname(HERE)
@@ -36,9 +36,6 @@ with sync_playwright() as p:
     check("Épargne totale" in t and "Sur la période" in t and "Dont provisions" in t and "Disponible" in t and pg.locator(".crange-c").count()==1, "sous-onglet Épargne : le graphique de Graphiques (période 6 / 12 mois / Tout, Sur la période, Dont provisions, Disponible)")
     pg.locator(".crange-c").click(); pg.wait_for_timeout(500)
     check("sur 12 mois" in txt(), "« 6 mois ⇄ » passe à 12 mois")
-    pg.locator('#nav .navi[data-view="list"]').click(); pg.wait_for_timeout(600)
-    ids=pg.evaluate("()=>[...document.querySelectorAll('.hmini[data-id]')].map(x=>x.getAttribute('data-id'))")
-    check(ids.count("provisions")==1 and "compte:prov" not in ids, "Accueil : l'ancienne carte « Compte · Provisions » devient la carte Provisions, sans doublon %s" % ids)
     check(not errs, "pas d'erreur %s"%errs)
     b.close()
 print("\n%d échec(s)"%len(fails)); sys.exit(1 if fails else 0)

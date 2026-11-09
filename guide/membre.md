@@ -13,10 +13,12 @@ Rejoindre un foyer est gratuit. Si le propriétaire a Tickets Plus, ses fonction
 
 ## Ton accueil
 
-Ton accueil est à toi : il montre toujours tes chiffres, pas ceux des autres. Deux vues au choix, tout en haut :
+Ton accueil est à toi : il montre toujours tes chiffres, pas ceux des autres.
 
-- **Résumé**, tourné vers le commun : ta part du commun du mois en grand, qui doit combien à qui, les dépenses communes du mois (avec ta part) et ce qui arrive bientôt ; puis ton compte et tes tickets.
-- **Tableau de bord** : les encadrés Banque (le solde de ton compte, si tu le vois), Ma part du commun et Mes tickets.
+- En haut, **ta part du commun** du mois (ou, si tu n'as pas de part, le total de tes tickets), puis qui doit combien à qui.
+- Trois cases : **Mon compte** (ce qui est passé à la banque) et **Fin du mois** prévue, si tu vois ton compte, et **Mes tickets**.
+- Les alertes, les **prochaines dépenses communes** avec ta part, et **tes derniers tickets**.
+- Touche un bloc pour ouvrir l'onglet qui va avec.
 
 Le bouton vert **＋**, posé sur la barre du bas, sert à ajouter : scanner ou saisir un ticket, et selon tes droits un virement ou un frais fixe.
 
@@ -67,7 +69,6 @@ En plus du foyer, tu as un espace à toi : Menu › Gérer › Mes comptes.
 Menu › Réglages › Affichage. **Simple** (par défaut) montre l'essentiel. **Détaillé** déplie tout :
 
 - Opérations : la recherche ouverte, des filtres en plus (Tickets, Frais fixes, Virements), des lignes plus serrées, le bouton Liquide toujours là ;
-- Tableau de bord : 4 graphiques par page avec leurs chiffres (la page défile) ;
 - Budget : les cases Budgets, Dépassés, Reste ;
 - À venir : tout « À payer bientôt » ;
 - Foyer : le graphique et les produits partagés ouverts ;

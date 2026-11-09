@@ -10,11 +10,10 @@ Tickets garde tout sur ton téléphone : pas de compte à créer, pas besoin d'i
 
 **L'écran d'accueil**
 
-- Tout en haut, deux vues au choix (l'appli garde la dernière) :
-  - **Résumé** : ce qu'il te reste jusqu'à la fin du mois, les alertes (budget dépassé, prélèvement dans les 3 jours, découvert prévu), tes dernières opérations et une ligne pour le foyer.
-  - **Tableau de bord** : les graphiques que tu choisis (⚙ sous les petites cartes, ou un appui long sur une carte pour la changer, la déplacer ou la masquer). Tout tient sur l'écran, sans défiler.
+- Ce qu'il te reste jusqu'à la fin du mois, les alertes (budget dépassé, prélèvement dans les 3 jours, découvert prévu), tes dernières opérations et une ligne pour le foyer. Touche un bloc pour ouvrir l'onglet qui va avec.
+- Les graphiques sont dans les onglets : Opérations › Graphiques, Budget › Analyse, À venir.
 - « + » › Saisir note une dépense à la main ; la liste des tickets du mois est dans Opérations › Tickets.
-- Le bouton en haut à droite choisit qui tu regardes : toi, une personne, ou tout le foyer.
+- Dans Budget et Foyer, le bouton en haut à droite choisit qui tu regardes : toi, une personne, ou tout le foyer.
 - En bas, 5 onglets : Accueil, Opérations, Budget, À venir, Foyer (et Bourse dans la version Perso). Le bouton vert **＋**, sur l'Accueil et Opérations, ajoute tout : scanner ou saisir un ticket, un virement, un frais fixe, importer un relevé.
 
 **Le menu** (☰ en haut à gauche) a quatre sous-onglets, et une recherche « Chercher un réglage… » qui trouve n'importe quelle ligne :
@@ -187,7 +186,6 @@ Retirer un membre coupe son accès tout de suite. Ses tickets déjà arrivés ch
 Menu › Réglages › Affichage. **Simple** (par défaut) montre l'essentiel. **Détaillé** déplie tout :
 
 - Opérations : la recherche ouverte, des filtres en plus (Tickets, Frais fixes, Virements), des lignes plus serrées, le bouton Liquide toujours là ;
-- Tableau de bord : 4 graphiques par page avec leurs chiffres (la page défile) ;
 - Budget : les cases Budgets, Dépassés, Reste ;
 - À venir : tout « À payer bientôt » ;
 - Foyer : le graphique et les produits partagés ouverts ;
