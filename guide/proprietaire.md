@@ -18,7 +18,9 @@ Tickets garde tout sur ton téléphone : pas de compte à créer, pas besoin d'i
 - En bas, 5 onglets : Accueil, Opérations, Budget, À venir, Foyer (et Bourse dans la version Perso). Le bouton vert **＋**, sur l'Accueil et Opérations, ajoute tout : scanner ou saisir un ticket, un virement, un frais fixe, importer un relevé.
 
 **Le menu** (☰ en haut à gauche) a quatre sous-onglets, et une recherche « Chercher un réglage… » qui trouve n'importe quelle ligne :
-- **Gérer** : tout ce qui se configure, au même endroit — comptes bancaires, épargne, liquide, catégories et produits, budgets, frais fixes, provisions, factures, personnes, foyer partagé, groupes, corbeille. Chaque ligne ouvre l'écran habituel ; ‹ te ramène au menu.
+- **Gérer** : tout ce qui se crée et se règle, au même endroit — comptes bancaires, épargne, liquide, frais fixes, virements chaque mois, provisions, factures, catégories, produits, budgets, personnes, foyer partagé, groupes, corbeille.
+  - **Créer en un geste** : les boutons « ＋ Compte », « ＋ Frais fixe », « ＋ Provision »… en haut, ou le ＋ au bout d'une ligne, ouvrent seulement la page de création ; une fois enregistré, tu reviens au menu.
+  - **Toucher une ligne** ouvre sa page : la liste complète (tous les comptes, tous les frais fixes par personne avec le total du mois, les provisions, l'arbre des catégories…), « ＋ Nouveau » en bas, et toucher un élément pour le modifier.
 - **Sauvegarde** : où en est ta sauvegarde, sauvegarder, restaurer, ton code de secours, le stockage et l'export.
 - **Réglages** : affichage, monnaie, code et empreinte, écran privé, rappels, widgets, mode démo.
 - **Aide** : ce guide, l'accueil de l'appli à revoir, Tickets Plus, la version.
