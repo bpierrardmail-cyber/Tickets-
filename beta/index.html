@@ -6,11 +6,11 @@
        Scripts (08/11) : seul le script de la page s'exécute, reconnu par son empreinte (python3 outils/csp.py après chaque modification).
        Le relais et les cours (Perso) ; les librairies (Tesseract, pdf.js) sont dans l'appli ; localhost = relais imité des tests (rien ne sort du téléphone).
        Toute nouvelle connexion doit être ajoutée ici (et justifiée, voir CLAUDE.md). -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-JkuixKSWW4BPJk9rxXByFLGlY9gpT9fZq1DWDGHJhiY=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-7/PPkEldWZ9+runbNc8+4MgDNdN338bzGX5tQqcIJ7Q=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="18/11 18:40" />
+  <meta name="build" content="18/11 19:01" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -1813,6 +1813,7 @@
       add({ k:"aide", tab:"aide", g:"", ic:"❓", t:"Guide", s:"toute l'appli, avec une recherche", kw:"aide guide mode d'emploi", fn:function(){ menuGo(openAide); } });
       add({ k:"welcome", tab:"aide", g:"", ic:"👋", t:"Revoir l'accueil", s:"les cartes du premier démarrage", kw:"accueil présentation", fn:function(){ welcomeShow(); } });
       if(plusOffer()) add({ k:"plus", tab:"aide", g:"", ic:"✦", t:APP_NAME+" Plus", s:"ce qu'il ajoute", kw:"plus payant abonnement", fn:function(){ plusShow(null); } });
+      if(bancOn()) add({ k:"banc", tab:"aide", g:"", ic:"🧪", t:"Tester la lecture sur mes tickets", s:"relit les photos de tes tickets · version Perso", kw:"banc essai lecture scan test ocr", fn:function(){ menuGo(function(){ state.view="banc"; render(); window.scrollTo(0,0); }); } });
       add({ k:"about", tab:"aide", g:"", ic:"ℹ️", t:"À propos", s:"version du "+(((document.querySelector('meta[name=build]')||{}).content)||""), kw:"version à propos confidentialité", fn:menuAbout });
       return L;
     }
@@ -4589,6 +4590,7 @@
       if(state.view==="gerer") return renderGerer();
       if(state.view==="mkpage") return renderMkpage();
       if(state.view==="stockage") return renderStockage();
+      if(state.view==="banc") return renderBanc();
       if(state.view==="drive") return renderDrive();
       if(state.view==="sauvaide") return renderSauvAide();
       if(state.view==="driverest") return renderDriveRest();
@@ -9495,6 +9497,87 @@
       L.push("Articles enregistrés ("+(d.articles||[]).length+") :"); (d.articles||[]).forEach(function(a){ L.push("  "+v(a.label)+" | "+v(a.prix)+" → "+v(a.produit)); });
       if(S.nbArt) L.push("Nombre d'articles annoncé : "+S.nbArt+" · lus : "+S.nbLu);
       ocrRawSheet(L.join("\n")+"\n\n"+ocrRawText(), "Signaler une lecture", "Ce qui a été lu, ce que tu as corrigé, puis la lecture complète. Colle-le avec la photo pour faire corriger la lecture ; l\'appli n\'envoie rien elle-même.");
+    }
+    // ---------- Banc d'essai de lecture (version Perso, 18/11) ----------
+    // Relit avec ML Kit la photo d'origine de chaque ticket, compare à ce qui a été enregistré (la bonne réponse)
+    // et exporte ce que ML Kit a lu avec le ticket enregistré, pour améliorer la lecture de la version Store.
+    // Règles de lecture seules (parseTicket) : pas ce que l'appli a appris (SIRET, total appris), comme un nouvel utilisateur.
+    function bancOn(){ return EDITION==="perso" && !DEMO; }
+    function bancPool(){ return state.entries.filter(function(e){ return e.src!=="releve" && !PHDEL[String(e.id)] && ORIGSZ[String(e.id)]; })
+      .sort(function(a, b){ return String(b.date).localeCompare(String(a.date)); }); }
+    function bancArts(e){ return (e.articles||[]).filter(function(a){ return !/ · ticket entier$/.test(String(a.label||"")); }); }
+    function bancSame(a, b){ a=norm(a); b=norm(b); return !!a && !!b && (a===b || (a.length>=3 && b.indexOf(a)>=0) || (b.length>=3 && a.indexOf(b)>=0)); }
+    function bancCheck(e, p){
+      var A=bancArts(e), L=p.lignes||[], sum=function(X){ var t=0; X.forEach(function(a){ t+=num(a.prix)||0; }); return t; };
+      var r={ total:p.total!=="" && Math.abs(num(p.total)-num(e.montant))<0.005, marchand:bancSame(p.marchand, e.marchand), date:!!p.date && p.date===e.date,
+        arts:A.length ? (L.length===A.length && Math.abs(sum(L)-sum(A))<0.05) : null };
+      r.ok=r.total && r.marchand && r.date && r.arts!==false; return r;
+    }
+    function bancRun(){
+      var plug=capPlugin("TicketOcr"); if(!plug){ uiToast("Seulement dans l'appli Android"); return; }
+      var pool=bancPool(), B=state.banc={ run:true, i:0, n:pool.length, items:[], at:new Date().toISOString() }; render();
+      function prog(){ var el=document.getElementById("bcProg"); if(el) el.textContent="Lecture "+Math.min(B.i+1, B.n)+"/"+B.n+"…"; var br=document.getElementById("bcBar"); if(br) br.style.width=Math.round(B.i*100/Math.max(1,B.n))+"%"; }
+      function one(){
+        if(state.banc!==B) return;
+        if(B.stop || B.i>=B.n){ B.run=false; if(state.view==="banc") render(); return; }
+        prog(); var e=pool[B.i];
+        origGet(e.id).then(function(o){
+          var pages=(o && o.b) || [], parts=[], k=0;
+          function pg(){ if(k>=pages.length) return Promise.resolve();
+            return nativeImage(pages[k]).then(function(b64){ return plug.recognize({ image:b64 }); })
+              .then(function(res){ parts.push({ t:mlkitRows(res||{}), res:res||null }); }, function(err){ parts.push({ t:"", res:null, err:String((err&&err.message)||err) }); })
+              .then(function(){ k++; return pg(); }); }
+          return pg().then(function(){
+            var p=parseTicket(parts.map(function(x){ return x.t; }).join("\n"));
+            B.items.push({ e:e, parts:parts, p:p, r:bancCheck(e, p) });
+          });
+        }).catch(function(){ B.items.push({ e:e, parts:[], p:null, r:{ ok:false, err:true } }); })
+          .then(function(){ B.i++; one(); });
+      }
+      one();
+    }
+    function bancExport(){
+      var B=state.banc; if(!B || !B.items.length) return;
+      var bm=(document.querySelector('meta[name="build"]')||{}).content||"";
+      var out={ banc:1, app:APP_NAME, build:bm, at:B.at, n:B.items.length, ok:B.items.filter(function(x){ return x.r.ok; }).length,
+        tickets:B.items.map(function(x){ var e=x.e;
+          return { enregistre:{ marchand:e.marchand||"", montant:num(e.montant), date:e.date||"", categorie:e.categorie||"", pay:e.pay||"", articles:(e.articles||[]).map(function(a){ return { lu:a.label||"", prix:a.prix, article:a.produit||"" }; }) },
+            lu:x.p ? { marchand:x.p.marchand||"", total:x.p.total, date:x.p.date||"", articles:(x.p.lignes||[]).map(function(a){ return a.label+" | "+a.prix; }) } : null,
+            ok:x.r, pages:x.parts.map(function(q){ var res=q.res||{}; return { lignes:q.t, width:res.width||0, height:res.height||0, morceaux:(res.lines||[]).map(function(l){ return { t:l.t, p:(l.p||[]).map(function(v){ return Math.round(v); }) }; }), err:q.err||undefined }; }) }; }) };
+      saveFile(new Blob([JSON.stringify(out)], { type:"application/json" }), "banc-lecture-"+todayISO()+".json", { what:"Banc de lecture" });
+    }
+    function renderBanc(){
+      var B=state.banc, pool=bancPool(), plug=!!capPlugin("TicketOcr");
+      var h=header("list")+'<section class="paper">';
+      h+='<div class="center muted" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase">Tester la lecture</div><hr class="rule">';
+      h+='<div class="muted" style="font-size:12px;line-height:1.5">Relit la photo d\'origine de tes tickets sur le téléphone (ML Kit), et compare à ce que tu as enregistré : magasin, total, date, articles. Avec les règles de lecture seules, comme pour un nouvel utilisateur. Rien n\'est modifié.</div>';
+      if(!B || (!B.run && !B.items.length)){
+        h+='<div class="sto-tot" style="margin-top:14px"><b>'+pool.length+'</b> ticket'+(pool.length>1?"s":"")+' avec leur photo d\'origine</div>';
+        if(!plug) h+='<div class="empty">Seulement dans l\'appli Android : la lecture se fait par ML Kit.</div>';
+        else if(pool.length) h+='<button type="button" class="btn" id="bcGo" style="width:100%;margin-top:10px">Lancer le test</button>';
+        else h+='<div class="empty">Aucun ticket n\'a encore sa photo d\'origine.</div>';
+      } else if(B.run){
+        h+='<div class="sto-tot" style="margin-top:14px" id="bcProg">Lecture '+Math.min(B.i+1, B.n)+'/'+B.n+'…</div><div class="sto-bar"><i id="bcBar" style="width:'+Math.round(B.i*100/Math.max(1,B.n))+'%"></i></div>';
+        h+='<button type="button" class="btn ghost" id="bcStop" style="width:100%;margin-top:10px">Arrêter</button>';
+      } else {
+        var ok=B.items.filter(function(x){ return x.r.ok; }), bad=B.items.filter(function(x){ return !x.r.ok; });
+        h+='<div class="sto-tot" style="margin-top:14px" id="bcRes"><b>'+B.items.length+'</b> ticket'+(B.items.length>1?"s":"")+' · <b style="color:var(--accent)">'+ok.length+' bien lu'+(ok.length>1?"s":"")+'</b>'+(bad.length?' · <b style="color:var(--coral)">'+bad.length+' à revoir</b>':'')+'</div>';
+        var cnt=function(k){ return B.items.filter(function(x){ return x.r[k]===false; }).length; };
+        h+='<div class="muted" style="font-size:12px">Erreurs : total '+cnt("total")+' · magasin '+cnt("marchand")+' · date '+cnt("date")+' · articles '+cnt("arts")+'</div>';
+        bad.forEach(function(x){ var e=x.e, p=x.p||{}, w=[];
+          if(x.r.err) w.push("photo illisible");
+          else { if(!x.r.total) w.push("total "+(p.total===""?"—":fmtK(num(p.total)))); if(!x.r.marchand) w.push("magasin « "+(p.marchand||"—")+" »"); if(!x.r.date) w.push("date "+(p.date?csvDate(p.date):"—"));
+            if(x.r.arts===false) w.push((p.lignes||[]).length+" article"+((p.lignes||[]).length>1?"s":"")+" lu"+((p.lignes||[]).length>1?"s":"")+" sur "+bancArts(e).length); }
+          h+='<div class="sto-row bc-bad"><span>'+esc(e.marchand||"Ticket")+'<br><small class="muted">'+esc(csvDate(e.date)+" · "+fmtK(num(e.montant)))+'</small></span><b style="color:var(--coral);white-space:normal;text-align:right">'+esc(w.join(" · "))+'</b></div>'; });
+        h+='<button type="button" class="btn" id="bcExp" style="width:100%;margin-top:14px">Exporter pour améliorer la lecture</button>';
+        h+='<button type="button" class="btn ghost" id="bcGo" style="width:100%;margin-top:8px">Relancer</button>';
+        h+='<div class="muted" style="font-size:11px;margin-top:10px;line-height:1.5">Le fichier contient ce que le téléphone a lu et tes tickets enregistrés (sans les photos). Envoie-le seulement pour faire améliorer la lecture.</div>';
+      }
+      h+='</section>'; app.innerHTML=h; setNav(null,false);
+      bindBack(function(){ if(state.banc && state.banc.run) state.banc.stop=true; state.view="list"; render(); });
+      var g=document.getElementById("bcGo"); if(g) g.onclick=bancRun;
+      var st=document.getElementById("bcStop"); if(st) st.onclick=function(){ B.stop=true; };
+      var ex=document.getElementById("bcExp"); if(ex) ex.onclick=bancExport;
     }
     function ocrRawSheet(t0, ttl, intro){
       var t=(typeof t0==="string" && t0) || ocrRawText(); if(!t) return;

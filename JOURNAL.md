@@ -79,6 +79,7 @@ Après chaque modification, dans le même commit :
 **Version Store** : `PLUS_FEATURES = widgets, foyer, avancee, factures` (« factures » = importer et suivre ses factures ; le reste d'À venir est gratuit). L'achat de Plus n'est pas encore branché. L'import de relevé est gratuit pour l'instant.
 
 ## En cours / à reprendre
+- **Banc d'essai de lecture** (18/11) : Benoît lance le test sur son téléphone (Perso) et envoie le fichier exporté ; le rejouer avec `outils/banc_rejouer.py`, corriger la lecture, ajouter des tickets inventés équivalents. Objectif : 100 % avant la sortie Store.
 - **Articles simplifiés** (18/11) : à essayer par Benoît (ticket scanné : noms, suggestions, nouvel article ; ticket à la main ; partager certains articles).
 - **Payé en espèces** (18/11) : à essayer par Benoît sur son téléphone (ticket en espèces pris ou non dans le liquide, détail du liquide, ticket partagé avec Sylvette).
 - **Refonte de la navigation (05/11)** : direction validée sur maquette (voir Décisions) ; à faire par étapes : 1) barre à 5 onglets + « + », 2) Accueil Résumé / Tableau de bord, 3) Opérations (une liste), 4) Budget, À venir, Foyer, 5) fiche ticket, premier démarrage. Étape 1 faite le 05/11 (barre à 5 onglets + « + ») ; étape 2 faite le 06/11 (Accueil Résumé / Tableau de bord) ; étapes 3 à 5 faites le 06/11, puis Opérations, Budget, À venir et Foyer allégés d'après la maquette (06/11) : à regarder par Benoît ; étapes 3, 4 et 5 faites le 06/11 ; refonte terminée (reste, au besoin : affichage détaillé, système de catégories à repenser plus tard, Tickets Plus).
@@ -133,6 +134,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **18/11 · banc de lecture** : grossir le banc d'essai avec l'historique de ses tickets pour que tout soit bien lu avant la sortie Store ; l'outil est dans la version Perso seulement (un utilisateur du Store n'en a pas besoin).
 - **18/11 · articles** : article et produit sont la même chose pour lui : un seul nom par article ; au scan, le texte lu sert à proposer l'article ; à la main, on donne directement l'article ; une seule catégorisation (la catégorie du ticket, et celle de l'article apprise une fois) ; « article » partout à l'écran (Budget › Articles) ; le partage d'une partie du ticket se fait dans « Qui paie ce ticket ? » (maquette « Tickets — Articles simplifiés », « Oui tu peux intégrer »).
 - **18/11 · espèces** : sur un ticket, on doit pouvoir payer en espèces et dire si c'est pris dans les espèces du mois ou pas ; la dépense se partage comme les autres ; ligne « Payé avec » visible directement sur la fiche (pas dans Options) ; fenêtre « Argent liquide » avec le détail du mois (maquette « Tickets — Payé en espèces », « tu peux intégrer »).
 - **08/11 · sécurité** : « il faut faire le maximum côté sécurité, tout ce qui a été remonté même mineur doit être corrigé » (revue du 08/11 : corrections faites le jour même, voir l'Historique).
@@ -221,6 +223,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 18/11
+- **Banc d'essai de lecture** (version Perso seulement) : Menu › Aide › « Tester la lecture sur mes tickets » relit avec ML Kit la photo d'origine de chaque ticket, compare aux règles seules (`parseTicket`, sans `tkMag` ni `tkAppris`) avec ce qui a été enregistré (magasin, total, date, articles), liste ce qui est à revoir et exporte `banc-lecture-AAAA-MM-JJ.json` (morceaux ML Kit + ticket enregistré, sans photo). `outils/banc_rejouer.py fichier.json [--ko]` rejoue ce fichier dans l'appli hors du téléphone. Le fichier contient de vrais tickets : jamais dans le dépôt ; chaque cas raté devient un ticket inventé dans `tests/donnees/tickets_fictifs.json`. Test t160.
 - **Scan plus fiable, durablement** (« Tu peux faire tous les points ») :
   - **banc d'essai** : 18 tickets inventés de mises en page différentes (Leclerc, Carrefour, Lidl, Action, Leroy Merlin, Super U, Picard, Monoprix, Grand Frais, Brico Dépôt, boulangerie, restaurant, station, pharmacie…) dans `tests/donnees/tickets_fictifs.json`, lus par t112 (18 / 18) ; chaque ticket mal lu signalé devient un ticket inventé de même mise en page ;
   - **magasin reconnu par son SIRET ou son téléphone** (`tkMag`, sur le téléphone et dans la sauvegarde ; `tkMagIds`, `tkMagFind`, `tkMagLearn`) : appris à l'enregistrement d'un ticket scanné, repris au scan suivant même si le logo est mal lu (« ✓ Magasin reconnu à son SIRET ou à son téléphone ») ;
