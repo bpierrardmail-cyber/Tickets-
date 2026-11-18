@@ -44,8 +44,9 @@ Touche le bouton vert **＋**, puis « Scanner un ticket » ou « Ticket depuis 
 - La **catégorie** est obligatoire : touche une des 10 grandes catégories (Courses, Sorties, Transport…). Dessous, tu peux préciser une sous-catégorie (Carburant, Bar…) ou en créer une avec « ＋ Nouvelle » ; c'est facultatif. L'appli la propose déjà d'après le magasin.
 - **Aucun article lu** (plein d'essence, ticket sans détail) ? L'appli ajoute tout seule un article du ticket entier : le compte tombe juste.
 - **Retrait au distributeur** (« RETRAIT », « DAB ») : l'appli demande « Mettre dans mon liquide » (l'argent sort du compte et s'ajoute au liquide, ce n'est pas une dépense) ou « Garder comme une dépense ».
+- **Payé en espèces** : « Payé avec » › Espèces, puis « Pris dans mes espèces du mois » (le liquide baisse, pas le compte) ou « Pas dans mes espèces du mois » (argent d'ailleurs : ni le compte ni le liquide ne bougent). C'est une dépense dans les deux cas, qui se partage comme les autres. Si le ticket porte « ESPECES » ou « RENDU », Espèces est déjà choisi. L'appli dit ce qui restera dans ton liquide.
 - La photo reste avec le ticket : touche la vignette à côté du montant pour la revoir.
-- « Options » (replié) : le compte (Auto = celui de la personne qui a payé), le groupe, le partage. La ligne résume ce qui est choisi.
+- « Options » (replié) : le compte (Auto = celui de la personne qui a payé ; « Liquide de » pour un ticket en espèces), le groupe, le partage. La ligne résume ce qui est choisi.
 
 **Ce que l'appli apprend**
 
@@ -101,7 +102,7 @@ Quatre parties, en boutons sous le titre : Opérations, **Tickets** (tous les ti
 
 **Graphiques** : ce mois, dépenses, solde, entrées et sorties, épargne, provisions. Touche une barre pour voir le détail.
 
-**La roue ⚙ du compte** : modifier le compte, le solde reporté, importer un relevé, annuler le dernier import, l'argent liquide, reprendre les virements du mois d'avant.
+**La roue ⚙ du compte** : modifier le compte, le solde reporté, importer un relevé, annuler le dernier import, l'argent liquide (le détail du mois : retraits, tickets payés en espèces, et la correction), reprendre les virements du mois d'avant.
 
 **Importer un relevé de banque**
 

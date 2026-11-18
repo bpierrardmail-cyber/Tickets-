@@ -79,6 +79,7 @@ Après chaque modification, dans le même commit :
 **Version Store** : `PLUS_FEATURES = widgets, foyer, avancee, factures` (« factures » = importer et suivre ses factures ; le reste d'À venir est gratuit). L'achat de Plus n'est pas encore branché. L'import de relevé est gratuit pour l'instant.
 
 ## En cours / à reprendre
+- **Payé en espèces** (18/11) : à essayer par Benoît sur son téléphone (ticket en espèces pris ou non dans le liquide, détail du liquide, ticket partagé avec Sylvette).
 - **Refonte de la navigation (05/11)** : direction validée sur maquette (voir Décisions) ; à faire par étapes : 1) barre à 5 onglets + « + », 2) Accueil Résumé / Tableau de bord, 3) Opérations (une liste), 4) Budget, À venir, Foyer, 5) fiche ticket, premier démarrage. Étape 1 faite le 05/11 (barre à 5 onglets + « + ») ; étape 2 faite le 06/11 (Accueil Résumé / Tableau de bord) ; étapes 3 à 5 faites le 06/11, puis Opérations, Budget, À venir et Foyer allégés d'après la maquette (06/11) : à regarder par Benoît ; étapes 3, 4 et 5 faites le 06/11 ; refonte terminée (reste, au besoin : affichage détaillé, système de catégories à repenser plus tard, Tickets Plus).
 - **Fait le 06/11 (réglage Affichage simple / détaillé)** — idée de départ (05/11, Benoît) : une « vue avancée » qui reprend l'interface d'avant la refonte. Avis donné : plutôt un réglage « Affichage détaillé » dans les nouveaux écrans (toutes les options dépliées, listes denses, tous les anciens graphiques dans le tableau de bord, colonnes en plus) que garder l'ancienne interface entière (deux interfaces à maintenir et à tester) ; pendant la refonte, l'ancienne reste disponible le temps de la transition. À décider.
 - **Étape 3 faite (05/11)** : le Plus du propriétaire couvre le foyer ; groupes selon les droits de Commun. À voir par Benoît avec Sylvette (version Perso : tout est déjà ouvert ; la différence se voit dans la version Store).
@@ -131,6 +132,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **18/11 · espèces** : sur un ticket, on doit pouvoir payer en espèces et dire si c'est pris dans les espèces du mois ou pas ; la dépense se partage comme les autres ; ligne « Payé avec » visible directement sur la fiche (pas dans Options) ; fenêtre « Argent liquide » avec le détail du mois (maquette « Tickets — Payé en espèces », « tu peux intégrer »).
 - **08/11 · sécurité** : « il faut faire le maximum côté sécurité, tout ce qui a été remonté même mineur doit être corrigé » (revue du 08/11 : corrections faites le jour même, voir l'Historique).
 - **08/11 · à faire (accordé)** : ticket sans article → l'annoncer avant l'enregistrement (ligne grisée « Aucun article lu · il sera enregistré comme 1 article : … · ticket entier (montant) » + « + Ajouter les articles »). Proposé, en attente : écran du QR d'invitation « Avant : installe l'appli, puis Menu › Rejoindre un foyer. Ton Plus la couvre » et « code et empreinte conseillés » (la ligne « obligatoires » y est restée par oubli). Revue de sécurité du 08/11 : corriger d'abord les 2 failles critiques (pollution de prototype par `budgetsP␟__proto__`, photo d'un ticket insérée sans contrôle), puis CSP par empreinte ; en attente de son « go ». Liste de suivi pour Benoît : page « Tickets · À faire » (claude.ai).
 - **08/11 · code et empreinte** : plus obligatoires, « fortement conseillés » ; chaque téléphone décide pour lui (« un code est personnel » : le propriétaire en créant le foyer, le membre en le rejoignant) ; avertissement si on passe ; l'empreinte jamais proposée sans lecteur. Après une restauration Drive, dire clairement que la sauvegarde Drive est activée et qu'elle se désactive dans le menu.
@@ -215,6 +217,20 @@ Après chaque modification, dans le même commit :
 ---
 
 ## Historique (le plus récent en haut)
+
+### 18/11
+- **Ticket payé en espèces** (maquette « Tickets — Payé en espèces » validée : « Oui pour les deux questions, tu peux intégrer ») :
+  - fiche du ticket : ligne **« Payé avec » · Compte / Espèces**, visible sous Date et Payé par (`tkPayHTML`, `#fpay`) ; en Espèces, deux choix (`#fliq`) : « Pris dans mes espèces du mois » (le liquide baisse, pas le compte) ou « Pas dans mes espèces du mois » (argent d'ailleurs, ni compte ni liquide). Dans les deux cas, une dépense comme les autres (Budget, Analyse, Foyer, partage, groupes) ;
+  - ce qui restera s'affiche et suit le montant et la date (`tkLiqPaint` : « Il te restera 42,50 € en liquide (sur 80,00 €) ») ; liquide jamais noté → « Pas dans mes espèces » par défaut et « Les indiquer » ; pas assez → avertissement sans blocage et « Corriger mes espèces » ; payé par quelqu'un d'autre → « Pris dans les espèces de Marie » ;
+  - données : `e.pay = "esp"`, `e.liq = {k, m, a}` ; le liquide (`liquideMois`) est modifié à l'enregistrement (`tkLiqDo`, l'ancien montant rendu d'abord par `tkLiqUndo`), à la suppression, à « Annuler » et à « Remettre » de la corbeille ;
+  - `tkBank(e, compte)` : un ticket en espèces ne sort pas du compte en banque (soldes, `cptOps`, `computeDepensesMonth(Done)`) ; `ticketInAcct` garde le rattachement (droits du foyer, export) ;
+  - Options : « Compte » devient « Liquide de » ; « Qui paie ce ticket ? » dit « · en espèces » ;
+  - scan : « ESPECES » ou « RENDU » lus, sans carte bancaire → Espèces déjà choisi, « lu sur le ticket : « ESPÈCES » » (`tkCashWord`) ;
+  - Opérations › Tickets : pastille « 💶 espèces » / « espèces hors liquide » ; liquide du compte : « dont −X € de tickets en espèces » ;
+  - import d'un relevé et « déjà dans tes comptes (relevé) » : un ticket en espèces n'est jamais rapproché d'une ligne de banque ; export tableur : colonne Compte « Espèces · liquide de … » ou « Espèces · hors liquide » ;
+  - foyer : un membre ne prend dans un liquide qu'avec l'onglet Compte en modification ; `e.liq` venu d'un membre vérifié (`tkLiqFromOk` : compte qu'il voit, montant du ticket) ; ticket perso envoyé au foyer : sans `liq`.
+- **Argent liquide, le détail du mois** (écran 4 de la maquette) : `liqEdit` devient une fenêtre avec le début du mois, les retraits et les tickets payés en espèces (`liqMoves`, toucher = ouvrir), « Aujourd'hui » (ou « Fin du mois »), puis « Corriger : ce que tu as vraiment » (vide = garder le calcul) ; « Reprendre la valeur d'octobre » quand rien n'a bougé ce mois-ci. Bouton Liquide d'Opérations : « ✎ Détail du mois · corriger ».
+- Guide (propriétaire, membre) : « Payé en espèces », Options « Liquide de », détail du liquide. Test t157.
 
 ### 09/11
 - **Menu refondu** (maquette « Menu refondu » validée : « Tu peux intégrer ») : ☰ ouvre une page `menu` (`renderMenu`, `menuItems`) au lieu du tiroir, avec la recherche « Chercher un réglage… » (tous les sous-onglets, dit où est la ligne) et 4 sous-onglets (`MENU_SUBS`, gardé dans `menuSub`) :

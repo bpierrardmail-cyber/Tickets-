@@ -31,6 +31,7 @@ Touche **＋**, puis « Scanner un ticket » ou « Ticket depuis la galerie ». 
 - La **catégorie** est obligatoire : touche une des 10 grandes catégories (Courses, Sorties, Transport…). Dessous, tu peux préciser une sous-catégorie (Carburant, Bar…) ou en créer une avec « ＋ Nouvelle » ; c'est facultatif. L'appli la propose déjà d'après le magasin.
 - **Aucun article lu** (plein d'essence, ticket sans détail) ? L'appli ajoute tout seule un article du ticket entier : le compte tombe juste.
 - **Retrait au distributeur** (« RETRAIT », « DAB ») : l'appli demande « Mettre dans mon liquide » (l'argent sort du compte et s'ajoute au liquide, ce n'est pas une dépense) ou « Garder comme une dépense ».
+- **Payé en espèces** : « Payé avec » › Espèces, puis « Pris dans mes espèces du mois » (le liquide baisse, pas le compte) ou « Pas dans mes espèces du mois » (argent d'ailleurs : ni le compte ni le liquide ne bougent). C'est une dépense dans les deux cas, qui se partage comme les autres. Si le ticket porte « ESPECES » ou « RENDU », Espèces est déjà choisi. L'appli dit ce qui restera dans ton liquide.
 - Pas de ticket ? ＋ › « Saisir une dépense » pour la noter à la main.
 - Une dépense à partager : Options › Partage (« Qui paie ce ticket ? ») : seulement toi, le commun du foyer, ou certaines personnes.
 - Supprimé par erreur ? Opérations › Tickets › Corbeille › « Remettre » (30 jours).
