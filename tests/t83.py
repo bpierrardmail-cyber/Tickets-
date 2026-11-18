@@ -22,7 +22,7 @@ with sync_playwright() as p:
         pg.locator("#f-montant").fill(montant)
         for lab, pr in arts:
             pg.locator("#addart").click(); pg.wait_for_timeout(250)
-            a=pg.locator("#arts .art").last; a.locator(".art-name").fill(lab); a.locator(".art-prix").fill(pr)
+            a=pg.locator("#arts .art").last; a.locator(".art-prod").fill(lab); a.locator(".art-prix").fill(pr)
         pg.wait_for_timeout(200)
     def chk(): return norm(pg.locator("#artchk").inner_text())
     load()
@@ -33,7 +33,7 @@ with sync_playwright() as p:
     check(norm(pg.locator("#artsum").inner_text())=="110,72 € sur 48,69 €" and pg.locator("#arts .art.warn").count()==3, "rappel au-dessus des articles, 3 cartes en orange")
     pg.screenshot(path=os.path.join(SP,"t83_ecart.png"))
     # 2. on corrige : supprime TOT TIC et Net → 21,45 sur 48,69 ; met 48,69 sur Volume → vert
-    pg.locator("#arts .art").nth(0).locator(".art-prix").fill("48,69"); pg.locator("#arts .art").nth(0).locator(".art-name").fill("Gazole")
+    pg.locator("#arts .art").nth(0).locator(".art-prix").fill("48,69"); pg.locator("#arts .art").nth(0).locator(".art-prod").fill("Gazole")
     pg.locator("#arts .art").nth(2).locator(".art-del").click(); pg.wait_for_timeout(300); pg.locator("#arts .art").nth(1).locator(".art-del").click(); pg.wait_for_timeout(300)
     c=chk(); check("1 article = total 48,69 €" in c and pg.locator("#artchk .chk.ok").count()==1 and pg.locator("#arts .art.warn").count()==0, "corrigé : bandeau vert « 1 article = total 48,69 € »")
     pg.locator("#save").click(); pg.wait_for_timeout(500)

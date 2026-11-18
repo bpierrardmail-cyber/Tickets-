@@ -17,7 +17,7 @@ Tickets garde tout sur ton téléphone : pas de compte à créer, pas besoin d'i
 - En bas, 5 onglets : Accueil, Opérations, Budget, À venir, Foyer (et Bourse dans la version Perso). Le bouton vert **＋**, sur l'Accueil et Opérations, ajoute tout : scanner ou saisir un ticket, un virement, un frais fixe, importer un relevé.
 
 **Le menu** (☰ en haut à gauche) a quatre sous-onglets, et une recherche « Chercher un réglage… » qui trouve n'importe quelle ligne :
-- **Gérer** : tout ce qui se crée et se règle, au même endroit — comptes bancaires, épargne, liquide, frais fixes, virements chaque mois, provisions, factures, catégories, produits, budgets, personnes, foyer partagé, groupes, corbeille.
+- **Gérer** : tout ce qui se crée et se règle, au même endroit — comptes bancaires, épargne, liquide, frais fixes, virements chaque mois, provisions, factures, catégories, articles, budgets, personnes, foyer partagé, groupes, corbeille.
   - **Créer en un geste** : les boutons « ＋ Compte », « ＋ Frais fixe », « ＋ Provision »… en haut, ou le ＋ au bout d'une ligne, ouvrent seulement la page de création ; une fois enregistré, tu reviens au menu.
   - **Toucher une ligne** ouvre sa page : la liste complète (tous les comptes, tous les frais fixes par personne avec le total du mois, les provisions, l'arbre des catégories…), « ＋ Nouveau » en bas, et toucher un élément pour le modifier.
 - **Sauvegarde** : où en est ta sauvegarde, sauvegarder, restaurer, ton code de secours, le stockage et l'export.
@@ -39,7 +39,8 @@ Touche le bouton vert **＋**, puis « Scanner un ticket » ou « Ticket depuis 
 **Vérifier avant d'enregistrer**
 
 - Le montant, le magasin et la date sont remplis. Regarde le montant en premier.
-- Ce qui est en orange est à vérifier : un article sans prix, un produit vide, un écart entre les articles et le total.
+- **Un seul nom par article** : chaque ligne, c'est l'article et son prix. Sur un ticket scanné, ce que le téléphone a lu reste écrit en petit (« lu : CRF YAOURT NAT X4 ») ; un article déjà connu est nommé tout seul, un inconnu est en orange, avec des suggestions à toucher.
+- Ce qui est en orange est à vérifier : un article sans prix ou sans nom, un écart entre les articles et le total.
 - Si la carte bancaire ou la TVA du ticket donnent un autre total, l'appli le dit et propose « Prendre … € ».
 - La **catégorie** est obligatoire : touche une des 10 grandes catégories (Courses, Sorties, Transport…). Dessous, tu peux préciser une sous-catégorie (Carburant, Bar…) ou en créer une avec « ＋ Nouvelle » ; c'est facultatif. L'appli la propose déjà d'après le magasin.
 - **Aucun article lu** (plein d'essence, ticket sans détail) ? L'appli ajoute tout seule un article du ticket entier : le compte tombe juste.
@@ -51,17 +52,17 @@ Touche le bouton vert **＋**, puis « Scanner un ticket » ou « Ticket depuis 
 **Ce que l'appli apprend**
 
 - Le 1er ticket d'un magasin demande parfois une correction du total : l'appli retient où il était et lit les suivants au même endroit.
-- Chaque article reçoit le produit que tu lui as donné la dernière fois (lait, pain…). Chaque personne a les siens.
-- Un nouveau produit (un nom que l'appli ne connaît pas) : sa catégorie s'affiche sous l'article, devinée d'après le nom, sinon celle du ticket ; touche-la pour la changer. Le produit est créé à l'enregistrement.
+- Un article lu sur un ticket reprend le nom que tu lui as donné la dernière fois (lait, pain…). Chaque personne a les siens.
+- Un nouvel article (un nom que l'appli ne connaît pas) : « Nouvel article, rangé dans … » s'affiche dessous, d'après le nom, sinon la catégorie du ticket ; touche-la pour la changer. Ensuite, sa catégorie n'est plus demandée.
 
-**Sans ticket** : « + » › Saisir pour noter une dépense à la main.
+**Sans ticket** : « + » › Saisir pour noter une dépense à la main. Pas besoin d'articles : le ticket entier compte dans sa catégorie. Pour le détail, « ＋ Article » : tu choisis l'article dans ta liste (ou tu en tapes un nouveau) et son prix.
 
 **Partager une dépense** : Options › Partage, « Qui paie ce ticket ? »
 
 - **Seulement** la personne qui a payé : pas partagé (par défaut).
 - **Le commun du foyer** : chacun selon sa part (Foyer : touche les personnes en haut).
 - **Certaines personnes** : en parts égales ou ajustées. Exemple : un resto à 3 sur une famille de 5.
-- Pour ne partager qu'une partie du ticket : « partager cet article » sur les articles concernés.
+- Pour ne partager qu'une partie du ticket : « Quoi ? » › « Certains articles », puis coche ceux qui sont partagés.
 
 **Supprimer un ticket** : ⋯ en haut de la fiche › Supprimer, ou un appui long sur le ticket dans une liste. Il part dans la **corbeille** (Opérations › Tickets, en bas) : « Annuler » tout de suite, ou « Remettre » pendant 30 jours, avec sa photo. Après 30 jours, il est supprimé pour de bon.
 
@@ -73,13 +74,13 @@ L'onglet Budget (ex Dépenses) a trois parties, en boutons sous le titre.
 
 - **Budgets** : un budget par grande catégorie (tout compris : Transport compte aussi Carburant et Péage) ou par sous-catégorie (seulement elle), pour le foyer ou par personne. En haut, ce que tu as dépensé sur le budget et ce qui reste pour les jours qui restent ; pour chaque catégorie, ce qui reste. « ✎ Modifier les budgets » en bas de la carte. Sans budget à toi, ce sont ceux du foyer.
 - **Analyse** : tes dépenses par mois, par catégorie (grandes catégories, ou le détail par sous-catégorie ; touche une grande catégorie pour voir ses sous-catégories), les dépenses qui reviennent et qui a payé. « + Frais fixes » ajoute les loyers, abonnements… pour voir tout ce qui sort vraiment.
-- **Produits** : ce que tu achètes et à quel prix. Mes produits, Hausses (ce qui augmente), Magasins (où c'est le moins cher), Catégories (tes articles rangés par catégorie). Touche un produit pour voir tous ses achats. Chaque produit est rangé dans une catégorie de l'arbre (Lait → Courses › Alimentation) : tu le changes dans ⚙ Produits & catégories.
+- **Articles** : ce que tu achètes et à quel prix. Mes articles, Hausses (ce qui augmente), Magasins (où c'est le moins cher), Catégories (tes articles rangés par catégorie). Touche un article pour voir tous ses achats. Chaque article est rangé dans une catégorie de l'arbre (Lait → Courses › Alimentation) : tu la changes dans ⚙ Articles & catégories.
 
 ✦ **Analyse avancée** (Tickets Plus) : ton inflation personnelle comparée à celle de l'INSEE, cette année contre l'an dernier, les alertes, le reste à vivre, des pistes d'économies.
 
-**Les catégories** (Budget › Produits › ⚙ Produits & catégories) : une dizaine de grandes catégories, et dedans tes sous-catégories. Tu peux ajouter une grande catégorie ou une sous-catégorie (＋), renommer, déplacer une sous-catégorie sous une autre grande catégorie (ses tickets et ses budgets suivent) ou supprimer : rien n'est perdu, ses tickets, ses produits et son budget vont dans la grande catégorie (ou dans Autre), et « Annuler » remet tout. Les grandes catégories sont repliées : touche-en une pour voir ses sous-catégories. Les produits sont rangés par lettre ; la barre A–Z en haut de la liste mène à une lettre.
+**Les catégories** (Budget › Articles › ⚙ Articles & catégories) : une dizaine de grandes catégories, et dedans tes sous-catégories. Tu peux ajouter une grande catégorie ou une sous-catégorie (＋), renommer, déplacer une sous-catégorie sous une autre grande catégorie (ses tickets et ses budgets suivent) ou supprimer : rien n'est perdu, ses tickets, ses articles et son budget vont dans la grande catégorie (ou dans Autre), et « Annuler » remet tout. Les grandes catégories sont repliées : touche-en une pour voir ses sous-catégories. Les articles sont rangés par lettre ; la barre A–Z en haut de la liste mène à une lettre.
 
-Le bouton personne, en haut à droite, choisit les dépenses montrées dans Produits et Analyse : les tiennes, celles d'une personne, ou tout le foyer.
+Le bouton personne, en haut à droite, choisit les dépenses montrées dans Articles et Analyse : les tiennes, celles d'une personne, ou tout le foyer.
 
 ## Opérations
 
@@ -140,7 +141,7 @@ L'onglet Foyer (ex Commun) montre combien chacun doit payer des frais communs du
 
 - **En haut, les personnes** et leur part du commun, en % : touche-les pour régler les parts. Un frais peut avoir ses propres parts. Dessous, ta part du mois ; « Voir le détail » montre le graphique.
 - **Frais communs** : ceux du mois. Pour les modifier, le lien mène à À venir › Frais fixes.
-- **Produits partagés** : les articles marqués « Dépense commune » sur les tickets, et ta part.
+- **Articles partagés** : les articles partagés des tickets (Options › Partage), et ta part.
 
 Les parts ne changent pas les soldes de tes comptes : elles disent seulement qui doit combien. Touche le titre d'une partie pour l'ouvrir ou la fermer.
 
@@ -151,7 +152,7 @@ Les parts ne changent pas les soldes de tes comptes : elles disent seulement qui
 - « Remboursé » : avec un virement (tu choisis les comptes) ou sans virement (liquide) ; un remboursement peut être partiel ;
 - ce qui reste d'un mois passe au suivant ; l'historique garde tous les remboursements.
 
-Compte comme payé pour le commun : les frais communs (selon le compte qui les paie) et les articles « Dépense commune » des tickets.
+Compte comme payé pour le commun : les frais communs (selon le compte qui les paie) et les articles partagés des tickets.
 
 **✦ Groupes** (Tickets Plus), en bas de l'onglet : pour un voyage ou une sortie, même avec des amis qui n'ont pas l'appli.
 
@@ -189,7 +190,7 @@ Menu › Réglages › Affichage. **Simple** (par défaut) montre l'essentiel. *
 - Opérations : la recherche ouverte, des filtres en plus (Tickets, Frais fixes, Virements), des lignes plus serrées, le bouton Liquide toujours là ;
 - Budget : les cases Budgets, Dépassés, Reste ;
 - À venir : tout « À payer bientôt » ;
-- Foyer : le graphique et les produits partagés ouverts ;
+- Foyer : le graphique et les articles partagés ouverts ;
 - fiche d'un ticket : les options dépliées.
 
 Le réglage est propre à chaque téléphone.

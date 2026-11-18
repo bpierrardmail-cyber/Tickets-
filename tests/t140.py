@@ -24,7 +24,7 @@ def start(b, d, init=""):
 def ls(pg, k): return pg.evaluate("k=>JSON.parse(localStorage.getItem(k))", k)
 def produits(pg):
     pg.locator('#nav .navi[data-view="depenses"]').click(); pg.wait_for_timeout(500)
-    pg.locator('.dpsub', has_text="Produits").click(); pg.wait_for_timeout(500); pg.locator("#artprod").click(); pg.wait_for_timeout(500)
+    pg.locator('.dpsub', has_text="Articles").click(); pg.wait_for_timeout(500); pg.locator("#artprod").click(); pg.wait_for_timeout(500)
 allerr=[]
 with sync_playwright() as p:
     b=p.chromium.launch()

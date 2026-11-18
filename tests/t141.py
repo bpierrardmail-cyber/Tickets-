@@ -99,7 +99,7 @@ with sync_playwright() as p:
                 closeAll(); bt=pg.locator('.avtabs button').nth(i)
                 if not bt.is_visible(): continue
                 lbl=bt.inner_text().strip(); bt.click(); pg.wait_for_timeout(450); inspect(v+" › "+lbl)
-                if v=="depenses" and "Produits" in lbl and click("#artprod", 600): inspect("Budget › Produits › Catégories")
+                if v=="depenses" and "Articles" in lbl and click("#artprod", 600): inspect("Budget › Articles › Catégories")
                 if v=="depenses" and "Budget" in lbl and click("#budEdit"): inspect("modifier les budgets"); closeAll()
                 if v=="factures" and pg.locator(".fct-card, .fcard, [data-fk]").count() and click(".fct-card, .fcard, [data-fk]", 600): inspect("détail d'un fournisseur"); nav(v)
             if v=="compte":

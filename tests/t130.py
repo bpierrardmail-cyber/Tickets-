@@ -58,7 +58,7 @@ with sync_playwright() as p:
     check("Énergie Fictive" in t and pg.locator(".fct-teaser").count()==0, "À venir › Factures : fournisseurs, Plus débloqué")
     pg.locator(".fct-card[data-k]").first.click(); pg.wait_for_timeout(700)
     nav(pg, "list")
-    for sub in ["Budgets","Analyse","Produits"]:
+    for sub in ["Budgets","Analyse","Articles"]:
         nav(pg, "depenses"); pg.locator('.dpsub', has_text=sub).first.click(); pg.wait_for_timeout(600)
     check("Hausses" in body(pg) or True, "Dépenses : Produits, Budgets, Analyse ouverts")
     pg.locator("#hmenu").click(); pg.wait_for_timeout(300); pg.locator('.mnsub[data-ms="gerer"]').click(); pg.wait_for_timeout(200); pg.locator('.dr-row[data-k="foyer"]').click(); pg.wait_for_timeout(900)

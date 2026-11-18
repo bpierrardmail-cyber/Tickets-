@@ -33,7 +33,8 @@ Touche **＋**, puis « Scanner un ticket » ou « Ticket depuis la galerie ». 
 - **Retrait au distributeur** (« RETRAIT », « DAB ») : l'appli demande « Mettre dans mon liquide » (l'argent sort du compte et s'ajoute au liquide, ce n'est pas une dépense) ou « Garder comme une dépense ».
 - **Payé en espèces** : « Payé avec » › Espèces, puis « Pris dans mes espèces du mois » (le liquide baisse, pas le compte) ou « Pas dans mes espèces du mois » (argent d'ailleurs : ni le compte ni le liquide ne bougent). C'est une dépense dans les deux cas, qui se partage comme les autres. Si le ticket porte « ESPECES » ou « RENDU », Espèces est déjà choisi. L'appli dit ce qui restera dans ton liquide.
 - Pas de ticket ? ＋ › « Saisir une dépense » pour la noter à la main.
-- Une dépense à partager : Options › Partage (« Qui paie ce ticket ? ») : seulement toi, le commun du foyer, ou certaines personnes.
+- Une dépense à partager : Options › Partage (« Qui paie ce ticket ? ») : seulement toi, le commun du foyer, ou certaines personnes ; « Quoi ? » › « Certains articles » pour n'en partager qu'une partie.
+- **Un seul nom par article** : l'article et son prix. Sur un ticket scanné, ce qui a été lu reste écrit en petit ; un article inconnu est en orange, avec des suggestions.
 - Supprimé par erreur ? Opérations › Tickets › Corbeille › « Remettre » (30 jours).
 
 Ton ticket part chez le propriétaire du foyer environ une minute et demie après (avec ceux saisis entre-temps), ou tout de suite quand tu quittes l'appli, dès que ton téléphone est connecté.
@@ -72,7 +73,7 @@ Menu › Réglages › Affichage. **Simple** (par défaut) montre l'essentiel. *
 - Opérations : la recherche ouverte, des filtres en plus (Tickets, Frais fixes, Virements), des lignes plus serrées, le bouton Liquide toujours là ;
 - Budget : les cases Budgets, Dépassés, Reste ;
 - À venir : tout « À payer bientôt » ;
-- Foyer : le graphique et les produits partagés ouverts ;
+- Foyer : le graphique et les articles partagés ouverts ;
 - fiche d'un ticket : les options dépliées.
 
 Le réglage est propre à chaque téléphone.

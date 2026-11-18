@@ -53,7 +53,7 @@ with sync_playwright() as p:
     M.locator("#f-montant").fill("3,20"); M.locator("#f-marchand").fill("Autoroute"); M.locator("#save").click(); M.wait_for_timeout(800)
     if M.locator("#cksave").count(): M.locator("#cksave").click(); M.wait_for_timeout(500)
     M.wait_for_timeout(3000)
-    M.locator('#nav .navi[data-view="depenses"]').click(); M.wait_for_timeout(600); M.locator('.dpsub', has_text="Produits").click(); M.wait_for_timeout(500); M.locator("#artprod").click(); M.wait_for_timeout(600)
+    M.locator('#nav .navi[data-view="depenses"]').click(); M.wait_for_timeout(600); M.locator('.dpsub', has_text="Articles").click(); M.wait_for_timeout(500); M.locator("#artprod").click(); M.wait_for_timeout(600)
     check(M.locator(".catren").count()==0 and M.locator(".catdel").count()==0 and M.locator(".catadd").count()>0, "Marie : ajouter une catégorie oui, renommer / supprimer non (propriétaire seulement)")
     sync(O)
     E=ls(O,"entries")
@@ -71,7 +71,7 @@ with sync_playwright() as p:
             L.locator('.sheet-overlay .dr-row[data-k="man"]').click(); L.wait_for_timeout(500); L.locator('#chips .chip[data-cat="Transport"]').click(); L.wait_for_timeout(300)
     check(L.locator("#catSubNew").count()==0, "Léa (lecture) : pas de « ＋ Nouvelle »")
     # propriétaire : renomme Bar → Bistrot ; Marie le reçoit
-    O.locator('.dpsub', has_text="Produits").click(); O.wait_for_timeout(500); O.locator("#artprod").click(); O.wait_for_timeout(600)
+    O.locator('.dpsub', has_text="Articles").click(); O.wait_for_timeout(500); O.locator("#artprod").click(); O.wait_for_timeout(600)
     O.once("dialog", lambda d: d.accept("Bistrot"))
     O.evaluate("()=>{ var b=document.querySelector('.cttog[data-cat=\"Sorties\"]'); if(b && b.getAttribute('aria-expanded')==='false') b.click(); }"); O.wait_for_timeout(400)   # grandes catégories repliées (07/11)
     O.evaluate("()=>{ var b=document.querySelector('.catren[data-cat=\"Bar\"]'); b.style.display=''; b.click(); }"); O.wait_for_timeout(2500)

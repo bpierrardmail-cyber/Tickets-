@@ -63,7 +63,7 @@ with sync_playwright() as p:
     check("Transport" in t and "reste 50,00" in t, "Transport (200 €) compte Carburant et Transport : reste 50 €")
     check("Bar" in t and "dépassé de 18,00" in t, "Bar (30 €) seulement lui : 48 €, dépassé de 18 €")
     # 4. gérer
-    pg.locator('.dpsub', has_text="Produits").click(); pg.wait_for_timeout(500)
+    pg.locator('.dpsub', has_text="Articles").click(); pg.wait_for_timeout(500)
     if pg.locator("#artprod").count(): pg.locator("#artprod").click()
     else: pg.evaluate("()=>{}")
     pg.wait_for_timeout(600)

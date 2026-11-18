@@ -22,7 +22,7 @@ with sync_playwright() as p:
     pg.locator("#hmenu").click(); pg.wait_for_timeout(400)
     check(pg.locator(".mnsub").count()==4 and pg.locator("#mnQ").count()==1, "☰ ouvre la page Menu : 4 sous-onglets et la recherche")
     t=txt(pg)
-    for w in ["Comptes bancaires","Catégories","Produits","Frais fixes","Provisions","Factures","Personnes","Foyer partagé","Corbeille"]: check(w in t, "Gérer : "+w)
+    for w in ["Comptes bancaires","Catégories","Articles","Frais fixes","Provisions","Factures","Personnes","Foyer partagé","Corbeille"]: check(w in t, "Gérer : "+w)
     check(pg.locator('.dr-row[data-k="frais"] .mn-n').inner_text()=="1", "Frais fixes : nombre de frais")
     pg.screenshot(path=os.path.join(SP,"t156_gerer.png"))
     pg.locator('.mnsub[data-ms="sauv"]').click(); pg.wait_for_timeout(300); t=txt(pg)
