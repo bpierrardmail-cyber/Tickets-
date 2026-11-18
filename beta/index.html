@@ -6,11 +6,11 @@
        Scripts (08/11) : seul le script de la page s'exécute, reconnu par son empreinte (python3 outils/csp.py après chaque modification).
        Le relais et les cours (Perso) ; les librairies (Tesseract, pdf.js) sont dans l'appli ; localhost = relais imité des tests (rien ne sort du téléphone).
        Toute nouvelle connexion doit être ajoutée ici (et justifiée, voir CLAUDE.md). -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-do8IBK3IImdM/jtE6tOLvAO/EjuZONAsB94/TO3m8p4=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-TGGL4EJQAY8flaSu03yD4nUzXBkzK3wzvXc3nitkC34=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="18/11 17:10" />
+  <meta name="build" content="18/11 17:51" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -3804,7 +3804,8 @@
       var top=(lines||[]).slice(0,8).map(function(l){ return norm(String(l).replace(/1/g,"i").replace(/0/g,"o").replace(/5/g,"s")); }).filter(function(l){ return l.replace(/ /g,"").length>=3; });
       // morceaux du haut du ticket : la ligne entière et chaque suite de 1 à 3 mots
       var parts=[];
-      top.forEach(function(l){ var w=l.split(" "); parts.push(l.replace(/ /g,""));
+      top.forEach(function(l, i){ var w=l.split(" "); parts.push(l.replace(/ /g,""));
+        if(top[i+1]) parts.push(l.replace(/ /g,"")+top[i+1].replace(/ /g,""));   // enseigne sur deux lignes (« BRICOD » / « DEPOT »)
         for(var a=0;a<w.length;a++) for(var b=a+1;b<=Math.min(w.length,a+3);b++) parts.push(w.slice(a,b).join("")); });
       var best=null, bs=0, bl=0;
       Object.keys(cands).forEach(function(c){
@@ -3898,7 +3899,10 @@
         if(!last){ if(!weightL && !/^\s*p[tnu]\b/i.test(l) && /[A-Za-zÀ-ÿ]{3,}/.test(l)) pend=l; return; }   // sans prix : peut-être un article pesé
         var prix = lastV;
         if(!(prix>0)) return;
-        var label = cleanLabel(weightL && pend ? pend : lsrc); pend="";
+        // nom et prix sur deux lignes (Brico Dépôt…) : « 2  GRILLE PERSIENNES D125 » puis « 3127600331284 17,90  35,80 V5 » (code-barres, prix unitaire, montant)
+        var eanL=!weightL && pend && /^\s*\d{8,14}\b/.test(l) && cleanLabel(lsrc).replace(/[^A-Za-zÀ-ÿ]/g,"").length<2;
+        if(eanL) pend=pend.replace(/^\s*\d{1,3}\s+(?=[A-Za-zÀ-ÿ])/, "");   // la quantité en tête du nom
+        var label = cleanLabel((weightL || eanL) && pend ? pend : lsrc); pend="";
         if(label.replace(/[^A-Za-zÀ-ÿ]/g,"").length < 2) return;
         if(neg){ var pc=/^\s*-?(\d{1,2})\s*%/.exec(l); if(pc) label=label.replace(/^\d{1,2}\s+/, "-"+pc[1]+"% "); }
         lignes.push({ label: label.slice(0,28), prix: prix.toFixed(2).replace(".",","), produit:"", remise:neg });
