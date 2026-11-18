@@ -221,6 +221,14 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 18/11
+- **Scan plus fiable, durablement** (« Tu peux faire tous les points ») :
+  - **banc d'essai** : 18 tickets inventés de mises en page différentes (Leclerc, Carrefour, Lidl, Action, Leroy Merlin, Super U, Picard, Monoprix, Grand Frais, Brico Dépôt, boulangerie, restaurant, station, pharmacie…) dans `tests/donnees/tickets_fictifs.json`, lus par t112 (18 / 18) ; chaque ticket mal lu signalé devient un ticket inventé de même mise en page ;
+  - **magasin reconnu par son SIRET ou son téléphone** (`tkMag`, sur le téléphone et dans la sauvegarde ; `tkMagIds`, `tkMagFind`, `tkMagLearn`) : appris à l'enregistrement d'un ticket scanné, repris au scan suivant même si le logo est mal lu (« ✓ Magasin reconnu à son SIRET ou à son téléphone ») ;
+  - **nom et prix sur deux lignes, en général** : une ligne de prix sans mot prend le nom de la ligne du dessus (code-barres Brico Dépôt, « 2 x 1,20  2,40 », prix sous le nom en boulangerie) ; une ligne de total, de paiement ou d'en-tête n'est jamais pris pour le nom suivant ; quantité lue (en tête du nom ou « 2 x ») ;
+  - **recoupements** : espèces données − rendu devient une source du total (« ✓ Espèces 8,87 », alerte si elle contredit le total avec une autre source) ; nombre d'articles annoncé par le ticket comparé aux articles lus (« ⚠ Le ticket annonce 4 articles, 3 lus : vérifie qu'il n'en manque pas ») ;
+  - **« Signaler une lecture »** (⋯ d'un ticket scanné, `tkReportSheet`) : ce qui a été lu → ce que tu as corrigé (montant, magasin, date, articles), puis la lecture complète, à copier ou partager ;
+  - la lecture par colonnes se fait sur les lignes que `mlkitRows` reconstitue à partir des positions ; une lecture colonne par colonne plus poussée n'a pas été nécessaire sur les 18 mises en page.
+  - Test t159.
 - **Enseigne : le nom coupé d'un ancien ticket ne gagne plus** : un ticket déjà enregistré « BRICOD » faisait relire « BRICOD » (ton orthographe d'abord) ; si une grande enseigne lue en entier commence pareil (« Brico Dépôt »), c'est elle qui est prise (`matchMerchant`, `bc`).
 - **Espèces : plus de compte à choisir** (« Oui ») : en Espèces, la ligne Compte disparaît des Options ; le liquide est toujours celui de la personne de « Payé par » (rangé avec son compte principal, `tkLiqAcct`) ; un ticket en espèces n'enregistre pas de compte. t157 adapté.
 - **Lecture des tickets, nom et prix sur deux lignes** (ticket Brico Dépôt de Benoît, « 1 oui ») : une ligne qui n'a qu'un code-barres et des prix (« 3127600331284 17,90  35,80 V5 ») prend le nom de la ligne du dessus, sans la quantité en tête (`eanL` dans `parseTicket`) ; enseigne écrite sur deux lignes (« BRICOD » / « DEPOT ») reconnue (`matchMerchant` essaie aussi deux lignes jointes). Ticket inventé ajouté au jeu d'essai (`tests/donnees/tickets_fictifs.json`, t112).

@@ -51,6 +51,8 @@ Touche le bouton vert **＋**, puis « Scanner un ticket » ou « Ticket depuis 
 
 **Ce que l'appli apprend**
 
+- Le magasin : une fois nommé, il est reconnu aux tickets suivants par son SIRET ou son téléphone, même si le logo est mal lu.
+
 - Le 1er ticket d'un magasin demande parfois une correction du total : l'appli retient où il était et lit les suivants au même endroit.
 - Un article lu sur un ticket reprend le nom que tu lui as donné la dernière fois (lait, pain…). Chaque personne a les siens.
 - Un nouvel article (un nom que l'appli ne connaît pas) : « Nouvel article, rangé dans … » s'affiche dessous, d'après le nom, sinon la catégorie du ticket ; touche-la pour la changer. Ensuite, sa catégorie n'est plus demandée.
@@ -253,6 +255,8 @@ Pour essayer l'appli ou la montrer sans tes chiffres : Menu › Réglages › Mo
 ## Questions fréquentes
 
 **Le total lu est faux.** Corrige le montant avant d'enregistrer, ou touche « Prendre … € » si l'appli propose le bon. Pour ce magasin, l'appli lira le total au même endroit la prochaine fois.
+
+**Un ticket est mal lu.** Corrige-le, puis ⋯ › « Signaler une lecture » avant d'enregistrer : copie le texte (ce qui a été lu, ce que tu as corrigé, la lecture complète) et envoie-le avec la photo pour faire corriger la lecture.
 
 **Une facture est mal lue.** Corrige la date ou le montant dans la fiche, puis « Appliquer » : l'appli s'en souvient pour ce fournisseur. Si ça recommence, « Copier la lecture » et envoie-la.
 

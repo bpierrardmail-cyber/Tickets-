@@ -57,5 +57,177 @@
    "alerte": false
   },
   "texte": "BRICOD\nDEPOT\nTESTVILLE\n00000 TESTVILLE\nSIRET: 00 000000000000\nQTE  DESCRIPTION PRIX  MONTANT T\n2  GRILLE AERATION D100  BLANC\n3000000000017 7,90  15,80 V5\n1  COLLE MONTAGE 310ML\n3000000000024 20,00  20,00 V5\nNOMBRE D'ARTICLES: 3\nTOTAL  35,80 €\nEspèces  -40,00 €\nRendu  4,20 €\nDETAIL TVA\nV5 TVA 20,00%  5,97  29,83 HT\n17/10/2026 11:21 2368"
+ },
+ {
+  "nom": "Leclerc : quantité sur la ligne du dessous, nombre d'articles",
+  "attendu": {
+   "montant": "11,29",
+   "marchand": "E.Leclerc",
+   "date": "2026-10-08",
+   "sources": [
+    "✓ Articles 11,29",
+    "✓ Carte 11,29"
+   ],
+   "alerte": false
+  },
+  "texte": "E.LECLERC\nSAS TESTDIS\nTEL 00 00 00 00 00\nLAIT UHT 1L\n6 x 0,95  5,70  A\nBEURRE DOUX 250G  2,49  A\nPAPIER ALU 20M  3,10  B\nTOTAL A PAYER  11,29\nCB  11,29\nNOMBRE D'ARTICLES 8\n08/10/2026 18:02"
+ },
+ {
+  "nom": "Carrefour Market : remise immédiate",
+  "attendu": {
+   "montant": "5,94",
+   "marchand": "Carrefour Market",
+   "date": "2026-10-14",
+   "sources": [
+    "✓ Articles 5,94",
+    "✓ Carte 5,94"
+   ],
+   "alerte": false
+  },
+  "texte": "CARREFOUR MARKET\nTESTVILLE\nSIRET 000 000 000 00000\nPOMMES GOLDEN  2,40\nBRIOCHE TRANCHEE  2,15\nREMISE IMMEDIATE  -0,50\nJUS ORANGE 1L  1,89\nTOTAL  5,94\nCARTE BANCAIRE  5,94\n14/10/2026 09:15"
+ },
+ {
+  "nom": "Lidl : codes TVA, ligne « 2 x » après l'article, espèces et rendu",
+  "attendu": {
+   "montant": "8,87",
+   "marchand": "Lidl",
+   "date": "2026-10-11",
+   "sources": [
+    "✓ Articles 8,87",
+    "✓ Espèces 8,87"
+   ],
+   "alerte": false
+  },
+  "texte": "LIDL\nTESTVILLE\nBanane  1,29 A\nPain complet  0,89 A\nLessive  4,99 B\nChocolat noir  1,70 A\n2 x  0,85\nA PAYER  8,87\nEspèces  10,00\nRendu  1,13\n11/10/2026 16:40"
+ },
+ {
+  "nom": "Restaurant : quantités en tête, TVA après le total",
+  "attendu": {
+   "montant": "39,50",
+   "date": "2026-10-19",
+   "sources": [
+    "✓ Articles 39,50",
+    "✓ Carte 39,50"
+   ],
+   "alerte": false
+  },
+  "texte": "LE BISTROT DU TEST\n1 PLACE DE LA MAIRIE\n2 MENU DU JOUR  29,00\n1 CAFE  2,00\n1 CARAFE VIN  8,50\nTOTAL TTC  39,50\ndont TVA 10%  3,59\nCB  39,50\n19/10/2026 13:05"
+ },
+ {
+  "nom": "Station : volume et prix au litre ne sont pas des articles",
+  "attendu": {
+   "montant": "41,09",
+   "date": "2026-10-21",
+   "sources": [
+    "✓ Carte 41,09"
+   ],
+   "alerte": false
+  },
+  "texte": "STATION TEST\nRUE DU PETROLE\nPOMPE 3\nGAZOLE\n24,33 L\nPRIX/L 1,689 EUR\nMONTANT  41,09 EUR\nCB SANS CONTACT  41,09\n21/10/2026 07:48"
+ },
+ {
+  "nom": "Action : deux fois le même article, nombre d'articles",
+  "attendu": {
+   "montant": "10,36",
+   "marchand": "Action",
+   "date": "2026-10-22",
+   "sources": [
+    "✓ Articles 10,36",
+    "✓ Carte 10,36"
+   ],
+   "alerte": false
+  },
+  "texte": "ACTION\nTESTVILLE\nSIRET: 000 000 000 00000\nBOUGIES PARFUMEES  1,79\nCABLE USB-C 1M  2,29\nCABLE USB-C 1M  2,29\nBOITE RANGEMENT  3,99\nTOTAL  10,36\nNOMBRE D'ARTICLES: 4\nCB  10,36\n22/10/2026 15:31"
+ },
+ {
+  "nom": "Boulangerie : chaque prix sous son nom",
+  "attendu": {
+   "montant": "13,60",
+   "date": "2026-10-23",
+   "sources": [
+    "✓ Articles 13,60",
+    "✓ Espèces 13,60"
+   ],
+   "alerte": false
+  },
+  "texte": "BOULANGERIE TEST\nBAGUETTE\n1,10\nTARTE AUX POMMES\n12,50\nTOTAL  13,60\nESPECES  20,00\nRENDU  6,40\n23/10/2026"
+ },
+ {
+  "nom": "Leroy Merlin : code-barres en tête de chaque article",
+  "attendu": {
+   "montant": "17,05",
+   "marchand": "Leroy Merlin",
+   "date": "2026-10-24",
+   "sources": [
+    "✓ Articles 17,05",
+    "✓ Carte 17,05"
+   ],
+   "alerte": false
+  },
+  "texte": "LEROY MERLIN\nTESTVILLE\n3276000000017 VIS AGGLO 4X40  5,90\n3276000000024 CHEVILLES X50  4,20\n3276000000031 MASTIC BLANC  6,95\nTOTAL  17,05\nCB  17,05\n24/10/2026 10:10"
+ },
+ {
+  "nom": "Super U : article pesé",
+  "attendu": {
+   "montant": "5,99",
+   "marchand": "Super U",
+   "date": "2026-10-25",
+   "sources": [
+    "✓ Articles 5,99",
+    "✓ Carte 5,99"
+   ],
+   "alerte": false
+  },
+  "texte": "SUPER U\nTESTVILLE\nTOMATES GRAPPE\n0,850 kg x 2,99 EUR/kg  2,54\nCAROTTES 1KG  1,35\nFROMAGE RAPE  2,10\nTOTAL  5,99\nCB  5,99\n25/10/2026 11:00"
+ },
+ {
+  "nom": "Picard : ticket court",
+  "attendu": {
+   "montant": "8,75",
+   "marchand": "Picard",
+   "date": "2026-10-26",
+   "sources": [
+    "✓ Articles 8,75",
+    "✓ Carte 8,75"
+   ],
+   "alerte": false
+  },
+  "texte": "PICARD\nTESTVILLE\nGLACE VANILLE 1L  4,95\nLEGUMES WOK 600G  3,80\nTOTAL  8,75\nCB  8,75\n26/10/2026"
+ },
+ {
+  "nom": "Monoprix : colonnes quantité, prix unitaire, montant",
+  "attendu": {
+   "montant": "8,65",
+   "marchand": "Monoprix",
+   "date": "2026-10-27",
+   "sources": [
+    "✓ Articles 8,65",
+    "✓ Carte 8,65"
+   ],
+   "alerte": false
+  },
+  "texte": "MONOPRIX\nTESTVILLE\nDESIGNATION  QTE  P.U  MONTANT\nEAU MINERALE 6X1.5L  2  3,10  6,20\nSAVON MAINS  1  2,45  2,45\nTOTAL  8,65\nCB  8,65\n27/10/2026"
+ },
+ {
+  "nom": "Grand Frais : espèces sans rendu",
+  "attendu": {
+   "montant": "13,79",
+   "marchand": "Grand Frais",
+   "date": "2026-10-28",
+   "sources": [
+    "✓ Articles 13,79",
+    "✓ Espèces 13,79"
+   ],
+   "alerte": false
+  },
+  "texte": "GRAND FRAIS\nTESTVILLE\nFRAISES 500G  3,99\nPOULET FERMIER  9,80\nTOTAL  13,79\nESPECES  13,79\n28/10/2026"
+ },
+ {
+  "nom": "Total mal lu (8,40) : articles et espèces moins le rendu disent 5,40",
+  "attendu": {
+   "montant": "8,40",
+   "alerte": "5,40"
+  },
+  "texte": "BOULANGERIE TEST\nPAIN AUX CEREALES  2,40\nCHOUQUETTES  3,00\nTOTAL  8,40\nESPECES  10,00\nRENDU  4,60\n29/10/2026"
  }
 ]
