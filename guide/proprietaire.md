@@ -47,7 +47,7 @@ Touche le bouton vert **＋**, puis « Scanner un ticket » ou « Ticket depuis 
 - **Retrait au distributeur** (« RETRAIT », « DAB ») : l'appli demande « Mettre dans mon liquide » (l'argent sort du compte et s'ajoute au liquide, ce n'est pas une dépense) ou « Garder comme une dépense ».
 - **Payé en espèces** : « Payé avec » › Espèces, puis « Pris dans mes espèces du mois » (le liquide baisse, pas le compte) ou « Pas dans mes espèces du mois » (argent d'ailleurs : ni le compte ni le liquide ne bougent). C'est une dépense dans les deux cas, qui se partage comme les autres. Si le ticket porte « ESPECES » ou « RENDU », Espèces est déjà choisi. L'appli dit ce qui restera dans ton liquide.
 - La photo reste avec le ticket : touche la vignette à côté du montant pour la revoir.
-- « Options » (replié) : le compte (Auto = celui de la personne qui a payé ; « Liquide de » pour un ticket en espèces), le groupe, le partage. La ligne résume ce qui est choisi.
+- « Options » (replié) : le compte (Auto = celui de la personne qui a payé ; pas de compte pour un ticket en espèces : c'est le liquide de la personne qui a payé), le groupe, le partage. La ligne résume ce qui est choisi.
 
 **Ce que l'appli apprend**
 

@@ -101,7 +101,7 @@ with sync_playwright() as p:
     check("Pris dans les espèces de Marie" in t4 and "Il lui restera 12,00 €" in t4 and "Pas dans ses espèces du mois" in t4, "payé par Marie : son liquide (« "+t4.replace("\n"," / ")+" »)")
     if pg.locator("#fopt").count() and pg.locator("#fshare").count()==0: pg.locator("#fopt").click(); pg.wait_for_timeout(300)
     opt=norm(pg.locator(".f-opt").inner_text()) if pg.locator(".f-opt").count() else ""
-    check("Liquide de" in opt, "Options : « Liquide de » à la place de « Compte »")
+    check(pg.locator("#f-acct").count()==0 and "Liquide de" not in opt and "Compte" not in opt, "en espèces : pas de compte à choisir dans les Options")
     if pg.locator("#fshare").count():
         pg.locator("#fshare").click(); pg.wait_for_timeout(400)
         sh=norm(pg.locator(".sheet-overlay").last.inner_text())

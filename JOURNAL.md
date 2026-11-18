@@ -221,6 +221,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 18/11
+- **Espèces : plus de compte à choisir** (« Oui ») : en Espèces, la ligne Compte disparaît des Options ; le liquide est toujours celui de la personne de « Payé par » (rangé avec son compte principal, `tkLiqAcct`) ; un ticket en espèces n'enregistre pas de compte. t157 adapté.
 - **Lecture des tickets, nom et prix sur deux lignes** (ticket Brico Dépôt de Benoît, « 1 oui ») : une ligne qui n'a qu'un code-barres et des prix (« 3127600331284 17,90  35,80 V5 ») prend le nom de la ligne du dessus, sans la quantité en tête (`eanL` dans `parseTicket`) ; enseigne écrite sur deux lignes (« BRICOD » / « DEPOT ») reconnue (`matchMerchant` essaie aussi deux lignes jointes). Ticket inventé ajouté au jeu d'essai (`tests/donnees/tickets_fictifs.json`, t112).
 - **Articles simplifiés** (maquette « Tickets — Articles simplifiés » validée : « Oui tu peux intégrer ») :
   - **un seul nom par article** : chaque ligne = Article + prix + ✕ (avant : nom lu, produit, case « partager », catégorie d'un nouveau produit, jusqu'à 4 lignes) ; le texte lu sur un ticket scanné reste en petit (« lu : CRF YAOURT NAT X4 ») et sert toujours à reconnaître l'article la fois suivante ; nom inconnu = orange « Quel article ? » avec des suggestions à toucher (`artSuggest` : noms appris par la personne, ou un de ses articles dont le nom est dans le texte lu) ; nouvel article : « Nouvel article, rangé dans Courses › Alimentation › », touchable, puis plus jamais demandé ;
