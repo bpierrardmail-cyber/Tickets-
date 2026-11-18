@@ -6,11 +6,11 @@
        Scripts (08/11) : seul le script de la page s'exécute, reconnu par son empreinte (python3 outils/csp.py après chaque modification).
        Le relais et les cours (Perso) ; les librairies (Tesseract, pdf.js) sont dans l'appli ; localhost = relais imité des tests (rien ne sort du téléphone).
        Toute nouvelle connexion doit être ajoutée ici (et justifiée, voir CLAUDE.md). -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-qCh+8F/OfpuDC/FQOnnXpuPow3GEaj2OIObUFrIucDg=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-uMawmQ6ZBPrqrUdK2OnGY8WRTnOmmPc4g0nvMxe1L3I=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="18/11 19:06" />
+  <meta name="build" content="18/11 19:19" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -9504,8 +9504,10 @@
     // Règles de lecture seules (parseTicket) : pas ce que l'appli a appris (SIRET, total appris), comme un nouvel utilisateur.
     function bancOn(){ return EDITION==="perso" && !DEMO; }
     // tous les tickets qui ont une photo, tous mois confondus ; avant le 03/11, seule la petite photo (600 px) est gardée
-    function bancSmall(e){ var k=String(e.id); return !ORIGSZ[k] && !!PHOTOS[k]; }
-    function bancPool(){ return state.entries.filter(function(e){ var k=String(e.id); return e.src!=="releve" && !PHDEL[k] && (ORIGSZ[k] || (typeof PHOTOS[k]==="string" && PHOTOS[k].indexOf("data:image/")===0)); })
+    // photos prises dans des sauvegardes ZIP (bancZip) : en mémoire seulement, rien n'est restauré ; d'abord celles du téléphone
+    function bancZ(e){ var Z=state.bancZip||{}, z=Z[String(e.id)]; return (z && !ORIGSZ[String(e.id)] && (z.o || !PHOTOS[String(e.id)])) ? z : null; }
+    function bancSmall(e){ var k=String(e.id), z=bancZ(e); return z ? !z.o : (!ORIGSZ[k] && !!PHOTOS[k]); }
+    function bancPool(){ return state.entries.filter(function(e){ var k=String(e.id); return e.src!=="releve" && !PHDEL[k] && (ORIGSZ[k] || bancZ(e) || (typeof PHOTOS[k]==="string" && PHOTOS[k].indexOf("data:image/")===0)); })
       .sort(function(a, b){ return String(b.date).localeCompare(String(a.date)); }); }
     function bancArts(e){ return (e.articles||[]).filter(function(a){ return !/ · ticket entier$/.test(String(a.label||"")); }); }
     function bancSame(a, b){ a=norm(a); b=norm(b); return !!a && !!b && (a===b || (a.length>=3 && b.indexOf(a)>=0) || (b.length>=3 && a.indexOf(b)>=0)); }
@@ -9523,9 +9525,10 @@
         if(state.banc!==B) return;
         if(B.stop || B.i>=B.n){ B.run=false; if(state.view==="banc") render(); return; }
         prog(); var e=pool[B.i];
-        var sm=bancSmall(e);
-        (sm ? Promise.resolve(null) : origGet(e.id)).then(function(o){
-          var pages=sm ? [bancThumbBlob(PHOTOS[String(e.id)])] : ((o && o.b) || []), parts=[], k=0;
+        var sm=bancSmall(e), zz=bancZ(e);
+        (zz ? Promise.all(zz.b.map(function(x){ return zz.ek ? decBlob(x, zz.ek, x.type) : x; })).then(function(b){ return { b:b }; })
+          : (sm ? Promise.resolve(null) : origGet(e.id))).then(function(o){
+          var pages=(sm && !zz) ? [bancThumbBlob(PHOTOS[String(e.id)])] : ((o && o.b) || []), parts=[], k=0;
           function pg(){ if(k>=pages.length) return Promise.resolve();
             return (sm ? bancUpImage(pages[k]) : nativeImage(pages[k])).then(function(b64){ return plug.recognize({ image:b64 }); })
               .then(function(res){ parts.push({ t:mlkitRows(res||{}), res:res||null }); }, function(err){ parts.push({ t:"", res:null, err:String((err&&err.message)||err) }); })
@@ -9547,6 +9550,30 @@
         c.width=Math.max(1,Math.round(w*k)); c.height=Math.max(1,Math.round(h*k)); var g=c.getContext("2d"); g.imageSmoothingQuality="high"; g.drawImage(img,0,0,c.width,c.height);
         var u=c.toDataURL("image/jpeg",0.92); URL.revokeObjectURL(url); res(u.slice(u.indexOf(",")+1)); }catch(e){ rej(e); } };
       img.onerror=function(){ URL.revokeObjectURL(url); rej(new Error("image illisible")); }; img.src=url; }); }
+    // « Photos d'une sauvegarde ZIP » : lit les photos du fichier (déchiffrées au moment de la lecture), sans rien restaurer
+    function bancZipPick(){
+      var inp=document.createElement("input"); inp.type="file"; inp.accept="application/zip,.zip"; inp.multiple=true; inp.id="bcZipIn"; inp.style.display="none"; document.body.appendChild(inp);
+      inp.onchange=function(){ var fs=inp.files ? [].slice.call(inp.files) : [], i=0, tot=0; try{ document.body.removeChild(inp); }catch(e){}
+        function nx(){ if(i>=fs.length){ if(tot && state.banc && !state.banc.run) state.banc=null; render(); uiToast(tot ? tot+" photo"+(tot>1?"s":"")+" de ticket"+(tot>1?"s":"")+" prise"+(tot>1?"s":"")+" dans "+(fs.length>1?"les sauvegardes":"la sauvegarde") : "Aucune photo de tes tickets dans ce fichier"); return; }
+          bancZipRead(fs[i++]).then(function(n){ tot+=n; nx(); }).catch(function(e){ var m=(e&&e.message)||String(e); if(m!=="annulé") window.alert("Sauvegarde illisible : "+m); nx(); }); }
+        nx(); };
+      inp.click();
+    }
+    function bancZipRead(file){
+      var pr=uiProgress("Lecture de la sauvegarde…");
+      return zipRead(file).then(function(Z){
+        var d=Z["data.json"]; if(!d || d.m!==0) throw new Error("ce n'est pas une sauvegarde complète");
+        return blobText(file.slice(d.o, d.o+d.s)).then(function(txt){ pr.close(); return encOpen(JSON.parse(txt)); }).then(function(X){
+          var have={}, by={}, n=0, B=state.bancZip=state.bancZip||{};
+          state.entries.forEach(function(e){ have[String(e.id)]=1; });
+          ((X.obj && X.obj._zip)||[]).forEach(function(x){ var z=Z[x.p], id=String(x.id); if(!z || z.m!==0 || !have[id]) return;
+            var P=by[id]||(by[id]={ o:!!x.o, b:[], ek:X.key||null }); P.b[x.n-1]=file.slice(z.o, z.o+z.s, x.t||"image/jpeg"); });
+          Object.keys(by).forEach(function(id){ var P=by[id]; P.b=P.b.filter(function(x){ return x; }); if(!P.b.length) return;
+            if(!B[id] || (P.o && !B[id].o)){ B[id]=P; n++; } });   // la photo d'origine l'emporte sur la petite
+          return n;
+        });
+      }).catch(function(e){ pr.close(); throw e; });
+    }
     function bancExport(){
       var B=state.banc; if(!B || !B.items.length) return;
       var bm=(document.querySelector('meta[name="build"]')||{}).content||"";
@@ -9565,10 +9592,13 @@
       if(!B || (!B.run && !B.items.length)){
         var nSm=pool.filter(bancSmall).length;
         h+='<div class="sto-tot" style="margin-top:14px"><b>'+pool.length+'</b> ticket'+(pool.length>1?"s":"")+' avec une photo, tous mois confondus</div>';
-        if(nSm) h+='<div class="muted" style="font-size:12px;line-height:1.5">Dont '+nSm+' d\'avant le 3 novembre : seule une petite photo est gardée, ils seront moins bien lus (comptés à part).</div>';
+        if(nSm) h+='<div class="muted" style="font-size:12px;line-height:1.5">Dont '+nSm+' avec seulement une petite photo (tickets d\'avant le 3 novembre) : moins bien lus, comptés à part.</div>';
+        var nZ=pool.filter(bancZ).length;
+        if(nZ) h+='<div class="muted" style="font-size:12px;line-height:1.5" id="bcZn">'+nZ+' photo'+(nZ>1?"s":"")+' prise'+(nZ>1?"s":"")+' dans tes sauvegardes ZIP (rien n\'est restauré).</div>';
         if(!plug) h+='<div class="empty">Seulement dans l\'appli Android : la lecture se fait par ML Kit.</div>';
         else if(pool.length) h+='<button type="button" class="btn" id="bcGo" style="width:100%;margin-top:10px">Lancer le test</button>';
-        else h+='<div class="empty">Aucun ticket n\'a encore sa photo d\'origine.</div>';
+        else h+='<div class="empty">Aucun ticket n\'a encore de photo.</div>';
+        if(plug) h+='<button type="button" class="btn ghost" id="bcZip" style="width:100%;margin-top:8px">📦 Photos d\'une sauvegarde ZIP</button><div class="muted" style="font-size:11px;margin-top:6px;line-height:1.5">Les photos de tes anciens tickets, prises dans une sauvegarde complète (OneDrive, Drive, Documents…) : rien n\'est restauré ni modifié, elles servent seulement au test. Tu peux en choisir plusieurs.</div>';
       } else if(B.run){
         h+='<div class="sto-tot" style="margin-top:14px" id="bcProg">Lecture '+Math.min(B.i+1, B.n)+'/'+B.n+'…</div><div class="sto-bar"><i id="bcBar" style="width:'+Math.round(B.i*100/Math.max(1,B.n))+'%"></i></div>';
         h+='<button type="button" class="btn ghost" id="bcStop" style="width:100%;margin-top:10px">Arrêter</button>';
@@ -9586,6 +9616,7 @@
           h+='<div class="sto-row bc-bad"><span>'+esc(e.marchand||"Ticket")+'<br><small class="muted">'+esc(csvDate(e.date)+" · "+fmtK(num(e.montant)))+'</small></span><b style="color:var(--coral);white-space:normal;text-align:right">'+esc(w.join(" · "))+'</b></div>'; });
         h+='<button type="button" class="btn" id="bcExp" style="width:100%;margin-top:14px">Exporter pour améliorer la lecture</button>';
         h+='<button type="button" class="btn ghost" id="bcGo" style="width:100%;margin-top:8px">Relancer</button>';
+        h+='<button type="button" class="btn ghost" id="bcZip" style="width:100%;margin-top:8px">📦 Photos d\'une sauvegarde ZIP</button>';
         h+='<div class="muted" style="font-size:11px;margin-top:10px;line-height:1.5">Le fichier contient ce que le téléphone a lu et tes tickets enregistrés (sans les photos). Envoie-le seulement pour faire améliorer la lecture.</div>';
       }
       h+='</section>'; app.innerHTML=h; setNav(null,false);
@@ -9593,6 +9624,7 @@
       var g=document.getElementById("bcGo"); if(g) g.onclick=bancRun;
       var st=document.getElementById("bcStop"); if(st) st.onclick=function(){ B.stop=true; };
       var ex=document.getElementById("bcExp"); if(ex) ex.onclick=bancExport;
+      var zb=document.getElementById("bcZip"); if(zb) zb.onclick=bancZipPick;
     }
     function ocrRawSheet(t0, ttl, intro){
       var t=(typeof t0==="string" && t0) || ocrRawText(); if(!t) return;
