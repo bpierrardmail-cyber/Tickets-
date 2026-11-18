@@ -6,11 +6,11 @@
        Scripts (08/11) : seul le script de la page s'exécute, reconnu par son empreinte (python3 outils/csp.py après chaque modification).
        Le relais et les cours (Perso) ; les librairies (Tesseract, pdf.js) sont dans l'appli ; localhost = relais imité des tests (rien ne sort du téléphone).
        Toute nouvelle connexion doit être ajoutée ici (et justifiée, voir CLAUDE.md). -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-P5WpbZfvKTMFzLuLvnEpSK9eKKHCIm9sz7mbeftunyg=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-s5Zu44Ru/flnzwWmLkhLwzVvNJYQP/99BZiBFNocFks=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="18/11 17:58" />
+  <meta name="build" content="18/11 18:07" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -3807,7 +3807,7 @@
       top.forEach(function(l, i){ var w=l.split(" "); parts.push(l.replace(/ /g,""));
         if(top[i+1]) parts.push(l.replace(/ /g,"")+top[i+1].replace(/ /g,""));   // enseigne sur deux lignes (« BRICOD » / « DEPOT »)
         for(var a=0;a<w.length;a++) for(var b=a+1;b<=Math.min(w.length,a+3);b++) parts.push(w.slice(a,b).join("")); });
-      var best=null, bs=0, bl=0;
+      var best=null, bs=0, bl=0, bc=null, bcs=0;
       Object.keys(cands).forEach(function(c){
         var nc=norm(c).replace(/ /g,""); if(nc.length<3) return;
         parts.forEach(function(pc){
@@ -3816,8 +3816,11 @@
           if(nc.length<5 && sc<1) return;          // noms courts (Lidl, Cora…) : seulement à l'identique
           if(cands[c]>0) sc+=0.03;                  // ta propre orthographe d'abord
           if(sc>bs || (sc===bs && nc.length>bl)){ bs=sc; best=c; bl=nc.length; }
+          if(CHAINS.indexOf(c)>=0 && (!bc || sc>bcs)){ bc=c; bcs=sc; }
         });
       });
+      // un ancien ticket enregistré avec un nom coupé (« BRICOD ») ne doit pas cacher la grande enseigne lue en entier (« Brico Dépôt »)
+      if(best && bc && best!==bc && bcs>=0.86 && cands[best]>0 && CHAINS.indexOf(best)<0){ var nb=norm(best).replace(/ /g,""), nbc=norm(bc).replace(/ /g,""); if(nbc.length>nb.length && nbc.indexOf(nb.slice(0, Math.max(3, nb.length-1)))===0) return bc; }
       if(best && bs>=0.86) return best;
       // sinon : une grande enseigne citée plus bas (« VOTRE MAGASIN GRAND FRAIS ») ; pas celles qui sont aussi des marques ou des mots courants
       var all=" "+norm((lines||[]).join(" "))+" ", hit=null, hn=0;

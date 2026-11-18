@@ -221,6 +221,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 18/11
+- **Enseigne : le nom coupé d'un ancien ticket ne gagne plus** : un ticket déjà enregistré « BRICOD » faisait relire « BRICOD » (ton orthographe d'abord) ; si une grande enseigne lue en entier commence pareil (« Brico Dépôt »), c'est elle qui est prise (`matchMerchant`, `bc`).
 - **Espèces : plus de compte à choisir** (« Oui ») : en Espèces, la ligne Compte disparaît des Options ; le liquide est toujours celui de la personne de « Payé par » (rangé avec son compte principal, `tkLiqAcct`) ; un ticket en espèces n'enregistre pas de compte. t157 adapté.
 - **Lecture des tickets, nom et prix sur deux lignes** (ticket Brico Dépôt de Benoît, « 1 oui ») : une ligne qui n'a qu'un code-barres et des prix (« 3127600331284 17,90  35,80 V5 ») prend le nom de la ligne du dessus, sans la quantité en tête (`eanL` dans `parseTicket`) ; enseigne écrite sur deux lignes (« BRICOD » / « DEPOT ») reconnue (`matchMerchant` essaie aussi deux lignes jointes). Ticket inventé ajouté au jeu d'essai (`tests/donnees/tickets_fictifs.json`, t112).
 - **Articles simplifiés** (maquette « Tickets — Articles simplifiés » validée : « Oui tu peux intégrer ») :
