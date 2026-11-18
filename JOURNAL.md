@@ -223,6 +223,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 18/11
+- **Banc de lecture : tous les mois** : il prend tous les tickets qui ont une photo ; ceux d'avant le 03/11 n'ont que la petite photo (600 px, JPEG 50 %) : relue agrandie ×2,5 (`bancSmall`, `bancThumbBlob`, `bancUpImage`), comptée à part (« Petites photos : N bien lus sur M ») et marquée `petite` dans l'export.
 - **Banc d'essai de lecture** (version Perso seulement) : Menu › Aide › « Tester la lecture sur mes tickets » relit avec ML Kit la photo d'origine de chaque ticket, compare aux règles seules (`parseTicket`, sans `tkMag` ni `tkAppris`) avec ce qui a été enregistré (magasin, total, date, articles), liste ce qui est à revoir et exporte `banc-lecture-AAAA-MM-JJ.json` (morceaux ML Kit + ticket enregistré, sans photo). `outils/banc_rejouer.py fichier.json [--ko]` rejoue ce fichier dans l'appli hors du téléphone. Le fichier contient de vrais tickets : jamais dans le dépôt ; chaque cas raté devient un ticket inventé dans `tests/donnees/tickets_fictifs.json`. Test t160.
 - **Scan plus fiable, durablement** (« Tu peux faire tous les points ») :
   - **banc d'essai** : 18 tickets inventés de mises en page différentes (Leclerc, Carrefour, Lidl, Action, Leroy Merlin, Super U, Picard, Monoprix, Grand Frais, Brico Dépôt, boulangerie, restaurant, station, pharmacie…) dans `tests/donnees/tickets_fictifs.json`, lus par t112 (18 / 18) ; chaque ticket mal lu signalé devient un ticket inventé de même mise en page ;

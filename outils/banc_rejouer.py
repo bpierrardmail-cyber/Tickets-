@@ -38,10 +38,11 @@ with sync_playwright() as p:
     with pg.expect_download() as dl: pg.locator("#bcExp").click()
     R=json.load(open(dl.value.path(), encoding="utf-8")); br.close()
 print("Avant (téléphone) : %d/%d bien lus · maintenant : %d/%d"%(B.get("ok",0), B["n"], R["ok"], R["n"]))
-for t in R["tickets"]:
+for j, t in enumerate(R["tickets"]):
+    sm=" (petite photo)" if T[idx[j]].get("petite") else ""
     if KO and t["ok"].get("ok"): continue
     e=t["enregistre"]; l=t["lu"] or {}; k=t["ok"]
     bad=[n for n in ("total","marchand","date","arts") if k.get(n) is False]
-    print(("OK  " if k.get("ok") else "KO  ")+"%s %s %.2f"%(e["date"], e["marchand"], e["montant"] or 0)+("" if not bad else "  → lu : "+" · ".join(
+    print(("OK  " if k.get("ok") else "KO  ")+"%s %s %.2f%s"%(e["date"], e["marchand"], e["montant"] or 0, sm)+("" if not bad else "  → lu : "+" · ".join(
         {"total":"total %s"%l.get("total"), "marchand":"magasin %r"%l.get("marchand"), "date":"date %s"%l.get("date"), "arts":"%d articles sur %d"%(len(l.get("articles",[])), len([a for a in e["articles"] if not a["lu"].endswith(" · ticket entier")]))}[n] for n in bad)))
 if errs: print("Erreurs JS :", errs[:3])
