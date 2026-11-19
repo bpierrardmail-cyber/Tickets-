@@ -134,6 +134,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **19/11 · Frais fixes et Factures** : Frais fixes = d'abord ce qui reste à payer, par jour, filtrable par personne, payés repliés ; Factures = coût des 3 prochains mois et import en haut, une carte par fournisseur avec son évolution et un seul état (maquette validée).
 - **19/11 · À venir** : 12 mois = ce qui reste à payer ce mois, les 7 prochains jours, 12 pastilles colorées et le détail du mois touché ; Provisions = enveloppes en cercles, frise des factures, tout le détail derrière l'enveloppe (maquette validée).
 - **18/11 · banc de lecture** : grossir le banc d'essai avec l'historique de ses tickets pour que tout soit bien lu avant la sortie Store ; l'outil est dans la version Perso seulement (un utilisateur du Store n'en a pas besoin).
 - **18/11 · articles** : article et produit sont la même chose pour lui : un seul nom par article ; au scan, le texte lu sert à proposer l'article ; à la main, on donne directement l'article ; une seule catégorisation (la catégorie du ticket, et celle de l'article apprise une fois) ; « article » partout à l'écran (Budget › Articles) ; le partage d'une partie du ticket se fait dans « Qui paie ce ticket ? » (maquette « Tickets — Articles simplifiés », « Oui tu peux intégrer »).
@@ -224,6 +225,10 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 19/11
+- **À venir › Frais fixes et Factures refaits** (maquette validée, écrans 4 à 6 du même canevas) :
+  - **Frais fixes** : page à part `renderFraisAv` (plus le mode `avMode` de `renderCommunes`) : total du mois payé / reste (`#fxHero`, navigation par mois gardée), pastilles Tout · Commun · personnes (`state.fxWho`), « À payer » par jour (étiquette, ta part), mises de côté en une ligne qui se déplie (`#fxPvT`, `state.fxPvOpen`), « Payés » repliés (`#fxPaidT`, `state.fxPaidOpen`, ouverts en affichage détaillé), Retirés du mois, cases ta part du commun / perso, « ＋ Frais fixe ». Le nom d'un frais (`.fxmore`) ouvre Modifier / Supprimer.
+  - **Factures** : en haut les factures des 3 prochains mois et « Importer » (`#fctHero`, `#fctImp`) ; cartes avec petit graphique des 6 dernières factures et un état (provision prête / il manquera, pas dans tes comptes, « Lisser » `.fct-liss` = crée la provision, annulable). Détail d'un fournisseur : prochaine facture en grand (`#fsHero`, `factEstWhy`), encadrés d'action, graphique (estimée hachurée), 3 dernières factures puis « Voir les plus anciennes » (`#fsMore`).
+  - `.av2-k` sans majuscules forcées (les tests lisent le texte tel quel). Tests adaptés : t92, t101.
 - **À venir refait** (maquette validée par Benoît, canevas « Tickets — À venir : 12 mois et Provisions ») :
   - **12 mois** : en haut « encore à payer » ce mois (payé / reste, il te restera fin de mois), « Les 7 prochains jours » en cases (mises de côté regroupées, « Tout voir » déplie la liste), 12 pastilles avec un point vert / orange / rouge, détail du mois touché (frais fixes, factures, mises de côté, ce qui manquera → « Voir la provision »), Argent de côté (« N à renforcer »). Graphique en barres retiré (`factChartHTML`).
   - **Provisions** : total, « N enveloppes à renforcer », « Tout remettre à l'heure » (annulable) ; enveloppes en cercles (`pv2Info`, `pv2Ring`) ; frise « Quand tombent les factures » ; détail d'une enveloppe (vue `provdet`, `renderProvDet`) avec tout ce qui était dans les grandes cartes. Plus de navigation par mois ni de graphique « De côté / Avec les factures prévues » (`provChartHTML`, `provListHTML` retirés).

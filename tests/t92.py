@@ -40,7 +40,7 @@ with sync_playwright() as p:
     pg.screenshot(path=os.path.join(SP,"t92_mois.png"), full_page=True)
     pg.locator('.avtabs button[data-av="frais"]').click(); pg.wait_for_timeout(400)
     t=norm(pg.locator("#app").inner_text())
-    check(avon(pg)=="Frais fixes" and "Frais communs" in t and "Loyer" in t and "Assurance auto" in t and "Salle de sport" in t, "Frais fixes : communs et perso au même endroit")
+    check(avon(pg)=="Frais fixes" and "Commun" in t and "Loyer" in t and "Assurance auto" in t and "Salle de sport" in t, "Frais fixes : communs et perso au même endroit")
     check(pg.locator("#hback").count()==0 and pg.evaluate("()=>document.querySelector('#nav .navi.on').dataset.view")=="factures", "Frais fixes : pas de retour, onglet À venir allumé")
     pg.locator("#addfrais").click(); pg.wait_for_timeout(300)
     check(pg.locator(".sheet-overlay, .ui-form, .uiform").count()>0 or "Nouveau frais fixe" in pg.locator("body").inner_text(), "Frais fixes : « Ajouter un frais fixe » ouvre le formulaire")

@@ -65,6 +65,7 @@ with sync_playwright() as p:
           "« Provision · Taxe » et « Provision · Chauffage » créés (Commun, à partir d'octobre)")
     check(not fr(pg, prov=13), "« Assurance » (pas dans les frais fixes) : aucun frais")
     av("frais")
+    if pg.locator("#fxPvT").count(): pg.locator("#fxPvT").click(); pg.wait_for_timeout(300)   # les mises de côté, regroupées en une ligne (19/11)
     t=norm(pg.locator("#app").inner_text())
     check("Provision · Eau" in t and "vers Livret A" in t and "reste sur Compte courant" in t and pg.locator(".fxpill").count()==3, "Frais fixes : « mise de côté », vers Livret A / reste sur le compte courant")
     pg.screenshot(path=os.path.join(SP,"t101_frais.png"), full_page=True)

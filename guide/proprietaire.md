@@ -126,6 +126,9 @@ L'onglet À venir montre ce qui va sortir de tes comptes. Il a quatre parties.
   - **les 12 prochains mois** en pastilles : le montant du mois et un point vert (tout est couvert), orange (une provision un peu juste) ou rouge (une facture pas couverte). Touche un mois : frais fixes, factures, mises de côté, et ce qui manquera, avec « Voir la provision » ;
   - l'argent de côté (épargne, provisions) ; « Tes comptes dans 12 mois » ouvre la projection.
 - **Frais fixes** : loyer, électricité, abonnements… Chaque mois, ou une seule fois. Pour un frais commun, il est payé par un compte en entier, ou chacun paie sa part.
+  - En haut : le total du mois, ce qui est payé et ce qui reste (les flèches changent de mois). Les pastilles Tout · Commun · chaque personne filtrent la liste.
+  - **À payer**, rangés par jour, avec une étiquette Commun ou le prénom, et ta part pour un frais commun ; les mises de côté des provisions tiennent sur une ligne qui se déplie. Touche le rond pour marquer payé, le nom pour modifier ou supprimer.
+  - **Payés** : repliés, touche pour les voir. En bas : ta part du commun, le perso, et « ＋ Frais fixe ».
 - **Provisions** : l'argent mis de côté chaque mois pour une grosse dépense (taxe foncière, assurance, vacances), rangé en **enveloppes**. La mise de côté apparaît dans les frais fixes.
   - En haut : le total, les enveloppes à renforcer et « Tout remettre à l'heure » (le nouveau montant mensuel de chacune, annulable).
   - Chaque enveloppe a un **cercle** : ce qui est de côté par rapport à sa prochaine facture, quand elle tombe, et ce qui manquera (orange) ou « à l'heure ».
@@ -134,7 +137,7 @@ L'onglet À venir montre ce qui va sortir de tes comptes. Il a quatre parties.
   - Dans son réglage, partie « Chaque mois » : **Qui paie ?** (le foyer, selon les parts, ou une personne), **Prélevé sur** (le compte d'où sort l'argent, ou « Chacun sur son compte »), **Mis de côté sur** (le compte ou le livret qui le reçoit) et **Suivre dans les frais fixes**. Un petit schéma montre le trajet de l'argent.
   - La mise de côté sort du compte qui paie et **entre sur le compte de la provision** : un seul rond « fait » pour les deux comptes. Sur un livret, cocher la mise de côté augmente sa valeur.
   - Quand la provision est suivie dans les frais fixes, son solde ne grandit que quand la mise de côté du mois est cochée « fait » (« pas encore fait ce mois-ci » sinon). Les mois à venir restent prévus dans les graphiques.
-- ✦ **Factures** (Tickets Plus) : importe tes factures, par PDF ou en photos (bouton « Importer une facture »).
+- ✦ **Factures** (Tickets Plus) : en haut, ce que coûteront tes factures sur les 3 prochains mois et le bouton « Importer une facture » (PDF ou photos). Une carte par fournisseur : la prochaine facture, l'évolution des dernières, et son état (dans tes comptes, payée par une provision, ou « Lisser » qui crée la provision en un geste). Touche une carte : la prochaine facture et pourquoi ce montant, ce qu'il reste à faire (Ajouter à tes comptes, Créer ou Lier une provision), le graphique (la prochaine en hachuré) et les 3 dernières factures (« Voir les plus anciennes »).
 
 **Importer une facture**
 
