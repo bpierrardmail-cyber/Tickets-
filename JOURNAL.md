@@ -134,6 +134,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **19/11 · Opérations** : Tickets = total et catégories du mois puis liste par jour ; Épargne = comptes en cartes avec objectif ; Graphiques = une phrase à retenir par graphique et les autres résumés (maquette validée).
 - **19/11 · Frais fixes et Factures** : Frais fixes = d'abord ce qui reste à payer, par jour, filtrable par personne, payés repliés ; Factures = coût des 3 prochains mois et import en haut, une carte par fournisseur avec son évolution et un seul état (maquette validée).
 - **19/11 · À venir** : 12 mois = ce qui reste à payer ce mois, les 7 prochains jours, 12 pastilles colorées et le détail du mois touché ; Provisions = enveloppes en cercles, frise des factures, tout le détail derrière l'enveloppe (maquette validée).
 - **18/11 · banc de lecture** : grossir le banc d'essai avec l'historique de ses tickets pour que tout soit bien lu avant la sortie Store ; l'outil est dans la version Perso seulement (un utilisateur du Store n'en a pas besoin).
@@ -225,6 +226,10 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 19/11
+- **Opérations › Tickets, Épargne, Graphiques refaits** (maquette validée, canevas « Tickets — Opérations : Tickets, Épargne, Graphiques ») :
+  - **Tickets** : en haut total, répartition par catégorie (barre + légende), « ±N % par rapport à … » (`#tkHero`) ; recherche (aussi dans les noms d'articles), pastilles de catégories (`#tkCats`, `state.catFilter`) ; liste par jour (`.tk2-day`, lignes `.entry.tk2-r` avec icône, nombre d'articles, partagé, espèces, photo ; la recherche cache les jours vides) ; Photos / Corbeille en deux cases (`#gogallery`, `#gocorb`).
+  - **Épargne** : plus de choix de compte en haut (mois seulement, `.ep2-nav`) ; période en 3 pastilles (`cRangeBtn` → `.crange-g`, aussi pour Solde) ; comptes en cartes `ep2BodyHTML` (`.ep2-card`, gain du mois, disponible, objectif en cercle ; toucher → Modifier / Supprimer ; Bourse → onglet Bourse), pastilles par personne (`state.epWho`), « ＋ Compte épargne » et Provisions.
+  - **Graphiques** : 4 boutons égaux (`.cch-tabs4`, « Entrées / sorties »), Ce mois : le gain du mois en grand ; une phrase à retenir au-dessus de chaque graphique (`cptGraphSums` → `.cpg-take`) ; « Les autres en résumé » (`.cpg-or`). Tests adaptés : t106.
 - **Factures, haut de page plus clair** (Benoît ne comprenait pas « Prochaines factures · 3 mois ≈ 156 € ») : titre « Tes factures d'ici fin <mois> », total exact (plus arrondi à l'euro), et dans chaque case de mois les fournisseurs avec leur montant (exact, ou ≈ si estimé).
 - **À venir › Frais fixes et Factures refaits** (maquette validée, écrans 4 à 6 du même canevas) :
   - **Frais fixes** : page à part `renderFraisAv` (plus le mode `avMode` de `renderCommunes`) : total du mois payé / reste (`#fxHero`, navigation par mois gardée), pastilles Tout · Commun · personnes (`state.fxWho`), « À payer » par jour (étiquette, ta part), mises de côté en une ligne qui se déplie (`#fxPvT`, `state.fxPvOpen`), « Payés » repliés (`#fxPaidT`, `state.fxPaidOpen`, ouverts en affichage détaillé), Retirés du mois, cases ta part du commun / perso, « ＋ Frais fixe ». Le nom d'un frais (`.fxmore`) ouvre Modifier / Supprimer.
