@@ -120,9 +120,17 @@ Le plus simple, sur Android : dans l'appli de ta banque, exporte le relevé (OFX
 
 L'onglet À venir montre ce qui va sortir de tes comptes. Il a quatre parties.
 
-- **12 mois** : d'abord « À payer bientôt » (avec la date), puis les 12 mois à venir avec ce qui est prévu, et l'argent de côté (épargne, provisions). « Tes comptes dans 12 mois » ouvre la projection.
+- **12 mois** :
+  - en haut, ce qu'il reste **encore à payer ce mois-ci** (déjà payé / reste) et ce qu'il te restera en fin de mois ;
+  - **les 7 prochains jours** en petites cases (les mises de côté des provisions regroupées en une seule) ; « Tout voir » déplie toute la liste ;
+  - **les 12 prochains mois** en pastilles : le montant du mois et un point vert (tout est couvert), orange (une provision un peu juste) ou rouge (une facture pas couverte). Touche un mois : frais fixes, factures, mises de côté, et ce qui manquera, avec « Voir la provision » ;
+  - l'argent de côté (épargne, provisions) ; « Tes comptes dans 12 mois » ouvre la projection.
 - **Frais fixes** : loyer, électricité, abonnements… Chaque mois, ou une seule fois. Pour un frais commun, il est payé par un compte en entier, ou chacun paie sa part.
-- **Provisions** : l'argent mis de côté chaque mois pour une grosse dépense (taxe foncière, assurance, vacances). La mise de côté apparaît dans les frais fixes. Le graphique montre ce qui est déjà de côté et ce qui est prévu ; l'appli propose un montant mensuel si une provision ne suffit pas.
+- **Provisions** : l'argent mis de côté chaque mois pour une grosse dépense (taxe foncière, assurance, vacances), rangé en **enveloppes**. La mise de côté apparaît dans les frais fixes.
+  - En haut : le total, les enveloppes à renforcer et « Tout remettre à l'heure » (le nouveau montant mensuel de chacune, annulable).
+  - Chaque enveloppe a un **cercle** : ce qui est de côté par rapport à sa prochaine facture, quand elle tombe, et ce qui manquera (orange) ou « à l'heure ».
+  - **Quand tombent les factures** : une frise des 12 mois, une bulle par mois de facture.
+  - **Touche une enveloppe** : son détail (prochaine facture, ce qu'il faut mettre par mois pour l'avoir à temps, la mise de côté du mois, « Sauter ce mois », comment elle s'est remplie, les factures payées), « La facture est payée » pour enregistrer le prélèvement, « Modifier l'enveloppe » et « Supprimer ».
   - Dans son réglage, partie « Chaque mois » : **Qui paie ?** (le foyer, selon les parts, ou une personne), **Prélevé sur** (le compte d'où sort l'argent, ou « Chacun sur son compte »), **Mis de côté sur** (le compte ou le livret qui le reçoit) et **Suivre dans les frais fixes**. Un petit schéma montre le trajet de l'argent.
   - La mise de côté sort du compte qui paie et **entre sur le compte de la provision** : un seul rond « fait » pour les deux comptes. Sur un livret, cocher la mise de côté augmente sa valeur.
   - Quand la provision est suivie dans les frais fixes, son solde ne grandit que quand la mise de côté du mois est cochée « fait » (« pas encore fait ce mois-ci » sinon). Les mois à venir restent prévus dans les graphiques.
@@ -191,7 +199,7 @@ Menu › Réglages › Affichage. **Simple** (par défaut) montre l'essentiel. *
 
 - Opérations : la recherche ouverte, des filtres en plus (Tickets, Frais fixes, Virements), des lignes plus serrées, le bouton Liquide toujours là ;
 - Budget : les cases Budgets, Dépassés, Reste ;
-- À venir : tout « À payer bientôt » ;
+- À venir : la liste complète sous « Les 7 prochains jours » ;
 - Foyer : le graphique et les articles partagés ouverts ;
 - fiche d'un ticket : les options dépliées.
 

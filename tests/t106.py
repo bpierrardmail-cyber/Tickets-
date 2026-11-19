@@ -26,7 +26,7 @@ with sync_playwright() as p:
     t=txt(); check(not any(o in t for o in OLD), "Accueil : aucun ancien titre")
     pg.locator('#nav .navi[data-view="factures"]').click(); pg.wait_for_timeout(500)
     pg.locator('.avtabs button', has_text="Provisions").click(); pg.wait_for_timeout(600)
-    t=txt(); check("Total provisions" in t and not any(o in t for o in OLD), "À venir › Provisions : « Total provisions »")
+    t=txt(); check("total provisions" in t.lower() and not any(o in t for o in OLD), "À venir › Provisions : « Total provisions »")
     pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(500)
     pg.locator('.avtabs .cpsub', has_text="Graphiques").click(); pg.wait_for_timeout(600)
     tabs=[x.strip() for x in pg.locator(".cch-tabs button").all_inner_texts()]

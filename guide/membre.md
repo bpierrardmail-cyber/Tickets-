@@ -72,7 +72,7 @@ Menu › Réglages › Affichage. **Simple** (par défaut) montre l'essentiel. *
 
 - Opérations : la recherche ouverte, des filtres en plus (Tickets, Frais fixes, Virements), des lignes plus serrées, le bouton Liquide toujours là ;
 - Budget : les cases Budgets, Dépassés, Reste ;
-- À venir : tout « À payer bientôt » ;
+- À venir : la liste complète sous « Les 7 prochains jours » ;
 - Foyer : le graphique et les articles partagés ouverts ;
 - fiche d'un ticket : les options dépliées.
 

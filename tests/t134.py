@@ -1,6 +1,6 @@
 # Refonte des onglets (06/11), sur le foyer inventé du mode démo :
 # Opérations : ligne « compte ▾ + mois », liste des comptes, loupe ; Budget : « Encore … pour N jours » ;
-# À venir › 12 mois : À payer bientôt avec la date, Argent de côté ; Foyer : les personnes en haut.
+# À venir › 12 mois : le mois en cours, les 7 prochains jours, Argent de côté ; Foyer : les personnes en haut.
 import sys, os
 HERE=os.path.dirname(os.path.abspath(__file__)); ROOT=os.path.dirname(HERE)
 from playwright.sync_api import sync_playwright
@@ -34,8 +34,8 @@ with sync_playwright() as p:
     check(pg.locator("#budEdit").count()==1 and "Dépassés" not in t, "Budgets : « Modifier les budgets » dans la carte, plus de cases")
     # À venir
     pg.locator('#nav .navi[data-view="factures"]').click(); pg.wait_for_timeout(700)
-    t=app(); i1=t.lower().find("à payer bientôt"); i2=t.lower().find("les 12 prochains mois")
-    check(0<=i1<i2 and pg.locator(".av-cal").count()>=1, "12 mois : À payer bientôt d'abord, avec la date")
+    t=app(); i0=t.lower().find("encore à payer"); i1=t.lower().find("les 7 prochains jours"); i2=t.lower().find("les 12 prochains mois")
+    check(0<=i0<i1<i2 and pg.locator("#avWeek > div").count()>=1, "12 mois : encore à payer ce mois, puis les 7 prochains jours, puis les 12 mois")
     check("Argent de côté" in t and pg.locator("#avPr").count()==1, "12 mois : Argent de côté")
     pg.locator("#avPr").click(); pg.wait_for_timeout(500)
     check(pg.locator('.avtabs button.on').inner_text()=="Provisions", "toucher Provisions : sous-onglet Provisions")

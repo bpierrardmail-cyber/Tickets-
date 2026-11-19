@@ -1,7 +1,7 @@
-# Provisions : graphique « De côté » / « Avec les factures prévues » et liste des factures prévues sur 12 mois. Données inventées.
-# - un mois futur ne repart plus de 0 (le graphique part des sommes déjà de côté) ;
+# Provisions (refonte du 19/11) : enveloppes avec la prochaine facture prévue et ce qui manquera, détail d'une enveloppe,
+# frise des factures, « Tout remettre à l'heure » (annulable). Données inventées.
 # - factures prévues : montant prévu (✎), factures estimées du fournisseur suivi, sinon le même mois l'an dernier ;
-#   échéance sans montant : « montant non indiqué » ; ce qui manquera, et « Passer à … / mois » ;
+#   échéance sans montant : « montant de la facture ? » ; ce qui manquera, et « Passer à … / mois » ;
 # - les 12 mois d'À venir comptent aussi ces factures (mois en jaune s'il manquera).
 import sys, os, re
 HERE=os.path.dirname(os.path.abspath(__file__)); ROOT=os.path.dirname(HERE)
@@ -33,38 +33,43 @@ with sync_playwright() as p:
     pg.evaluate("d=>{localStorage.clear(); for(const k in d) localStorage.setItem(k, JSON.stringify(d[k]));}", data); pg.reload(); pg.wait_for_timeout(1000)
     pg.locator('#nav .navi[data-view="factures"]').click(); pg.wait_for_timeout(300)
     pg.locator('.avtabs button[data-av="prov"]').click(); pg.wait_for_timeout(500)
-    def hero(): return money(pg.locator(".thero .dash-big").inner_text())
-    def fin(): return money(pg.locator(".pvread .l b").first.inner_text())
-    def tab(): return norm(pg.locator(".thero .cch-tabs button.on").inner_text()).replace("★","").replace("☆","").strip()
-    check(tab()=="De côté", "onglet par défaut : « De côté »")
-    h0=hero(); check(abs(fin()-h0)<0.01, "octobre : la fin du mois = le total mis de côté (%s / %s)"%(fin(), h0))
-    # ---------- un mois futur : le graphique part des sommes déjà de côté
-    pg.locator("#mn-next").click(); pg.wait_for_timeout(400)
-    h1=hero(); check(abs(fin()-h1)<0.01 and h1>h0, "novembre (futur) : « Fin novembre » = le total (%s), plus 0 + la mise de côté du mois"%fin())
-    pg.locator("#mn-today").click(); pg.wait_for_timeout(400)
-    # ---------- avec les factures prévues
-    pg.locator('.thero .cch-tabs button[data-m="prevu"]').click(); pg.wait_for_timeout(400)
-    t=norm(pg.locator(".thero").inner_text())
-    check(tab().startswith("Avec les factures prévues") and "Après factures" in t and "Factures prévues" in t and "Le plus bas" in t and "À compléter" in t, "onglet « Avec les factures prévues » : légende et chiffres (factures prévues, le plus bas, à compléter)")
-    pg.screenshot(path=os.path.join(SP,"t102_prevu.png"), full_page=True)
-    nov=pg.locator('.pvcol[data-m="2026-11"]')
-    check("~" in nov.locator(".c").inner_text() or "−" in nov.locator(".c").inner_text(), "novembre : une facture prévue sur la colonne (%s)"%nov.locator(".c").inner_text())
-    nov.click(); pg.wait_for_timeout(300)
-    r=norm(pg.locator(".pvread .l").inner_text())
-    check("Impôt foncier" in r and "manque" in r and "Eau" in r, "détail de novembre : impôt foncier (manque) et facture d'eau estimée : %s"%r.replace("\n"," | "))
-    check(fin()<h1-500, "novembre après factures (%s) bien plus bas que sans (%s)"%(fin(), h1))
-    rows=[norm(x) for x in pg.locator(".pvlist .row").all_inner_texts()]
-    for x in rows: print("  ", x.replace("\n"," | "))
-    fo=[x for x in rows if "Impôt foncier" in x]; eau=[x for x in rows if "Eau" in x]; ass=[x for x in rows if "Assurance" in x]; tx=[x for x in rows if "Taxe" in x]
-    check(fo and "comme en novembre 2025" in fo[0] and "il manquera 590" in fo[0] and "Passer à 620" in fo[0], "foncier : comme l'an dernier (1 000 €), il manquera 590 €, « Passer à 620 € / mois »")
-    check(len(eau)>=2 and all("estimée d'après tes factures" in x for x in eau), "eau : les prochaines factures estimées du fournisseur suivi (%d)"%len(eau))
-    check(ass and "montant prévu" in ass[0] and "il manquera 50" in ass[0] and "Passer à 60" in ass[0], "assurance : montant prévu 300 € en mars, il manquera 50 €, « Passer à 60 € / mois »")
-    check(tx and "montant non indiqué" in tx[0], "taxe : échéance sans montant → « montant non indiqué »")
-    pg.locator(".pvlist .row", has_text="Assurance").locator(".prapply").click(); pg.wait_for_timeout(400)
+    # refonte du 19/11 : enveloppes (cercle, prochaine facture, manque), détail d'une enveloppe, frise des factures
+    hero=money(pg.locator("#pvHero .av2-big b").inner_text())
+    check(hero>0 and "total provisions" in pg.locator("#pvHero").inner_text().lower(), "Provisions : le total en haut (%s)"%hero)
+    def card(nom): return norm(pg.locator(".pv2-env", has_text=nom).inner_text())
+    fo=card("Impôt foncier"); ass=card("Assurance"); tx=card("Taxe"); eau=card("Eau")
+    for x in (fo, ass, tx, eau): print("  ", x.replace("\n"," | "))
+    check("manque 590" in fo and "le mois prochain" in fo, "foncier : facture le mois prochain, manque 590 €")
+    check("manque 50" in ass, "assurance : manque 50 €")
+    check("montant de la facture ?" in tx, "taxe : échéance sans montant → « montant de la facture ? »")
+    check("à l'heure" in eau, "eau : à l'heure")
+    check("2 enveloppes à renforcer" in pg.locator("#pvHero").inner_text() and pg.locator("#pvFixAll").count()==1, "en haut : « 2 enveloppes à renforcer » et « Tout remettre à l'heure »")
+    tl=pg.locator('.pvtl[data-m="2026-11"]')
+    check(tl.count()==1 and tl.locator(".bb.w").count()==1, "frise : novembre en orange (il manquera)")
+    pg.screenshot(path=os.path.join(SP,"t102_prov.png"), full_page=True)
+    # détail du foncier
+    pg.locator(".pv2-env", has_text="Impôt foncier").click(); pg.wait_for_timeout(400)
+    d=norm(pg.locator("#app").inner_text())
+    check("comme en novembre 2025" in d and "il manquera 590" in d and pg.locator(".prapply").count()==1 and "620" in pg.locator(".prapply").inner_text(), "détail du foncier : comme l'an dernier, il manquera 590 €, « Passer à 620 € / mois »")
+    pg.locator("#hback").click(); pg.wait_for_timeout(300)
+    # détail de l'eau : la prochaine facture estimée d'après les factures du fournisseur
+    pg.locator(".pv2-env", has_text="Eau").click(); pg.wait_for_timeout(400)
+    check("estimée d'après tes factures" in norm(pg.locator("#app").inner_text()), "détail de l'eau : facture estimée d'après le fournisseur suivi")
+    pg.locator("#hback").click(); pg.wait_for_timeout(300)
+    # assurance : « Passer à 60 € / mois » → à l'heure
+    pg.locator(".pv2-env", has_text="Assurance").click(); pg.wait_for_timeout(400)
+    pg.locator(".prapply").click(); pg.wait_for_timeout(400)
     P=[x for x in pg.evaluate("()=>JSON.parse(localStorage.getItem('provisions'))") if x["id"]==13][0]
-    ass=[norm(x) for x in pg.locator(".pvlist .row").all_inner_texts() if "Assurance" in x]
-    check((P.get("mensuelChanges") or {}).get("2026-11")==60 and ass and "couverte" in ass[0], "« Passer à 60 € / mois » : à partir de novembre, l'assurance est couverte")
-    check(tab().startswith("Avec les factures prévues"), "l'onglet choisi reste affiché")
+    check((P.get("mensuelChanges") or {}).get("2026-11")==60 and "à l'heure" in norm(pg.locator(".pvd-top").inner_text()), "« Passer à 60 € / mois » : à partir de novembre, l'assurance est à l'heure")
+    pg.locator("#hback").click(); pg.wait_for_timeout(300)
+    check("1 enveloppe à renforcer" in pg.locator("#pvHero").inner_text(), "il ne reste que le foncier à renforcer")
+    # « Tout remettre à l'heure » puis Annuler
+    pg.locator("#pvFixAll").click(); pg.wait_for_timeout(400)
+    P=[x for x in pg.evaluate("()=>JSON.parse(localStorage.getItem('provisions'))") if x["id"]==11][0]
+    check((P.get("mensuelChanges") or {}).get("2026-11")==620 and "à l'heure" in card("Impôt foncier"), "« Tout remettre à l'heure » : foncier à 620 € / mois")
+    pg.locator(".ui-toast button, #uiToast button", has_text="Annuler").first.click(); pg.wait_for_timeout(400)
+    P=[x for x in pg.evaluate("()=>JSON.parse(localStorage.getItem('provisions'))") if x["id"]==11][0]
+    check(not (P.get("mensuelChanges") or {}).get("2026-11") and "manque 590" in card("Impôt foncier"), "Annuler remet le foncier comme avant")
     # ---------- Factures : « prête pour novembre · il restera … » (carte du fournisseur et son détail)
     pg.locator('.avtabs button[data-av="fact"]').click(); pg.wait_for_timeout(400)
     cd=norm(pg.locator(".fct-card", has_text="Vallée Claire").inner_text())
@@ -75,7 +80,9 @@ with sync_playwright() as p:
     pg.locator("#hback").click(); pg.wait_for_timeout(300)
     # ---------- 12 mois d'À venir : le foncier prévu compte, novembre en jaune
     pg.locator('.avtabs button[data-av="mois"]').click(); pg.wait_for_timeout(400)
-    check(pg.locator('.fct-col[data-m="2026-11"] i.e.w').count()==1, "12 mois : novembre en jaune (il manquera dans une provision)")
+    check(pg.locator('.fct-col[data-m="2026-11"]').get_attribute("data-dot") in ("o","r"), "12 mois : novembre en orange ou rouge (il manquera dans une provision)")
+    pg.locator('.fct-col[data-m="2026-11"]').click(); pg.wait_for_timeout(300)
+    check("Impôt foncier" in pg.locator(".av2-warn").first.inner_text() and pg.locator(".avgoprov").count()>=1, "12 mois, novembre : « Il manquera » pour le foncier et « Voir la provision »")
     check(not errs, "pas d'erreur %s"%errs[:3])
     b.close()
 print("\n%d échec(s)"%len(fails))

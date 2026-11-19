@@ -3,7 +3,7 @@
 # 2. Ticket sans article : un article du ticket entier est ajouté tout seul (le compte tombe juste) ; prix tapé dans le champ produit → mis dans le prix.
 # 3. Retrait au distributeur : « Mettre dans mon liquide » (virement sorti + liquide), ou « Garder comme une dépense ».
 # 4. Page Tickets : un ticket sans article ne compte pas comme un écart.
-# 5. À venir › « À payer bientôt » limité à 4 (« Voir les N autres ») ; Foyer : détail du graphique replié.
+# 5. À venir › « Les 7 prochains jours » (« Tout voir · N » déplie la liste) ; Foyer : détail du graphique replié.
 # 6. Premier démarrage : après le prénom et la monnaie, « Remplis ton appli en une minute ».
 import sys, os, json
 HERE=os.path.dirname(os.path.abspath(__file__)); ROOT=os.path.dirname(HERE)
@@ -65,11 +65,11 @@ with sync_playwright() as p:
     # page Tickets : le ticket sans article (station) n'est pas un écart
     pg.locator('#nav .navi[data-view="compte"]').click(); pg.wait_for_timeout(400); pg.locator('.cpsub[data-cp="tk"]').click(); pg.wait_for_timeout(600)
     check("Écart avec Articles" not in norm(pg.locator("#app").inner_text()), "ticket sans article : pas d'écart sur la page Tickets")
-    # À venir : 4 lignes puis « Voir les N autres »
+    # À venir : les 7 prochains jours, puis « Tout voir · N »
     pg.locator('#nav .navi[data-view="factures"]').click(); pg.wait_for_timeout(700)
-    check(pg.locator("#soonMore").count()==1 and "autres" in pg.locator("#soonMore").inner_text(), "À payer bientôt : 4 lignes et « Voir les N autres »")
+    check(pg.locator("#avWeek").count()==1 and pg.locator("#soonMore").count()==1 and "Tout voir" in pg.locator("#soonMore").inner_text() and pg.locator(".ops-av .ops-r").count()==0, "les 7 prochains jours, « Tout voir · N », liste repliée")
     pg.locator("#soonMore").click(); pg.wait_for_timeout(500)
-    check("Moins" in pg.locator("#soonMore").inner_text(), "« Voir les autres » déplie la liste")
+    check("Moins" in pg.locator("#soonMore").inner_text() and pg.locator(".ops-av .ops-r").count()>=1, "« Tout voir » déplie la liste")
     # Foyer : détail replié
     pg.locator('#nav .navi[data-view="communes"]').click(); pg.wait_for_timeout(700)
     check(pg.locator("#comDetT").count()==1 and "Voir le détail" in pg.locator("#comDetT").inner_text(), "Foyer : le détail du graphique est replié")

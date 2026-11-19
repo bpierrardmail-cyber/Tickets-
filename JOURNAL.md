@@ -134,6 +134,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **19/11 · À venir** : 12 mois = ce qui reste à payer ce mois, les 7 prochains jours, 12 pastilles colorées et le détail du mois touché ; Provisions = enveloppes en cercles, frise des factures, tout le détail derrière l'enveloppe (maquette validée).
 - **18/11 · banc de lecture** : grossir le banc d'essai avec l'historique de ses tickets pour que tout soit bien lu avant la sortie Store ; l'outil est dans la version Perso seulement (un utilisateur du Store n'en a pas besoin).
 - **18/11 · articles** : article et produit sont la même chose pour lui : un seul nom par article ; au scan, le texte lu sert à proposer l'article ; à la main, on donne directement l'article ; une seule catégorisation (la catégorie du ticket, et celle de l'article apprise une fois) ; « article » partout à l'écran (Budget › Articles) ; le partage d'une partie du ticket se fait dans « Qui paie ce ticket ? » (maquette « Tickets — Articles simplifiés », « Oui tu peux intégrer »).
 - **18/11 · espèces** : sur un ticket, on doit pouvoir payer en espèces et dire si c'est pris dans les espèces du mois ou pas ; la dépense se partage comme les autres ; ligne « Payé avec » visible directement sur la fiche (pas dans Options) ; fenêtre « Argent liquide » avec le détail du mois (maquette « Tickets — Payé en espèces », « tu peux intégrer »).
@@ -221,6 +222,12 @@ Après chaque modification, dans le même commit :
 ---
 
 ## Historique (le plus récent en haut)
+
+### 19/11
+- **À venir refait** (maquette validée par Benoît, canevas « Tickets — À venir : 12 mois et Provisions ») :
+  - **12 mois** : en haut « encore à payer » ce mois (payé / reste, il te restera fin de mois), « Les 7 prochains jours » en cases (mises de côté regroupées, « Tout voir » déplie la liste), 12 pastilles avec un point vert / orange / rouge, détail du mois touché (frais fixes, factures, mises de côté, ce qui manquera → « Voir la provision »), Argent de côté (« N à renforcer »). Graphique en barres retiré (`factChartHTML`).
+  - **Provisions** : total, « N enveloppes à renforcer », « Tout remettre à l'heure » (annulable) ; enveloppes en cercles (`pv2Info`, `pv2Ring`) ; frise « Quand tombent les factures » ; détail d'une enveloppe (vue `provdet`, `renderProvDet`) avec tout ce qui était dans les grandes cartes. Plus de navigation par mois ni de graphique « De côté / Avec les factures prévues » (`provChartHTML`, `provListHTML` retirés).
+  - Tests adaptés : t92, t100, t101, t102 (réécrit), t106, t133, t134, t144. Guide mis à jour.
 
 ### 18/11
 - **Banc de lecture : photos d'une sauvegarde ZIP** (Benoît avait supprimé les photos de la galerie de l'appli ; ses sauvegardes complètes sont sur OneDrive) : « 📦 Photos d'une sauvegarde ZIP » (plusieurs fichiers possibles) lit les photos des tickets encore présents (`bancZipPick`, `bancZipRead`, en mémoire dans `state.bancZip`, déchiffrées à la lecture si la sauvegarde l'est ; la photo d'origine l'emporte sur la petite) ; rien n'est restauré ni écrit. Test t160.

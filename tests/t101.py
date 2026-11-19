@@ -39,9 +39,14 @@ def who(pg, v):   # « Qui paie ? » d'une provision : boutons (3 choix au plus)
     if f.locator(".ui-seg").count(): f.locator('.ui-seg button[data-v="%s"]' % v).click()
     else: f.locator("select").select_option(v)
     pg.wait_for_timeout(200)
-def menu(pg, nom, act):   # le ⋯ d'une provision → Modifier / Supprimer
-    pg.locator(".pcard", has=pg.locator(".pname", has_text=nom)).locator(".btn.more").click(); pg.wait_for_timeout(250)
-    pg.locator(".sheet-overlay button", has_text=act).first.click(); pg.wait_for_timeout(300)
+def openprov(pg, nom):   # toucher une enveloppe (refonte du 19/11) : son détail
+    if pg.locator(".pv2-env").count()==0:
+        pg.locator('#nav .navi[data-view="factures"]').click(); pg.wait_for_timeout(300)
+        pg.locator('.avtabs button[data-av="prov"]').click(); pg.wait_for_timeout(400)
+    pg.locator(".pv2-env", has=pg.locator(".pname", has_text=nom)).first.click(); pg.wait_for_timeout(400)
+def menu(pg, nom, act):   # détail d'une enveloppe → Modifier l'enveloppe / Supprimer
+    openprov(pg, nom)
+    pg.locator("#app button", has_text=act).first.click(); pg.wait_for_timeout(300)
 def money(t):
     m=re.search(r"[-−]?\d[\d ]*(?:,\d+)?", norm(t)); return float(m.group(0).replace(" ","").replace("−","-").replace(",",".")) if m else None
 with sync_playwright() as p:
@@ -73,7 +78,7 @@ with sync_playwright() as p:
     check(abs(v0-(650+20+50+30+121.9))<0.01, "Commun avant : la facture d'eau compte encore dans les parts (%s)"%v0)
     # la provision signale la facture déjà dans les comptes mais pas retirée
     av("prov")
-    card=pg.locator(".pcard", has_text="Eau").first
+    openprov(pg, "Eau"); card=pg.locator("#app")
     check("1 facture pas encore retirée" in norm(card.inner_text()) and "de Compte courant →" in norm(card.inner_text()), "provision « Eau » : « 1 facture pas encore retirée », mise de côté depuis le compte courant")
     card.locator(".pvret").click(); pg.wait_for_timeout(400)
     sh=norm(pg.locator(".sheet-overlay").last.inner_text())
@@ -108,7 +113,7 @@ with sync_playwright() as p:
     check(pg.locator(".fct-miss").count()==0, "plus de bandeau")
     # ---------- 4. sauter un mois, changer le montant, « Remplie par »
     av("prov")
-    pg.locator('.prskip[data-id="11"]').click(); pg.wait_for_timeout(300)
+    openprov(pg, "Eau"); pg.locator('.prskip').click(); pg.wait_for_timeout(300)
     check((fr(pg, prov=11)[0].get("skipMonths") or {}).get("2026-10"), "« Sauter ce mois » sur la provision : le frais est retiré d'octobre")
     av("frais")
     check("Retirés de octobre 2026" in norm(pg.locator("#app").inner_text()), "Frais fixes : « Provision · Eau » dans les retirés du mois")
