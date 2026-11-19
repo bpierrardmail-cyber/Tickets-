@@ -225,6 +225,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 19/11
+- **Factures, haut de page plus clair** (Benoît ne comprenait pas « Prochaines factures · 3 mois ≈ 156 € ») : titre « Tes factures d'ici fin <mois> », total exact (plus arrondi à l'euro), et dans chaque case de mois les fournisseurs avec leur montant (exact, ou ≈ si estimé).
 - **À venir › Frais fixes et Factures refaits** (maquette validée, écrans 4 à 6 du même canevas) :
   - **Frais fixes** : page à part `renderFraisAv` (plus le mode `avMode` de `renderCommunes`) : total du mois payé / reste (`#fxHero`, navigation par mois gardée), pastilles Tout · Commun · personnes (`state.fxWho`), « À payer » par jour (étiquette, ta part), mises de côté en une ligne qui se déplie (`#fxPvT`, `state.fxPvOpen`), « Payés » repliés (`#fxPaidT`, `state.fxPaidOpen`, ouverts en affichage détaillé), Retirés du mois, cases ta part du commun / perso, « ＋ Frais fixe ». Le nom d'un frais (`.fxmore`) ouvre Modifier / Supprimer.
   - **Factures** : en haut les factures des 3 prochains mois et « Importer » (`#fctHero`, `#fctImp`) ; cartes avec petit graphique des 6 dernières factures et un état (provision prête / il manquera, pas dans tes comptes, « Lisser » `.fct-liss` = crée la provision, annulable). Détail d'un fournisseur : prochaine facture en grand (`#fsHero`, `factEstWhy`), encadrés d'action, graphique (estimée hachurée), 3 dernières factures puis « Voir les plus anciennes » (`#fsMore`).

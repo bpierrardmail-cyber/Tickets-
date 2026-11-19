@@ -6,11 +6,11 @@
        Scripts (08/11) : seul le script de la page s'exécute, reconnu par son empreinte (python3 outils/csp.py après chaque modification).
        Le relais et les cours (Perso) ; les librairies (Tesseract, pdf.js) sont dans l'appli ; localhost = relais imité des tests (rien ne sort du téléphone).
        Toute nouvelle connexion doit être ajoutée ici (et justifiée, voir CLAUDE.md). -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-d+U1Gsk6FFgMcJjyjX1w6s/Qjg0Kyju+k2rgMwJXTm8=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-6clTt0fFEQsvYk7jn6kAglpoZv707YLNi0e9gCnkLY8=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="19/11 13:35" />
+  <meta name="build" content="19/11 14:31" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -837,7 +837,8 @@
     .fx2-sub{ margin-left:18px; border-left:2px solid rgba(199,139,214,.35); padding-left:6px; }
     .fct-more{ width:100%; padding:12px 0; background:none; border:0; border-top:1px solid var(--line); color:var(--accent); font:inherit; font-size:13px; }
     .fct-bc.est i{ background:repeating-linear-gradient(45deg, #e6b450 0 4px, transparent 4px 8px) !important; border:1px solid #e6b450; box-sizing:border-box; }
-    .fct-3m{ display:flex; gap:6px; } .fct-3m > div{ flex:1; background:var(--card2); border-radius:12px; padding:8px 10px; min-width:0; } .fct-3m small{ display:block; font-size:11px; color:var(--muted); } .fct-3m b{ font-size:14px; font-variant-numeric:tabular-nums; }
+    .fct-3m{ display:flex; gap:6px; } .fct-3m > div{ flex:1; background:var(--card2); border-radius:12px; padding:8px 10px; min-width:0; } .fct-3m small{ display:block; font-size:11px; color:var(--muted); margin-bottom:3px; } .fct-3m b{ font-size:13px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .fct-3m .l{ display:flex; flex-direction:column; margin-top:3px; } .fct-3m .l i{ font-style:normal; font-size:11px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .fct-wrap{ background:var(--card); border:1px solid var(--line); border-radius:16px; margin-bottom:10px; overflow:hidden; } .fct-wrap.warn{ border-color:rgba(230,180,80,.45); }
     .fct-wrap > .fct-card{ border:0; border-radius:0; margin:0; background:none; width:100%; }
     .fct-bot{ display:flex; justify-content:space-between; align-items:flex-end; gap:10px; margin-top:10px; } .fct-bot .fct-s{ margin:0; text-align:right; }
@@ -11159,12 +11160,12 @@
           return;
         }
         // refonte du 19/11 : en haut, les factures des 3 prochains mois et l'import ; une carte par fournisseur (évolution, un seul état)
-        var S=factSeries(), m3=[curM, nextMonthKey(curM), nextMonthKey(nextMonthKey(curM))], v3=[0,0,0], e3=[false,false,false];
-        S.forEach(function(s){ if(!s.next) return; var d=s.next, k=0; while(d && d.slice(0,7)<=m3[2] && k<6){ var i=m3.indexOf(d.slice(0,7)); if(i>=0){ v3[i]+=factEstimate(s, d)||0; if(!factNoConso(s)) e3[i]=true; } d=isoAddMonths(d, s.ryth||1); k++; } });
+        var S=factSeries(), m3=[curM, nextMonthKey(curM), nextMonthKey(nextMonthKey(curM))], v3=[0,0,0], e3=[false,false,false], L3=[[],[],[]];
+        S.forEach(function(s){ if(!s.next) return; var d=s.next, k=0; while(d && d.slice(0,7)<=m3[2] && k<6){ var i=m3.indexOf(d.slice(0,7)); if(i>=0){ var v=factEstimate(s, d)||0, ap=!factNoConso(s); v3[i]+=v; if(ap) e3[i]=true; L3[i].push({ n:s.four||factType(s.type).l, v:v, est:ap }); } d=isoAddMonths(d, s.ryth||1); k++; } });
         var t3=v3[0]+v3[1]+v3[2];
         h+='<section class="paper av2-hero" id="fctHero">';
-        if(S.length){ h+='<div class="av2-k">Prochaines factures · 3 mois</div><div class="av2-big"><b>'+(e3.some(function(x){ return x; })?'≈ ':'')+esc(fmtK(Math.round(t3)))+'</b><span>'+S.length+' fournisseur'+(S.length>1?'s':'')+'</span></div><div class="fct-3m">';
-          m3.forEach(function(m, i){ h+='<div><small>'+MOIS3[+m.slice(5,7)-1]+'</small><b>'+(v3[i]>0.004?(e3[i]?'≈ ':'')+esc(fmtK(Math.round(v3[i]))):'—')+'</b></div>'; });
+        if(S.length){ h+='<div class="av2-k">Tes factures d\'ici fin '+esc(MOIS_NOMS[+m3[2].slice(5,7)-1])+'</div><div class="av2-big"><b>'+(e3.some(function(x){ return x; })?'≈ ':'')+esc(fmtK(t3))+'</b></div><div class="fct-3m">';
+          m3.forEach(function(m, i){ h+='<div><small>'+esc(MOIS_NOMS[+m.slice(5,7)-1])+'</small>'+(L3[i].length ? L3[i].map(function(x){ return '<span class="l"><i>'+esc(x.n)+'</i><b>'+(x.est?'≈ '+esc(fctE(x.v)):esc(fmtK(x.v)))+'</b></span>'; }).join("") : '<span class="l"><i>aucune</i></span>')+'</div>'; });
           h+='</div>'; }
         else h+='<div class="av2-k">Tes factures</div><div class="muted" style="font-size:13px;line-height:1.45">Importe une facture d\'électricité, d\'eau, de gaz ou d\'internet : en PDF, ou en photos page par page. L\'appli en tire le prélèvement, la prochaine facture et ce qu\'il faut mettre de côté.</div>';
         if(!ro) h+='<button type="button" class="btn primary" id="fctImp" style="margin-top:4px">⇩ Importer une facture · PDF ou photo</button>';
