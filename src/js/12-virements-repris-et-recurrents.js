@@ -182,14 +182,14 @@
         if(v.epargneId && v.done && v.epApplied) applyEp(v.epargneId, v.epApplied);
         virements.push(v); persistVirements(); render(); });
     }
-    function computeDepensesMonth(person, month){
+    // Ce qui sort du compte en banque un mois donné : tickets payés depuis ce compte (pas en espèces) et frais fixes ; done = seulement les frais « faits »
+    function depMonth(person, month, done){
       var st0=acctStart(person); if(st0 && month<st0) return 0;
-      var me=state.entries.filter(function(e){ return monthKey(e.date)===month; });
-      var paid=0; me.forEach(function(e){ if(tkBank(e, person)) paid+=Number(e.montant)||0; });
-      var fr=fraisCommuns.filter(function(f){ return fraisActif(f, month); });
-      var fx=0; fr.forEach(function(f){ if(fraisKind(f, person)) fx+=fraisAcctAmt(f, person, month); });
+      var paid=0; entriesOfMonth(month).forEach(function(e){ if(tkBank(e, person)) paid+=Number(e.montant)||0; });
+      var fx=0; fraisCommuns.forEach(function(f){ if(fraisActif(f, month) && (!done || fraisDone(f, month)) && fraisKind(f, person)) fx+=fraisAcctAmt(f, person, month); });
       return paid+fx;
     }
+    function computeDepensesMonth(person, month){ return depMonth(person, month, false); }
     // Début du suivi d'un compte : son mois de création, sinon son premier solde de départ, sinon le début d'utilisation de l'appli
     // (date de création la plus ancienne : les identifiants sont des horodatages). Avant ce mois, le compte ne bouge pas.
     var useStartMemo=null;
@@ -222,39 +222,26 @@
       if(ks.length>1){ var all=[], m=ks[0], g=0; while(m<=upto && g<600){ all.push(m); m=nextMonthKey(m); g++; } return all; }
       return ks;
     }
-    function soldeFlow(person, upto){
+    // Solde d'un compte mois par mois jusqu'à « upto » : ouverture (reporté) et clôture. done = seulement ce qui est fait (la banque).
+    // Une seule boucle pour les deux (20/11) ; chaque mois calculé est gardé le temps de l'affichage (calcGet).
+    function soldeRun(person, upto, done){
       var st0=acctStart(person); if(st0 && upto<st0) return { opening:0, closing:0 };   // compte pas encore suivi
-      var ms=compteMonths(person, upto), closing=0, oOut=0, cOut=0;
+      var C=calcGet(), key="sf|"+(done?1:0)+"|"+person+"|"+upto; if(C[key]) return C[key];
+      var ms=compteMonths(person, upto), closing=0, out={ opening:0, closing:0 };
       for(var i=0;i<ms.length;i++){
         var m=ms[i], ov=getSoldeInit(person,m);
         var opening=(ov!==null)?ov:closing;
-        var c=opening + virementsSum(person,m) - computeDepensesMonth(person,m);
+        var c=opening + (done ? virementsSumDone(person,m)-computeDepensesMonthDone(person,m) : virementsSum(person,m)-computeDepensesMonth(person,m));
         closing=c;
-        if(m===upto){ oOut=opening; cOut=c; }
+        C["sf|"+(done?1:0)+"|"+person+"|"+m]={ opening:opening, closing:c };
+        if(m===upto) out={ opening:opening, closing:c };
       }
-      return { opening:oOut, closing:cOut };
+      C[key]=out; return out;
     }
+    function soldeFlow(person, upto){ return soldeRun(person, upto, false); }
     function virementsSumDone(p,m){ return virementsOf(p,m).reduce(function(t,v){ return t+(v.done?(Number(v.montant)||0):0); },0)+provInSum(p, m, true); }
-    function computeDepensesMonthDone(person, month){
-      var st0=acctStart(person); if(st0 && month<st0) return 0;
-      var me=state.entries.filter(function(e){ return monthKey(e.date)===month; });
-      var paid=0; me.forEach(function(e){ if(tkBank(e, person)) paid+=Number(e.montant)||0; });
-      var fr=fraisCommuns.filter(function(f){ return fraisActif(f, month) && fraisDone(f, month); });
-      var fx=0; fr.forEach(function(f){ if(fraisKind(f, person)) fx+=fraisAcctAmt(f, person, month); });
-      return paid+fx;
-    }
-    function soldeFlowDone(person, upto){
-      var st0=acctStart(person); if(st0 && upto<st0) return { opening:0, closing:0 };   // compte pas encore suivi
-      var ms=compteMonths(person, upto), closing=0, oOut=0, cOut=0;
-      for(var i=0;i<ms.length;i++){
-        var m=ms[i], ov=getSoldeInit(person,m);
-        var opening=(ov!==null)?ov:closing;
-        var c=opening + virementsSumDone(person,m) - computeDepensesMonthDone(person,m);
-        closing=c;
-        if(m===upto){ oOut=opening; cOut=c; }
-      }
-      return { opening:oOut, closing:cOut };
-    }
+    function computeDepensesMonthDone(person, month){ return depMonth(person, month, true); }
+    function soldeFlowDone(person, upto){ return soldeRun(person, upto, true); }
     var epargne = store.read("epargne", []);
     (function(){ var m=monthKey(todayISO()), ch=false;
       epargne.forEach(function(c){ if(!c.vals){ c.vals={}; if(typeof c.montant!=="undefined") c.vals[m]=Number(c.montant)||0; delete c.montant; ch=true; } });

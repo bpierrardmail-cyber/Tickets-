@@ -27,8 +27,6 @@
         if(fitOver(el) && el.matches(".hstat b, .hstat span, .hstat small, .dash-split.h3 span b, .hm-s")){ el.style.whiteSpace="normal"; el.style.textOverflow="clip"; }   // libellé ou montant : sur deux lignes plutôt que coupé
       });
     }
-    function homeMode(){ return "resume"; }
-    function homeModeHTML(){ return ""; }
     function rsMoisFin(m){ var p=m.split("-"), d=new Date(+p[0], +p[1], 0); return d.getDate()+" "+d.toLocaleDateString("fr-FR",{month:"long"}); }
     function rsDebt(m, me){   // « Marie te doit 153 € » (✦ équilibre) : la ligne qui concerne « me », sinon null
       if(!canUse("equilibre") || !(personnes||[]).length) return null;
@@ -116,7 +114,7 @@
       if(drvB) h+=drvB;
       else if(!fyMember() && !drvOn() && (bkAge===null || bkAge>=7))
         h+='<div class="bk-banner bk-plain"><span style="font-size:20px">💾</span><div>'+(bkAge===null?'<b>Aucune sauvegarde</b> de tes données pour l\'instant.':'<b>Dernière sauvegarde il y a '+bkAge+' jours.</b>')+'</div><button type="button" class="btn" id="bkNow">Sauvegarder</button></div>';
-      h+=homeModeHTML()+(fyMember() ? rsMemberHTML(m, me) : rsOwnerHTML(m, me));
+      h+=(fyMember() ? rsMemberHTML(m, me) : rsOwnerHTML(m, me));
       app.innerHTML=h; setNav("list", true);   // la barre du bas (sinon cachée au démarrage sur le Résumé)
       drvBannerWire(); var bkn=document.getElementById("bkNow"); if(bkn) bkn.onclick=backupData;
       [].forEach.call(document.querySelectorAll("[data-rs]"), function(b){ b.onclick=function(){ var g=b.getAttribute("data-rs");

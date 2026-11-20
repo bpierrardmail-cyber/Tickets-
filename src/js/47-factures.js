@@ -134,7 +134,6 @@
       return B.reduce(function(t,b){ return t+b.montant; },0)/B.length/s.ryth;
     }
     function factRythLabel(r){ return r===1?"tous les mois":(r===12?"1 fois par an":(r===6?"2 fois par an":"tous les "+r+" mois")); }
-    function factIcon(type){ return factType(type).ic; }
     function factProvName(s){ var t=factType(s.type); return t.v==="autre" ? (s.four||"Facture") : t.l; }
     // Mois où l'argent sort : jour du prélèvement (ou de la facture à payer)
     function factPayIso(s, iso){ return isoAddDays(iso, s.offset||0); }
@@ -198,7 +197,6 @@
       return '<div class="avtabs" role="tablist">'+L.map(function(x){ var on=x[0]===cur; return '<button type="button" role="tab" aria-selected="'+on+'" data-av="'+x[0]+'"'+(on?' class="on"':'')+'>'+x[1]+(x[0]==="fact" && !canUse("factures")?' <span class="avplus">✦</span>':'')+'</button>'; }).join("")+'</div>'; }
     function wireAvTabs(){ [].forEach.call(document.querySelectorAll(".avtabs button"), function(b){ b.onclick=function(){ state.avnSub=b.getAttribute("data-av"); render(); window.scrollTo(0,0); }; }); }
     function factPlusAsk(){ plusShow("factures"); }
-    function avCanFrais(){ return !fyMember() || (fyCfg.role==="edit" && fyTabOn(fyCfg, "communes") && fyTabEd("communes")); }
     function renderFactures(){
       var sub=avSub(); state.avnSub=sub;
       if(sub==="frais") return renderCommunes();

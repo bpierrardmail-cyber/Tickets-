@@ -102,7 +102,6 @@
       });
       return out;
     }
-    function fraisTotalFor(month, who){ return fraisLines(month, who).reduce(function(t,x){ return t+x.v; },0); }
     // Analyse : les frais fixes seulement à partir du premier mois avec des tickets (pas avant le début de l'appli), jamais dans le futur
     function anFraisLines(month, who){ var mk="an0|"+pvCur(), f0=fsMemo[mk];
       if(f0===undefined){ f0=null; vEntries().forEach(function(e){ var k=e.date && monthKey(e.date); if(k && (!f0 || k<f0)) f0=k; }); fsMemo[mk]=f0; }
@@ -154,17 +153,6 @@
       persistEpargne();
     }
     function epNameOf(id){ if(!id) return ""; var a=epargne.filter(function(x){ return String(x.id)===String(id); })[0]; return a?a.nom:""; }
-    function chooseEpargne(){
-      var linkable=epargne.filter(function(c){ return !c.bourseLink; });
-      if(!linkable.length) return null;
-      var menu="Rattacher à un compte épargne ?\nLe montant y sera retiré (entrée) ou versé (sortie) automatiquement.\n\n0 = Non\n";
-      linkable.forEach(function(c,i){ menu+=(i+1)+" = "+c.nom+"\n"; });
-      var ch=window.prompt(menu,"0");
-      if(ch===null) return null;
-      var idx=parseInt(ch,10);
-      if(idx>=1 && idx<=linkable.length) return linkable[idx-1].id;
-      return null;
-    }
     function addVirement(sens){
       var hasEp=epargne.some(function(c){ return !c.bourseLink; });
       uiForm({ title:sens==="out"?"Virement envoyé":(sens==="in"?"Virement reçu":"Nouveau virement"), fields:[

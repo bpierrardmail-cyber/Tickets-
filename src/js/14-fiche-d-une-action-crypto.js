@@ -344,7 +344,6 @@
     function persistBourse(){ store.write("bourse", bourse); if(bourse.length){ try{ store.write("bourseSafe", { t:new Date().toISOString(), bourse:bourse }); }catch(e){} } }
     function bMonths(c){ return Object.keys(c.vals||{}).sort(); }
     function bLast(c){ var ms=bMonths(c); return ms.length?c.vals[ms[ms.length-1]]:null; }
-    function bPrev(c){ var ms=bMonths(c); return ms.length>1?c.vals[ms[ms.length-2]]:null; }
     function bFirst(c){ var ms=bMonths(c); return ms.length?c.vals[ms[0]]:null; }
     function bourseTotalLive(){ var t=0; bourse.forEach(function(c){ if(c.sol && c.solQty && state.solPrice){ t+=c.solQty*state.solPrice+bCash(bLast(c)); } else { t+=bTot(bLast(c)); } }); return t; }
     // La Bourse est une ligne automatique de l'épargne (bourseLink), une seule, qui suit le portefeuille : elle compte une fois dans tous les totaux.
@@ -475,8 +474,6 @@
     }
     function epMonthsOf(c){ return Object.keys(c.vals||{}).sort(); }
     function epCurrent(c){ var ms=epMonthsOf(c); return ms.length?(Number(c.vals[ms[ms.length-1]])||0):0; }
-    function epPrev(c){ var ms=epMonthsOf(c); return ms.length>1?(Number(c.vals[ms[ms.length-2]])||0):null; }
-    function epFirst(c){ var ms=epMonthsOf(c); return ms.length?(Number(c.vals[ms[0]])||0):null; }
     function epAt(c, mk){ var ms=epMonthsOf(c).filter(function(m){ return m<=mk; }); return ms.length?(Number(c.vals[ms[ms.length-1]])||0):0; }
     function epPrevAt(c, mk){ var ms=epMonthsOf(c).filter(function(m){ return m<=mk; }); return ms.length>1?(Number(c.vals[ms[ms.length-2]])||0):null; }
     function pctStr(from,to){ if(from===null||from===0) return null; var p=(to-from)/Math.abs(from)*100; return (p>=0?"+":"-")+Math.abs(p).toFixed(1).replace(".",",")+" %"; }
@@ -519,25 +516,6 @@
         if(r.obj && r.obj>0) c.objectif={ montant:r.obj, mois:r.objMois||"" }; else delete c.objectif;
         persistEpargne(); render();
       });
-    }
-    function toggleEpargneLink(id){
-      var c=epargne.filter(function(x){ return String(x.id)===String(id); })[0]; if(!c) return;
-      var m=monthKey(todayISO());
-      if(!c.vals) c.vals={};
-      if(c.bourseLink){
-        c.bourseLink=false;
-        var pl=c.preLink; delete c.preLink;
-        persistEpargne(); render();
-        uiConfirm("« "+esc(c.nom)+" » n'est plus lié à la Bourse.<br>Revenir à la valeur d'avant la liaison ?", function(){
-          if(pl && pl.month===m && pl.had) c.vals[m]=pl.val; else delete c.vals[m];
-          persistEpargne(); render();
-        }, {ok:"Revenir à la valeur d'avant", no:"Garder la valeur"});
-        return;
-      }
-      uiConfirm("Lier « "+esc(c.nom)+" » au total de l'onglet Bourse ?<br>Sa valeur suivra le portefeuille automatiquement.", function(){
-        c.preLink={ month:m, had:(m in c.vals), val:c.vals[m] }; c.bourseLink=true; c.vals[m]=bourseTotalLive();
-        persistEpargne(); render();
-      }, {ok:"Lier"});
     }
     function delEpargne(id){
       var c=epargneById(id); if(!c) return;

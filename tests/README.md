@@ -13,6 +13,7 @@ sh tests/run.sh t94 t95    # seulement ceux-là
 sh tests/run.sh -j 4       # 4 tests d'écran à la fois (par défaut : le nombre de processeurs)
 python3 tests/t95.py       # un seul test, avec le détail OK / FAIL
 python3 tests/unit/run.py lecture   # un seul fichier de tests rapides
+python3 tests/perf.py      # fluidité : temps de chaque écran avec un grand foyer inventé (--profil : où part le temps)
 ```
 
 `run.sh` refuse de démarrer si `beta/index.html` n'est pas l'assemblage de `src/` (lancer `python3 outils/build.py`). Les tests qui utilisent le relais local (foyer) passent l'un après l'autre, à la fin.

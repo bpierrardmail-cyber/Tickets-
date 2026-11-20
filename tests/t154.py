@@ -17,7 +17,7 @@ data={"askName":False,"devise":"EUR","personnes":[{"nom":"Léa"}],
   "epargne":[{"id":50,"nom":"Livret A","solde":1200}],
   "entries":[{"id":1,"date":"2026-10-05","marchand":"Leclerc","montant":42.5,"categorie":"Alimentation","payePar":"Benoit","articles":[]}],
   "virements":[{"id":2,"person":"Benoit","month":"2026-10","label":"Salaire","montant":2100,"done":True}]}
-r=subprocess.run(["python3", os.path.join(HERE,"..","outils","csp.py"), "--check"], capture_output=True, text=True)
+r=subprocess.run(["python3", os.path.join(HERE,"..","outils","build.py"), "--check"], capture_output=True, text=True)
 check(r.returncode==0, "CSP : empreinte du script à jour")
 with sync_playwright() as p:
     b=p.chromium.launch(); errs=[]

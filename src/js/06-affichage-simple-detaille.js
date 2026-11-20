@@ -15,31 +15,6 @@
         { l:(on?"✓ ":"")+"Activé", primary:on, fn:function(){ store.write("ecranPrive", true); secureApply(); uiToast("Écran privé activé"); } },
         { l:(on?"":"✓ ")+"Désactivé", primary:!on, fn:function(){ store.write("ecranPrive", false); secureApply(); uiToast("Écran privé désactivé"); } } ]);
     }
-    function openSettings(){ openMenu("regl"); }
-    function openSettingsSheet(){
-      var fyM=fyMember(), fyFull=!fyM || (fyCfg.role==="edit" && fyCfg.accts==null), rows=[];
-      function row(k, ic, t, sub, danger){ return '<button type="button" class="dr-row tall'+(danger?' danger':'')+'" data-k="'+k+'"><span class="ic">'+ic+'</span><span class="t">'+esc(t)+(sub?'<small>'+esc(sub)+'</small>':'')+'</span><span class="chev">›</span></button>'; }
-      if(fyFull) rows.push(row("devise","💱","Monnaie de l'appli",curSym()+" · "+CURS[BASE].l+" · ne convertit pas les montants"));
-      rows.push(row("aff","👁️","Affichage", affDet() ? "détaillé · tout déplié, plus de chiffres" : "simple · l'essentiel"));
-      var rc=rapCfg(); rows.push(row("rappels","🔔","Rappels", rc.on ? "activés · "+rc.h+" h" : "prélèvements, budgets, sauvegarde"));
-      rows.push(lockCfg ? row("lock","🔑","Code et empreinte",lockCfg.bioId?"code + empreinte actifs":"code actif · empreinte à ajouter") : row("lock","🔒","Verrouiller par un code","tu pourras ajouter l'empreinte ensuite"));
-      if(capNative()) rows.push(row("secure","🙈","Écran privé", store.read("ecranPrive", false) ? "activé · caché dans les applis récentes et les captures" : "désactivé · l'aperçu des applis récentes montre l'écran"));
-      rows.push(DEMO ? row("demo","🎭","Quitter la démo","tes vraies données reviennent telles quelles") : row("demo","🎭","Mode démo","un foyer inventé pour tout essayer ; tes données restent de côté"));
-      var h='<div class="sheet-title">Réglages</div><div class="dr-grp">'+rows.join("")+'</div>';
-      if(!fyM) h+='<div class="dr-grp" style="margin-top:10px">'+row("restore","📂","Restaurer une sauvegarde","remplace toutes les données par celles du fichier")+'</div>';
-      h+='<div class="ui-stack" style="margin-top:12px"><button type="button" class="btn ghost ui-no">Fermer</button></div>';
-      var s=uiSheet(h); s.q(".ui-no").onclick=s.close;
-      var acts={ secure:secureChoose, aff:affChoose, devise:chooseCurrency, restore:drvRestoreChooser, rappels:rapSettings, demo:function(){ if(DEMO) demoQuit(); else demoStart(); },
-        lock:function(){
-          if(!lockCfg) return lockSetup();
-          var ch=[{ l:"Changer le code", fn:lockSetup }];
-          fyCheckBio().then(function(){
-            if(!lockCfg.bioId && fyBioOk) ch.push({ l:"Ajouter l'empreinte", fn:lockEnableBio });
-            if(lockCfg.bioId) ch.push({ l:"Retirer l'empreinte", fn:lockBioOff });
-            ch.push({ l:"Retirer le code", danger:true, fn:lockDisable });
-            uiChoice("Code et empreinte", "Propres à ce téléphone"+(fyCfg?" : fortement conseillés avec le foyer partagé.":"."), ch); }); } };
-      [].forEach.call(s.qa(".dr-row"), function(b){ b.onclick=function(){ var fn=acts[b.getAttribute("data-k")]; s.close(); if(fn) fn(); }; });
-    }
     function personCounts(n){
       var t=state.entries.filter(function(e){ return (e.payePar||"").trim()===n; }).length, f=fraisCommuns.filter(function(x){ return (x.personne||"").trim()===n; }).length;
       return t+" ticket"+(t>1?"s":"")+" · "+f+" frais fixe"+(f>1?"s":"");

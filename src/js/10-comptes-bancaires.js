@@ -48,4 +48,3 @@
       return order.map(function(o){ return { owner:o, label:(o===me?o+" · toi":o), items:g[o] }; });
     }
     // « Moi » sur l'Accueil : ce qui est à toi et ce qui est en commun
-    function isMine(x){ var o=ownerOf(x); return o===mePerson() || o==="Commun"; }

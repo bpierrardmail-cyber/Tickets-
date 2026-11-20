@@ -250,28 +250,6 @@
     // Titulaire d'un compte : la personne « payé par » ; le compte principal sans titulaire est le tien
     function acctOwner(a){ var p=(a.payer||"").trim(); if(p && p!=="Commun") return p; return a.main ? mePerson() : ""; }
     // Comptes : une page par personne (toi d'abord), « Comptes partagés » si besoin, puis « Foyer » (tous les comptes)
-    function acctPagerHTML(sel, month){
-      var me=mePerson(), groups={}, order=[], figs={}, grand=0;
-      comptes.forEach(function(a){ var o=acctOwner(a)||"__shared"; if(!groups[o]){ groups[o]=[]; order.push(o); } groups[o].push(a);
-        try{ figs[a.key]=acctFigures(a.key, month).banque; }catch(e){ figs[a.key]=0; } grand+=figs[a.key]; });
-      // toi, puis ceux qui ont le plus de comptes (souvent les adultes), puis par ordre alphabétique
-      order.sort(function(x,y){ if(x===me) return -1; if(y===me) return 1; if(x==="__shared") return 1; if(y==="__shared") return -1;
-        return (groups[y].length-groups[x].length) || x.localeCompare(y,"fr"); });
-      function row(key, nom, amt, col, main){ return '<button type="button" class="ap-row'+(key===sel?' on':'')+'" data-acct="'+esc(key)+'"><span class="ap-n"><i style="background:'+col+'"></i><span>'+esc(nom)+'</span>'+(main?'<em>★</em>':'')+'</span><b'+(amt<0?' class="neg"':'')+'>'+fmtS(amt)+'</b></button>'; }
-      // les comptes d'une page se suivent sur une rangée qui défile : la carte garde la même hauteur quel que soit leur nombre
-      function strip(rows, n){ return '<div class="ap-strip n'+Math.min(n,3)+'">'+rows+'</div>'; }
-      var pages=[], start=0, nPers=order.filter(function(o){ return o!=="__shared"; }).length, epBy={}, prBy={}, epAll=0, prAll=0;
-      epargne.forEach(function(c){ var o=ownerOf(c), v=epAt(c, month); epBy[o]=(epBy[o]||0)+v; epAll+=v; });
-      provisions.forEach(function(p){ var o=ownerOf(p), v=0; try{ v=provTotalAt(month, function(x){ return x===p; }); }catch(e){} prBy[o]=(prBy[o]||0)+v; prAll+=v; });
-      function extra(ep, pr){ return (ep?' · épargne '+cptK(ep)+' '+curSym():'')+(pr?' · provisions '+cptK(pr)+' '+curSym():''); }
-      order.forEach(function(o, idx){ var L=groups[o], tot=0; L.forEach(function(a){ tot+=figs[a.key]; if(a.key===sel) start=idx; });
-        pages.push('<div class="ap-h"><span>'+(o==="__shared"?"Comptes partagés":esc(o)+(o===me?'<small>toi</small>':''))+'</span><b>'+fmtS(tot)+'</b></div><div class="ap-sub">'+L.length+' compte'+(L.length>1?'s':'')+extra(epBy[o==="__shared"?"Commun":o], prBy[o==="__shared"?"Commun":o])+'</div>'+
-          strip(L.map(function(a){ return row(a.key, a.nom, figs[a.key], acctCol(a), a.main); }).join(""), L.length)); });
-      pages.push('<div class="ap-h"><span>Foyer<small>tout le monde</small></span><b>'+fmtS(grand)+'</b></div><div class="ap-sub">'+(nPers>1?nPers+' personnes · ':'')+comptes.length+' comptes'+extra(epAll, prAll)+'</div>'+strip(row("__all", "Tous les comptes", grand, "var(--ink-soft)", false), 1));
-      if(sel==="__all") start=pages.length-1;
-      var tools='<button type="button" class="ap-tool" data-acct="__add" aria-label="Ajouter un compte">＋</button><button type="button" class="ap-tool" data-acct="__manage" aria-label="Gérer les comptes">⚙︎</button>';
-      return '<section class="paper ap-card">'+pagerHTML("acct", pages, { start:start, force:true, tools:tools, nav:true })+'</section>';
-    }
     // Opérations (refonte) : une ligne « ● Compte courant ▾ » + le mois ; toucher le compte ouvre la liste des comptes (par personne, avec le solde)
     function acctRowHTML(sel, month, curM){
       var a=sel==="__all" ? null : acctByKey(sel), nm=sel==="__all" ? "Tous les comptes" : (a ? a.nom : "Mes tickets"), col=a ? acctCol(a) : "var(--ink-soft)";

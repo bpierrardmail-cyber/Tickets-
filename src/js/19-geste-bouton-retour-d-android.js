@@ -59,11 +59,6 @@
     // à l'enregistrement : le compte choisi, sauf s'il est celui par défaut (le frais suit alors le compte habituel de la personne)
     function acctPicked(r, who){ var k=r.acct||""; return (k && k!==acctDefKey(who)) ? k : ""; }
     function whoOf(r){ return (r.who==="__autre") ? ((r.whoNew||"").trim()||"Commun") : (r.who||"Commun"); }
-    function epargneOptions(){
-      var o=[{v:"",l:"Aucun"}];
-      epargne.filter(function(c){ return !c.bourseLink; }).forEach(function(c){ o.push({v:String(c.id), l:c.nom}); });
-      return o;
-    }
     function epargneById(id){ return epargne.filter(function(c){ return String(c.id)===String(id); })[0]; }
     var SENS_OPTS=[{v:"in",l:"Entrée +"},{v:"out",l:"Sortie −"}];
 
@@ -163,14 +158,6 @@
       fyNavFilter();
     }
 
-    function backupStatus(){
-      var lb=store.read("lastBackup", null);
-      if(!lb) return { col:"var(--coral)", label:"jamais sauvegardé" };
-      var days=backupAge().days;
-      var col=(days>=7)?"var(--coral)":(days>=3?"#e0a458":"var(--accent)");
-      var when=backupAge().label;
-      return { col:col, label:"sauvegardé "+when };
-    }
     var VIEW_TITLES={ sauvaide:"Tes sauvegardes", drive:"Sauvegarde Drive", driverest:"Restaurer", import:"Import", avancee:"Analyse avancée", list:"Accueil", form:"Ticket", articles:"Articles", produits:"Articles & catégories", graph:"Analyse", history:"Analyse", analyse:"Analyse", month:"Analyse", artDetail:"Articles", communes:"Foyer", compte:"Opérations", bourse:"Bourse", gallery:"Galerie", photo:"Photo", patrimoine:"Patrimoine", provisions:"Provisions", bilan:"Bilan", foyer:"Foyer partagé" };
     function capFirst(t){ t=String(t||""); return t.charAt(0).toUpperCase()+t.slice(1); }
     // Onglet Dépenses : Tickets (vue « tickets ») · Produits et Budgets (vue « articles ») · Analyse (vue « analyse »)

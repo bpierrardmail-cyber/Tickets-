@@ -29,7 +29,6 @@
     function fyRO(){ if(!fyCfg || !fyMember()) return false; if(fyCfg.role==="view") return true; var t=fyCurTab(); if(t==="foyer" || t==="bilan") return false; return !fyTabEd(t==="form"?"list":t); }
     function fyTabOn(m, t){ return !m || !m.tabs || t==="list" || m.tabs.indexOf(t)>=0; }   // l'Accueil (personnel) est toujours là
     function fyFirstTab(){ var t=(fyCfg && fyCfg.tabs && fyCfg.tabs[0]) || "list"; return t; }
-    function fyRoleLabel(r){ return r==="edit"?"Modification":(r==="view"?"Consultation":"Propriétaire"); }
     function fyRightsLabel(m){ if(!m || m.role==="owner") return "Propriétaire"; var vis=FY_TABS.filter(function(t){ return fyTabOn(m, t.v); }), ed=fyEdTabs(m);
       var w=vis.filter(function(t){ return ed.indexOf(t.v)>=0; }), r=vis.filter(function(t){ return ed.indexOf(t.v)<0; });
       if(!w.length) return "Lecture"+(r.length===FY_TABS.length?" · tous les onglets":" : "+r.map(function(t){ return t.l; }).join(", "));
@@ -51,7 +50,6 @@
     function fyFraisCanEdit(f){ if(!fyMember()) return true; if(fyCfg.role==="view" || !fyTabEd("communes")) return false; if(fyCfg.accts==null) return true;
       var fw=(f.personne||"").trim()||"Commun"; if(fw==="Commun" || fw===mePerson()) return true;
       return comptes.some(function(a){ return a.key!=="__tickets" && !!fraisKind(f, a.key); }); }
-    function fyTicketsOnly(){ return fyMember() && !!fyCfg.accts && !fyCfg.accts.length; }
     function fyDefPayer(){ return fyMember() ? mePerson() : ""; }
     function fyPayers(){ var l=[]; comptes.forEach(function(a){ var p=(a.payer||"").trim(); if(p && p!=="Commun" && l.indexOf(p)<0) l.push(p); }); if(fyCfg && fyCfg.me && l.indexOf(fyCfg.me)<0) l.unshift(fyCfg.me); return l; }
     function myAcct(){

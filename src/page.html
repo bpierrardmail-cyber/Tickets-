@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <!-- Connexions permises (07/11, sécurité) : même si un défaut laissait passer du code, il ne pourrait rien envoyer ailleurs.
-       Scripts (08/11) : seul le script de la page s'exécute, reconnu par son empreinte (python3 outils/csp.py après chaque modification).
+       Scripts (08/11) : seul le script de la page s'exécute, reconnu par son empreinte (mise par python3 outils/build.py à l'assemblage).
        Le relais et les cours (Perso) ; les librairies (Tesseract, pdf.js) sont dans l'appli ; localhost = relais imité des tests (rien ne sort du téléphone).
        Toute nouvelle connexion doit être ajoutée ici (et justifiée, voir CLAUDE.md). -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Hy20OXAc0BmaL+2IF8Uy2OjXLMRoBlaTXKe6VFWBvCM=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="20/11 20:45" />
+  <meta name="build" content="20/11 21:38" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
 /*@CSS*/  </style>

@@ -31,7 +31,7 @@
       else if(!cap) return "";
       return cap?'<div class="com-tools" style="margin:0 0 12px;flex-wrap:nowrap">'+(state.view==="list"?'<button type="button" class="ap-tool com-add" id="manual2" style="flex:0 0 auto">✍️ Saisie</button>':'')+'<button type="button" class="ap-tool com-add psel-c" id="pvCap">🧾 '+esc(cap)+'</button>'+'</div>':'';   // touche = la page des tickets du mois
     }
-    function pvCapTxt(n, total){ return n+" ticket"+(n>1?"s":"")+" · "+fmtK(total); }   // la personne est sur le bouton en haut à droite
+   // la personne est sur le bouton en haut à droite
     function wirePV(){
       var hd=app.querySelector("header.head");
       if(pvWanted && hd && !hd.querySelector(".hpv")){

@@ -65,9 +65,6 @@
     var fraisCommuns = store.read("fraisCommuns", []);
     function persistFrais(){ store.write("fraisCommuns", fraisCommuns); }
     var argentMois = store.read("argentMois", {});
-    function persistArgent(){ store.write("argentMois", argentMois); }
-    function getArgent(p,m){ return (argentMois[p] && argentMois[p][m]) || 0; }
-    function setArgent(p,m,v){ if(!argentMois[p]) argentMois[p]={}; argentMois[p][m]=v; persistArgent(); }
     var liquideMois = store.read("liquideMois", {});
     function persistLiquide(){ store.write("liquideMois", liquideMois); }
     function liquideAt(p, m){

@@ -79,16 +79,6 @@
       if(ch) persistFrais();
     }
     // « Remplie par » d'une provision : qui fait la mise de côté (frais fixe relié)
-    function provFillVal(p){ var f=provFraisOf(p); if(p && p.noFrais) return "__none"; if(!f) return provFillDef(p);
-      var w=(f.personne||"").trim()||"Commun"; return (w==="Commun" && f.split) ? "__split" : w; }
-    function provFillField(p){
-      var cur=p ? provFillVal(p) : provFillDef(null), ppl=uniquePersons(); if(ppl.indexOf(mePerson())<0) ppl.unshift(mePerson());
-      var o=[{v:"Commun", l:"Commun · un compte, en entier"}]; if(ppl.length>1) o.push({v:"__split", l:"Commun · chacun sa part"});
-      ppl.forEach(function(n){ o.push({v:n, l:n}); });
-      if(!o.some(function(x){ return x.v===cur; }) && cur!=="__none") o.push({v:cur, l:cur});
-      o.push({v:"__none", l:"Pas dans les frais fixes"});
-      return { key:"fill", label:"Remplie par", type:"select", value:cur, options:o, help:"La mise de côté de chaque mois est un frais fixe : dans À venir › Frais fixes, les parts du Commun, l'Analyse et le compte qui paie (sauf si l'argent reste sur ce compte)." };
-    }
     // Réglage « Chaque mois » d'une provision (maquette du 07/11) : Qui paie ? · Prélevé sur · Mis de côté sur · Suivre dans les frais fixes, avec le trajet de l'argent
     function provWhoOpts(){ var ppl=uniquePersons(); if(ppl.indexOf(mePerson())<0) ppl.unshift(mePerson()); var o=[{ v:"Commun", l:"Le foyer" }]; ppl.forEach(function(n){ o.push({ v:n, l:n }); }); return o; }
     function provFromDef(who){ var a=(who==="Commun") ? mainAcct() : payAcctOf(who); return (a && a.key) || ""; }
@@ -139,16 +129,6 @@
       f.personne=r.who||"Commun";
       if(f.personne==="Commun" && r.from==="__split"){ f.split=true; delete f.compte; }
       else { delete f.split; if(r.from && acctByKey(r.from)) f.compte=r.from; else delete f.compte; }
-      persistFrais();
-    }
-    function provFillApply(p, v){
-      if(!v || fyMember()) return;
-      var f=provFraisOf(p);
-      if(v==="__none"){ p.noFrais=true; if(f) provFraisDetach(f); persistFrais(); return; }
-      delete p.noFrais; if(!f){ provFraisSync(); f=provFraisOf(p); } if(!f) return;
-      var who=(v==="__split") ? "Commun" : v;
-      if(((f.personne||"").trim()||"Commun")!==who) delete f.compte;
-      f.personne=who; if(v==="__split"){ f.split=true; delete f.compte; } else delete f.split;
       persistFrais();
     }
     function addProvision(){

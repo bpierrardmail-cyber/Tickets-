@@ -21,3 +21,14 @@ T("cohérence : « Il te reste » (fin) = solde du soir de la liste du mois", fu
   var A=acctFigures("Alex", M), F=soldeFlow("Alex", M); return near(A.fin, F.closing, 0.01); });
 T("dépenses du mois d'Alex : ticket par carte 30 + loyer 800 + sa part d'internet 18 (pas le ticket en espèces)", function(){
   return near(computeDepensesMonth("Alex", M), 848); });
+T("calculs gardés : un ticket ajouté (store.write) change tout de suite le solde", function(){
+  var avant=soldeFlow("Alex", M).closing;
+  state.entries.push({id:99,date:M+"-20",marchand:"Essai",montant:10,categorie:"Courses",payePar:"Alex",articles:[]}); store.write("entries", state.entries);
+  var apres=soldeFlow("Alex", M).closing; state.entries.pop(); store.write("entries", state.entries);
+  return near(avant-apres, 10); });
+T("calculs gardés : même chiffre avec ou sans mémoire (mois d'avant puis ce mois, et l'inverse)", function(){
+  calcReset(); var a=soldeFlow("Alex", "2026-09").closing, b=soldeFlow("Alex", M).closing;
+  calcReset(); var b2=soldeFlow("Alex", M).closing, a2=soldeFlow("Alex", "2026-09").closing;
+  return eq([a,b], [a2,b2]); });
+T("tickets d'un mois : entriesOfMonth = filtre sur la date", function(){
+  return eq(entriesOfMonth(M).map(function(e){ return e.id; }), state.entries.filter(function(e){ return monthKey(e.date)===M; }).map(function(e){ return e.id; })); });

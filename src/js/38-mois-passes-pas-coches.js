@@ -722,7 +722,6 @@
              '<text x="90" y="86" text-anchor="middle" font-size="10" fill="#6f6a5e" font-family="monospace" letter-spacing="1">TOTAL</text>'+
              '<text x="90" y="106" text-anchor="middle" font-size="17" font-weight="700" fill="#f4796b" font-family="monospace">'+fmt(total)+'</text></svg>';
     }
-    function gMonthShort(key){ return new Date(key+"-01T00:00:00").toLocaleDateString("fr-FR",{month:"short",year:"2-digit"}); }
     function gBlock(items){
       var tot=items.reduce(function(s2,it){ return s2+(Number(it.value)||0); },0);
       if(tot<=0) return '<div class="center muted" style="font-size:12px;margin-top:12px">Aucune donnée.</div>';
@@ -735,16 +734,6 @@
         out+='<div class="lgd" style="cursor:default"><span class="sw" style="background:'+it.color+'"></span><span class="ln">'+esc(it.name)+'</span><span class="lv">'+fmt(it.value)+'</span><span class="lp">'+share+'</span></div>';
       });
       out+='</div>';
-      return out;
-    }
-    function gMonthBars(rows, colorFn){
-      var maxV=0; rows.forEach(function(r){ if(Math.abs(r.value)>maxV) maxV=Math.abs(r.value); }); if(maxV<=0) maxV=1;
-      var out="";
-      rows.forEach(function(r){
-        var pct=Math.max(r.value!==0?2:0, Math.round(Math.abs(r.value)/maxV*100));
-        var col=colorFn?colorFn(r.value):"#f4796b";
-        out+='<div class="bar-row"><div class="bar-top"><span class="bl">'+esc(r.label)+'</span><span class="bv" style="color:'+col+'">'+esc(r.sub||fmt(r.value))+'</span></div><div class="bar-track"><i style="width:'+pct+'%;background:'+col+'"></i></div></div>';
-      });
       return out;
     }
     function computeCompteMonth(person, month){

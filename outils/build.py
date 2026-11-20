@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Assemble l'appli : src/page.html + src/app.css + src/js/*.js (dans l'ordre des numéros) → beta/index.html,
-# puis met l'empreinte du script dans la CSP (plus besoin de lancer outils/csp.py à part).
+# puis met l'empreinte du script dans la CSP.
 #   python3 outils/build.py            assemble beta/index.html
 #   python3 outils/build.py --stamp    met d'abord l'étiquette de version (heure de Paris) dans src/page.html (avant chaque commit)
 #   python3 outils/build.py --test F   écrit en plus une copie de test dans F (jamais servie) : à la fin du script,

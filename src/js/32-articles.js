@@ -277,17 +277,6 @@
       state.entries.forEach(function(e){ add(e.payePar); });
       arr.sort(); return arr;
     }
-    function choosePerson(current){
-      var ex=uniquePersons();
-      if(ex.indexOf("Commun")<0) ex.unshift("Commun");
-      var hint = "\nChoix : "+ex.map(function(p,i){ return (i+1)+". "+p; }).join("   ");
-      var ans=window.prompt("Pour qui ce frais ?\n(« Commun » = dépense partagée)"+hint+"\n\nTape un nom ou le numéro", current||"Commun");
-      if(ans===null) return null;
-      ans=ans.trim();
-      if(!ans) return current||"Commun";
-      if(/^\d+$/.test(ans)){ var n=parseInt(ans,10); if(n>=1 && n<=ex.length) return ex[n-1]; }
-      return ans;
-    }
     function addFraisCommun(){
       // Le frais commence au mois affiché (Commun ou Compte), passé ou futur ; il dure un mois, plusieurs mois ou sans fin
       var vm=(state.months && (state.view==="compte" ? state.months.compte : state.months.communes)) || monthKey(todayISO()), okM=/^[0-9]{4}-[0-9]{2}$/;
@@ -428,7 +417,7 @@
         var frais=fraisCommuns.filter(function(f){ return fraisActif(f, m); }), byP={}, fraisTot=0;
         frais.forEach(function(f){ var who=(f.personne||"").trim()||"Commun"; if(!byP[who]) byP[who]={ total:0, items:[] }; var v=fraisPartV(f, m); byP[who].total+=v; byP[who].items.push(f); fraisTot+=v; });
         var rows=[], prod=0;
-        state.entries.filter(function(e){ return monthKey(e.date)===m; }).forEach(function(e){
+        entriesOfMonth(m).forEach(function(e){
           (e.articles||[]).forEach(function(a){ if(!a.commun) return; var amt=Number(a.prix)||0;
             rows.push({ id:e.id, marchand:e.marchand, date:e.date, label:artName(a), prix:amt, sh:e.share||null }); prod+=amt; });
         });
@@ -438,7 +427,7 @@
       var D=monthData(month);
       var totPersons=[];
       fraisCommuns.forEach(function(f){ var fp=(f.personne||"").trim(); if(fp && fp!=="Commun" && totPersons.indexOf(fp)<0) totPersons.push(fp); });
-      state.entries.forEach(function(e){ var pp=(e.payePar||"").trim(); if(pp && pp!=="Commun" && totPersons.indexOf(pp)<0) totPersons.push(pp); });
+      ticketPayers().forEach(function(pp){ if(totPersons.indexOf(pp)<0) totPersons.push(pp); });
       totPersons=totPersons.filter(function(p){ var r=personRec(p); return !(r && r.archived) || month<r.archived || (D.byP[p] && D.byP[p].items.length); });
       totPersons.sort();
       var me=mePerson(); if(totPersons.indexOf(me)<0) totPersons.unshift(me);

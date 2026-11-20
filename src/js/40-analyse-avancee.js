@@ -351,7 +351,6 @@
       for(var j=0;j<PRODUITS.length;j++){ if(FAMILLES.indexOf(PRODUITS[j])<0 && PRODUITS[j]!=="Remise" && normName(PRODUITS[j])===n) return "produit"; }
       return "";
     }
-    function nameTaken(name){ return takenAs(name)!==""; }
     function addFamille(){
       var name=(window.prompt("Nom de la nouvelle famille de produits :")||"").trim();
       if(!name) return;
@@ -581,33 +580,3 @@
       });
     }
 
-    function canvasToBlob(src){
-      return new Promise(function(resolve){
-        function compress(canvas){
-          var quals=[0.7,0.55,0.42,0.32,0.25], steps=0;
-          (function attempt(qi){
-            steps++;
-            if(qi>=quals.length){
-              if(canvas.width<=900 || steps>16){ canvas.toBlob(function(b){ resolve(b||src); }, "image/jpeg", 0.4); return; }
-              var nc=document.createElement("canvas");
-              nc.width=Math.max(1,Math.round(canvas.width*0.8));
-              nc.height=Math.max(1,Math.round(canvas.height*0.8));
-              nc.getContext("2d").drawImage(canvas,0,0,nc.width,nc.height);
-              canvas=nc; attempt(0); return;
-            }
-            canvas.toBlob(function(b){
-              if(!b){ resolve(src); return; }
-              if(b.size<=950000){ resolve(b); return; }
-              attempt(qi+1);
-            }, "image/jpeg", quals[qi]);
-          })(0);
-        }
-        if(src && src.toBlob){ compress(src); return; }
-        function smallFrom(srcImg, w0, h0){ var lo=Math.max(w0,h0), s=lo>2000?2000/lo:1; var c=document.createElement("canvas"); c.width=Math.max(1,Math.round(w0*s)); c.height=Math.max(1,Math.round(h0*s)); c.getContext("2d").drawImage(srcImg,0,0,c.width,c.height); return c; }
-        function viaImg(){ try{ var img=new Image(); img.onload=function(){ try{ compress(smallFrom(img,img.width,img.height)); }catch(e){ resolve(src); } }; img.onerror=function(){ resolve(src); }; img.src=URL.createObjectURL(src); }catch(e){ resolve(src); } }
-        try{
-          if(self.createImageBitmap){ createImageBitmap(src).then(function(bmp){ try{ var c=smallFrom(bmp,bmp.width,bmp.height); try{ bmp.close(); }catch(e){} compress(c); }catch(e){ viaImg(); } }).catch(viaImg); }
-          else viaImg();
-        }catch(e){ viaImg(); }
-      });
-    }
