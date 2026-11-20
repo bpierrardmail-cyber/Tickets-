@@ -1,8 +1,9 @@
-# Met le guide (guide/proprietaire.md et guide/membre.md) dans beta/index.html, entre /* GUIDE-DEBUT */ et /* GUIDE-FIN */.
-# À relancer après chaque modification du guide : python3 guide/maj.py
+# Met le guide (guide/proprietaire.md et guide/membre.md) dans le code de l'appli (src/js/*-aide.js), entre /* GUIDE-DEBUT */ et /* GUIDE-FIN */,
+# puis réassemble beta/index.html (outils/build.py). À relancer après chaque modification du guide : python3 guide/maj.py
 # Markdown reconnu : « ## Titre » (une partie), paragraphes, **gras**, listes « - » et « 1. ».
-import os, re, json, html
-HERE=os.path.dirname(os.path.abspath(__file__)); APP=os.path.join(os.path.dirname(HERE), "beta", "index.html")
+import os, re, json, html, glob, subprocess, sys
+HERE=os.path.dirname(os.path.abspath(__file__)); ROOT=os.path.dirname(HERE)
+APP=[f for f in sorted(glob.glob(os.path.join(ROOT, "src", "js", "*.js"))) if "/* GUIDE-DEBUT */" in open(f, encoding="utf-8").read()][0]
 def inline(t): return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", html.escape(t, quote=False))
 def parts(md):
     out=[]; cur=None
@@ -25,3 +26,4 @@ a=s.index("/* GUIDE-DEBUT */"); b=s.index("/* GUIDE-FIN */")
 s=s[:a]+"/* GUIDE-DEBUT */ var GUIDE="+json.dumps(G, ensure_ascii=False)+"; "+s[b:]
 open(APP,"w",encoding="utf-8").write(s)
 print("guide mis à jour :", {k:len(v) for k,v in G.items()}, "parties")
+subprocess.check_call([sys.executable, os.path.join(ROOT, "outils", "build.py")])

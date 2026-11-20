@@ -7,10 +7,8 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 - **Lire `JOURNAL.md` en début de session** (état actuel, en cours, décisions) au lieu de relire les conversations. **Le tenir à jour à chaque modification, dans le même commit** : une entrée datée en haut de l'Historique, plus les sections Décisions, État actuel et En cours si elles changent.
 - Répondre **en français**, court et concret.
 - « Ne fais rien », « comment tu vois ça », « montre-moi » → donner un avis ou une maquette, **ne pas modifier l'appli**. Par défaut, montrer la proposition avant de modifier ; il dit « tu peux intégrer directement » quand il veut qu'on le fasse.
-- On travaille dans `beta/index.html`. Le `index.html` à la racine renvoie vers la β (ancienne version retirée le 07/11).
-- Avant chaque commit, mettre à jour l'étiquette de version (heure de Paris) :
-  `sed -i "s#<meta name=\"build\" content=\"[^\"]*\" />#<meta name=\"build\" content=\"$(TZ=Europe/Paris date +'%d/%m %H:%M')\" />#" beta/index.html`
-  puis **l'empreinte du script dans la CSP** : `python3 outils/csp.py` (obligatoire après toute modification du script, `maj.py` compris : sinon l'appli ne démarre plus ; `--check` pour vérifier).
+- **On modifie `src/`, jamais `beta/index.html` directement** (20/11) : `src/page.html` (le HTML, avec `/*@CSS*/` et `/*@JS*/`), `src/app.css`, `src/js/NN-sujet.js` (le script, découpé par sections, assemblé dans l'ordre des numéros, dans une seule IIFE : `00-debut.js` l'ouvre, `60-…` la ferme). `python3 outils/build.py` assemble `beta/index.html` (servi tel quel) et y met l'empreinte CSP ; `--check` vérifie que `beta/index.html` est bien l'assemblage de `src/`. Le `index.html` à la racine renvoie vers la β.
+- Avant chaque commit : `python3 outils/build.py --stamp` (étiquette de version à l'heure de Paris dans `src/page.html`, assemblage, empreinte CSP). Sans assemblage, `beta/index.html` ne contient pas la modification ; une empreinte fausse empêche l'appli de démarrer (`outils/csp.py` appelle maintenant `build.py`).
 - Commits en français, préfixés « β » quand ils touchent la β, poussés directement sur `main`.
 - Exigences permanentes : marcher sans bug pour une grande famille (10 personnes et plus, plus de 10 comptes, affichage lisible) ; rien à configurer pour l'utilisateur ; aucune source de données payante ; le relais ne doit jamais pouvoir lire les données du foyer ; **marcher sans réseau** (la version Store est une appli complète, sans aucune connexion pour l'usage normal : seuls le foyer partagé et l'achat de Plus en ont besoin).
 
@@ -18,30 +16,32 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 
 | Chemin | Rôle |
 |---|---|
-| `beta/index.html` | **L'appli** (≈ 9 700 lignes) : HTML + CSS + JS dans un seul fichier. Servie par GitHub Pages (`/Tickets-/beta/`). |
+| `beta/index.html` | **L'appli assemblée** (≈ 14 650 lignes, produite par `outils/build.py` depuis `src/`, ne pas la modifier à la main) : HTML + CSS + JS dans un seul fichier. Servie par GitHub Pages (`/Tickets-/beta/`). |
 | `index.html`, `sw.js`, `manifest.webmanifest` | Racine : renvoi vers la β (l'ancienne version stable est retirée depuis le 07/11) + service worker (réseau d'abord), qui sert la β dans un navigateur. |
 | `relais/cours-worker.js` | Worker Cloudflare : cours Yahoo / CoinGecko (`/search`, `/quote`, `/chart`, `/crypto/*`), inflation INSEE (`/inflation`) et routage `/foyer`. Limite par adresse en mémoire (`rlHit`, `RL_MAX` par minute, 429 ; test t153). |
 | `relais/foyer.js` | Foyer partagé : un Durable Object SQLite par foyer (classe `Foyer`). Tables créées seulement à la création ; boîte d'envoi dans le quota (10 Mo par membre, lecture par 8 Mo, `more`) ; requêtes sans forme valable refusées avant le foyer ; limites par adresse (`rlFoyer`). |
+| `src/` | **Le code de l'appli** (20/11) : `page.html`, `app.css`, `js/NN-sujet.js` (61 fichiers par section). Assemblé dans `beta/index.html` par `outils/build.py`. |
+| `outils/build.py` | Assemble `src/` → `beta/index.html` + empreinte CSP (`--stamp` : étiquette de version ; `--check` : vérifie). |
 | `outils/banc_rejouer.py` | Rejoue un export « Tester la lecture » (Perso) dans l'appli et dit ce qui est bien lu ; le fichier reste hors du dépôt. |
-| `outils/csp.py` | Met à jour l'empreinte du script dans la CSP de `beta/index.html` (`--check` : vérifie). |
+| `outils/csp.py` | Ancien nom : appelle `build.py` (l'empreinte est mise à l'assemblage). |
 | `wrangler.jsonc` | Config du Worker ; déployé par Workers Builds à chaque push sur `main`. |
 | `app-android/` | Appli Android Capacitor 7, code natif dans `native/`. **Perso** : charge la β en ligne (`server.url`) et en garde une copie pour marcher sans réseau (`TkOfflineClient`). **Store** : la β est dans l'APK (copiée à la compilation avec pdf.js et `insee.json`), mises à jour par le Store. |
 | `.github/workflows/apk-beta.yml` | Compile deux APK (Perso et Store) quand `app-android/**` ou `beta/**` change ; publiés dans la release `apk-beta`. Compilation sans clé ni droit d'écriture (`npm ci --ignore-scripts`), puis job `sign` à part : `apksigner` avec les secrets `TK_KEYSTORE_B64` / `TK_KEYSTORE_PASS` ; actions épinglées par empreinte ; empreintes de `beta/lib` vérifiées ; pas de sauvegarde Android automatique (`allowBackup=false`). |
 | `.github/workflows/deps.yml` | Copie Tesseract et pdf.js dans `beta/` à une version figée et refait `app-android/package-lock.json` (à relancer pour changer de version). |
 | `tests/` | Tests Playwright (Python) avec données fictives, relais local, `run.sh` ; mode d'emploi dans `tests/README.md`. `tests/vitrine.py` refait les captures de `beta/vitrine/`. |
-| `guide/` | Le guide : `proprietaire.md` et `membre.md` (source) ; `python3 guide/maj.py` les met dans `beta/index.html` (`var GUIDE`, entre `/* GUIDE-DEBUT */` et `/* GUIDE-FIN */`). Brouillons partagés avec Benoît dans deux documents « Guide de Tickets » (propriétaire, membre) : reporter ses corrections dans les `.md` puis relancer `maj.py`. |
+| `guide/` | Le guide : `proprietaire.md` et `membre.md` (source) ; `python3 guide/maj.py` les met dans `src/js/55-aide.js` (`var GUIDE`, entre `/* GUIDE-DEBUT */` et `/* GUIDE-FIN */`) puis réassemble. Brouillons partagés avec Benoît dans deux documents « Guide de Tickets » (propriétaire, membre) : reporter ses corrections dans les `.md` puis relancer `maj.py`. |
 | `PLAN.md` | Plan détaillé des chantiers à partir du 06/11/2026 (sauvegarde Drive, Plus du foyer, import en un geste, monnaie) et ce que Benoît doit préparer. |
 | `legal/` | Textes légaux à relire (confidentialité, conditions, mentions légales), à publier sur bpierrard.fr. |
 | `beta/vitrine/` | Captures de l'appli (données inventées, 544 × 500, ~20 Ko) pour l'accueil et le carrousel Plus ; copiées dans l'APK avec la β. |
 
-## Code de `beta/index.html`
+## Code de l'appli (`src/`, assemblé dans `beta/index.html`)
 
 - **ES5 uniquement** : `var`, `function`, pas de `let`/`const`, de flèches, de gabarits ni d'`async`. Tout le JS est dans un seul `<script>` (IIFE).
 - **Sécurité (revue du 08/11)** : CSP par empreinte du script (pas de script ni de `on…=` écrit dans le HTML : un script ajouté se charge par une adresse `blob:`) ; `Object.prototype` figé ; toute donnée venue d'un autre téléphone, d'une sauvegarde ou d'un fichier est contrôlée (`fyPathOk`, `phSafe`, `fyAllowed`) ; photos seulement par `phSafe`. Tests t154 (faux membre malveillant), t155 (sauvegarde chiffrée).
 - Méthode d'édition qui marche bien : script Python qui remplace un extrait exact avec `assert s.count(old)==1`, en écrivant les vrais caractères Unicode (pas d'échappements `\u`).
 - Vérifier la syntaxe après chaque modification :
   `node -e "const h=require('fs').readFileSync('beta/index.html','utf8');const m=h.match(/<script>\n  \(function\(\)\{[\s\S]*?<\/script>/);new Function(m[0].replace(/^<script>/,'').replace(/<\/script>$/,''));console.log('OK')"`
-- Repères : les sections sont annoncées par `// ---------- Titre ----------` (Comptes, Éditions, Budgets, Filtre par personne, Analyse, Appli Android, Foyer partagé, Widgets…).
+- Repères : un fichier `src/js/NN-sujet.js` par section, qui commence par `// ---------- Titre ----------` (Comptes, Éditions, Budgets, Filtre par personne, Analyse, Appli Android, Foyer partagé, Widgets…). Chercher une fonction : `grep -n "function nom" src/js/*.js`. L'ordre des fichiers compte pour les instructions exécutées au chargement (les `function` sont visibles partout dans l'IIFE). Une nouvelle section : un nouveau fichier avec un numéro libre à la bonne place (ex. `47b-…` se range entre 47 et 48).
 - Outils internes :
   - `store.read(k, def)` / `store.write(k, v)` / `store.remove(k)` : JSON dans localStorage ; une écriture refusée faute de place part dans IndexedDB (`tickets-kv`, liste des clés dans `__idbOnly`), chargée au démarrage avant de relancer le script (`window.__tkKV`). Ne jamais appeler `localStorage` directement.
   - `render()` : redessine tout ; il remet aussi les mémos à zéro (`pvMemo`, `fsMemo`). `renderView()` choisit l'écran selon `state.view`.

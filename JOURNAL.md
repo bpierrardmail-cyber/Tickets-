@@ -134,6 +134,7 @@ Après chaque modification, dans le même commit :
 
 ## Décisions de Benoît
 
+- **20/11 · Architecture** : on modifie `src/`, `beta/index.html` est produit par `outils/build.py` ; pas de tests sur GitHub pour l'instant (Benoît préfère limiter l'usage de GitHub) ; pas de framework.
 - **19/11 · Opérations** : Tickets = total et catégories du mois puis liste par jour ; Épargne = comptes en cartes avec objectif ; Graphiques = une phrase à retenir par graphique et les autres résumés (maquette validée).
 - **19/11 · Frais fixes et Factures** : Frais fixes = d'abord ce qui reste à payer, par jour, filtrable par personne, payés repliés ; Factures = coût des 3 prochains mois et import en haut, une carte par fournisseur avec son évolution et un seul état (maquette validée).
 - **19/11 · À venir** : 12 mois = ce qui reste à payer ce mois, les 7 prochains jours, 12 pastilles colorées et le détail du mois touché ; Provisions = enveloppes en cercles, frise des factures, tout le détail derrière l'enveloppe (maquette validée).
@@ -224,6 +225,9 @@ Après chaque modification, dans le même commit :
 ---
 
 ## Historique (le plus récent en haut)
+
+### 20/11
+- **Architecture, étape 1 : le code découpé** (Benoît : « fais tous les points sauf les tests sur GitHub ») : `beta/index.html` est maintenant assemblé depuis `src/` (`page.html`, `app.css`, 61 fichiers `src/js/NN-sujet.js`, un par section) par `outils/build.py`, qui met aussi l'empreinte CSP (`--stamp` pour l'étiquette, `--check` pour vérifier). Assemblage identique à l'octet près à l'ancien fichier. `guide/maj.py` écrit dans `src/js/55-aide.js` puis réassemble ; `outils/csp.py` appelle `build.py`.
 
 ### 19/11
 - **Opérations › Tickets, Épargne, Graphiques refaits** (maquette validée, canevas « Tickets — Opérations : Tickets, Épargne, Graphiques ») :

@@ -2,6 +2,7 @@
 # Lance tous les tests (ou ceux donnés : sh tests/run.sh t94 t95) et résume les échecs.
 # Le relais local est démarré s'il ne répond pas déjà sur localhost:8787 (tests du foyer : t93).
 cd "$(dirname "$0")"
+python3 ../outils/build.py --check || { echo "Assembler d'abord : python3 outils/build.py"; exit 1; }
 LISTE="$*"; [ -z "$LISTE" ] && LISTE=$(ls t[0-9]*.py | sed 's/\.py$//' | sort -V)
 PID=""
 if ! curl -s -m 2 http://localhost:8787/ >/dev/null 2>&1; then
