@@ -95,18 +95,17 @@
       var n=(data.entries && data.entries.length) ? data.entries.length : 0, np={};
       (obj._zip||[]).forEach(function(x){ np[x.id]=1; });
       np=Object.keys(np).length;
+      var bad=[];
       if(!o.quiet && !window.confirm("Restaurer cette sauvegarde ?\n"+n+" ticket(s)"+(np?" et "+np+" photo(s)":"")+" vont REMPLACER les données actuelles.")) return;
       ["entries","cats","catParent","taxoV3","taxoV4","familles","produits","familleDe","appris","fraisCommuns","argentMois","liquideMois","budgets","bourseHist","virements","virRec","soldeInit","provisions","factures","factAlias","factAppris","releve","tkAppris","tkMag","photoKeep","commRemb","groupes","epargne","bourse","ocrKey","offlineReady","taxoV2","simThreshold","virEpV2","comptes","devise","personnes","cptChartDef","comChartDef","anChartDef","artChartDef","bView","bChartMode","cptRange","adRange","compteSel","communParts","homeScope","budgetsP","commBalFrom","comProd","cptLiq","anFrais"].forEach(function(k){
-        if(k in data) store.write(k, data[k]); else if(o.exact) store.remove(k);
+        if(k in data){ var v=dataClean(k, data[k]); if(v!==undefined) store.write(k, v); else bad.push(k); }   // forme contrôlée (01a-donnees.js)
+        else if(o.exact) store.remove(k);
       });
       if(!("comptes" in data)) store.write("comptes", null);
       if(!("communParts" in data)) store.write("communParts", null);   // ancienne sauvegarde : parts égales   // ancienne sauvegarde : le compte est reconstruit au redémarrage
       store.write("askName", false);
-      if(data.taxoV2!==2) store.write("taxoV2", null);
-      if(!("catParent" in data)) store.remove("catParent");   // sauvegarde d'avant l'arbre : catSetup, famMerge et catRepair repassent
-      if(data.taxoV3!==3) store.remove("taxoV3");
-      if(data.taxoV4!==4) store.remove("taxoV4");
-      if(data.virEpV2!==1) store.write("virEpV2", null);
+      dataMigReset(data);   // sauvegarde d'avant une migration : elle repasse au redémarrage (liste dans 01a-donnees.js)
+      if(bad.length) try{ console.warn("sauvegarde : laissé de côté (forme inattendue)", bad); }catch(e){}
       var photos=(obj && obj.photos && typeof obj.photos==="object") ? obj.photos : null;
       var fyStep=function(){
         if(!data.fyBk || fyCfg) return Promise.resolve();   // ce téléphone a déjà un foyer : on le garde tel quel
@@ -124,7 +123,7 @@
         });
       };
       // sans la question, un court délai laisse le navigateur enregistrer les données avant de recharger
-      function finishRestore(){ if(!o.quiet){ window.alert("Sauvegarde restaurée ✓"); window.location.reload(); } else setTimeout(function(){ window.location.reload(); }, 700); }
+      function finishRestore(){ if(!o.quiet){ window.alert("Sauvegarde restaurée ✓"+(bad.length?"\n\nIllisible, laissé de côté : "+bad.join(", "):"")); window.location.reload(); } else setTimeout(function(){ window.location.reload(); }, 700); }
       var ch=Promise.resolve();
       if(photos && IDB) Object.keys(photos).forEach(function(id){ if(!/^\d{1,16}$/.test(id) || !phSafe(photos[id])) return; ch=ch.then(function(){ return idbPut(id, photos[id]); }); });
       if(more) ch=ch.then(more);

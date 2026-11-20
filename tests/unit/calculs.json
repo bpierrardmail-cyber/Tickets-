@@ -1,0 +1,13 @@
+{"askName":false,"devise":"EUR","personnes":[{"nom":"Alex"},{"nom":"Marie"}],
+ "comptes":[{"key":"Alex","nom":"Compte d'Alex","payer":"Alex","main":true},{"key":"Marie","nom":"Compte de Marie","payer":"Marie"}],
+ "communParts":{"Alex":60,"Marie":40},
+ "soldeInit":{"Alex":{"2026-09":1000},"Marie":{"2026-09":500}},
+ "entries":[
+  {"id":1,"date":"2026-10-05","marchand":"Supermarché","montant":30,"categorie":"Courses","payePar":"Alex","articles":[]},
+  {"id":2,"date":"2026-10-06","marchand":"Boulangerie","montant":20,"categorie":"Courses","payePar":"Alex","pay":"esp","articles":[]},
+  {"id":3,"date":"2026-10-07","marchand":"Pharmacie","montant":15,"categorie":"Santé","payePar":"Marie","articles":[]}],
+ "fraisCommuns":[
+  {"id":11,"label":"Loyer","montant":800,"personne":"Commun","recurrent":true,"startMonth":"2026-01","doneMonths":{}},
+  {"id":12,"label":"Internet","montant":30,"personne":"Commun","recurrent":true,"startMonth":"2026-01","split":true,"doneMonths":{}},
+  {"id":13,"label":"Téléphone","montant":12,"personne":"Marie","recurrent":true,"startMonth":"2026-01","doneMonths":{}}],
+ "provisions":[{"id":21,"nom":"Taxe foncière","mensuel":50,"startMonth":"2026-07","noFrais":true,"ou":"ext"}]}

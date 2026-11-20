@@ -227,6 +227,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 20/11
+- **Architecture, étapes 2 à 4** : lecture des tickets regroupée dans `src/js/15a-lecture-ticket.js` (`mlkitRows` sorti de la partie Android), lecture des factures dans `47a-lecture-facture.js` ; **tests rapides** `tests/unit/` (copie de test `build.py --test` avec `window.__tkEval`, 46 vérifications en ~1 s : montants tapés, ML Kit, les 18 tickets inventés, factures, comptes / commun / espèces / provisions, forme des sauvegardes, migrations) ; **données** : `01a-donnees.js` (`dataClean` sur tout ce que restaure `restoreApply`, `DATA_MIGRATIONS` + `dataMigReset` au lieu des lignes éparses) ; **`run.sh`** : tests rapides d'abord, tests d'écran en parallèle (`-j`, ceux du relais ensuite), code de sortie, refus si `beta/index.html` n'est pas assemblé. Point 5 (affichage partiel, JS moderne) laissé pour plus tard, à décider ensemble.
 - **Architecture, étape 1 : le code découpé** (Benoît : « fais tous les points sauf les tests sur GitHub ») : `beta/index.html` est maintenant assemblé depuis `src/` (`page.html`, `app.css`, 61 fichiers `src/js/NN-sujet.js`, un par section) par `outils/build.py`, qui met aussi l'empreinte CSP (`--stamp` pour l'étiquette, `--check` pour vérifier). Assemblage identique à l'octet près à l'ancien fichier. `guide/maj.py` écrit dans `src/js/55-aide.js` puis réassemble ; `outils/csp.py` appelle `build.py`.
 
 ### 19/11

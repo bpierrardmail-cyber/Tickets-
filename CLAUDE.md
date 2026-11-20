@@ -37,6 +37,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 ## Code de l'appli (`src/`, assemblé dans `beta/index.html`)
 
 - **ES5 uniquement** : `var`, `function`, pas de `let`/`const`, de flèches, de gabarits ni d'`async`. Tout le JS est dans un seul `<script>` (IIFE).
+- **Données (20/11)** : `src/js/01a-donnees.js` — `dataClean(clé, valeur)` contrôle la forme de tout ce que `restoreApply` écrit (fichier, ZIP, Drive ; ce qui est illisible est laissé de côté et signalé), `DATA_SHAPE` (forme de chaque clé), `DATA_MIGRATIONS` (marques des migrations faites une fois : une nouvelle migration s'y ajoute ; `dataMigReset` les retire pour une sauvegarde d'avant). Lecture des tickets dans `15a-lecture-ticket.js` (`mlkitRows`, `matchMerchant`, `parseTicket`), des factures dans `47a-lecture-facture.js`.
 - **Sécurité (revue du 08/11)** : CSP par empreinte du script (pas de script ni de `on…=` écrit dans le HTML : un script ajouté se charge par une adresse `blob:`) ; `Object.prototype` figé ; toute donnée venue d'un autre téléphone, d'une sauvegarde ou d'un fichier est contrôlée (`fyPathOk`, `phSafe`, `fyAllowed`) ; photos seulement par `phSafe`. Tests t154 (faux membre malveillant), t155 (sauvegarde chiffrée).
 - Méthode d'édition qui marche bien : script Python qui remplace un extrait exact avec `assert s.count(old)==1`, en écrivant les vrais caractères Unicode (pas d'échappements `\u`).
 - Vérifier la syntaxe après chaque modification :
@@ -176,7 +177,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
 
 ## Tests
 
-Les tests sont dans `tests/` (mode d'emploi : `tests/README.md`) : `sh tests/run.sh` les lance tous, `python3 tests/t95.py` un seul. Ajouter un test pour chaque nouvelle fonction, **toujours avec des données inventées** (le dépôt est public). Les tests qui utilisaient de vraies données (relevés BoursoBank, factures, vrais tickets) ne sont pas dans le dépôt. Principe :
+Les tests sont dans `tests/` (mode d'emploi : `tests/README.md`) : `sh tests/run.sh` les lance tous (rapides puis écran, en parallèle `-j N`, ceux du relais à la suite), `sh tests/run.sh unit` les rapides seuls, `python3 tests/t95.py` un seul. **Deux niveaux** (20/11) : `tests/unit/*.js` appellent directement les fonctions de l'appli (copie de test `build.py --test`, `window.__tkEval`, données `NOM.json`) — pour un calcul ou une lecture, ajouter d'abord un test rapide ; les `tNN.py` pour le parcours à l'écran. Ajouter un test pour chaque nouvelle fonction, **toujours avec des données inventées** (le dépôt est public). Pas de tests sur GitHub pour l'instant (décision du 20/11). Les tests qui utilisaient de vraies données (relevés BoursoBank, factures, vrais tickets) ne sont pas dans le dépôt. Principe :
 - date fixée par `tests/horloge.py` (`import horloge` dans chaque test) : le navigateur se croit le 30/10/2026, car les données inventées sont en octobre 2026 ; un nouveau test fait de même ;
 - l'appli Store se teste en servant une copie de `beta/` (+ pdf.js, `insee.json`) sur `https://localhost/` par une route, avec l'identifiant `TicketsApp/store` et un faux `window.Capacitor` : aucune requête ne doit partir ailleurs ;
 - Chromium sans interface, viewport 412×900 ;

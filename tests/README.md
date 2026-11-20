@@ -7,10 +7,20 @@ Ce sont des scripts Playwright en Python. Ils ouvrent `beta/index.html` dans Chr
 ## Lancer
 
 ```
-sh tests/run.sh            # tous les tests
+sh tests/run.sh            # les tests rapides, puis tous les tests d'écran
+sh tests/run.sh unit       # seulement les tests rapides (quelques secondes)
 sh tests/run.sh t94 t95    # seulement ceux-là
+sh tests/run.sh -j 4       # 4 tests d'écran à la fois (par défaut : le nombre de processeurs)
 python3 tests/t95.py       # un seul test, avec le détail OK / FAIL
+python3 tests/unit/run.py lecture   # un seul fichier de tests rapides
 ```
+
+`run.sh` refuse de démarrer si `beta/index.html` n'est pas l'assemblage de `src/` (lancer `python3 outils/build.py`). Les tests qui utilisent le relais local (foyer) passent l'un après l'autre, à la fin.
+
+## Deux niveaux
+
+- **Tests rapides** (`tests/unit/`, 20/11) : les fonctions de l'appli appelées directement, sans l'écran. `run.py` fabrique une copie de test (`outils/build.py --test beta/_unit.html`, jamais servie ni versionnée) qui expose `window.__tkEval` ; chaque fichier `NOM.js` est exécuté **dans** l'appli (il voit `parseTicket`, `provBalance`, `fraisCommuns`…), page neuve à chaque fichier, avec les données de `NOM.json` s'il existe. On écrit `T("ce qui est vérifié", function(){ return eq(obtenu, attendu); })` (`near` pour un montant). Fichiers : `lecture` (montants tapés, ML Kit, les tickets inventés, factures), `calculs` (comptes, commun, espèces, provisions), `donnees` (forme des sauvegardes, migrations). À compléter à chaque nouvelle règle de calcul ou de lecture.
+- **Tests d'écran** (`tNN.py`) : le parcours dans l'appli, comme un utilisateur.
 
 Chaque test affiche `OK` ou `FAIL` pour chaque vérification, puis le nombre d'échecs.
 

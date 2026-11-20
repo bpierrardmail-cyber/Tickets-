@@ -34,26 +34,6 @@
         catch(e){ viaImg(); }
       });
     }
-    // ML Kit rend des morceaux de texte (souvent le libellé et le prix séparément) :
-    // on redresse la photo d'après l'inclinaison moyenne, puis on regroupe les morceaux
-    // qui sont à la même hauteur pour retrouver les lignes du ticket, de gauche à droite.
-    function mlkitRows(res){
-      var L=[];
-      (res && res.lines || []).forEach(function(l){ if(!l || !l.t) return; var q=l.p; if(!q || q.length<8) return; L.push({ t:String(l.t), q:q }); });
-      if(!L.length) return (res && res.text) || "";
-      var ang=L.map(function(l){ return Math.atan2(l.q[3]-l.q[1], l.q[2]-l.q[0]); }).sort(function(a,b){ return a-b; });
-      var a=ang[Math.floor(ang.length/2)]||0;   // même tournée d'un quart de tour ou à l'envers : on redresse
-      var ca=Math.cos(-a), sa=Math.sin(-a);
-      L.forEach(function(l){ var xs=[], ys=[]; for(var i=0;i<8;i+=2){ xs.push(l.q[i]*ca-l.q[i+1]*sa); ys.push(l.q[i]*sa+l.q[i+1]*ca); }
-        l.x=Math.min.apply(null,xs); var y0=Math.min.apply(null,ys), y1=Math.max.apply(null,ys); l.h=Math.max(1,y1-y0); l.cy=(y0+y1)/2; });
-      var hs=L.map(function(l){ return l.h; }).sort(function(a,b){ return a-b; }), mh=hs[Math.floor(hs.length/2)]||10;
-      L.sort(function(a,b){ return a.cy-b.cy; });
-      var rows=[];
-      L.forEach(function(l){ var r=rows[rows.length-1];
-        if(r && Math.abs(l.cy-r.cy)<mh*0.6){ r.it.push(l); r.cy=(r.cy*(r.it.length-1)+l.cy)/r.it.length; }
-        else rows.push({ cy:l.cy, it:[l] }); });
-      return rows.map(function(r){ return r.it.sort(function(a,b){ return a.x-b.x; }).map(function(i){ return i.t; }).join("  "); }).join("\n");
-    }
     // Sauvegarde dans l'appli Android : fichier dans Documents/Tickets, ou envoi vers Drive / mail
     function backupNative(dump, fname){
       var FS=capPlugin("Filesystem"), SH=capPlugin("Share"), json=JSON.stringify(dump);
