@@ -65,13 +65,25 @@ const MAX_INBOX_MB = 10 * 1024 * 1024;  // envois en attente d'un membre, en tou
 const INBOX_READ = 8 * 1024 * 1024;  // une lecture de la boîte par le propriétaire : environ 8 Mo, il redemande la suite
 const RL_FOYER = 300, RL_JOIN = 10, RL_WIN = 60000;   // requêtes /foyer par minute et par adresse ; essais de « rejoindre »
 const RLF = new Map();
-function rlFoyer(key, max) {   // compteur en mémoire (par instance), l'adresse n'est jamais écrite
+function rlFoyer(key, cost, max) {   // repli : compteur en mémoire (par instance), l'adresse n'est jamais écrite
   if (!key) return true;
   const now = Date.now(); let e = RLF.get(key);
   if (!e || now - e.t >= RL_WIN) { e = { t: now, n: 0 }; RLF.set(key, e); }
   e.n++;
   if (RLF.size > 5000) for (const [k, v] of RLF) if (now - v.t >= RL_WIN) RLF.delete(k);
   return e.n <= max;
+}
+// 21/11 : limites tenues par Cloudflare (liaisons « ratelimits » de wrangler.jsonc : RL_F, RL_J, RL_C), communes à toutes les
+// instances du relais d'un même lieu, au lieu d'un compteur que chaque instance remettait à zéro. Clé = empreinte de l'adresse
+// (l'adresse elle-même n'est jamais transmise ni écrite). Sans la liaison (banc d'essai local), le compteur en mémoire sert de repli.
+export async function rlCheck(env, name, key, cost, max, mem) {
+  if (!key) return true;
+  const b = env && env[name];
+  if (b && typeof b.limit === "function") {
+    try { const r = await b.limit({ key: await sha("rl|" + key), delta: Math.max(1, Math.round(cost || 1)) }); return !!(r && r.success); }
+    catch (e) { /* liaison indisponible : repli en mémoire */ }
+  }
+  return mem(key, cost, max);
 }
 const RE_AUTH = /^Bearer ([A-Za-z0-9_-]{22})\.([A-Za-z0-9_-]{1,16})\.([A-Za-z0-9_-]{22,64})$/;
 
@@ -112,12 +124,12 @@ export async function handleFoyer(request, env) {
   const route = url.pathname.replace(/\/+$/, "");
   let ipr = request.headers.get("CF-Connecting-IP") || "";
   if (ipr.includes(":")) ipr = ipr.split(":").slice(0, 4).join(":");
-  if (!rlFoyer(ipr, RL_FOYER)) return fjson({ error: "limite" }, 429);
+  if (!await rlCheck(env, "RL_F", ipr, 1, RL_FOYER, rlFoyer)) return fjson({ error: "limite" }, 429);
   if (request.method === "POST" && route === "/foyer/create") {
     if (!body || !RE_HASH.test(body.otok || "")) return fjson({ error: "jeton" }, 400);
   } else if (request.method === "POST" && route === "/foyer/join") {
     if (!body || !RE_MID.test(body.mid || "") || !RE_TOK.test(body.inv || "") || !RE_HASH.test(body.tok || "")) return fjson({ error: "invitation" }, 400);
-    if (!rlFoyer("j|" + ipr, RL_JOIN)) return fjson({ error: "limite" }, 429);
+    if (!await rlCheck(env, "RL_J", "j|" + ipr, 1, RL_JOIN, rlFoyer)) return fjson({ error: "limite" }, 429);
   } else if (!RE_AUTH.test(auth)) return fjson({ error: "auth" }, 401);
   if (request.method === "POST" && route === "/foyer/create" && env.GARDE) {
     // l'adresse IP n'est pas gardée : seulement son empreinte du jour (pour IPv6, le bloc /64 d'une box)

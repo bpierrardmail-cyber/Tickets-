@@ -12,7 +12,7 @@
 //
 // /foyer/* : foyer partagé (voir foyer.js) — copies chiffrées sur les téléphones, illisibles ici.
 
-import { Foyer, Garde, handleFoyer } from "./foyer.js";
+import { Foyer, Garde, handleFoyer, rlCheck } from "./foyer.js";
 export { Foyer, Garde };
 
 const CORS = {
@@ -25,8 +25,8 @@ const TYPES_OK = ["EQUITY", "ETF", "MUTUALFUND", "INDEX"];
 
 // Limite par adresse (08/11, sécurité point 7) : un téléphone fait quelques requêtes par minute (Bourse, Analyse avancée) ;
 // au-delà de RL_MAX « coûts » par minute, réponse 429 sans interroger Yahoo / CoinGecko / INSEE.
-// Compteur en mémoire du relais (par instance, gratuit, rien n'est écrit) : il arrête un client qui insiste,
-// sans garantie stricte au niveau mondial. Le foyer partagé a ses propres protections (foyer.js) et n'est pas compté ici.
+// 21/11 : compté par Cloudflare (liaison RL_C de wrangler.jsonc, commune aux instances d'un même lieu, voir rlCheck dans foyer.js) ;
+// le compteur en mémoire ci-dessous ne sert plus que de repli (banc d'essai local, liaison indisponible). Le foyer partagé a ses propres protections (foyer.js) et n'est pas compté ici.
 // L'adresse n'est jamais écrite : seulement gardée en mémoire une minute (IPv6 : le bloc /64 d'une box).
 export const RL_MAX = 120, RL_WIN = 60000;
 const RL = new Map();
@@ -144,7 +144,9 @@ export default {
     if (url.pathname === "/foyer" || url.pathname.startsWith("/foyer/")) return handleFoyer(request, env);
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
     if (request.method !== "GET") return new Response("méthode", { status: 405, headers: CORS });
-    if (!rlHit(request.headers.get("CF-Connecting-IP") || "", rlCost(url))) {
+    let ipc = request.headers.get("CF-Connecting-IP") || "";
+    if (ipc.includes(":")) ipc = ipc.split(":").slice(0, 4).join(":");
+    if (!await rlCheck(env, "RL_C", ipc, rlCost(url), RL_MAX, (k, c) => rlHit(k, c))) {
       return new Response(JSON.stringify({ error: "limite" }), { status: 429, headers: { ...CORS, "Content-Type": "application/json; charset=utf-8", "Retry-After": "60", "Cache-Control": "no-store" } });
     }
     try {

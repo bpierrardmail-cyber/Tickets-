@@ -105,6 +105,7 @@
       add({ k:"demo", tab:"regl", g:"Essayer", ic:"🎭", t:DEMO?"Quitter la démo":"Mode démo", s:DEMO?"tes vraies données reviennent telles quelles":"un foyer inventé ; tes données restent de côté", kw:"démo essayer", fn:function(){ if(DEMO) demoQuit(); else demoStart(); } });
       // Aide
       add({ k:"aide", tab:"aide", g:"", ic:"❓", t:"Guide", s:"toute l'appli, avec une recherche", kw:"aide guide mode d'emploi", fn:function(){ menuGo(openAide); } });
+      add({ k:"perdu", tab:"aide", g:"", ic:"🔒", t:"Téléphone perdu ou volé", s:"ce qu'il faut faire, dans l'ordre", kw:"perdu volé vol sécurité nouveau téléphone effacer pirate arnaque code", fn:function(){ menuGo(function(){ openAide("Téléphone perdu ou volé"); }); } });
       add({ k:"welcome", tab:"aide", g:"", ic:"👋", t:"Revoir l'accueil", s:"les cartes du premier démarrage", kw:"accueil présentation", fn:function(){ welcomeShow(); } });
       if(plusOffer()) add({ k:"plus", tab:"aide", g:"", ic:"✦", t:APP_NAME+" Plus", s:"ce qu'il ajoute", kw:"plus payant abonnement", fn:function(){ plusShow(null); } });
       if(bancOn()) add({ k:"banc", tab:"aide", g:"", ic:"🧪", t:"Tester la lecture sur mes tickets", s:"relit les photos de tes tickets · version Perso", kw:"banc essai lecture scan test ocr", fn:function(){ menuGo(function(){ state.view="banc"; render(); window.scrollTo(0,0); }); } });

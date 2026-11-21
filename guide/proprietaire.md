@@ -265,6 +265,19 @@ Pour essayer l'appli ou la montrer sans tes chiffres : Menu › Réglages › Mo
 - Tes vraies données restent de côté, sans être touchées. Rien n'est envoyé pendant la démo (ni foyer, ni Drive, ni rappels, ni widgets).
 - La pastille « 🎭 Démo · Quitter » en haut : un geste et tes données reviennent telles quelles. « Repartir de l'exemple » efface ce que tu as essayé.
 
+## Téléphone perdu ou volé
+
+Tes comptes sont sur le téléphone : agis vite, dans cet ordre.
+
+1. **Efface le téléphone à distance** : sur un ordinateur, google.com/android/find avec ton compte Google, puis « Effacer l'appareil ». C'est la seule façon de retirer tes données d'un téléphone qui n'est plus entre tes mains.
+2. **Coupe son accès à ton compte Google** (et donc à ta sauvegarde Drive) : myaccount.google.com › Sécurité › Vos appareils › le téléphone › Se déconnecter.
+3. **Remets tes données sur un nouveau téléphone** : au premier démarrage, « Restaurer depuis Google Drive » et ton code de secours (ou « Restaurer une sauvegarde » avec un fichier). Ton foyer partagé revient avec, tes membres n'ont rien à refaire.
+4. **Si le téléphone perdu n'avait pas de code** (Menu › Réglages › Code et empreinte) et que tu as un foyer partagé : par prudence, Menu › Gérer › Foyer partagé › « Arrêter le partage », puis crée un nouveau foyer (nouveau code de secours) et réinvite tes membres. L'ancien téléphone ne peut plus rien envoyer.
+
+**Le téléphone d'un membre est perdu** : Menu › Gérer › Foyer partagé › touche le membre › « Nouveau téléphone : nouveau QR code ». Le téléphone perdu n'a plus accès au foyer tout de suite ; le membre scanne le nouveau QR code sur son nouveau téléphone.
+
+**Pour être prêt avant** : un code à 6 chiffres (et l'empreinte), la sauvegarde Google Drive activée, et ton code de secours noté sur papier, rangé ailleurs que le téléphone.
+
 ## Questions fréquentes
 
 **Le total lu est faux.** Corrige le montant avant d'enregistrer, ou touche « Prendre … € » si l'appli propose le bon. Pour ce magasin, l'appli lira le total au même endroit la prochaine fois.
@@ -280,6 +293,8 @@ Pour essayer l'appli ou la montrer sans tes chiffres : Menu › Réglages › Mo
 **Je change de téléphone.** Avec la sauvegarde Drive : au premier démarrage du nouveau, « Restaurer depuis Google Drive » et ton code de secours. Pour les photos aussi : une sauvegarde complète (ZIP), puis Menu › Sauvegarde › Depuis un fichier. Avec un foyer partagé, il revient avec la sauvegarde (Drive ou fichier) et ton code de secours : tes membres n'ont rien à refaire.
 
 **Mon code de secours.** Ne le donne à personne, même pas à un membre du foyer : il ouvre ton foyer et tes sauvegardes. Les membres n'en ont pas besoin, ils ont leur propre accès.
+
+**Quelqu'un me demande mon code.** Ne le donne jamais. Ni l'appli, ni son auteur, ni Google ne te demanderont ton code du téléphone ou ton code de secours, par message, mail ou téléphone : c'est une arnaque.
 
 **Le téléphone manque de place.** Menu › Sauvegarde › Stockage : supprime les photos des années anciennes, ou garde les photos d'origine 2 ou 5 ans.
 

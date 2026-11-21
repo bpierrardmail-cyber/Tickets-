@@ -79,6 +79,8 @@ Après chaque modification, dans le même commit :
 **Version Store** : `PLUS_FEATURES = widgets, foyer, avancee, factures` (« factures » = importer et suivre ses factures ; le reste d'À venir est gratuit). L'achat de Plus n'est pas encore branché. L'import de relevé est gratuit pour l'instant.
 
 ## En cours / à reprendre
+- **Sécurité, plus tard** (21/11) : chiffrer les données sur le téléphone (clé dans la puce sécurisée d'Android, débloquée par l'empreinte ou le code) — utile pour la version Store, pas nécessaire pour l'instant (Benoît) ; vérifier l'achat de Plus par le relais (Play Integrity) à la sortie Store.
+- **Clé de signature des APK** (rappel, 21/11) : Benoît garde une copie hors ligne du fichier de la clé (keystore, celui mis en base64 dans le secret GitHub `TK_KEYSTORE_B64`) et de son mot de passe (`TK_KEYSTORE_PASS`) ; à la sortie Store, la signature gérée par Google Play.
 - **Banc d'essai de lecture** (18/11) : Benoît lance le test sur son téléphone (Perso) et envoie le fichier exporté ; le rejouer avec `outils/banc_rejouer.py`, corriger la lecture, ajouter des tickets inventés équivalents. Objectif : 100 % avant la sortie Store.
 - **Articles simplifiés** (18/11) : à essayer par Benoît (ticket scanné : noms, suggestions, nouvel article ; ticket à la main ; partager certains articles).
 - **Payé en espèces** (18/11) : à essayer par Benoît sur son téléphone (ticket en espèces pris ou non dans le liquide, détail du liquide, ticket partagé avec Sylvette).
@@ -225,6 +227,12 @@ Après chaque modification, dans le même commit :
 ---
 
 ## Historique (le plus récent en haut)
+
+### 21/11
+- **Sécurité, suite de la revue du 20/11** (Benoît : « OK pour 5 et téléphone perdu ; 2 pour plus tard ») :
+  - **point 5, limites du relais tenues par Cloudflare** : liaisons `ratelimits` dans `wrangler.jsonc` (`RL_F` 300 requêtes /foyer par minute, `RL_J` 10 essais de « rejoindre », `RL_C` 120 pour les cours), communes à toutes les instances d'un même lieu ; `rlCheck(env, nom, clé, coût, max, repli)` dans `foyer.js`, clé = empreinte de l'adresse (jamais l'adresse) ; sans la liaison (banc local, panne), l'ancien compteur en mémoire sert de repli. t153 : +6 vérifications (liaison consultée, empreinte seulement, refus → 429 sans rien appeler, « rejoindre », panne → repli) ;
+  - **Téléphone perdu ou volé** : partie du guide (propriétaire : effacer à distance par google.com/android/find, déconnecter le téléphone du compte Google, restaurer sur le nouveau, « Arrêter le partage » puis nouveau foyer si l'ancien n'avait pas de code, « Nouveau téléphone : nouveau QR code » pour un membre ; membre : effacer, prévenir le propriétaire, ses comptes perso par sa sauvegarde) ; « on ne te demandera jamais ton code » dans les deux guides ; ligne Menu › Aide › « Téléphone perdu ou volé » qui ouvre cette partie dépliée (`openAide(titre)`). Test t161 ;
+  - noté : le jeton du propriétaire vient du code de secours (même code = même accès, c'est ce qui permet de restaurer le foyer) ; couper l'accès d'un ancien téléphone du propriétaire passe donc par un nouveau foyer.
 
 ### 20/11
 - **Nettoyage, calculs et fluidité** (Benoît : « nettoyage du dépôt et de Cloudflare, puis le reste du point 2 et le point 5 ») :

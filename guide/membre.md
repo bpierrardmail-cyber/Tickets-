@@ -88,6 +88,14 @@ Menu › Réglages › Rappels (appli Android) : tes prélèvements de la veille
 - Si tu quittes le foyer (Menu › Gérer › Foyer partagé › Quitter le foyer), les données du foyer partent de ton téléphone ; tu retrouves celles que tu avais avant de le rejoindre.
 - Si le propriétaire te retire du foyer, ton accès est coupé tout de suite.
 
+## Téléphone perdu ou volé
+
+1. **Efface le téléphone à distance** : sur un ordinateur, google.com/android/find avec ton compte Google, puis « Effacer l'appareil ».
+2. **Préviens le propriétaire du foyer** : il touche ton nom › « Nouveau téléphone : nouveau QR code ». Le téléphone perdu n'a plus accès au foyer tout de suite ; tu scannes le nouveau QR code sur ton nouveau téléphone et tu retrouves tout.
+3. **Tes comptes perso** (« Mes comptes ») : ils reviennent avec ta propre sauvegarde Google Drive et ton code de secours.
+
+Ni l'appli, ni le propriétaire, ni Google ne te demanderont ton code par message, mail ou téléphone : ne le donne jamais.
+
 ## Mode démo
 
 Pour essayer l'appli ou la montrer sans tes chiffres : Menu › Réglages › Mode démo (ou « Voir un exemple » au premier démarrage).

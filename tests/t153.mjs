@@ -22,5 +22,20 @@ let v6 = 0; for (let i = 0; i < RL_MAX + 5; i++) if ((await get("/search?q=b" + 
 check(v6 > 0, "IPv6 : tout le bloc /64 compte ensemble");
 check((await w.fetch(new Request("https://relais.test/search?q=x", { method: "POST", headers: { "CF-Connecting-IP": "203.0.113.50" } }), {})).status === 405, "seulement GET pour les cours");
 check((await get("/search?q=sansip")).status === 200, "sans adresse (banc d'essai local) : pas de limite");
+// 21/11 : limite tenue par Cloudflare (liaisons RL_C, RL_F, RL_J), l'adresse jamais transmise en clair
+const seen = []; let allow = true;
+const fake = { limit: async (o) => { seen.push(o); return { success: allow }; } };
+const envL = { RL_C: fake, RL_F: fake, RL_J: fake, FOYER: { idFromName: () => "x", get: () => ({ fetch: async () => new Response("{}") }) } };
+const getL = (p, ip) => w.fetch(new Request("https://relais.test" + p, { headers: { "CF-Connecting-IP": ip } }), envL);
+check((await getL("/search?q=lim", "192.0.2.44")).status === 200 && seen.length === 1, "avec la liaison Cloudflare : elle est consultée");
+check(!JSON.stringify(seen).includes("192.0.2.44") && /^[A-Za-z0-9_-]{43}$/.test(seen[0].key), "elle ne reçoit qu'une empreinte, jamais l'adresse");
+check(seen[0].delta === 1, "une recherche coûte 1");
+allow = false; const n1 = up;
+check((await getL("/search?q=lim2", "192.0.2.44")).status === 429 && up === n1, "liaison qui refuse : 429, rien ne part vers l'extérieur");
+const join = await w.fetch(new Request("https://relais.test/foyer/join", { method: "POST", headers: { "CF-Connecting-IP": "192.0.2.45", "Content-Type": "application/json" },
+  body: JSON.stringify({ fid: "A".repeat(22), mid: "abcdefgh", inv: "B".repeat(22), tok: "C".repeat(43) }) }), envL);
+check(join.status === 429, "foyer : la liaison refuse aussi les essais de « rejoindre »");
+const envX = { RL_C: { limit: async () => { throw new Error("panne"); } } };
+check((await w.fetch(new Request("https://relais.test/search?q=panne", { headers: { "CF-Connecting-IP": "192.0.2.46" } }), envX)).status === 200, "liaison en panne : le compteur en mémoire prend le relais");
 fs.rmSync(tmp, { recursive: true });
 console.log("\n" + fails + " échec(s)"); process.exit(fails ? 1 : 0);
