@@ -21,7 +21,7 @@
       h+='<div class="ep2-foot">'+(ro?'':'<button type="button" class="btn primary" id="addep">＋ Compte épargne</button>')+'<button type="button" class="paper ep2-prov" id="goprov"><span>Provisions</span><span>'+esc(fmtK(provT))+' ›</span></button></div>';
       return h;
     }
-    // Opérations › Graphiques : la phrase à retenir de chaque graphique (clé = mode) et son résumé d'une ligne (clé = mode + "1")
+    // Opérations › Évolution (ex Graphiques) : la phrase à retenir de chaque graphique (clé = mode) et son résumé d'une ligne (clé = mode + "1")
     function cptGraphSums(person, month, liqOn){
       var R={}, pm=prevMonthKey(month), mN=function(m){ return monthLabelOf(m).split(" ")[0]; };
       try{

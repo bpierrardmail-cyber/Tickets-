@@ -153,7 +153,7 @@
 
       var cptOpen = state.cptOpen || (state.cptOpen={});
       var virIn=0, virOut=0; virs.forEach(function(v){ var x=Number(v.montant)||0; if(x>=0) virIn+=x; else virOut+=x; });
-      var CMODES=[["mois","Ce mois"],["dep","Dépenses"],["solde","Solde"],["es","Entrées / sorties"]];   // Épargne : sous-onglet Épargne ; Provisions : À venir › Provisions
+      var CMODES=[["mois","Ce mois"],["solde","Solde"],["es","Entrées / sorties"]];   // Évolution du compte (22/11 : « Dépenses » → Budget › Analyse) ; Épargne : sous-onglet Épargne ; Provisions : À venir › Provisions
       // Répartition des dépenses du mois (catégories de tickets + frais fixes), de la plus grosse à la plus petite
       var dParts=[], byCat={};
       paid.forEach(function(e){ var c=(e.categorie||"Autre"); byCat[c]=(byCat[c]||0)+(Number(e.montant)||0); });
@@ -192,7 +192,7 @@
       function cRangeBtn(){   // 6 mois · 12 mois · Tout en pastilles (19/11)
         return '<span class="crange-g" role="group" aria-label="Période">'+[["6","6 mois"],["12","12 mois"],["all","Tout"]].map(function(x){ return '<button type="button" class="anfx crange-c'+(x[0]===crange?' on':'')+'" data-r="'+x[0]+'" aria-pressed="'+(x[0]===crange)+'">'+x[1]+'</button>'; }).join("")+'</span>'; }
       function inOut(m){ var inn=provInSum(person, m, false), out=computeDepensesMonth(person,m); virementsOf(person,m).forEach(function(v){ var x=Number(v.montant)||0; if(x>=0) inn+=x; else out+=-x; }); return { inn:inn, out:out }; }
-      var chart=chartTabsHTML(CMODES, cmode, "cptChartDef", "mois").replace('class="cch-tabs"','class="cch-tabs cch-tabs4"')+'<div class="cch">';
+      var chart=chartTabsHTML(CMODES, cmode, "cptChartDef", "mois").replace('class="cch-tabs"','class="cch-tabs cch-tabs4 cch-tabs3"')+'<div class="cch">';
 
       var pvCpt=provSumWhere(month, function(w, p){ return (acct.main && w==="cpt") || w==="cpt:"+acct.key; });
       var hero={ label:(multi?esc(acct.nom):"Solde du compte")+(futur?" · fin "+esc(monthLabelOf(month))+" prévue":" (banque estimée)"), big:soldeBanque, color:(soldeBanque<0?"var(--coral)":"var(--ink)"), sub:(futur?"Prévu, tout ce qui est planifié compris, sans le liquide":"Estimé, sans le liquide")+(pvCpt>0.004?" · dont provisions "+fmtK(pvCpt)+", disponible "+fmtK(soldeBanque-pvCpt):"") };
@@ -207,10 +207,6 @@
         var gain=soldeFin-reporte;
         hero={ label:esc(capFirst(monthLabelOf(month).split(" ")[0]))+(multi?" · "+esc(acct.nom):"")+(futur?" · prévu":""), big:gain, color:(gain<0?"var(--coral)":"var(--accent)"), sub:(gain<0?"perdu":"gagné")+(futur?" (prévu)":"")+" · début "+fmtK(reporte)+" · fin "+fmtK(soldeFin) };
         chart+=compteWaterfallSVG(steps)+'<div class="cch-note">Touche une barre pour son détail</div>';
-      } else if(cmode==="dep"){
-        hero={ label:"Dépenses du mois", big:depenses, color:"var(--coral)", sub:"Tickets "+fmtK(paidTotal)+" · Frais fixes "+fmtK(fraisTotal) };
-        if(depenses>0) chart+='<div class="cdon cdon-big">'+compteDonutSVG(dParts, depenses)+'<div class="cdon-l">'+dParts.map(function(x){ return '<div class="cdon-r"><i class="cdot" style="background:'+x.col+';margin:0"></i><span class="n">'+esc(x.l)+'</span><span class="p">'+Math.round(x.v/depenses*100)+' %</span><span class="a">'+cptK(x.v)+' '+esc(curSym())+'</span></div>'; }).join("")+'</div></div>';
-        else chart+='<div class="cch-note" style="margin:30px 0">Aucune dépense ce mois-ci.</div>';
       } else if(cmode==="solde"){
         var sFirst=month; virements.forEach(function(v){ if(v.person===person && v.month && v.month<sFirst) sFirst=v.month; }); state.entries.forEach(function(e){ var k=monthKey(e.date); if(k && k<sFirst && ticketInAcct(e, person)) sFirst=k; });
         var sMs=cRangeMonths(sFirst);
@@ -393,6 +389,8 @@
         var bub={ es:accEs, ep:(accEp||''), prov:(accProv||'') }[cmode];
         h+=tabHero(heroMain)+(bub?'<section class="paper cacc">'+bub+'</section>':'');
         if(!preStart) h+='<section class="paper cpg-oth"><b class="cpg-oh">Les autres en résumé</b>'+CMODES.filter(function(x){ return x[0]!==cmode; }).map(function(x){ return '<button type="button" class="cpg-or" data-m="'+x[0]+'"><span><b>'+esc(x[1])+'</b><small>'+(gSum[x[0]+"1"]||"")+'</small></span><span class="ch">›</span></button>'; }).join("")+'</section>';
+        // les dépenses par catégorie sont dans Budget › Analyse (22/11)
+        if(!preStart && depSubs().some(function(x){ return x[0]==="analyse"; })) h+='<button type="button" class="paper cpg-dep" id="cpgDep"><span><b>Tes dépenses par catégorie</b><small>'+(gSum.dep1||"")+'</small></span><span class="cpg-go">Budget › Analyse ›</span></button>';
       }
       else {
         var ph, pb;
@@ -495,6 +493,7 @@
       wireChartDefaults();
       [].forEach.call(document.querySelectorAll(".cch-tabs button"), function(bt){ bt.onclick=function(){ state.cptChart=bt.getAttribute("data-m"); store.write("cptChart", state.cptChart); render(); }; });
       var clq=document.getElementById("cptLiqBtn"); if(clq) clq.onclick=function(ev){ ev.stopPropagation(); state.cptLiq=!liqOn; store.write("cptLiq", state.cptLiq); render(); };
+      var cpgDep=document.getElementById("cpgDep"); if(cpgDep) cpgDep.onclick=function(){ state.depSub="analyse"; state.view=depView(); render(); window.scrollTo(0,0); };
       [].forEach.call(document.querySelectorAll(".cpg-or"), function(b){ b.onclick=function(){ state.cptChart=b.getAttribute("data-m"); render(); window.scrollTo(0,0); }; });
       [].forEach.call(document.querySelectorAll(".ep2-card[data-id]"), function(b){ b.onclick=function(){ var id=b.getAttribute("data-id"), c=epargne.filter(function(x){ return String(x.id)===id; })[0]; if(!c) return;
         if(c.bourseLink){ if(FEAT.bourse){ state.view="bourse"; render(); window.scrollTo(0,0); } return; }

@@ -35,7 +35,7 @@ with sync_playwright() as p:
     top=norm(pg.locator(".ops-sum").inner_text()); print("  haut :", top.replace("\n"," | "))
     check("1 527,58" in top.replace("\n","") or "1 527,58" in top, "solde estimé 1 527,58 €")
     check("+2 230 €" in top and "−1 115 €" in top and "1 385 €" in top, "Entrées +2 230 · Sorties −1 115 · Fin de mois 1 385")
-    check(pg.evaluate("()=>[].map.call(document.querySelectorAll('.avtabs .cpsub'), b=>b.textContent)")==["Opérations","Tickets","Épargne","Graphiques"] and pg.locator("#cptGear").count()==1 and pg.locator('.cptGo[data-page="cfg"]').count()==0, "sous-onglets Opérations · Épargne · Graphiques et roue du compte")
+    check(pg.evaluate("()=>[].map.call(document.querySelectorAll('.avtabs .cpsub'), b=>b.textContent)")==["Opérations","Tickets","Épargne","Évolution"] and pg.locator("#cptGear").count()==1 and pg.locator('.cptGo[data-page="cfg"]').count()==0, "sous-onglets Opérations · Épargne · Graphiques et roue du compte")
     check(pg.locator(".thero .cch-tabs").count()==0, "plus de graphique sur la page principale")
     t=body(); print("  liste :", t[:900].replace("\n"," | "))
     av=norm(pg.locator(".ops-av").inner_text())
@@ -103,10 +103,10 @@ with sync_playwright() as p:
     check(pg.locator("#opsBody").count()==1, "retour : la liste du compte")
     # Graphiques
     pg.locator('.avtabs .cpsub[data-cp="graph"]').click(); pg.wait_for_timeout(700)
-    check(pg.locator(".thero .cch-tabs").count()==1 and pg.locator(".avtabs .cpsub.on").inner_text()=="Graphiques", "Graphiques : les graphiques d'avant, en sous-onglet")
+    check(pg.locator(".thero .cch-tabs").count()==1 and pg.locator(".avtabs .cpsub.on").inner_text()=="Évolution", "Graphiques : les graphiques d'avant, en sous-onglet")
     pg.screenshot(path=os.path.join(SP,"t76_graph.png"))
-    pg.locator('.thero .cch-tabs button[data-m="dep"]').click(); pg.wait_for_timeout(500)
-    check(pg.locator(".thero .cch-tabs button.on").get_attribute("data-m")=="dep", "changer de graphique")
+    pg.locator('.thero .cch-tabs button[data-m="es"]').click(); pg.wait_for_timeout(500)
+    check(pg.locator(".thero .cch-tabs button.on").get_attribute("data-m")=="es", "changer de graphique")
     pg.locator(".thero .hstat").first.click() if False else None
     pg.locator('.avtabs .cpsub[data-cp=""]').click(); pg.wait_for_timeout(600)
     check(pg.locator("#opsBody").count()==1, "Opérations : la liste")
@@ -118,7 +118,7 @@ with sync_playwright() as p:
     # Graphiques › Solde (l'Accueil n'a plus de cartes de graphiques depuis le 09/11)
     pg.locator('.avtabs .cpsub[data-cp="graph"]').click(); pg.wait_for_timeout(500)
     pg.locator('.thero .cch-tabs button[data-m="solde"]').click(); pg.wait_for_timeout(500)
-    check(pg.locator(".avtabs .cpsub.on").inner_text()=="Graphiques" and pg.locator(".thero .cch-tabs button.on").get_attribute("data-m")=="solde", "toucher la carte « Solde » ouvre ce graphique")
+    check(pg.locator(".avtabs .cpsub.on").inner_text()=="Évolution" and pg.locator(".thero .cch-tabs button.on").get_attribute("data-m")=="solde", "toucher la carte « Solde » ouvre ce graphique")
     pg.locator('.avtabs .cpsub[data-cp=""]').click(); pg.wait_for_timeout(500); check(pg.locator("#opsBody").count()==1, "Opérations : la liste")
     # mois passé et mois à venir
     compte(); pg.locator("#cm-prev").click(); pg.wait_for_timeout(500); t=body(); print("  septembre :", t[:300].replace("\n"," | "))

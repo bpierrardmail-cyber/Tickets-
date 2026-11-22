@@ -27,7 +27,7 @@ with sync_playwright() as p:
     check(pg.locator(".avtabs .cpsub.on").inner_text()=="Opérations" and pg.locator("#opsBody").count()==1 and pg.locator("#cptGraph").count()==0, "Opérations par défaut, sans les boutons Graphiques / Configuration")
     pg.screenshot(path=os.path.join(SP,"t94_ops.png"))
     # plus d'onglet Virements : « ＋ Ajouter » dans les Opérations
-    check(pg.evaluate("()=>[].map.call(document.querySelectorAll('.avtabs .cpsub'), b=>b.textContent)")==["Opérations","Tickets","Épargne","Graphiques"], "4 sous-onglets : Opérations · Tickets · Épargne · Graphiques")
+    check(pg.evaluate("()=>[].map.call(document.querySelectorAll('.avtabs .cpsub'), b=>b.textContent)")==["Opérations","Tickets","Épargne","Évolution"], "4 sous-onglets : Opérations · Tickets · Épargne · Graphiques")
     check(pg.locator("#opsAdd").count()==0, "plus de « ＋ Ajouter » : le « + » de la barre suffit")
     pg.locator("#navplus").click(); pg.wait_for_timeout(300)
     ks=pg.evaluate("()=>[].map.call(document.querySelectorAll('.sheet-overlay .dr-row[data-k]'), b=>b.getAttribute('data-k'))")

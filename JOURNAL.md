@@ -228,6 +228,10 @@ Après chaque modification, dans le même commit :
 
 ## Historique (le plus récent en haut)
 
+### 22/11
+- **Opérations › Graphiques devient « Évolution »** (maquette planche 4 du canevas Opérations, Benoît : « tu peux intégrer ») : la vie du compte affiché en 3 boutons (Ce mois, Solde, Entrées / sorties, `.cch-tabs3`) ; le graphique « Dépenses » est retiré (doublon de Budget › Analyse) et remplacé, sous « Les autres en résumé », par la carte « Tes dépenses par catégorie » (`#cpgDep` : total du mois et comparaison, mène à Budget › Analyse). Guide mis à jour ; t76, t94, t106 adaptés (t106 : carte et navigation).
+- Clé de signature des APK : Benoît a imprimé le mot de passe et rangé le fichier sur OneDrive.
+
 ### 21/11
 - **Sécurité, suite de la revue du 20/11** (Benoît : « OK pour 5 et téléphone perdu ; 2 pour plus tard ») :
   - **point 5, limites du relais tenues par Cloudflare** : liaisons `ratelimits` dans `wrangler.jsonc` (`RL_F` 300 requêtes /foyer par minute, `RL_J` 10 essais de « rejoindre », `RL_C` 120 pour les cours), communes à toutes les instances d'un même lieu ; `rlCheck(env, nom, clé, coût, max, repli)` dans `foyer.js`, clé = empreinte de l'adresse (jamais l'adresse) ; sans la liaison (banc local, panne), l'ancien compteur en mémoire sert de repli. t153 : +6 vérifications (liaison consultée, empreinte seulement, refus → 429 sans rien appeler, « rejoindre », panne → repli) ;

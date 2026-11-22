@@ -11,7 +11,7 @@ Tickets garde tout sur ton téléphone : pas de compte à créer, pas besoin d'i
 **L'écran d'accueil**
 
 - Ce qu'il te reste jusqu'à la fin du mois, les alertes (budget dépassé, prélèvement dans les 3 jours, découvert prévu), tes dernières opérations et une ligne pour le foyer. Touche un bloc pour ouvrir l'onglet qui va avec.
-- Les graphiques sont dans les onglets : Opérations › Graphiques, Budget › Analyse, À venir.
+- Les graphiques sont dans les onglets : Opérations › Évolution (ton compte), Budget › Analyse (tes dépenses), À venir.
 - « + » › Saisir note une dépense à la main ; la liste des tickets du mois est dans Opérations › Tickets.
 - Dans Budget et Foyer, le bouton en haut à droite choisit qui tu regardes : toi, une personne, ou tout le foyer.
 - En bas, 5 onglets : Accueil, Opérations, Budget, À venir, Foyer (et Bourse dans la version Perso). Le bouton vert **＋**, sur l'Accueil et Opérations, ajoute tout : scanner ou saisir un ticket, un virement, un frais fixe, importer un relevé.
@@ -88,7 +88,7 @@ Le bouton personne, en haut à droite, choisit les dépenses montrées dans Arti
 
 L'onglet Opérations (ex Compte) montre ton compte en banque comme un relevé : tickets, frais fixes et virements du mois, jour par jour, avec le solde du soir.
 
-Quatre parties, en boutons sous le titre : Opérations, **Tickets**, Épargne, Graphiques.
+Quatre parties, en boutons sous le titre : Opérations, **Tickets**, Épargne, Évolution.
 
 **Tickets** : en haut, le total du mois, sa répartition par catégorie et la comparaison avec le mois d'avant. Dessous, la recherche (magasin, article, catégorie), le calendrier pour une période, et des pastilles pour ne voir qu'une catégorie. Les tickets sont rangés par jour, avec le nombre d'articles et les marques « partagé », « espèces » et « photo ». En bas : « Photos des tickets » (la galerie) et la corbeille.
 
@@ -105,7 +105,7 @@ Quatre parties, en boutons sous le titre : Opérations, **Tickets**, Épargne, G
 
 **Épargne** : le total de tes comptes épargne, sa courbe (pastilles 6 mois · 12 mois · Tout) et ce qui est disponible hors provisions. Chaque compte est une carte : ce qu'il a gagné ce mois, et, s'il a un objectif, un cercle avec ce qu'il faut mettre par mois. Touche une carte pour la modifier ou la supprimer ; dans un grand foyer, les pastilles filtrent par personne.
 
-**Graphiques** : quatre boutons (Ce mois, Dépenses, Solde, Entrées / sorties). Chaque graphique commence par une phrase qui dit ce qu'il faut retenir (« Ton compte a gagné 610 € ce mois »). Touche une barre pour voir le détail. En dessous, « Les autres en résumé » donne les trois autres en une ligne chacun.
+**Évolution** : la vie du compte affiché, en trois boutons (Ce mois, Solde, Entrées / sorties). Chaque graphique commence par une phrase qui dit ce qu'il faut retenir (« Ton compte a gagné 610 € ce mois »). Touche une barre pour voir le détail. En dessous, « Les autres en résumé » donne les deux autres en une ligne chacun. Tes dépenses par catégorie sont dans Budget › Analyse : la carte « Tes dépenses par catégorie » y mène.
 
 **La roue ⚙ du compte** : modifier le compte, le solde reporté, importer un relevé, annuler le dernier import, l'argent liquide (le détail du mois : retraits, tickets payés en espèces, et la correction), reprendre les virements du mois d'avant.
 

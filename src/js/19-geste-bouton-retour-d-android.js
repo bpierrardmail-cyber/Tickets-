@@ -173,7 +173,7 @@
     function depCur(){ return state.view==="analyse" ? "analyse" : (state.depSub==="produits" ? "produits" : (state.depSub==="budgets" ? "budgets" : "produits")); }
     // Opérations : sous-onglets ; un membre sans l'onglet Compte n'a que Tickets
     function cptTabOn(){ return !fyMember() || fyTabOn(fyCfg, "compte"); }
-    function cptSubsHTML(page){ var L=cptTabOn() ? [["","Opérations"],["tk","Tickets"],["ep","Épargne"],["graph","Graphiques"]] : [["tk","Tickets"]];
+    function cptSubsHTML(page){ var L=cptTabOn() ? [["","Opérations"],["tk","Tickets"],["ep","Épargne"],["graph","Évolution"]] : [["tk","Tickets"]];
       if(L.length<2) return '';
       return '<div class="avtabs" role="tablist">'+L.map(function(x){ var on=(x[0]||null)===page; return '<button type="button" role="tab" class="cpsub'+(on?' on':'')+'" aria-selected="'+on+'" data-cp="'+x[0]+'">'+x[1]+'</button>'; }).join("")+'</div>'; }
     function cptSubGo(k){ if(k==="tk"){ state.view="tickets"; state.depSub="tickets"; state.catFilter=null; render(); window.scrollTo(0,0); return; }
