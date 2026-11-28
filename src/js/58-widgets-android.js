@@ -63,7 +63,7 @@
         if(bDay && bDay.pts && bDay.pts.length>1 && Date.now()-bDay.t<6*3600000){ bDay.pts.forEach(function(q){ if(q.t>=lim) hist.push([q.t, r2(q.v)]); }); }
         else bourseHist.forEach(function(h){ if(h.t<lim) ref=h.v; else hist.push([h.t, r2(h.v)]); });
         if(ref==null && hist.length) ref=hist[0][1];
-        snap.bourse={ total:r2(bourseTotalLive()), ref:(ref!=null?r2(ref):null), hist:hist.slice(-160), fixed:r2(fixed), items:items, base:BASE, fx:(fxCache&&fxCache.rates)||{}, api:coursApi() };
+        snap.bourse={ total:r2(bourseTotalLive()), ref:(ref!=null?r2(ref):null), hist:hist.slice(-160), cap:r2(bourseCapNow()), long:bourseSeries().slice(-500).map(q=>[q.t, r2(q.v), r2(q.c||0)]), fixed:r2(fixed), items:items, base:BASE, fx:(fxCache&&fxCache.rates)||{}, api:coursApi() };
       }
       return snap;
     }

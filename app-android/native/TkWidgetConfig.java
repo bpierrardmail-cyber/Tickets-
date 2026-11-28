@@ -44,7 +44,7 @@ public class TkWidgetConfig extends Activity {
         JSONObject d = TkWidgets.data(this);
         boolean isSolde = kind == TkWidgetSolde.class, multi = d != null && d.optBoolean("multi", false);
         String name = kind == TkWidgetSolde.class ? "Solde" : kind == TkWidgetCommun.class ? "Commun" : kind == TkWidgetMois.class ? "Mois en cours"
-                : kind == TkWidgetFoyer.class ? "Foyer" : kind == TkWidgetBourse.class ? "Bourse du jour" : kind == TkWidgetEpargne.class ? "Épargne" : "Tickets";
+                : kind == TkWidgetFoyer.class ? "Foyer" : kind == TkWidgetBourse.class ? "Bourse" : kind == TkWidgetEpargne.class ? "Épargne" : "Tickets";
         ((TextView) findViewById(R.id.tk_cfg_title)).setText("Widget « " + name + " »");
 
         final RadioButton moi = findViewById(R.id.tk_cfg_moi), foyer = findViewById(R.id.tk_cfg_foyer);
@@ -88,6 +88,15 @@ public class TkWidgetConfig extends Activity {
                 boxes.add(cb); boxIds.add(it.optString("id"));
             }
         }
+        // Bourse : période (24 h, ce mois, 1 mois, 6 mois, 1 an, depuis le début)
+        final boolean isBo = kind == TkWidgetBourse.class;
+        findViewById(R.id.tk_cfg_bo).setVisibility(isBo ? View.VISIBLE : View.GONE);
+        final String[] boK = { "24h", "mois", "1m", "6m", "1a", "max" };
+        final int[] boR = { R.id.tk_cfg_b24, R.id.tk_cfg_bmois, R.id.tk_cfg_b1m, R.id.tk_cfg_b6m, R.id.tk_cfg_b1a, R.id.tk_cfg_bmax };
+        if (isBo) {
+            String cur = TkWidgets.prefs(this).getString("bp_" + id, "24h");
+            for (int i = 0; i < boK.length; i++) ((RadioButton) findViewById(boR[i])).setChecked(boK[i].equals(cur));
+        }
         boolean isFoyer = kind == TkWidgetEpargne.class ? TkWidgets.epFoyer(this, id) : "foyer".equals(TkWidgets.scope(this, id));
         moi.setChecked(!isFoyer);
         foyer.setChecked(isFoyer);
@@ -114,6 +123,11 @@ public class TkWidgetConfig extends Activity {
                         .putInt("epp_" + id, p6.isChecked() ? 6 : pall.isChecked() ? 0 : 12)
                         .putBoolean("epnp_" + id, noProv.isChecked())
                         .apply();
+            }
+            if (isBo) {
+                String bp = "24h";
+                for (int i = 0; i < boK.length; i++) if (((RadioButton) findViewById(boR[i])).isChecked()) bp = boK[i];
+                TkWidgets.prefs(this).edit().putString("bp_" + id, bp).apply();
             }
             // masquage auto activé alors que les montants sont affichés pour toujours : ils se masquent dans 2 minutes
             long until = TkWidgets.prefs(this).getLong("vis_until", 0);

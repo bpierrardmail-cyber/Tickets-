@@ -6,11 +6,11 @@
        Scripts (08/11) : seul le script de la page s'exécute, reconnu par son empreinte (mise par python3 outils/build.py à l'assemblage).
        Le relais et les cours (Perso) ; les librairies (Tesseract, pdf.js) sont dans l'appli ; localhost = relais imité des tests (rien ne sort du téléphone).
        Toute nouvelle connexion doit être ajoutée ici (et justifiée, voir CLAUDE.md). -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-HF9Nj8xomwt1vb2Rg0eWR7qyVzrXzanEJEhyFCFj+ZU=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-iFMsUzcObjWowPB3r4SAtoqNlfSgKyCnVmDsm8k2X7A=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="28/11 15:07" />
+  <meta name="build" content="28/11 16:59" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -13875,7 +13875,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
         if(bDay && bDay.pts && bDay.pts.length>1 && Date.now()-bDay.t<6*3600000){ bDay.pts.forEach(function(q){ if(q.t>=lim) hist.push([q.t, r2(q.v)]); }); }
         else bourseHist.forEach(function(h){ if(h.t<lim) ref=h.v; else hist.push([h.t, r2(h.v)]); });
         if(ref==null && hist.length) ref=hist[0][1];
-        snap.bourse={ total:r2(bourseTotalLive()), ref:(ref!=null?r2(ref):null), hist:hist.slice(-160), fixed:r2(fixed), items:items, base:BASE, fx:(fxCache&&fxCache.rates)||{}, api:coursApi() };
+        snap.bourse={ total:r2(bourseTotalLive()), ref:(ref!=null?r2(ref):null), hist:hist.slice(-160), cap:r2(bourseCapNow()), long:bourseSeries().slice(-500).map(q=>[q.t, r2(q.v), r2(q.c||0)]), fixed:r2(fixed), items:items, base:BASE, fx:(fxCache&&fxCache.rates)||{}, api:coursApi() };
       }
       return snap;
     }

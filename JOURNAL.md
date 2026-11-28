@@ -229,6 +229,8 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 28/11
+- **Widget Bourse, période au choix** (Benoît : « j'ai plus que ça en perte ce mois-ci », le widget ne montrait que 24 h) : réglage Période (appui long) 24 h · Ce mois · 1 mois · 6 mois · 1 an · Depuis le début (`bp_<id>`) ; hors 24 h, gagné / perdu = plus-value sur la période (versements retirés, comme la courbe « plus-value » de l'onglet), courbe et dates suivent ; données `widgetSnapshot().bourse.long` (`bourseSeries`) et `cap` (`bourseCapNow`).
+- **Widget Épargne** : « Ce mois · hors » était coupé → « Ce mois* », et sur le grand format « * hors provisions (X €) ».
 - **Widget Bourse, petit format** (Benoît : « la somme à la place du pourcentage ») : « ▼ −106 € » au lieu de « ▼ −1,78 % » ; le grand format garde les deux.
 - **Widget Épargne, provisions retirées seulement du mois en cours** (Benoît : « les mois passés doivent prendre en compte toutes les dépenses, pas ce mois ») : avec « Retirer les provisions du total », seuls le total et « Ce mois · hors prov. » sont sans les provisions ; « 6 mois » et la courbe gardent tout, comme l'onglet Épargne. « 6 mois » = « Sur la période » de l'onglet (6 mois affichés, 5 écarts) : plus de « Depuis juin » avec 6 mois d'historique.
 - **Widget Épargne, même total que l'appli** (Benoît : « la somme sur 6 mois n'est pas la même ») : le widget comptait par défaut « Moi » (ses livrets seulement) alors que l'onglet Épargne compte tout ; maintenant **toute l'épargne par défaut** (réglage à part `escope_<id>`, défaut `foyer`, pour que l'ancien « Moi » enregistré sans le vouloir ne compte plus), « Épargne · moi » dans le titre si on choisit Moi.

@@ -163,7 +163,7 @@ public final class TkWidgets {
 
     static void forget(Context c, int[] ids) {
         SharedPreferences.Editor e = prefs(c).edit();
-        for (int id : ids) { e.remove("mask_" + id); e.remove("scope_" + id); e.remove("epx_" + id); e.remove("escope_" + id); e.remove("epnp_" + id); e.remove("epp_" + id); }
+        for (int id : ids) { e.remove("mask_" + id); e.remove("scope_" + id); e.remove("epx_" + id); e.remove("bp_" + id); e.remove("escope_" + id); e.remove("epnp_" + id); e.remove("epp_" + id); }
         e.apply();
     }
 
@@ -451,7 +451,34 @@ public final class TkWidgets {
         else ref = b.isNull("ref") ? (pts.isEmpty() ? total : pts.get(0)[1]) : b.optDouble("ref", total);
         if (!pts.isEmpty() && pts.get(0)[0] > from) pts.add(0, new double[] { from, ref });
         double chg = total - ref, pc = ref != 0 ? chg / Math.abs(ref) * 100 : 0;
-        v.setTextViewText(R.id.tk_title, head("Bourse · 24 h"));
+        // Période choisie dans les réglages (bp_<id>) : autre que 24 h → plus-value gagnée ou perdue sur la période (versements retirés), comme l'onglet Bourse
+        String per = p.getString("bp_" + id, "24h"), perLab = "24 h";
+        JSONArray lg = b.optJSONArray("long");
+        if (!"24h".equals(per) && lg != null && lg.length() > 0) {
+            double cap = b.optDouble("cap", 0);
+            java.util.Calendar cal = java.util.Calendar.getInstance();
+            if ("mois".equals(per)) { cal.set(java.util.Calendar.DAY_OF_MONTH, 1); cal.set(java.util.Calendar.HOUR_OF_DAY, 0); cal.set(java.util.Calendar.MINUTE, 0); cal.set(java.util.Calendar.SECOND, 0); from = cal.getTimeInMillis(); perLab = "ce mois"; }
+            else if ("1m".equals(per)) { from = now - 30 * 86400000L; perLab = "1 mois"; }
+            else if ("6m".equals(per)) { from = now - 182 * 86400000L; perLab = "6 mois"; }
+            else if ("1a".equals(per)) { from = now - 365 * 86400000L; perLab = "1 an"; }
+            else { from = lg.optJSONArray(0) == null ? now : lg.optJSONArray(0).optLong(0); perLab = "total"; }
+            pts = new ArrayList<>();
+            double refPl = Double.NaN, refV = 0;
+            for (int i = 0; i < lg.length(); i++) {
+                JSONArray q = lg.optJSONArray(i); if (q == null) continue;
+                double t = q.optDouble(0), pl = q.optDouble(1) - q.optDouble(2);
+                if (t < from) { refPl = pl; refV = q.optDouble(1); }
+                else if (t < tLast) pts.add(new double[] { t, pl });
+            }
+            if ("max".equals(per)) { refPl = 0; refV = cap; }
+            if (Double.isNaN(refPl)) { if (pts.isEmpty()) { refPl = total - cap; } else { refPl = pts.get(0)[1]; } JSONArray q0 = lg.optJSONArray(0); refV = q0 == null ? total : q0.optDouble(1); }
+            pts.add(0, new double[] { from, refPl });
+            pts.add(new double[] { Math.max(tLast, from + 1), total - cap });
+            chg = (total - cap) - refPl;
+            ref = refPl;
+            pc = refV != 0 ? chg / Math.abs(refV) * 100 : 0;
+        }
+        v.setTextViewText(R.id.tk_title, head("Bourse · " + perLab));
         v.setTextViewText(R.id.tk_time, tLast > 0 ? "maj " + hhmm(tLast) : "");
         if (mask) {
             v.setTextViewText(R.id.tk_big, "•••• " + sym); v.setTextColor(R.id.tk_big, SOFT);
@@ -472,8 +499,9 @@ public final class TkWidgets {
         v.setImageViewBitmap(R.id.tk_chart, line(c, w, hh, pts, ref, from, now, chg >= 0 ? ACCENT : CORAL));
         int[] lab = { R.id.tk_x0, R.id.tk_x1, R.id.tk_x2, R.id.tk_x3 };
         long day0 = startOfDay(now);
-        for (int i = 0; i < 4; i++) { long t = from + (now - from) * i / 3; v.setTextViewText(lab[i], (t < day0 ? "hier " : "") + hhmm(t)); }
-        taps(v, c, id, mask, "Bourse · 24 h", "bourse");
+        java.text.SimpleDateFormat dm = new java.text.SimpleDateFormat(now - from > 400 * 86400000L ? "MMM yy" : "d MMM", java.util.Locale.FRENCH);
+        for (int i = 0; i < 4; i++) { long t = from + (now - from) * i / 3; v.setTextViewText(lab[i], "24h".equals(per) ? (t < day0 ? "hier " : "") + hhmm(t) : dm.format(new java.util.Date(t))); }
+        taps(v, c, id, mask, "Bourse · " + perLab, "bourse");
         Intent r = new Intent(c, TkWidgetBourse.class);
         r.setAction(TkWidgetBourse.REFRESH);
         v.setOnClickPendingIntent(R.id.tk_refresh, PendingIntent.getBroadcast(c, 9000 + id, r, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
@@ -554,7 +582,7 @@ public final class TkWidgets {
         for (int[] sp : spans) {
             int back = Math.min(sp[0], last);
             boolean mois = sp[0] == 1;
-            String lab = mois ? (noProv ? "Ce mois · hors prov." : "Ce mois") : back < sp[0] ? "Depuis " + moisCourt(months.optString(0)) : "6 mois";
+            String lab = mois ? (noProv ? "Ce mois*" : "Ce mois") : back < sp[0] ? "Depuis " + moisCourt(months.optString(0)) : "6 mois";
             double dl = ser[last] - ser[last - back];
             if (mois && noProv) dl -= pv[last] - pv[last - back];
             v.setTextViewText(sp[1], lab);
@@ -584,7 +612,7 @@ public final class TkWidgets {
         boolean sub = tall && (noProv ? provAll > 0.004 : prov > 0.004);
         v.setViewVisibility(R.id.tk_sub, sub ? View.VISIBLE : View.GONE);
         if (sub) v.setTextViewText(R.id.tk_sub, mask ? "Disponible •••• · provisions ••••"
-                : noProv ? "Sans les provisions (" + money(provAll, sym, 0) + ")"
+                : noProv ? "* hors provisions (" + money(provAll, sym, 0) + ")"
                 : "Disponible " + money(ser[last] - prov, sym, 0) + " · dont provisions " + money(prov, sym, 0));
         int[] rows = { R.id.tk_e1, R.id.tk_e2, R.id.tk_e3, R.id.tk_e4 }, rn = { R.id.tk_e1n, R.id.tk_e2n, R.id.tk_e3n, R.id.tk_e4n },
                 rv = { R.id.tk_e1v, R.id.tk_e2v, R.id.tk_e3v, R.id.tk_e4v }, rb = { R.id.tk_e1b, R.id.tk_e2b, R.id.tk_e3b, R.id.tk_e4b };
