@@ -63,6 +63,13 @@ public class TkWidgetConfig extends Activity {
             int per = TkWidgets.prefs(this).getInt("epp_" + id, 12);
             p6.setChecked(per == 6); p12.setChecked(per == 12); pall.setChecked(per <= 0);
             noProv.setChecked(TkWidgets.prefs(this).getBoolean("epnp_" + id, false));
+            // le montant retiré : toutes les provisions, où qu'elles soient
+            JSONArray pH = ep == null ? null : ep.optJSONArray("provH");
+            double pv = pH == null || pH.length() == 0 ? 0 : pH.optDouble(pH.length() - 1, 0);
+            String sym = d == null ? "€" : d.optString("sym", "€");
+            ((TextView) findViewById(R.id.tk_cfg_noprov_t)).setText(pv > 0.004
+                    ? "Retirer les provisions du total (" + TkWidgets.money(pv, sym, 0) + ")"
+                    : "Retirer les provisions du total (aucune pour l'instant)");
             String epEx = "," + TkWidgets.prefs(this).getString("epx_" + id, "") + ",";
             LinearLayout list = findViewById(R.id.tk_cfg_eplist);
             JSONArray items = ep == null ? null : ep.optJSONArray("items");

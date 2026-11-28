@@ -42,7 +42,9 @@
         const first=epargne.filter(c=>!c.closed).reduce((f, c)=>{ const k=epMonthsOf(c)[0]; return k && (!f || k<f) ? k : f; }, null);
         let months=first ? ms.filter(k=>k>=first) : []; if(!months.length) months=[m];
         const provOn=c=>{ let t=0; provisions.forEach(p=>{ if(provWhere(p)==="ep:"+c.id){ try{ t+=provBalance(p, m); }catch(e){} } }); return t; };
-        snap.epargne={ me:me, months:months, items:epargne.filter(c=>!c.closed).map(c=>{
+        // provisions, où qu'elles soient (livret, compte, ailleurs), mois par mois : « Retirer les provisions du total » (28/11)
+        const provH=months.map(k=>{ try{ return r2(provTotalAt(k)); }catch(e){ return 0; } });
+        snap.epargne={ me:me, months:months, provH:provH, items:epargne.filter(c=>!c.closed).map(c=>{
           const it={ id:String(c.id), n:c.nom||"Épargne", o:ownerOf(c), h:months.map(k=>r2(epAt(c, k))) };
           if(c.bourseLink) it.b=1;
           const pv=provOn(c); if(pv) it.p=r2(pv);

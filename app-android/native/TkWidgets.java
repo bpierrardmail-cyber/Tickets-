@@ -535,7 +535,11 @@ public final class TkWidgets {
             for (int i = 0; h != null && i < nM && i < h.length(); i++) ser[i] += h.optDouble(i, 0);
             prov += it.optDouble("p", 0);
         }
-        double tot = ser[last] - (noProv ? prov : 0);
+        // « Retirer les provisions du total » : toutes les provisions, où qu'elles soient (livret, compte, ailleurs), mois par mois
+        JSONArray pH = e.optJSONArray("provH");
+        double provAll = pH == null || pH.length() == 0 ? prov : pH.optDouble(Math.min(last, pH.length() - 1), 0);
+        if (noProv) for (int i = 0; i < nM; i++) ser[i] -= pH == null ? prov : pH.optDouble(Math.min(i, pH.length() - 1), 0);
+        double tot = ser[last];
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.tk_widget_epargne);
         v.setTextViewText(R.id.tk_title, head(foyer ? "Épargne · foyer" : "Épargne"));
         v.setTextViewText(R.id.tk_time, moisCourt(months.optString(last)));
@@ -560,7 +564,7 @@ public final class TkWidgets {
         if (chart) {
             int from = per <= 0 ? 0 : Math.max(0, last - per);
             List<double[]> pts = new ArrayList<>();
-            for (int i = from; i <= last; i++) pts.add(new double[] { i, ser[i] - (noProv ? prov : 0) });
+            for (int i = from; i <= last; i++) pts.add(new double[] { i, ser[i] });
             int listH = huge ? Math.min(4, inc.size()) * 26 : 0;
             int hh = Math.max(30, hAll - 24 - 30 - 34 - 16 - 20 - listH - 20);
             double first = pts.get(0)[1];
@@ -569,10 +573,10 @@ public final class TkWidgets {
             v.setTextViewText(R.id.tk_x1, moisCourt(months.optString((from + last) / 2)));
             v.setTextViewText(R.id.tk_x2, moisCourt(months.optString(last)));
         }
-        boolean sub = tall && prov > 0.004;
+        boolean sub = tall && (noProv ? provAll > 0.004 : prov > 0.004);
         v.setViewVisibility(R.id.tk_sub, sub ? View.VISIBLE : View.GONE);
         if (sub) v.setTextViewText(R.id.tk_sub, mask ? "Disponible •••• · provisions ••••"
-                : noProv ? "Sans les provisions (" + money(prov, sym, 0) + ")"
+                : noProv ? "Sans les provisions (" + money(provAll, sym, 0) + ")"
                 : "Disponible " + money(ser[last] - prov, sym, 0) + " · dont provisions " + money(prov, sym, 0));
         int[] rows = { R.id.tk_e1, R.id.tk_e2, R.id.tk_e3, R.id.tk_e4 }, rn = { R.id.tk_e1n, R.id.tk_e2n, R.id.tk_e3n, R.id.tk_e4n },
                 rv = { R.id.tk_e1v, R.id.tk_e2v, R.id.tk_e3v, R.id.tk_e4v }, rb = { R.id.tk_e1b, R.id.tk_e2b, R.id.tk_e3b, R.id.tk_e4b };

@@ -9,3 +9,4 @@ T("propriétaire et « moi »", function(){ return eq([it(501).o, it(502).o, S.m
 T("objectif du Livret A", function(){ return near(it(501).obj, 20000); });
 T("provision rangée sur le Livret A : sa part (« dont provisions »)", function(){ return near(it(501).p, provBalance(provisions[0], M[M.length-1])) === true && it(501).p > 0 ? true : "p = "+it(501).p; });
 T("gagné sur 6 et 12 mois, comme le calcule le widget (Alex)", function(){ var h=it(501).h, L=h.length-1; return eq([h[L]-h[L-6], h[L]-h[L-12]], [1900, 3400]); });
+T("provisions où qu'elles soient, mois par mois (retirées du total si on le choisit)", function(){ var L=S.provH.length-1; return eq([S.provH.length, S.provH[0], S.provH[L]>0], [M.length, 0, true]) === true ? near(S.provH[L], provTotalAt(M[M.length-1])) : eq([S.provH.length, S.provH[0], S.provH[L]>0], [M.length, 0, true]); });

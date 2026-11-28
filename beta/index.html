@@ -6,11 +6,11 @@
        Scripts (08/11) : seul le script de la page s'exécute, reconnu par son empreinte (mise par python3 outils/build.py à l'assemblage).
        Le relais et les cours (Perso) ; les librairies (Tesseract, pdf.js) sont dans l'appli ; localhost = relais imité des tests (rien ne sort du téléphone).
        Toute nouvelle connexion doit être ajoutée ici (et justifiée, voir CLAUDE.md). -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ez+4fVvBNYJkkB6EHnue0HysMIv8GbWsaZwK0Ja3g40=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-HF9Nj8xomwt1vb2Rg0eWR7qyVzrXzanEJEhyFCFj+ZU=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="28/11 08:37" />
+  <meta name="build" content="28/11 09:40" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -13854,7 +13854,9 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
         const first=epargne.filter(c=>!c.closed).reduce((f, c)=>{ const k=epMonthsOf(c)[0]; return k && (!f || k<f) ? k : f; }, null);
         let months=first ? ms.filter(k=>k>=first) : []; if(!months.length) months=[m];
         const provOn=c=>{ let t=0; provisions.forEach(p=>{ if(provWhere(p)==="ep:"+c.id){ try{ t+=provBalance(p, m); }catch(e){} } }); return t; };
-        snap.epargne={ me:me, months:months, items:epargne.filter(c=>!c.closed).map(c=>{
+        // provisions, où qu'elles soient (livret, compte, ailleurs), mois par mois : « Retirer les provisions du total » (28/11)
+        const provH=months.map(k=>{ try{ return r2(provTotalAt(k)); }catch(e){ return 0; } });
+        snap.epargne={ me:me, months:months, provH:provH, items:epargne.filter(c=>!c.closed).map(c=>{
           const it={ id:String(c.id), n:c.nom||"Épargne", o:ownerOf(c), h:months.map(k=>r2(epAt(c, k))) };
           if(c.bourseLink) it.b=1;
           const pv=provOn(c); if(pv) it.p=r2(pv);

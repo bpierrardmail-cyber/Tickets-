@@ -229,6 +229,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 28/11
+- **Widget Épargne, « Retirer les provisions du total »** (Benoît : ses provisions sont sur un compte, le réglage ne changeait rien ; « la solution 2, où qu'elles soient ») : retire maintenant toutes les provisions, où qu'elles soient (livret, compte, ailleurs), mois par mois (`epargne.provH` = `provTotalAt` de chaque mois), courbe et gains compris ; le réglage affiche le montant retiré.
 - **Widget Épargne, petit format** (Benoît, capture : « depuis juin » deux fois, l'historique ne remontant qu'à juin) : les deux lignes deviennent « Ce mois » (depuis le mois dernier) et « 6 mois » (« Depuis <mois> » s'il y a moins de 6 mois d'historique).
 - **Widget Épargne** (maquette « Widget Épargne », Benoît : « sur le petit widget, le gain sur 6 et 12 mois », puis « tu peux intégrer ») : nouveau widget Android `TkWidgetEpargne` (layout `tk_widget_epargne.xml`, `tk_info_epargne.xml`, chaînes `tk_w_epargne` / `tk_d_epargne`, ajouté par `patch-manifest.js`), une seule taille qui s'adapte :
   - 2 × 1 : total + « 6 mois ▲ +… » / « 12 mois ▲ +… » (« depuis <mois> » s'il y a moins d'historique) ;
