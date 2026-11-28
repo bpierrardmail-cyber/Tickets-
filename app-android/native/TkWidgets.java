@@ -466,7 +466,7 @@ public final class TkWidgets {
         // masqué : ni montant ni courbe, une invitation à toucher
         v.setViewVisibility(R.id.tk_hint, mask && hAll >= 90 ? View.VISIBLE : View.GONE);
         v.setViewVisibility(R.id.tk_time, narrow ? View.GONE : View.VISIBLE);
-        if (narrow && !mask) v.setTextViewText(R.id.tk_chg, (chg >= 0 ? "▲ +" : "▼ −") + num(Math.abs(pc), 2) + " %");
+        if (narrow && !mask) v.setTextViewText(R.id.tk_chg, (chg >= 0 ? "▲ +" : "▼ −") + num(Math.abs(chg), 0) + " " + sym);   // petit format : la somme (Benoît, 28/11), le % reste sur le grand
         v.setViewVisibility(R.id.tk_chart, chart ? View.VISIBLE : View.GONE);
         v.setViewVisibility(R.id.tk_xrow, chart ? View.VISIBLE : View.GONE);
         v.setImageViewBitmap(R.id.tk_chart, line(c, w, hh, pts, ref, from, now, chg >= 0 ? ACCENT : CORAL));
