@@ -63,7 +63,7 @@ public class TkWidgetConfig extends Activity {
             int per = TkWidgets.prefs(this).getInt("epp_" + id, 12);
             p6.setChecked(per == 6); p12.setChecked(per == 12); pall.setChecked(per <= 0);
             noProv.setChecked(TkWidgets.prefs(this).getBoolean("epnp_" + id, false));
-            String ex = "," + TkWidgets.prefs(this).getString("epx_" + id, "") + ",";
+            String epEx = "," + TkWidgets.prefs(this).getString("epx_" + id, "") + ",";
             LinearLayout list = findViewById(R.id.tk_cfg_eplist);
             JSONArray items = ep == null ? null : ep.optJSONArray("items");
             for (int i = 0; items != null && i < items.length(); i++) {
@@ -76,7 +76,7 @@ public class TkWidgetConfig extends Activity {
                 cb.setTextSize(16);
                 cb.setMinHeight((int) (48 * getResources().getDisplayMetrics().density));
                 cb.setButtonTintList(android.content.res.ColorStateList.valueOf(0xFF4FD6A0));
-                cb.setChecked(!ex.contains("," + it.optString("id") + ","));
+                cb.setChecked(!epEx.contains("," + it.optString("id") + ","));
                 list.addView(cb);
                 boxes.add(cb); boxIds.add(it.optString("id"));
             }
@@ -99,10 +99,10 @@ public class TkWidgetConfig extends Activity {
                     .putString("scope_" + id, foyer.isChecked() ? "foyer" : "moi")
                     .apply();
             if (isEp) {
-                StringBuilder ex = new StringBuilder();
-                for (int i = 0; i < boxes.size(); i++) if (!boxes.get(i).isChecked()) { if (ex.length() > 0) ex.append(','); ex.append(boxIds.get(i)); }
+                StringBuilder off = new StringBuilder();
+                for (int i = 0; i < boxes.size(); i++) if (!boxes.get(i).isChecked()) { if (off.length() > 0) off.append(','); off.append(boxIds.get(i)); }
                 TkWidgets.prefs(this).edit()
-                        .putString("epx_" + id, ex.toString())
+                        .putString("epx_" + id, off.toString())
                         .putInt("epp_" + id, p6.isChecked() ? 6 : pall.isChecked() ? 0 : 12)
                         .putBoolean("epnp_" + id, noProv.isChecked())
                         .apply();
