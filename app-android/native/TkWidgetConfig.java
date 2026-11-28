@@ -88,7 +88,7 @@ public class TkWidgetConfig extends Activity {
                 boxes.add(cb); boxIds.add(it.optString("id"));
             }
         }
-        boolean isFoyer = "foyer".equals(TkWidgets.scope(this, id));
+        boolean isFoyer = kind == TkWidgetEpargne.class ? TkWidgets.epFoyer(this, id) : "foyer".equals(TkWidgets.scope(this, id));
         moi.setChecked(!isFoyer);
         foyer.setChecked(isFoyer);
 
@@ -110,6 +110,7 @@ public class TkWidgetConfig extends Activity {
                 for (int i = 0; i < boxes.size(); i++) if (!boxes.get(i).isChecked()) { if (off.length() > 0) off.append(','); off.append(boxIds.get(i)); }
                 TkWidgets.prefs(this).edit()
                         .putString("epx_" + id, off.toString())
+                        .putString("escope_" + id, foyer.isChecked() ? "foyer" : "moi")
                         .putInt("epp_" + id, p6.isChecked() ? 6 : pall.isChecked() ? 0 : 12)
                         .putBoolean("epnp_" + id, noProv.isChecked())
                         .apply();

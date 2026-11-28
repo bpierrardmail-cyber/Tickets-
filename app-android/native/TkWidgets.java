@@ -158,9 +158,12 @@ public final class TkWidgets {
 
     static String scope(Context c, int id) { return prefs(c).getString("scope_" + id, "moi"); }
 
+    /** Épargne : toute l'épargne par défaut, comme le total de l'onglet Épargne (« Tout ») ; « moi » seulement si on le choisit. */
+    static boolean epFoyer(Context c, int id) { return !"moi".equals(prefs(c).getString("escope_" + id, "foyer")); }
+
     static void forget(Context c, int[] ids) {
         SharedPreferences.Editor e = prefs(c).edit();
-        for (int id : ids) { e.remove("mask_" + id); e.remove("scope_" + id); e.remove("epx_" + id); e.remove("epnp_" + id); e.remove("epp_" + id); }
+        for (int id : ids) { e.remove("mask_" + id); e.remove("scope_" + id); e.remove("epx_" + id); e.remove("escope_" + id); e.remove("epnp_" + id); e.remove("epp_" + id); }
         e.apply();
     }
 
@@ -484,7 +487,7 @@ public final class TkWidgets {
         JSONArray items = e == null ? null : e.optJSONArray("items");
         if (items == null) return out;
         String me = e.optString("me", ""), ex = "," + prefs(c).getString("epx_" + id, "") + ",";
-        boolean foyer = "foyer".equals(scope(c, id)), mine = false;
+        boolean foyer = epFoyer(c, id), mine = false;
         for (int i = 0; i < items.length(); i++) {
             JSONObject it = items.optJSONObject(i);
             if (it == null) continue;
@@ -526,7 +529,7 @@ public final class TkWidgets {
         if (months == null || months.length() == 0 || inc.isEmpty())
             return message(c, id, "Épargne", "Ajoute tes livrets dans Opérations › Épargne pour les voir ici.", "epargne");
         SharedPreferences p = prefs(c);
-        boolean noProv = p.getBoolean("epnp_" + id, false), foyer = "foyer".equals(scope(c, id)) && epMultiOwner(e);
+        boolean noProv = p.getBoolean("epnp_" + id, false), moiSeul = !epFoyer(c, id) && epMultiOwner(e);
         int per = p.getInt("epp_" + id, 12), nM = months.length(), last = nM - 1;
         double[] ser = new double[nM];
         double prov = 0;
@@ -541,7 +544,7 @@ public final class TkWidgets {
         if (noProv) for (int i = 0; i < nM; i++) ser[i] -= pH == null ? prov : pH.optDouble(Math.min(i, pH.length() - 1), 0);
         double tot = ser[last];
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.tk_widget_epargne);
-        v.setTextViewText(R.id.tk_title, head(foyer ? "Épargne · foyer" : "Épargne"));
+        v.setTextViewText(R.id.tk_title, head(moiSeul ? "Épargne · moi" : "Épargne"));
         v.setTextViewText(R.id.tk_time, moisCourt(months.optString(last)));
         // 1re ligne : ce mois (depuis le mois dernier) ; 2e ligne : sur 6 mois (« depuis <mois> » s'il y a moins d'historique)
         int[][] spans = { { 1, R.id.tk_l6, R.id.tk_v6 }, { 6, R.id.tk_l12, R.id.tk_v12 } };
