@@ -68,6 +68,48 @@
             </RadioGroup>
         </LinearLayout>
 
+        <!-- Widget Épargne : durée de la courbe, lignes comptées, provisions -->
+        <LinearLayout
+            android:id="@+id/tk_cfg_ep"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Courbe (widget agrandi)" android:textColor="#A4AAB6" android:textSize="13sp" />
+
+            <RadioGroup
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+                <RadioButton android:id="@+id/tk_cfg_p6" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:buttonTint="#4FD6A0" android:text="6 mois" android:textColor="#ECEEF3" android:textSize="15sp" />
+                <RadioButton android:id="@+id/tk_cfg_p12" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:buttonTint="#4FD6A0" android:text="12 mois" android:textColor="#ECEEF3" android:textSize="15sp" />
+                <RadioButton android:id="@+id/tk_cfg_pall" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:buttonTint="#4FD6A0" android:text="Tout" android:textColor="#ECEEF3" android:textSize="15sp" />
+            </RadioGroup>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="18dp" android:text="Ce qu'il compte" android:textColor="#A4AAB6" android:textSize="13sp" />
+
+            <LinearLayout
+                android:id="@+id/tk_cfg_eplist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="vertical" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center_vertical"
+                android:minHeight="52dp"
+                android:orientation="horizontal">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Retirer les provisions du total" android:textColor="#ECEEF3" android:textSize="16sp" />
+                <Switch android:id="@+id/tk_cfg_noprov" android:layout_width="wrap_content" android:layout_height="48dp" android:thumbTint="#ECEEF3" android:trackTint="#4FD6A0" />
+            </LinearLayout>
+        </LinearLayout>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

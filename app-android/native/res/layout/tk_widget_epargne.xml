@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget Épargne (28/11) : 2×1 = total + gagné sur 6 et 12 mois ; plus haut : courbe, disponible ; plus haut encore : les livrets -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tk_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/tk_widget_bg"
+    android:orientation="vertical"
+    android:paddingStart="14dp"
+    android:paddingEnd="14dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="9dp">
+
+    <LinearLayout
+        android:id="@+id/tk_head"
+        android:minHeight="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tk_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Épargne"
+            android:textColor="#A4AAB6"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/tk_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:maxLines="1"
+            android:text="nov."
+            android:textColor="#A4AAB6"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tk_big"
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:autoSizeMaxTextSize="26sp"
+        android:autoSizeMinTextSize="15sp"
+        android:autoSizeStepGranularity="1sp"
+        android:autoSizeTextType="uniform"
+        android:gravity="center_vertical"
+        android:maxLines="1"
+        android:text="30 200,00 €"
+        android:textColor="#ECEEF3"
+        android:textStyle="bold" />
+
+    <LinearLayout android:id="@+id/tk_r6" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+        <TextView android:id="@+id/tk_l6" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:maxLines="1" android:text="6 mois" android:textColor="#A4AAB6" android:textSize="11.5sp" />
+        <TextView android:id="@+id/tk_v6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1" android:text="▲ +1 420 €" android:textColor="#4FD6A0" android:textSize="11.5sp" android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout android:id="@+id/tk_r12" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+        <TextView android:id="@+id/tk_l12" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:maxLines="1" android:text="12 mois" android:textColor="#A4AAB6" android:textSize="11.5sp" />
+        <TextView android:id="@+id/tk_v12" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1" android:text="▲ +2 940 €" android:textColor="#4FD6A0" android:textSize="11.5sp" android:textStyle="bold" />
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/tk_chart"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="6dp"
+        android:layout_weight="1"
+        android:contentDescription="Courbe de l'épargne"
+        android:scaleType="fitXY"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/tk_hint"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:maxLines="2"
+        android:text="touche pour afficher avec ton empreinte"
+        android:textColor="#7C828E"
+        android:textSize="12sp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/tk_xrow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:orientation="horizontal"
+        android:visibility="gone">
+        <TextView android:id="@+id/tk_x0" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="start" android:text="déc." android:textColor="#7C828E" android:textSize="10sp" />
+        <TextView android:id="@+id/tk_x1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="juin" android:textColor="#7C828E" android:textSize="10sp" />
+        <TextView android:id="@+id/tk_x2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="end" android:text="nov." android:textColor="#7C828E" android:textSize="10sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tk_sub"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="Disponible 28 820 € · dont provisions 1 380 €"
+        android:textColor="#A4AAB6"
+        android:textSize="11.5sp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/tk_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+        <LinearLayout android:id="@+id/tk_e1" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:orientation="vertical">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <TextView android:id="@+id/tk_e1n" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:ellipsize="end" android:maxLines="1" android:text="Livret A" android:textColor="#D4D8E0" android:textSize="12.5sp" />
+                <TextView android:id="@+id/tk_e1v" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:maxLines="1" android:text="12 400 €" android:textColor="#ECEEF3" android:textSize="12.5sp" android:textStyle="bold" />
+            </LinearLayout>
+            <ImageView android:id="@+id/tk_e1b" android:layout_width="match_parent" android:layout_height="4dp" android:layout_marginTop="3dp" android:contentDescription="Objectif" android:scaleType="fitXY" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/tk_e2" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:orientation="vertical">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <TextView android:id="@+id/tk_e2n" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:ellipsize="end" android:maxLines="1" android:text="Livret A" android:textColor="#D4D8E0" android:textSize="12.5sp" />
+                <TextView android:id="@+id/tk_e2v" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:maxLines="1" android:text="12 400 €" android:textColor="#ECEEF3" android:textSize="12.5sp" android:textStyle="bold" />
+            </LinearLayout>
+            <ImageView android:id="@+id/tk_e2b" android:layout_width="match_parent" android:layout_height="4dp" android:layout_marginTop="3dp" android:contentDescription="Objectif" android:scaleType="fitXY" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/tk_e3" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:orientation="vertical">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <TextView android:id="@+id/tk_e3n" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:ellipsize="end" android:maxLines="1" android:text="Livret A" android:textColor="#D4D8E0" android:textSize="12.5sp" />
+                <TextView android:id="@+id/tk_e3v" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:maxLines="1" android:text="12 400 €" android:textColor="#ECEEF3" android:textSize="12.5sp" android:textStyle="bold" />
+            </LinearLayout>
+            <ImageView android:id="@+id/tk_e3b" android:layout_width="match_parent" android:layout_height="4dp" android:layout_marginTop="3dp" android:contentDescription="Objectif" android:scaleType="fitXY" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/tk_e4" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:orientation="vertical">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <TextView android:id="@+id/tk_e4n" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:ellipsize="end" android:maxLines="1" android:text="Livret A" android:textColor="#D4D8E0" android:textSize="12.5sp" />
+                <TextView android:id="@+id/tk_e4v" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:maxLines="1" android:text="12 400 €" android:textColor="#ECEEF3" android:textSize="12.5sp" android:textStyle="bold" />
+            </LinearLayout>
+            <ImageView android:id="@+id/tk_e4b" android:layout_width="match_parent" android:layout_height="4dp" android:layout_marginTop="3dp" android:contentDescription="Objectif" android:scaleType="fitXY" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

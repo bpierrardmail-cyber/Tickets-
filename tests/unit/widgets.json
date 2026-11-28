@@ -1,0 +1,8 @@
+{"askName":false,"devise":"EUR","personnes":[{"nom":"Alex"},{"nom":"Marie"}],
+ "comptes":[{"key":"Alex","nom":"Compte d'Alex","payer":"Alex","main":true},{"key":"Marie","nom":"Compte de Marie","payer":"Marie"}],
+ "entries":[],
+ "epargne":[
+  {"id":501,"nom":"Livret A","owner":"Alex","vals":{"2025-10":9000,"2026-04":10500,"2026-10":12400},"objectif":{"montant":20000,"mois":""}},
+  {"id":502,"nom":"LDDS","owner":"Marie","vals":{"2026-06":3000,"2026-10":3600}},
+  {"id":503,"nom":"Ancien livret","owner":"Alex","vals":{"2025-01":500},"closed":true}],
+ "provisions":[{"id":601,"nom":"Voiture","mensuel":50,"soldeInitial":300,"startMonth":"2026-07","ou":"ep:501","noFrais":true,"prelevements":[]}]}

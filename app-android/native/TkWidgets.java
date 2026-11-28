@@ -60,7 +60,7 @@ public final class TkWidgets {
     static final String[] MOIS_COURTS = { "janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc." };
 
     static final Class<?>[] PROVIDERS = { TkWidgetScan.class, TkWidgetSolde.class, TkWidgetCommun.class,
-            TkWidgetMois.class, TkWidgetFoyer.class, TkWidgetBourse.class };
+            TkWidgetMois.class, TkWidgetFoyer.class, TkWidgetBourse.class, TkWidgetEpargne.class };
 
     // ---------- Données ----------
     static SharedPreferences prefs(Context c) { return c.getSharedPreferences(PREFS, Context.MODE_PRIVATE); }
@@ -160,7 +160,7 @@ public final class TkWidgets {
 
     static void forget(Context c, int[] ids) {
         SharedPreferences.Editor e = prefs(c).edit();
-        for (int id : ids) { e.remove("mask_" + id); e.remove("scope_" + id); }
+        for (int id : ids) { e.remove("mask_" + id); e.remove("scope_" + id); e.remove("epx_" + id); e.remove("epnp_" + id); e.remove("epp_" + id); }
         e.apply();
     }
 
@@ -225,6 +225,7 @@ public final class TkWidgets {
         if (k == TkWidgetMois.class) return mois(c, id, d, mask, sym, o);
         if (k == TkWidgetFoyer.class) return foyer(c, id, d, mask, sym, o);
         if (k == TkWidgetBourse.class) return bourse(c, id, d, mask, sym, o);
+        if (k == TkWidgetEpargne.class) return epargne(c, id, d, mask, sym, o);
         return null;
     }
 
@@ -474,6 +475,133 @@ public final class TkWidgets {
         r.setAction(TkWidgetBourse.REFRESH);
         v.setOnClickPendingIntent(R.id.tk_refresh, PendingIntent.getBroadcast(c, 9000 + id, r, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
         return v;
+    }
+
+    // ---------- Épargne (28/11) ----------
+    /** Lignes d'épargne comptées par ce widget : moi ou tout le foyer (« scope_ »), sans les lignes décochées (« epx_ »). */
+    static List<JSONObject> epItems(Context c, int id, JSONObject e) {
+        List<JSONObject> out = new ArrayList<>(), all = new ArrayList<>();
+        JSONArray items = e == null ? null : e.optJSONArray("items");
+        if (items == null) return out;
+        String me = e.optString("me", ""), ex = "," + prefs(c).getString("epx_" + id, "") + ",";
+        boolean foyer = "foyer".equals(scope(c, id)), mine = false;
+        for (int i = 0; i < items.length(); i++) {
+            JSONObject it = items.optJSONObject(i);
+            if (it == null) continue;
+            all.add(it);
+            if (me.equals(it.optString("o"))) mine = true;
+        }
+        for (JSONObject it : all) {
+            if (ex.contains("," + it.optString("id") + ",")) continue;
+            // « Moi » sans aucune ligne à moi : on montre tout plutôt qu'un widget vide
+            if (!foyer && mine && !me.equals(it.optString("o"))) continue;
+            out.add(it);
+        }
+        return out;
+    }
+
+    static boolean epMultiOwner(JSONObject e) {
+        JSONArray items = e == null ? null : e.optJSONArray("items");
+        String first = null;
+        for (int i = 0; items != null && i < items.length(); i++) {
+            String o = items.optJSONObject(i) == null ? "" : items.optJSONObject(i).optString("o");
+            if (first == null) first = o; else if (!first.equals(o)) return true;
+        }
+        return false;
+    }
+
+    static String moisCourt(String key) {
+        try { return MOIS_COURTS[Integer.parseInt(key.substring(5, 7)) - 1]; } catch (Exception x) { return ""; }
+    }
+
+    static CharSequence gain(double dl, String sym) {
+        return (dl >= 0 ? "▲ +" : "▼ −") + num(Math.abs(dl), 0) + " " + sym;
+    }
+
+    /** Épargne : total et ce qu'elle a gagné sur 6 et 12 mois ; plus haut, la courbe et le disponible ; plus haut encore, les livrets. */
+    static RemoteViews epargne(Context c, int id, JSONObject d, boolean mask, String sym, Bundle o) throws Exception {
+        JSONObject e = d.optJSONObject("epargne");
+        JSONArray months = e == null ? null : e.optJSONArray("months");
+        List<JSONObject> inc = epItems(c, id, e);
+        if (months == null || months.length() == 0 || inc.isEmpty())
+            return message(c, id, "Épargne", "Ajoute tes livrets dans Opérations › Épargne pour les voir ici.", "epargne");
+        SharedPreferences p = prefs(c);
+        boolean noProv = p.getBoolean("epnp_" + id, false), foyer = "foyer".equals(scope(c, id)) && epMultiOwner(e);
+        int per = p.getInt("epp_" + id, 12), nM = months.length(), last = nM - 1;
+        double[] ser = new double[nM];
+        double prov = 0;
+        for (JSONObject it : inc) {
+            JSONArray h = it.optJSONArray("h");
+            for (int i = 0; h != null && i < nM && i < h.length(); i++) ser[i] += h.optDouble(i, 0);
+            prov += it.optDouble("p", 0);
+        }
+        double tot = ser[last] - (noProv ? prov : 0);
+        RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.tk_widget_epargne);
+        v.setTextViewText(R.id.tk_title, head(foyer ? "Épargne · foyer" : "Épargne"));
+        v.setTextViewText(R.id.tk_time, moisCourt(months.optString(last)));
+        int[][] spans = { { 6, R.id.tk_l6, R.id.tk_v6 }, { 12, R.id.tk_l12, R.id.tk_v12 } };
+        for (int[] sp : spans) {
+            int back = Math.min(sp[0], last);
+            String lab = back < sp[0] ? (back == 0 ? "ce mois" : "depuis " + moisCourt(months.optString(0))) : sp[0] + " mois";
+            double dl = ser[last] - ser[last - back];
+            v.setTextViewText(sp[1], lab);
+            v.setTextViewText(sp[2], mask ? "••••" : gain(dl, sym));
+            v.setTextColor(sp[2], mask ? SOFT : (dl >= 0 ? ACCENT : CORAL));
+        }
+        if (mask) { v.setTextViewText(R.id.tk_big, "•••• " + sym); v.setTextColor(R.id.tk_big, SOFT); }
+        else { v.setTextViewText(R.id.tk_big, big(tot, sym)); v.setTextColor(R.id.tk_big, tot < 0 ? CORAL : INK); }
+        int w = widthDp(o, 180) - 28, hAll = heightDp(o, 110);
+        boolean tall = hAll >= 150, huge = hAll >= 260;
+        boolean chart = tall && !mask && nM > 1;
+        v.setViewVisibility(R.id.tk_chart, chart ? View.VISIBLE : View.GONE);
+        v.setViewVisibility(R.id.tk_xrow, chart ? View.VISIBLE : View.GONE);
+        v.setViewVisibility(R.id.tk_hint, tall && mask ? View.VISIBLE : View.GONE);
+        if (chart) {
+            int from = per <= 0 ? 0 : Math.max(0, last - per);
+            List<double[]> pts = new ArrayList<>();
+            for (int i = from; i <= last; i++) pts.add(new double[] { i, ser[i] - (noProv ? prov : 0) });
+            int listH = huge ? Math.min(4, inc.size()) * 26 : 0;
+            int hh = Math.max(30, hAll - 24 - 30 - 34 - 16 - 20 - listH - 20);
+            double first = pts.get(0)[1];
+            v.setImageViewBitmap(R.id.tk_chart, line(c, w, hh, pts, first, from, last, ser[last] >= ser[from] ? ACCENT : CORAL));
+            v.setTextViewText(R.id.tk_x0, moisCourt(months.optString(from)));
+            v.setTextViewText(R.id.tk_x1, moisCourt(months.optString((from + last) / 2)));
+            v.setTextViewText(R.id.tk_x2, moisCourt(months.optString(last)));
+        }
+        boolean sub = tall && prov > 0.004;
+        v.setViewVisibility(R.id.tk_sub, sub ? View.VISIBLE : View.GONE);
+        if (sub) v.setTextViewText(R.id.tk_sub, mask ? "Disponible •••• · provisions ••••"
+                : noProv ? "Sans les provisions (" + money(prov, sym, 0) + ")"
+                : "Disponible " + money(ser[last] - prov, sym, 0) + " · dont provisions " + money(prov, sym, 0));
+        int[] rows = { R.id.tk_e1, R.id.tk_e2, R.id.tk_e3, R.id.tk_e4 }, rn = { R.id.tk_e1n, R.id.tk_e2n, R.id.tk_e3n, R.id.tk_e4n },
+                rv = { R.id.tk_e1v, R.id.tk_e2v, R.id.tk_e3v, R.id.tk_e4v }, rb = { R.id.tk_e1b, R.id.tk_e2b, R.id.tk_e3b, R.id.tk_e4b };
+        v.setViewVisibility(R.id.tk_list, huge ? View.VISIBLE : View.GONE);
+        // les plus grosses lignes d'abord
+        List<JSONObject> byVal = new ArrayList<>(inc);
+        Collections.sort(byVal, (a, z) -> Double.compare(lastOf(z, last), lastOf(a, last)));
+        for (int r = 0; r < 4; r++) {
+            boolean on = huge && r < byVal.size();
+            v.setViewVisibility(rows[r], on ? View.VISIBLE : View.GONE);
+            if (!on) continue;
+            JSONObject it = byVal.get(r);
+            double val = lastOf(it, last), obj = it.optDouble("obj", 0);
+            String name = it.optString("n");
+            if (r == 3 && byVal.size() > 4) {   // les autres regroupées
+                val = 0; for (int i = 3; i < byVal.size(); i++) val += lastOf(byVal.get(i), last);
+                name = "+ " + (byVal.size() - 3) + " autres"; obj = 0;
+            }
+            v.setTextViewText(rn[r], name);
+            v.setTextViewText(rv[r], mask ? "••••" : money(val, sym, 0));
+            v.setViewVisibility(rb[r], obj > 0 && !mask ? View.VISIBLE : View.GONE);
+            if (obj > 0 && !mask) v.setImageViewBitmap(rb[r], bar(c, w, 4, (float) Math.max(0, Math.min(1, val / obj)), ACCENT));
+        }
+        taps(v, c, id, mask, "Épargne", "epargne");
+        return v;
+    }
+
+    static double lastOf(JSONObject it, int last) {
+        JSONArray h = it.optJSONArray("h");
+        return h == null || h.length() == 0 ? 0 : h.optDouble(Math.min(last, h.length() - 1), 0);
     }
 
     static void masquer(RemoteViews v, String sym) {

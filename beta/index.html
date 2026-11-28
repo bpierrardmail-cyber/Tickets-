@@ -6,11 +6,11 @@
        Scripts (08/11) : seul le script de la page s'exécute, reconnu par son empreinte (mise par python3 outils/build.py à l'assemblage).
        Le relais et les cours (Perso) ; les librairies (Tesseract, pdf.js) sont dans l'appli ; localhost = relais imité des tests (rien ne sort du téléphone).
        Toute nouvelle connexion doit être ajoutée ici (et justifiée, voir CLAUDE.md). -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-BYM9wVNpEhha2/ucQPtax5HRbOFfj+9HtHxGtO8VMN0=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-8rc0Si4i+MPxBQqd00ne6BlLcrOJozaN/8gZYkQ3jVA=' 'wasm-unsafe-eval' blob:; script-src-attr 'none'; worker-src 'self' blob:; connect-src 'self' blob: data: https://tickets.bpierrard-mail.workers.dev https://api.coingecko.com https://api.frankfurter.dev https://stooq.com http://localhost:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#13151b" />
   <title>Tickets β</title>
-  <meta name="build" content="22/11 12:54" />
+  <meta name="build" content="28/11 08:22" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <style>
     :root{
@@ -1891,7 +1891,7 @@
       sh.q("#mcCopy").onclick=function(){ try{ navigator.clipboard.writeText(code).then(function(){ uiToast("Code copié"); }, function(){ uiToast("Copie impossible : recopie-le"); }); }catch(e){ uiToast("Copie impossible : recopie-le"); } };
     }
     function menuWidgets(){
-      var L=[["🧾","Fin de mois","ce qu'il te restera à la fin du mois"],["🏦","Solde","le solde d'un compte"],["👨‍👩‍👧","Foyer","tous les comptes du foyer"],["🤝","Commun","la part de chacun"],["📷","Scanner","prendre un ticket en photo en un geste"]];
+      var L=[["🧾","Fin de mois","ce qu'il te restera à la fin du mois"],["🏦","Solde","le solde d'un compte"],["👨‍👩‍👧","Foyer","tous les comptes du foyer"],["🤝","Commun","la part de chacun"],["🐷","Épargne","le total, gagné sur 6 et 12 mois, la courbe et tes livrets"],["📷","Scanner","prendre un ticket en photo en un geste"]];
       if(FEAT.bourse) L.unshift(["📈","Bourse","ton portefeuille sur 24 h (appli Perso)"]);
       var plus=!canUse("widgets");
       var sh=uiSheet('<div class="sheet-title">Widgets</div>'+(plus?'<div class="muted" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin:-4px 0 10px">✦ '+APP_NAME+' Plus</div>':'')+
@@ -13847,6 +13847,20 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
         bo:r2((FEAT.bourse && bourse.length)?bourseTotalLive():0),
         ppl:order.map(function(o,i){ return { n:o, v:r2(own[o]), c:ACOLS[i%ACOLS.length] }; }),
         list:comptes.map(function(a){ var v=0; try{ v=acctFigures(a.key, m).banque; }catch(e){} return { n:a.nom, v:r2(v), c:acctCol(a) }; }) };
+      // Épargne (widget Épargne, 28/11) : chaque ligne d'épargne avec sa valeur mois par mois (36 mois au plus) ;
+      // le widget fait lui-même les totaux selon ses réglages (moi / foyer, lignes comptées, provisions retirées ou non)
+      try{
+        const ms=[]; let mk=m; for(let i=0;i<37;i++){ ms.unshift(mk); mk=prevMonthKey(mk); }
+        const first=epargne.filter(c=>!c.closed).reduce((f, c)=>{ const k=epMonthsOf(c)[0]; return k && (!f || k<f) ? k : f; }, null);
+        let months=first ? ms.filter(k=>k>=first) : []; if(!months.length) months=[m];
+        const provOn=c=>{ let t=0; provisions.forEach(p=>{ if(provWhere(p)==="ep:"+c.id){ try{ t+=provBalance(p, m); }catch(e){} } }); return t; };
+        snap.epargne={ me:me, months:months, items:epargne.filter(c=>!c.closed).map(c=>{
+          const it={ id:String(c.id), n:c.nom||"Épargne", o:ownerOf(c), h:months.map(k=>r2(epAt(c, k))) };
+          if(c.bourseLink) it.b=1;
+          const pv=provOn(c); if(pv) it.p=r2(pv);
+          if(c.objectif && c.objectif.montant>0) it.obj=r2(c.objectif.montant);
+          return it; }) };
+      }catch(e){}
       // Bourse (appli perso) : le total et de quoi le recalculer sans ouvrir l'appli (positions, taux de change, relais des cours)
       if(FEAT.bourse && bourse.length){
         var fixed=0, items=[], ref=null, hist=[];
@@ -14427,6 +14441,7 @@ restorein.onchange=function(ev){ var f=ev.target.files && ev.target.files[0]; if
       if(t==="plus"){ plusShow("widgets"); return; }
       if(t==="drive"){ state.view="drive"; render(); window.scrollTo(0,0); drvRefresh().then(function(){ if(state.view==="drive") render(); }); return; }
       if(t==="scan"){ state.view="list"; render(); widgetScan(); return; }
+      if(t==="epargne"){ state.view="compte"; state.cptPage="ep"; render(); window.scrollTo(0,0); return; }
       if(t==="compte_foyer" || t==="foyer") state.compteSel=(comptes.length>1)?"__all":myAcct().key;
       else if(t==="compte") state.compteSel=myAcct().key;
       var map={ compte:"compte", compte_foyer:"compte", foyer:"compte", communes:"communes", mois:"list", bourse:(FEAT.bourse?"bourse":"list") };

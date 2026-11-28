@@ -6,11 +6,17 @@ import android.appwidget.AppWidgetProviderInfo;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.CheckBox;
+import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Réglages d'un widget, par un appui long (« Paramètres du widget ») ; plus rien à régler au moment de le poser
@@ -38,11 +44,43 @@ public class TkWidgetConfig extends Activity {
         JSONObject d = TkWidgets.data(this);
         boolean isSolde = kind == TkWidgetSolde.class, multi = d != null && d.optBoolean("multi", false);
         String name = kind == TkWidgetSolde.class ? "Solde" : kind == TkWidgetCommun.class ? "Commun" : kind == TkWidgetMois.class ? "Mois en cours"
-                : kind == TkWidgetFoyer.class ? "Foyer" : kind == TkWidgetBourse.class ? "Bourse du jour" : "Tickets";
+                : kind == TkWidgetFoyer.class ? "Foyer" : kind == TkWidgetBourse.class ? "Bourse du jour" : kind == TkWidgetEpargne.class ? "Épargne" : "Tickets";
         ((TextView) findViewById(R.id.tk_cfg_title)).setText("Widget « " + name + " »");
 
         final RadioButton moi = findViewById(R.id.tk_cfg_moi), foyer = findViewById(R.id.tk_cfg_foyer);
-        findViewById(R.id.tk_cfg_scope).setVisibility(isSolde && multi ? View.VISIBLE : View.GONE);
+        // Épargne : Moi / Foyer s'il y a l'épargne de plusieurs personnes, puis courbe, lignes comptées, provisions
+        final boolean isEp = kind == TkWidgetEpargne.class;
+        JSONObject ep = d == null ? null : d.optJSONObject("epargne");
+        boolean epMulti = isEp && TkWidgets.epMultiOwner(ep);
+        if (isEp) { moi.setText("Moi · mon épargne"); foyer.setText("Foyer · toute l'épargne"); }
+        findViewById(R.id.tk_cfg_scope).setVisibility((isSolde && multi) || epMulti ? View.VISIBLE : View.GONE);
+        findViewById(R.id.tk_cfg_ep).setVisibility(isEp ? View.VISIBLE : View.GONE);
+        final List<CheckBox> boxes = new ArrayList<>();
+        final List<String> boxIds = new ArrayList<>();
+        final RadioButton p6 = findViewById(R.id.tk_cfg_p6), p12 = findViewById(R.id.tk_cfg_p12), pall = findViewById(R.id.tk_cfg_pall);
+        final Switch noProv = findViewById(R.id.tk_cfg_noprov);
+        if (isEp) {
+            int per = TkWidgets.prefs(this).getInt("epp_" + id, 12);
+            p6.setChecked(per == 6); p12.setChecked(per == 12); pall.setChecked(per <= 0);
+            noProv.setChecked(TkWidgets.prefs(this).getBoolean("epnp_" + id, false));
+            String ex = "," + TkWidgets.prefs(this).getString("epx_" + id, "") + ",";
+            LinearLayout list = findViewById(R.id.tk_cfg_eplist);
+            JSONArray items = ep == null ? null : ep.optJSONArray("items");
+            for (int i = 0; items != null && i < items.length(); i++) {
+                JSONObject it = items.optJSONObject(i);
+                if (it == null) continue;
+                CheckBox cb = new CheckBox(this);
+                String who = epMulti ? " · " + it.optString("o") : "";
+                cb.setText(it.optString("n") + who);
+                cb.setTextColor(0xFFECEEF3);
+                cb.setTextSize(16);
+                cb.setMinHeight((int) (48 * getResources().getDisplayMetrics().density));
+                cb.setButtonTintList(android.content.res.ColorStateList.valueOf(0xFF4FD6A0));
+                cb.setChecked(!ex.contains("," + it.optString("id") + ","));
+                list.addView(cb);
+                boxes.add(cb); boxIds.add(it.optString("id"));
+            }
+        }
         boolean isFoyer = "foyer".equals(TkWidgets.scope(this, id));
         moi.setChecked(!isFoyer);
         foyer.setChecked(isFoyer);
@@ -60,6 +98,15 @@ public class TkWidgetConfig extends Activity {
                     .putBoolean("auto", auto)
                     .putString("scope_" + id, foyer.isChecked() ? "foyer" : "moi")
                     .apply();
+            if (isEp) {
+                StringBuilder ex = new StringBuilder();
+                for (int i = 0; i < boxes.size(); i++) if (!boxes.get(i).isChecked()) { if (ex.length() > 0) ex.append(','); ex.append(boxIds.get(i)); }
+                TkWidgets.prefs(this).edit()
+                        .putString("epx_" + id, ex.toString())
+                        .putInt("epp_" + id, p6.isChecked() ? 6 : pall.isChecked() ? 0 : 12)
+                        .putBoolean("epnp_" + id, noProv.isChecked())
+                        .apply();
+            }
             // masquage auto activé alors que les montants sont affichés pour toujours : ils se masquent dans 2 minutes
             long until = TkWidgets.prefs(this).getLong("vis_until", 0);
             if (auto && until == Long.MAX_VALUE) TkWidgets.showAll(this);

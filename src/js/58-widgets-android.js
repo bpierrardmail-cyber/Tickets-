@@ -35,6 +35,20 @@
         bo:r2((FEAT.bourse && bourse.length)?bourseTotalLive():0),
         ppl:order.map(function(o,i){ return { n:o, v:r2(own[o]), c:ACOLS[i%ACOLS.length] }; }),
         list:comptes.map(function(a){ var v=0; try{ v=acctFigures(a.key, m).banque; }catch(e){} return { n:a.nom, v:r2(v), c:acctCol(a) }; }) };
+      // Épargne (widget Épargne, 28/11) : chaque ligne d'épargne avec sa valeur mois par mois (36 mois au plus) ;
+      // le widget fait lui-même les totaux selon ses réglages (moi / foyer, lignes comptées, provisions retirées ou non)
+      try{
+        const ms=[]; let mk=m; for(let i=0;i<37;i++){ ms.unshift(mk); mk=prevMonthKey(mk); }
+        const first=epargne.filter(c=>!c.closed).reduce((f, c)=>{ const k=epMonthsOf(c)[0]; return k && (!f || k<f) ? k : f; }, null);
+        let months=first ? ms.filter(k=>k>=first) : []; if(!months.length) months=[m];
+        const provOn=c=>{ let t=0; provisions.forEach(p=>{ if(provWhere(p)==="ep:"+c.id){ try{ t+=provBalance(p, m); }catch(e){} } }); return t; };
+        snap.epargne={ me:me, months:months, items:epargne.filter(c=>!c.closed).map(c=>{
+          const it={ id:String(c.id), n:c.nom||"Épargne", o:ownerOf(c), h:months.map(k=>r2(epAt(c, k))) };
+          if(c.bourseLink) it.b=1;
+          const pv=provOn(c); if(pv) it.p=r2(pv);
+          if(c.objectif && c.objectif.montant>0) it.obj=r2(c.objectif.montant);
+          return it; }) };
+      }catch(e){}
       // Bourse (appli perso) : le total et de quoi le recalculer sans ouvrir l'appli (positions, taux de change, relais des cours)
       if(FEAT.bourse && bourse.length){
         var fixed=0, items=[], ref=null, hist=[];

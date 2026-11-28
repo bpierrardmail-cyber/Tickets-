@@ -21,6 +21,7 @@ const add =
   receiver("TkWidgetCommun", "tk_info_commun", "tk_w_commun") +
   receiver("TkWidgetMois", "tk_info_mois", "tk_w_mois") +
   receiver("TkWidgetFoyer", "tk_info_foyer", "tk_w_foyer") +
+  receiver("TkWidgetEpargne", "tk_info_epargne", "tk_w_epargne") +
   // Bourse : seulement dans l'appli perso (la version Store n'a pas de Bourse)
   receiver("TkWidgetBourse", "tk_info_bourse", "tk_w_bourse", ' android:enabled="@bool/tk_bourse"') + `
         <receiver android:name=".TkWidgetActions" android:exported="false" />

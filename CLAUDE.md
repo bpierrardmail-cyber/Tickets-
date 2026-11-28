@@ -173,6 +173,7 @@ Appli de suivi des dépenses d'un foyer (tickets de caisse, comptes, frais fixes
   - masqués par défaut ; on touche le montant → `TkUnlockActivity` (empreinte ou code de l'appareil) ;
   - remasqués au bout de 2 min ou quand l'écran s'éteint ;
   - réglages par appui long (`TkWidgetConfig`).
+  - **Épargne** (`TkWidgetEpargne`, 28/11) : s'adapte à la hauteur (total + gagné sur 6 / 12 mois ; courbe et disponible ; lignes avec objectif) ; données `widgetSnapshot().epargne` (valeurs mois par mois de chaque ligne), totaux faits dans `TkWidgets.epargne` selon les réglages du widget (`scope_`, `epx_`, `epp_`, `epnp_` + id). Test `tests/unit/widgets.js`.
 - `patch-manifest.js` et `tickets.gradle` sont appliqués par le workflow. Le widget Bourse n'existe que dans l'édition Perso.
 
 ## Tests

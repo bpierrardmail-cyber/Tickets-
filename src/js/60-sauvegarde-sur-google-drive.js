@@ -559,6 +559,7 @@
       if(t==="plus"){ plusShow("widgets"); return; }
       if(t==="drive"){ state.view="drive"; render(); window.scrollTo(0,0); drvRefresh().then(function(){ if(state.view==="drive") render(); }); return; }
       if(t==="scan"){ state.view="list"; render(); widgetScan(); return; }
+      if(t==="epargne"){ state.view="compte"; state.cptPage="ep"; render(); window.scrollTo(0,0); return; }
       if(t==="compte_foyer" || t==="foyer") state.compteSel=(comptes.length>1)?"__all":myAcct().key;
       else if(t==="compte") state.compteSel=myAcct().key;
       var map={ compte:"compte", compte_foyer:"compte", foyer:"compte", communes:"communes", mois:"list", bourse:(FEAT.bourse?"bourse":"list") };

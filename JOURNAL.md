@@ -228,6 +228,14 @@ Après chaque modification, dans le même commit :
 
 ## Historique (le plus récent en haut)
 
+### 28/11
+- **Widget Épargne** (maquette « Widget Épargne », Benoît : « sur le petit widget, le gain sur 6 et 12 mois », puis « tu peux intégrer ») : nouveau widget Android `TkWidgetEpargne` (layout `tk_widget_epargne.xml`, `tk_info_epargne.xml`, chaînes `tk_w_epargne` / `tk_d_epargne`, ajouté par `patch-manifest.js`), une seule taille qui s'adapte :
+  - 2 × 1 : total + « 6 mois ▲ +… » / « 12 mois ▲ +… » (« depuis <mois> » s'il y a moins d'historique) ;
+  - plus haut (≥ 150 dp) : courbe (6 mois, 12 mois ou tout) et « Disponible … · dont provisions … » ;
+  - plus haut encore (≥ 260 dp) : les 4 plus grosses lignes avec la barre de leur objectif (« + N autres » au-delà).
+  - Masqué comme les autres (empreinte), titre › → Opérations › Épargne (`openFromWidget("epargne")`). Réglages (appui long, `TkWidgetConfig`) : Moi / Foyer (s'il y a l'épargne de plusieurs personnes ; « Moi » sans ligne à soi montre tout), durée de la courbe (`epp_<id>`), lignes comptées (`epx_<id>`), « Retirer les provisions du total » (`epnp_<id>`).
+  - Côté appli : `widgetSnapshot().epargne` = `{me, months, items:[{id, n, o, h:[valeur de chaque mois, 37 mois au plus], b?, p? (provisions rangées sur la ligne), obj?}]}` ; lignes clôturées laissées de côté ; le widget fait les totaux selon ses réglages. Réglages › Widgets le cite. Test rapide `tests/unit/widgets.js`. **Nouvel APK** nécessaire.
+
 ### 22/11
 - **Opérations › Graphiques devient « Évolution »** (maquette planche 4 du canevas Opérations, Benoît : « tu peux intégrer ») : la vie du compte affiché en 3 boutons (Ce mois, Solde, Entrées / sorties, `.cch-tabs3`) ; le graphique « Dépenses » est retiré (doublon de Budget › Analyse) et remplacé, sous « Les autres en résumé », par la carte « Tes dépenses par catégorie » (`#cpgDep` : total du mois et comparaison, mène à Budget › Analyse). Guide mis à jour ; t76, t94, t106 adaptés (t106 : carte et navigation).
 - Clé de signature des APK : Benoît a imprimé le mot de passe et rangé le fichier sur OneDrive.
