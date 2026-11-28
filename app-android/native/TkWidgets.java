@@ -539,10 +539,11 @@ public final class TkWidgets {
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.tk_widget_epargne);
         v.setTextViewText(R.id.tk_title, head(foyer ? "Épargne · foyer" : "Épargne"));
         v.setTextViewText(R.id.tk_time, moisCourt(months.optString(last)));
-        int[][] spans = { { 6, R.id.tk_l6, R.id.tk_v6 }, { 12, R.id.tk_l12, R.id.tk_v12 } };
+        // 1re ligne : ce mois (depuis le mois dernier) ; 2e ligne : sur 6 mois (« depuis <mois> » s'il y a moins d'historique)
+        int[][] spans = { { 1, R.id.tk_l6, R.id.tk_v6 }, { 6, R.id.tk_l12, R.id.tk_v12 } };
         for (int[] sp : spans) {
             int back = Math.min(sp[0], last);
-            String lab = back < sp[0] ? (back == 0 ? "ce mois" : "depuis " + moisCourt(months.optString(0))) : sp[0] + " mois";
+            String lab = sp[0] == 1 ? "Ce mois" : back < sp[0] ? "Depuis " + moisCourt(months.optString(0)) : sp[0] + " mois";
             double dl = ser[last] - ser[last - back];
             v.setTextViewText(sp[1], lab);
             v.setTextViewText(sp[2], mask ? "••••" : gain(dl, sym));

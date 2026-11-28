@@ -229,6 +229,7 @@ Après chaque modification, dans le même commit :
 ## Historique (le plus récent en haut)
 
 ### 28/11
+- **Widget Épargne, petit format** (Benoît, capture : « depuis juin » deux fois, l'historique ne remontant qu'à juin) : les deux lignes deviennent « Ce mois » (depuis le mois dernier) et « 6 mois » (« Depuis <mois> » s'il y a moins de 6 mois d'historique).
 - **Widget Épargne** (maquette « Widget Épargne », Benoît : « sur le petit widget, le gain sur 6 et 12 mois », puis « tu peux intégrer ») : nouveau widget Android `TkWidgetEpargne` (layout `tk_widget_epargne.xml`, `tk_info_epargne.xml`, chaînes `tk_w_epargne` / `tk_d_epargne`, ajouté par `patch-manifest.js`), une seule taille qui s'adapte :
   - 2 × 1 : total + « 6 mois ▲ +… » / « 12 mois ▲ +… » (« depuis <mois> » s'il y a moins d'historique) ;
   - plus haut (≥ 150 dp) : courbe (6 mois, 12 mois ou tout) et « Disponible … · dont provisions … » ;

@@ -25,7 +25,7 @@
       sh.q("#mcCopy").onclick=function(){ try{ navigator.clipboard.writeText(code).then(function(){ uiToast("Code copié"); }, function(){ uiToast("Copie impossible : recopie-le"); }); }catch(e){ uiToast("Copie impossible : recopie-le"); } };
     }
     function menuWidgets(){
-      var L=[["🧾","Fin de mois","ce qu'il te restera à la fin du mois"],["🏦","Solde","le solde d'un compte"],["👨‍👩‍👧","Foyer","tous les comptes du foyer"],["🤝","Commun","la part de chacun"],["🐷","Épargne","le total, gagné sur 6 et 12 mois, la courbe et tes livrets"],["📷","Scanner","prendre un ticket en photo en un geste"]];
+      var L=[["🧾","Fin de mois","ce qu'il te restera à la fin du mois"],["🏦","Solde","le solde d'un compte"],["👨‍👩‍👧","Foyer","tous les comptes du foyer"],["🤝","Commun","la part de chacun"],["🐷","Épargne","le total, gagné ce mois et sur 6 mois, la courbe et tes livrets"],["📷","Scanner","prendre un ticket en photo en un geste"]];
       if(FEAT.bourse) L.unshift(["📈","Bourse","ton portefeuille sur 24 h (appli Perso)"]);
       var plus=!canUse("widgets");
       var sh=uiSheet('<div class="sheet-title">Widgets</div>'+(plus?'<div class="muted" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin:-4px 0 10px">✦ '+APP_NAME+' Plus</div>':'')+

@@ -12,6 +12,6 @@
     <string name="tk_d_commun">Ta part du Commun ce mois-ci et les frais à payer</string>
     <string name="tk_d_mois">Dépenses du mois, budget et plus grosses catégories</string>
     <string name="tk_d_foyer">Les comptes du foyer, personne par personne</string>
-    <string name="tk_d_epargne">Ton épargne, ce qu\'elle a gagné sur 6 et 12 mois ; plus grand : la courbe et tes livrets</string>
+    <string name="tk_d_epargne">Ton épargne, ce qu\'elle a gagné ce mois et sur 6 mois ; plus grand : la courbe et tes livrets</string>
     <string name="tk_d_bourse">Ton portefeuille et sa courbe du jour, mis à jour toutes les 15 minutes</string>
 </resources>
