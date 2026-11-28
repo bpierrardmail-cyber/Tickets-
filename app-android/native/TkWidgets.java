@@ -538,20 +538,25 @@ public final class TkWidgets {
             for (int i = 0; h != null && i < nM && i < h.length(); i++) ser[i] += h.optDouble(i, 0);
             prov += it.optDouble("p", 0);
         }
-        // « Retirer les provisions du total » : toutes les provisions, où qu'elles soient (livret, compte, ailleurs), mois par mois
+        // « Retirer les provisions du total » : toutes les provisions, où qu'elles soient (livret, compte, ailleurs).
+        // Elles ne sont retirées que du total et de « Ce mois » (le mois en cours) ; les mois passés gardent toutes les dépenses.
         JSONArray pH = e.optJSONArray("provH");
-        double provAll = pH == null || pH.length() == 0 ? prov : pH.optDouble(Math.min(last, pH.length() - 1), 0);
-        if (noProv) for (int i = 0; i < nM; i++) ser[i] -= pH == null ? prov : pH.optDouble(Math.min(i, pH.length() - 1), 0);
-        double tot = ser[last];
+        double[] pv = new double[nM];
+        for (int i = 0; i < nM; i++) pv[i] = pH == null || pH.length() == 0 ? prov : pH.optDouble(Math.min(i, pH.length() - 1), 0);
+        double provAll = pv[last];
+        double tot = noProv ? ser[last] - pv[last] : ser[last];
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.tk_widget_epargne);
         v.setTextViewText(R.id.tk_title, head(moiSeul ? "Épargne · moi" : "Épargne"));
         v.setTextViewText(R.id.tk_time, moisCourt(months.optString(last)));
-        // 1re ligne : ce mois (depuis le mois dernier) ; 2e ligne : sur 6 mois (« depuis <mois> » s'il y a moins d'historique)
-        int[][] spans = { { 1, R.id.tk_l6, R.id.tk_v6 }, { 6, R.id.tk_l12, R.id.tk_v12 } };
+        // 1re ligne : ce mois (depuis le mois dernier ; hors provisions si l'option est cochée)
+        // 2e ligne : 6 mois, comme « Sur la période » de l'onglet Épargne (6 mois affichés, 5 écarts), sans rien retirer ; « depuis <mois> » s'il y a moins d'historique
+        int[][] spans = { { 1, R.id.tk_l6, R.id.tk_v6 }, { 5, R.id.tk_l12, R.id.tk_v12 } };
         for (int[] sp : spans) {
             int back = Math.min(sp[0], last);
-            String lab = sp[0] == 1 ? "Ce mois" : back < sp[0] ? "Depuis " + moisCourt(months.optString(0)) : sp[0] + " mois";
+            boolean mois = sp[0] == 1;
+            String lab = mois ? (noProv ? "Ce mois · hors prov." : "Ce mois") : back < sp[0] ? "Depuis " + moisCourt(months.optString(0)) : "6 mois";
             double dl = ser[last] - ser[last - back];
+            if (mois && noProv) dl -= pv[last] - pv[last - back];
             v.setTextViewText(sp[1], lab);
             v.setTextViewText(sp[2], mask ? "••••" : gain(dl, sym));
             v.setTextColor(sp[2], mask ? SOFT : (dl >= 0 ? ACCENT : CORAL));
